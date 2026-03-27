@@ -136,14 +136,14 @@ describe('pickNpcMove', () => {
   });
 
   it('favors super-effective moves', () => {
-    // Stone vs Storm => rock_slide and earthquake are both stone (2x vs storm)
+    // Stone vs Fire => rock_slide and earthquake are both stone (2x vs fire)
     // Run 50 times — super-effective should appear majority
     const npcMoveKeys = ['rock_slide', 'earthquake'];
     let superEffectiveCount = 0;
     for (let i = 0; i < 50; i++) {
-      const result = pickNpcMove(npcMoveKeys, 'stone', 'storm');
+      const result = pickNpcMove(npcMoveKeys, 'stone', 'fire');
       const move = moves[result] || moves.basic_attack;
-      const eff = getTypeEffectiveness(move.element, 'storm');
+      const eff = getTypeEffectiveness(move.element, 'fire');
       if (eff > 1.0) superEffectiveCount++;
     }
     expect(superEffectiveCount).toBeGreaterThan(25);
