@@ -105,6 +105,7 @@ export const npcs = {
     moveKeys: ['rock_slide'],
     difficulty: 'Easy',
     baseXP: 25,
+    scrapsReward: 30,
     idleSprite: '/assets/npc/firewall_sentinel_sprites.png',
     attackSprite: '/assets/npc/firewall_sentinel_attack.png',
     arena: '/assets/arenas/npc_firewall_sentinel.png',
@@ -119,6 +120,7 @@ export const npcs = {
     moveKeys: ['shadow_strike', 'void_pulse'],
     difficulty: 'Medium',
     baseXP: 40,
+    scrapsReward: 50,
     idleSprite: '/assets/npc/bit_wraith_sprites.png',
     attackSprite: '/assets/npc/bit_wraith_attack.png',
     arena: '/assets/arenas/npc_bit_wraith.png',
@@ -133,6 +135,7 @@ export const npcs = {
     moveKeys: ['lightning_strike', 'thunder_clap'],
     difficulty: 'Hard',
     baseXP: 60,
+    scrapsReward: 80,
     idleSprite: '/assets/npc/glitch_hydra_sprites.png',
     attackSprite: '/assets/npc/glitch_hydra_attack.png',
     arena: '/assets/arenas/npc_glitch_hydra.png',
@@ -147,6 +150,7 @@ export const npcs = {
     moveKeys: ['rock_slide', 'earthquake'],
     difficulty: 'Boss',
     baseXP: 80,
+    scrapsReward: 120,
     idleSprite: '/assets/npc/recursive_golem_sprites.png',
     attackSprite: '/assets/npc/recursive_golem_attack.png',
     arena: '/assets/arenas/npc_recursive_golem.png',
@@ -163,3 +167,15 @@ export const elementColors = {
   shadow:  { primary: '#8844aa', glow: '#aa66cc' },
   neutral: { primary: '#888888', glow: '#aaaaaa' },
 };
+
+// === RARITY CONFIG ===
+export const rarityTiers = [
+  { name: 'Common',   chance: 0.50, elements: ['fire', 'ice'], multiplier: 1 },
+  { name: 'Uncommon', chance: 0.30, elements: ['storm', 'venom', 'stone'], multiplier: 2 },
+  { name: 'Rare',     chance: 0.15, elements: ['shadow'], multiplier: 3 },
+  { name: 'Exotic',   chance: 0.05, elements: ['shadow'], multiplier: 5, guaranteedShiny: true },
+];
+
+export const PULL_COST = 50;
+export const SHINY_CHANCE = 0.02;
+export const PITY_THRESHOLD = 10;
