@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import TitleScreen from './TitleScreen';
 
 const SCREENS = {
   TITLE: 'title',
@@ -27,10 +28,7 @@ export default function App() {
   return (
     <div className="app">
       {screen === SCREENS.TITLE && (
-        <div className="placeholder-screen">
-          <h1>DRAGON FORGE</h1>
-          <button onClick={handleStartGame}>ENTER THE FORGE</button>
-        </div>
+        <TitleScreen onStart={handleStartGame} />
       )}
       {screen === SCREENS.BATTLE_SELECT && (
         <div className="placeholder-screen">
