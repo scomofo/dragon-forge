@@ -1,11 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+/* === RESET === */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* === BASE === */
 body {
   background: #111118;
   color: #e0e0e0;
@@ -27,16 +29,406 @@ body {
   position: relative;
 }
 
-.placeholder-screen {
+/* === CRT SCANLINE OVERLAY === */
+.app::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* === PIXELATED RENDERING === */
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* === PROFESSOR FELIX FRAME === */
+.felix-frame {
+  border: 4px solid #ffffff;
+  box-shadow: inset -4px -4px 0px #888888;
+  background: #111118;
+}
+
+/* === UI PANELS === */
+.panel {
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #333;
+}
+
+.panel-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  border-bottom: 2px solid #333;
+}
+
+.panel-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 14px 20px;
+  z-index: 10;
+  border-top: 2px solid #ff6622;
+}
+
+/* === HP BAR === */
+.hp-bar-container {
+  min-width: 180px;
+}
+
+.hp-bar-label {
+  font-size: 9px;
+  margin-bottom: 4px;
+}
+
+.hp-bar-track {
+  height: 8px;
+  background: #333;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+}
+
+/* === MOVE BUTTONS === */
+.move-panel {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.move-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  padding: 10px 16px;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.move-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.move-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.move-btn .tooltip {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000;
+  border: 1px solid #555;
+  padding: 4px 8px;
+  font-size: 8px;
+  white-space: nowrap;
+  margin-bottom: 4px;
+  border-radius: 2px;
+}
+
+.move-btn:hover .tooltip {
+  display: block;
+}
+
+/* === ARENA === */
+.arena {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  image-rendering: pixelated;
+}
+
+.arena-sprites {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10%;
+  padding-top: 40px;
+  padding-bottom: 60px;
+}
+
+/* === FLOATING DAMAGE NUMBERS === */
+@keyframes damageFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-30px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.8);
+  }
+}
+
+.damage-number {
+  position: absolute;
+  font-size: 18px;
+  font-weight: bold;
+  pointer-events: none;
+  animation: damageFloat 0.8s ease-out forwards;
+  text-shadow: 2px 2px 0px #000, -1px -1px 0px #000;
+  z-index: 20;
+}
+
+.damage-number.normal { color: #ffffff; }
+.damage-number.super-effective { color: #ff4444; font-size: 22px; }
+.damage-number.resisted { color: #888888; font-size: 14px; }
+.damage-number.miss { color: #666666; font-style: italic; }
+
+/* === ATTACK ANIMATIONS === */
+@keyframes telegraph {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(2) saturate(1.5); }
+}
+
+@keyframes recoil {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.sprite-telegraph {
+  animation: telegraph 0.4s ease-in-out;
+}
+
+.sprite-recoil {
+  animation: recoil 0.2s ease-in-out;
+}
+
+.sprite-ko {
+  animation: fadeOut 0.6s ease-out forwards;
+}
+
+/* === TITLE SCREEN === */
+.title-screen {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
-  gap: 20px;
+  gap: 24px;
 }
 
-.placeholder-screen button {
+.title-screen h1 {
+  font-size: 24px;
+  color: #ff6622;
+  text-shadow: 0 0 20px rgba(255, 102, 34, 0.5);
+}
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.typewriter-text {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid #ff6622;
+  animation: typewriter 2s steps(40) forwards, blink 0.7s step-end infinite;
+  max-width: 600px;
+}
+
+@keyframes blink {
+  50% { border-color: transparent; }
+}
+
+.enter-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  padding: 16px 32px;
+  background: #1a1a2e;
+  color: #ff6622;
+  border: 2px solid #ff6622;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.enter-btn:hover {
+  background: #ff6622;
+  color: #111118;
+  box-shadow: 0 0 20px rgba(255, 102, 34, 0.4);
+}
+
+/* === BATTLE SELECT === */
+.battle-select {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.battle-select-header {
+  text-align: center;
+  padding: 16px;
+  font-size: 14px;
+  color: #ff6622;
+}
+
+.battle-select-panels {
+  display: flex;
+  flex: 1;
+  gap: 16px;
+  padding: 0 16px;
+  overflow: hidden;
+}
+
+.select-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.select-panel h2 {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.select-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.select-card:hover {
+  border-color: #666;
+}
+
+.select-card.selected {
+  border-color: #ff6622;
+  box-shadow: 0 0 10px rgba(255, 102, 34, 0.2);
+}
+
+.select-card-info {
+  flex: 1;
+}
+
+.select-card-name {
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+
+.select-card-stats {
+  font-size: 8px;
+  color: #888;
+}
+
+.matchup-indicator {
+  text-align: center;
+  padding: 12px;
+  font-size: 11px;
+}
+
+.matchup-indicator.super-effective { color: #ff4444; }
+.matchup-indicator.resisted { color: #888888; }
+.matchup-indicator.neutral { color: #e0e0e0; }
+
+.battle-select-footer {
+  padding: 16px;
+  text-align: center;
+}
+
+.begin-battle-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  padding: 14px 28px;
+  background: #1a1a2e;
+  color: #ff6622;
+  border: 2px solid #ff6622;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.begin-battle-btn:hover:not(:disabled) {
+  background: #ff6622;
+  color: #111118;
+}
+
+.begin-battle-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* === RESULT SCREENS === */
+.result-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 50;
+}
+
+.result-overlay h2 {
+  font-size: 20px;
+}
+
+.result-overlay.victory h2 { color: #ffcc00; }
+.result-overlay.defeat h2 { color: #ff4444; }
+
+.xp-display {
+  font-size: 10px;
+  color: #44aaff;
+}
+
+.level-up-display {
+  font-size: 12px;
+  color: #ffcc00;
+  text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+}
+
+.result-btn {
   font-family: 'Press Start 2P', monospace;
   font-size: 10px;
   padding: 12px 24px;
@@ -46,7 +438,21 @@ body {
   cursor: pointer;
 }
 
-.placeholder-screen button:hover {
+.result-btn:hover {
   border-color: #ff6622;
   color: #ff8844;
+}
+
+/* === STABILITY GLITCH (from spec) === */
+.stability-glitch {
+  animation: jitter 0.1s infinite;
+  filter: hue-rotate(90deg) contrast(150%);
+}
+
+@keyframes jitter {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 1px); }
+  50% { transform: translate(1px, -2px); }
+  75% { transform: translate(-1px, 2px); }
+  100% { transform: translate(2px, -1px); }
 }
