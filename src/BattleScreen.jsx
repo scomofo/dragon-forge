@@ -233,7 +233,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       {/* Arena background */}
-      <div className="arena" style={{ background: npc.arena }} />
+      <div className="arena pixelated" style={{ backgroundImage: `url(${npc.arena})` }} />
 
       {/* Top bar — HP */}
       <div className="panel panel-top">

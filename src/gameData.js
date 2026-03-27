@@ -107,7 +107,7 @@ export const npcs = {
     baseXP: 25,
     idleSprite: '/assets/npc/firewall_sentinel_sprites.png',
     attackSprite: '/assets/npc/firewall_sentinel_attack.png',
-    arena: 'linear-gradient(180deg, #1a0f05 0%, #3d2810 20%, #6b4c2a 45%, #8b6b3a 60%, #5a4020 80%, #2a1a0a 100%), radial-gradient(ellipse at 50% 90%, rgba(139,107,58,0.3) 0%, transparent 60%)',
+    arena: '/assets/arenas/npc_firewall_sentinel.png',
   },
   bit_wraith: {
     id: 'bit_wraith',
@@ -120,7 +120,7 @@ export const npcs = {
     baseXP: 40,
     idleSprite: '/assets/npc/bit_wraith_sprites.png',
     attackSprite: '/assets/npc/bit_wraith_attack.png',
-    arena: 'linear-gradient(180deg, #050510 0%, #0d0d2a 20%, #1a1244 45%, #2a1a5a 60%, #150f3a 80%, #08081a 100%), radial-gradient(ellipse at 30% 40%, rgba(80,40,120,0.2) 0%, transparent 50%)',
+    arena: '/assets/arenas/npc_bit_wraith.png',
   },
   glitch_hydra: {
     id: 'glitch_hydra',
@@ -133,7 +133,7 @@ export const npcs = {
     baseXP: 60,
     idleSprite: '/assets/npc/glitch_hydra_sprites.png',
     attackSprite: '/assets/npc/glitch_hydra_attack.png',
-    arena: 'linear-gradient(180deg, #050a1a 0%, #0f1a3a 20%, #1a2a5a 45%, #2a3a7a 55%, #1a2550 75%, #0a1025 100%), radial-gradient(ellipse at 60% 30%, rgba(100,140,255,0.15) 0%, transparent 50%)',
+    arena: '/assets/arenas/npc_glitch_hydra.png',
   },
   recursive_golem: {
     id: 'recursive_golem',
@@ -146,7 +146,7 @@ export const npcs = {
     baseXP: 80,
     idleSprite: '/assets/npc/recursive_golem_sprites.png',
     attackSprite: '/assets/npc/recursive_golem_attack.png',
-    arena: 'linear-gradient(180deg, #0f0a05 0%, #2a1a0a 20%, #4a3018 40%, #6b4828 55%, #4a3520 75%, #1a1008 100%), radial-gradient(ellipse at 50% 85%, rgba(160,120,60,0.25) 0%, transparent 50%)',
+    arena: '/assets/arenas/npc_recursive_golem.png',
   },
 };
 
