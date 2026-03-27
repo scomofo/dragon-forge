@@ -4,7 +4,7 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain,
 } from './battleEngine';
-import { loadSave, saveDragonProgress } from './persistence';
+import { loadSave, saveDragonProgress, addScraps } from './persistence';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
@@ -47,6 +47,7 @@ function initBattle(dragonId, npcId) {
     xpGained: 0,
     leveledUp: false,
     newLevel: progress.level,
+    scrapsGained: 0,
   };
 }
 
@@ -73,7 +74,7 @@ function battleReducer(state, action) {
     case 'SET_PHASE':
       return { ...state, phase: action.phase };
     case 'SET_VICTORY':
-      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel };
+      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0 };
     case 'SET_DEFEAT':
       return { ...state, phase: PHASES.DEFEAT };
     case 'RESET_TURN':
@@ -199,6 +200,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
 
     if (result.npc.hp <= 0) {
       const xpGained = calculateXpGain(state.npc.baseXP, state.playerLevel, state.npc.level);
+      const scrapsGained = state.npc.scrapsReward || 0;
       const newXp = state.playerXp + xpGained;
       const xpPerLevel = 100;
       let newLevel = state.playerLevel;
@@ -209,10 +211,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
       }
       const leveledUp = newLevel > state.playerLevel;
       saveDragonProgress(state.dragonId, newLevel, remainingXp);
+      if (scrapsGained > 0) addScraps(scrapsGained);
 
       dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
       await wait(600);
-      dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel });
+      dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained });
     } else if (result.player.hp <= 0) {
       dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-ko' });
       await wait(600);
@@ -359,6 +362,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
         <div className="result-overlay victory">
           <h2>VICTORY!</h2>
           <div className="xp-display">+{state.xpGained} XP</div>
+          {state.scrapsGained > 0 && (
+            <div className="xp-display" style={{ color: '#ffcc00' }}>+{state.scrapsGained} ◆</div>
+          )}
           {state.leveledUp && (
             <div className="level-up-display">LEVEL UP! Now Lv.{state.newLevel}</div>
           )}
