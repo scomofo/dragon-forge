@@ -285,6 +285,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
             attackSprite={npc.attackSprite}
             isAttacking={state.npcAttacking}
             className={state.npcSpriteClass}
+            flipX={npc.flipSprite}
           />
           {state.damageNumbers
             .filter((d) => d.target === 'npc')

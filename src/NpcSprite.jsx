@@ -1,4 +1,4 @@
-export default function NpcSprite({ idleSprite, attackSprite, isAttacking = false, className = '', size = 160 }) {
+export default function NpcSprite({ idleSprite, attackSprite, isAttacking = false, className = '', size = 160, flipX = false }) {
   const src = isAttacking ? attackSprite : idleSprite;
 
   return (
@@ -10,6 +10,7 @@ export default function NpcSprite({ idleSprite, attackSprite, isAttacking = fals
         imageRendering: 'pixelated',
         height: `${size}px`,
         objectFit: 'contain',
+        transform: flipX ? 'scaleX(-1)' : 'none',
       }}
     />
   );
