@@ -107,7 +107,7 @@ export const npcs = {
     baseXP: 30,
     idleSprite: '/assets/npc/firewall_sentinel_sprites.png',
     attackSprite: '/assets/npc/firewall_sentinel_attack.png',
-    arena: '/assets/arenas/stone.png',
+    arena: 'linear-gradient(180deg, #2a1a0a 0%, #4a3520 40%, #6b4c2a 70%, #3d2a15 100%)',
   },
   bit_wraith: {
     id: 'bit_wraith',
@@ -120,7 +120,7 @@ export const npcs = {
     baseXP: 50,
     idleSprite: '/assets/npc/bit_wraith_sprites.png',
     attackSprite: '/assets/npc/bit_wraith_attack.png',
-    arena: '/assets/arenas/shadow.png',
+    arena: 'linear-gradient(180deg, #0a0a1a 0%, #1a1a3a 40%, #2a1a4a 70%, #0d0d1d 100%)',
   },
   glitch_hydra: {
     id: 'glitch_hydra',
@@ -133,7 +133,7 @@ export const npcs = {
     baseXP: 80,
     idleSprite: '/assets/npc/glitch_hydra_sprites.png',
     attackSprite: '/assets/npc/glitch_hydra_attack.png',
-    arena: '/assets/arenas/lightning.png',
+    arena: 'linear-gradient(180deg, #0a1a2a 0%, #1a2a4a 40%, #2a3a6a 70%, #15203a 100%)',
   },
   recursive_golem: {
     id: 'recursive_golem',
@@ -146,7 +146,7 @@ export const npcs = {
     baseXP: 120,
     idleSprite: '/assets/npc/recursive_golem_sprites.png',
     attackSprite: '/assets/npc/recursive_golem_attack.png',
-    arena: '/assets/arenas/stone.png',
+    arena: 'linear-gradient(180deg, #2a1a0a 0%, #4a3520 40%, #6b4c2a 70%, #3d2a15 100%)',
   },
 };
 

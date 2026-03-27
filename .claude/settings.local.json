@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash \"C:/Users/Scott Morley/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.6/skills/brainstorming/scripts/start-server.sh\" --project-dir \"/c/Users/Scott Morley/Dev/df\")",
+      "Bash(xargs cat:*)",
+      "Bash(timeout 10 npm run dev)",
+      "Bash(npx vitest:*)",
+      "Bash(npx vite:*)",
+      "Bash(for f:*)",
+      "Bash(identify \"$f\")",
+      "Read(//c/Users/Scott Morley/Dev/df/**)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "claude-flow"
+  ]
+}

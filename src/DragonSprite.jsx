@@ -1,42 +1,102 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { DRAGON_SHEET, STAGE_SCALES, DRAGON_DISPLAY } from './sprites';
 
 export default function DragonSprite({ spriteSheet, stage = 3, flipX = false, forcedFrame = null, className = '' }) {
+  const canvasRef = useRef(null);
+  const imageRef = useRef(null);
   const [frame, setFrame] = useState(0);
-  const intervalRef = useRef(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
+  // Load sprite sheet image
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      imageRef.current = img;
+      setImageLoaded(true);
+    };
+    img.src = spriteSheet;
+  }, [spriteSheet]);
+
+  // Animate frames
   useEffect(() => {
     if (forcedFrame !== null) {
       setFrame(forcedFrame);
       return;
     }
 
-    intervalRef.current = setInterval(() => {
+    const interval = setInterval(() => {
       setFrame((prev) => (prev + 1) % DRAGON_SHEET.totalFrames);
     }, DRAGON_SHEET.frameDuration);
 
-    return () => clearInterval(intervalRef.current);
+    return () => clearInterval(interval);
   }, [forcedFrame]);
 
-  const col = frame % DRAGON_SHEET.cols;
-  const row = Math.floor(frame / DRAGON_SHEET.cols);
-  const bgX = -(col * DRAGON_SHEET.frameWidth);
-  const bgY = -(row * DRAGON_SHEET.frameHeight);
+  // Draw frame to canvas with chroma key
+  const drawFrame = useCallback(() => {
+    const canvas = canvasRef.current;
+    const img = imageRef.current;
+    if (!canvas || !img) return;
+
+    const ctx = canvas.getContext('2d');
+    const col = frame % DRAGON_SHEET.cols;
+    const row = Math.floor(frame / DRAGON_SHEET.cols);
+    const sx = col * DRAGON_SHEET.frameWidth;
+    const sy = row * DRAGON_SHEET.frameHeight;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the frame
+    ctx.save();
+    if (flipX) {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(
+      img,
+      sx, sy, DRAGON_SHEET.frameWidth, DRAGON_SHEET.frameHeight,
+      0, 0, canvas.width, canvas.height
+    );
+    ctx.restore();
+
+    // Remove green background (chroma key)
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      // Detect green screen pixels: high green, low red and blue
+      if (g > 150 && r < 150 && b < 150 && g > r * 1.3 && g > b * 1.3) {
+        data[i + 3] = 0; // Set alpha to 0
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+  }, [frame, flipX]);
+
+  useEffect(() => {
+    if (imageLoaded) {
+      drawFrame();
+    }
+  }, [imageLoaded, drawFrame]);
 
   const scale = STAGE_SCALES[stage] ?? 1.0;
-  const width = DRAGON_DISPLAY.width * scale;
-  const height = DRAGON_DISPLAY.height * scale;
+  const width = Math.round(DRAGON_DISPLAY.width * scale);
+  const height = Math.round(DRAGON_DISPLAY.height * scale);
 
-  const style = {
-    width: `${width}px`,
-    height: `${height}px`,
-    backgroundImage: `url(${spriteSheet})`,
-    backgroundPosition: `${bgX * (width / DRAGON_SHEET.frameWidth)}px ${bgY * (height / DRAGON_SHEET.frameHeight)}px`,
-    backgroundSize: `${DRAGON_SHEET.cols * width}px ${DRAGON_SHEET.rows * height}px`,
-    imageRendering: 'pixelated',
-    transform: flipX ? 'scaleX(-1)' : 'none',
-    filter: stage === 4 ? 'drop-shadow(0 0 8px gold)' : 'none',
-  };
-
-  return <div className={`dragon-sprite ${className}`} style={style} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      width={width}
+      height={height}
+      className={`dragon-sprite ${className}`}
+      style={{
+        imageRendering: 'pixelated',
+        filter: stage === 4 ? 'drop-shadow(0 0 8px gold)' : 'none',
+        width: `${width}px`,
+        height: `${height}px`,
+      }}
+    />
+  );
 }

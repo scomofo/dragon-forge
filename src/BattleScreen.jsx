@@ -233,7 +233,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       {/* Arena background */}
-      <div className="arena pixelated" style={{ backgroundImage: `url(${npc.arena})` }} />
+      <div className="arena" style={{ background: npc.arena }} />
 
       {/* Top bar — HP */}
       <div className="panel panel-top">
@@ -304,7 +304,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
           <DragonSprite
             spriteSheet={dragon.spriteSheet}
             stage={state.playerStage}
-            flipX={false}
+            flipX={true}
             forcedFrame={state.playerForcedFrame}
             className={state.playerSpriteClass}
           />

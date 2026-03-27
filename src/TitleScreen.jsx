@@ -22,12 +22,12 @@ export default function TitleScreen({ onStart }) {
 
   return (
     <div className="title-screen">
-      <div className="felix-frame" style={{ width: 96, height: 96, overflow: 'hidden', marginBottom: 16 }}>
+      <div className="felix-frame" style={{ width: 160, height: 160, overflow: 'hidden', marginBottom: 16, borderRadius: 4 }}>
         <img
           src="/assets/felix_pixel.jpg"
           alt="Professor Felix"
           className="pixelated"
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
         />
       </div>
 
