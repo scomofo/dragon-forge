@@ -204,7 +204,7 @@ describe('resolveTurn', () => {
 
   it('stops turn if first attacker KOs the target', () => {
     const weakNpc = { ...npcState, hp: 1 };
-    const result = resolveTurn(playerState, weakNpc, 'magma_breath', 'rock_slide');
+    const result = resolveTurn(playerState, weakNpc, 'basic_attack', 'rock_slide');
     // NPC should be KO'd, only player attack event + no npc attack
     expect(result.npc.hp).toBe(0);
     const npcAttackEvents = result.events.filter(e => e.attacker === 'npc' && e.action === 'attack');
