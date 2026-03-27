@@ -108,7 +108,7 @@ export const npcs = {
     idleSprite: '/assets/npc/firewall_sentinel_sprites.png',
     attackSprite: '/assets/npc/firewall_sentinel_attack.png',
     arena: '/assets/arenas/npc_firewall_sentinel.png',
-    flipSprite: true,
+    flipSprite: false,
   },
   bit_wraith: {
     id: 'bit_wraith',
@@ -122,7 +122,7 @@ export const npcs = {
     idleSprite: '/assets/npc/bit_wraith_sprites.png',
     attackSprite: '/assets/npc/bit_wraith_attack.png',
     arena: '/assets/arenas/npc_bit_wraith.png',
-    flipSprite: true,
+    flipSprite: false,
   },
   glitch_hydra: {
     id: 'glitch_hydra',
@@ -136,7 +136,7 @@ export const npcs = {
     idleSprite: '/assets/npc/glitch_hydra_sprites.png',
     attackSprite: '/assets/npc/glitch_hydra_attack.png',
     arena: '/assets/arenas/npc_glitch_hydra.png',
-    flipSprite: false,
+    flipSprite: true,
   },
   recursive_golem: {
     id: 'recursive_golem',
