@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import TitleScreen from './TitleScreen';
+import BattleSelectScreen from './BattleSelectScreen';
 
 const SCREENS = {
   TITLE: 'title',
@@ -31,17 +32,12 @@ export default function App() {
         <TitleScreen onStart={handleStartGame} />
       )}
       {screen === SCREENS.BATTLE_SELECT && (
-        <div className="placeholder-screen">
-          <h1>SELECT YOUR DRAGON</h1>
-          <button onClick={() => handleBeginBattle({ dragonId: 'fire', npcId: 'firewall_sentinel' })}>
-            BEGIN BATTLE (placeholder)
-          </button>
-        </div>
+        <BattleSelectScreen onBeginBattle={handleBeginBattle} />
       )}
       {screen === SCREENS.BATTLE && (
         <div className="placeholder-screen">
           <h1>BATTLE (placeholder)</h1>
-          <p>Config: {JSON.stringify(battleConfig)}</p>
+          <p style={{ fontSize: 9 }}>Dragon: {battleConfig?.dragonId} vs NPC: {battleConfig?.npcId}</p>
           <button onClick={handleBattleEnd}>END BATTLE</button>
         </div>
       )}
