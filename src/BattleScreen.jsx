@@ -1,4 +1,5 @@
 import { useReducer, useCallback, useEffect, useRef } from 'react';
+import { playSound, playMusic, stopMusic } from './soundEngine';
 import { dragons, npcs, moves, elementColors } from './gameData';
 import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
@@ -98,6 +99,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
     const isPlayer = event.attacker === 'player';
 
     if (event.action === 'defend') {
+      playSound('defend');
       if (isPlayer) {
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
         await wait(400);
@@ -113,6 +115,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
     } else {
       dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-telegraph' });
     }
+    playSound('attackLaunch');
     await wait(400);
 
     // IMPACT phase
@@ -124,13 +127,17 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
       dispatch({ type: 'SET_NPC_ATTACKING', value: true });
     }
 
-    // Apply damage + show number
     if (event.hit) {
       if (isPlayer) {
         dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: event.damage });
       } else {
         dispatch({ type: 'APPLY_DAMAGE_TO_PLAYER', damage: event.damage });
       }
+      if (event.effectiveness > 1.0) playSound('superEffective');
+      else if (event.effectiveness < 1.0) playSound('resisted');
+      else playSound('attackHit');
+    } else {
+      playSound('miss');
     }
 
     const dmgId = ++damageIdCounter;
@@ -164,6 +171,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
 
   const handleMoveSelect = useCallback(async (moveKey) => {
     if (animatingRef.current) return;
+    playSound('buttonClick');
     animatingRef.current = true;
     dispatch({ type: 'START_ANIMATION' });
 
@@ -214,13 +222,29 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
       if (scrapsGained > 0) addScraps(scrapsGained);
 
       dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
+      playSound('ko');
       await wait(600);
       dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained });
+      stopMusic();
+      playSound('victoryFanfare');
+      playSound('xpGain');
+      if (scrapsGained > 0) setTimeout(() => playSound('scrapsEarned'), 200);
+      if (leveledUp) setTimeout(() => playSound('levelUp'), 400);
     } else if (result.player.hp <= 0) {
       dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-ko' });
+      playSound('ko');
       await wait(600);
       dispatch({ type: 'SET_DEFEAT' });
+      stopMusic();
+      playSound('defeatDrone');
     } else {
+      const playerHpPct = result.player.hp / state.playerMaxHp;
+      const npcHpPct = result.npc.hp / state.npcMaxHp;
+      if (playerHpPct < 0.25 || npcHpPct < 0.25) {
+        playMusic('battleIntense');
+      } else {
+        playMusic('battle');
+      }
       dispatch({ type: 'RESET_TURN' });
     }
 
