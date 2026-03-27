@@ -46,3 +46,31 @@ export function executePull(pityCounter) {
     newPityCounter,
   };
 }
+
+export function applyPullResult(save, pull) {
+  const newSave = structuredClone(save);
+  const dragon = newSave.dragons[pull.element];
+  let isNew = false;
+  let xpGained = 0;
+
+  if (!dragon.owned) {
+    dragon.owned = true;
+    if (pull.shiny) dragon.shiny = true;
+    isNew = true;
+  } else {
+    xpGained = 50 * pull.rarityMultiplier;
+    dragon.xp += xpGained;
+    const xpPerLevel = 100;
+    while (dragon.xp > xpPerLevel) {
+      dragon.xp -= xpPerLevel;
+      dragon.level++;
+    }
+    if (pull.shiny && !dragon.shiny) {
+      dragon.shiny = true;
+    }
+  }
+
+  newSave.pityCounter = pull.newPityCounter;
+
+  return { save: newSave, isNew, xpGained };
+}

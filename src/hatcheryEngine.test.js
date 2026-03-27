@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rollRarity, rollElement, rollShiny, executePull } from './hatcheryEngine';
+import { rollRarity, rollElement, rollShiny, executePull, applyPullResult } from './hatcheryEngine';
 
 describe('rollRarity', () => {
   it('returns a rarity tier object', () => {
@@ -80,5 +80,68 @@ describe('executePull', () => {
       }
     }
     expect(foundNonRare).toBe(true);
+  });
+});
+
+describe('applyPullResult', () => {
+  it('unlocks a new dragon', () => {
+    const save = {
+      dragons: { fire: { level: 1, xp: 0, owned: false, shiny: false } },
+      dataScraps: 100,
+      pityCounter: 0,
+    };
+    const pull = { element: 'fire', rarityName: 'Common', rarityMultiplier: 1, shiny: false, newPityCounter: 1 };
+    const result = applyPullResult(save, pull);
+    expect(result.save.dragons.fire.owned).toBe(true);
+    expect(result.isNew).toBe(true);
+    expect(result.xpGained).toBe(0);
+  });
+
+  it('merges duplicate with XP bonus', () => {
+    const save = {
+      dragons: { fire: { level: 1, xp: 0, owned: true, shiny: false } },
+      dataScraps: 100,
+      pityCounter: 0,
+    };
+    const pull = { element: 'fire', rarityName: 'Uncommon', rarityMultiplier: 2, shiny: false, newPityCounter: 1 };
+    const result = applyPullResult(save, pull);
+    expect(result.isNew).toBe(false);
+    expect(result.xpGained).toBe(100);
+    expect(result.save.dragons.fire.xp).toBe(100);
+  });
+
+  it('upgrades to shiny on duplicate shiny pull', () => {
+    const save = {
+      dragons: { shadow: { level: 5, xp: 20, owned: true, shiny: false } },
+      dataScraps: 100,
+      pityCounter: 0,
+    };
+    const pull = { element: 'shadow', rarityName: 'Rare', rarityMultiplier: 3, shiny: true, newPityCounter: 0 };
+    const result = applyPullResult(save, pull);
+    expect(result.save.dragons.shadow.shiny).toBe(true);
+  });
+
+  it('updates pity counter', () => {
+    const save = {
+      dragons: { fire: { level: 1, xp: 0, owned: false, shiny: false } },
+      dataScraps: 100,
+      pityCounter: 3,
+    };
+    const pull = { element: 'fire', rarityName: 'Common', rarityMultiplier: 1, shiny: false, newPityCounter: 4 };
+    const result = applyPullResult(save, pull);
+    expect(result.save.pityCounter).toBe(4);
+  });
+
+  it('levels up dragon when XP exceeds threshold', () => {
+    const save = {
+      dragons: { fire: { level: 1, xp: 80, owned: true, shiny: false } },
+      dataScraps: 100,
+      pityCounter: 0,
+    };
+    const pull = { element: 'fire', rarityName: 'Exotic', rarityMultiplier: 5, shiny: false, newPityCounter: 0 };
+    const result = applyPullResult(save, pull);
+    expect(result.save.dragons.fire.level).toBe(4);
+    expect(result.save.dragons.fire.xp).toBe(30);
+    expect(result.xpGained).toBe(250);
   });
 });
