@@ -551,11 +551,25 @@ body {
 }
 
 .egg-container {
-  width: 160px;
-  height: 200px;
+  width: 200px;
+  height: 240px;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.egg-img {
+  height: 200px;
+  width: auto;
+  image-rendering: pixelated;
+}
+
+.reveal-egg {
+  height: 60px;
+  width: auto;
+  image-rendering: pixelated;
+  opacity: 0.6;
+  margin-bottom: 8px;
 }
 
 /* === EGG ANIMATIONS === */

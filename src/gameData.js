@@ -168,6 +168,17 @@ export const elementColors = {
   neutral: { primary: '#888888', glow: '#aaaaaa' },
 };
 
+// === EGG SPRITES ===
+export const eggSprites = {
+  generic: '/assets/eggs/egg_generic.png',
+  fire:    '/assets/eggs/egg_fire.png',
+  ice:     '/assets/eggs/egg_ice.png',
+  storm:   '/assets/eggs/egg_storm.png',
+  stone:   '/assets/eggs/egg_stone.png',
+  venom:   '/assets/eggs/egg_venom.png',
+  shadow:  '/assets/eggs/egg_shadow.png',
+};
+
 // === RARITY CONFIG ===
 export const rarityTiers = [
   { name: 'Common',   chance: 0.50, elements: ['fire', 'ice'], multiplier: 1 },

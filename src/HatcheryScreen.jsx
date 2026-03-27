@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { dragons, elementColors, PULL_COST } from './gameData';
+import { dragons, elementColors, eggSprites, PULL_COST } from './gameData';
 import { executePull, applyPullResult } from './hatcheryEngine';
 import { loadSave, writeSave } from './persistence';
 import NavBar from './NavBar';
@@ -122,18 +122,23 @@ export default function HatcheryScreen({ onNavigate }) {
 
         <div className="egg-container">
           {(phase === ANIM_PHASES.IDLE || phase === ANIM_PHASES.EGG_APPEAR) && (
-            <div className="egg-sprite egg-pulse" />
+            <img src={eggSprites.generic} alt="Egg" className="pixelated egg-img egg-pulse" />
           )}
           {phase === ANIM_PHASES.EGG_SHAKE && (
-            <div className="egg-sprite egg-shake" />
+            <img src={eggSprites.generic} alt="Egg" className="pixelated egg-img egg-shake" />
           )}
           {phase === ANIM_PHASES.BURST && (
-            <div style={{ position: 'relative', width: 120, height: 150 }}>
+            <div style={{ position: 'relative', width: 160, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div className="egg-burst" style={{ background: `radial-gradient(circle, ${burstColor}, transparent)` }} />
             </div>
           )}
           {phase === ANIM_PHASES.REVEAL && currentResult && (
             <div className="reveal-result">
+              <img
+                src={eggSprites[currentResult.pull.element] || eggSprites.generic}
+                alt="Element Egg"
+                className="pixelated reveal-egg"
+              />
               <DragonSprite
                 spriteSheet={dragons[currentResult.pull.element].spriteSheet}
                 stage={1}
