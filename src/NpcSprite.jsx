@@ -1,4 +1,4 @@
-export default function NpcSprite({ idleSprite, attackSprite, isAttacking = false, className = '' }) {
+export default function NpcSprite({ idleSprite, attackSprite, isAttacking = false, className = '', size = 160 }) {
   const src = isAttacking ? attackSprite : idleSprite;
 
   return (
@@ -8,7 +8,7 @@ export default function NpcSprite({ idleSprite, attackSprite, isAttacking = fals
       alt="NPC"
       style={{
         imageRendering: 'pixelated',
-        height: '160px',
+        height: `${size}px`,
         objectFit: 'contain',
       }}
     />

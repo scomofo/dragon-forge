@@ -73,7 +73,7 @@ export default function BattleSelectScreen({ onBeginBattle }) {
                 onClick={() => setSelectedNpc(npc)}
               >
                 <div style={{ width: 60, height: 60, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <NpcSprite idleSprite={npc.idleSprite} attackSprite={npc.attackSprite} />
+                  <NpcSprite idleSprite={npc.idleSprite} attackSprite={npc.attackSprite} size={55} />
                 </div>
                 <div className="select-card-info">
                   <div className="select-card-name" style={{ color: color.primary }}>{npc.name}</div>
