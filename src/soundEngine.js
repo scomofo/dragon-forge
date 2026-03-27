@@ -221,6 +221,11 @@ const SFX = {
   xpGain: () => playTone(1000, 40, 'sine', 0.3),
   levelUp: () => playArpeggio([523, 659, 784, 1047], 'square', 80),
   scrapsEarned: () => { playTone(1400, 30, 'sine', 0.3); setTimeout(() => playTone(1400, 30, 'sine', 0.3), 60); },
+
+  // Status
+  statusApply: () => { playNoise(60, 2000, 0.4); playTone(350, 80, 'sawtooth', 0.3); },
+  statusTick: () => playNoise(40, 1500, 0.25),
+  statusExpire: () => playArpeggio([400, 500, 600], 'sine', 60),
 };
 
 export function playSound(name, options) {

@@ -808,3 +808,32 @@ body {
   font-size: 6px;
   margin-top: 2px;
 }
+
+/* === STATUS EFFECTS === */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8px;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #444;
+}
+
+.status-indicator.burn { border-color: #ff6622; color: #ff8844; }
+.status-indicator.freeze { border-color: #44aaff; color: #66ccff; }
+.status-indicator.paralyze { border-color: #aa66ff; color: #cc88ff; }
+.status-indicator.guardbreak { border-color: #aa8844; color: #ccaa66; }
+.status-indicator.poison { border-color: #44cc44; color: #66ee66; }
+.status-indicator.blind { border-color: #8844aa; color: #aa66cc; }
+
+.status-flash {
+  position: absolute;
+  font-size: 9px;
+  pointer-events: none;
+  animation: damageFloat 1s ease-out forwards;
+  text-shadow: 2px 2px 0px #000;
+  z-index: 20;
+}
