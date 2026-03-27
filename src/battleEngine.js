@@ -1,4 +1,4 @@
-import { typeChart, stageMultipliers } from './gameData';
+import { typeChart, stageMultipliers, stageThresholds } from './gameData';
 
 export function getTypeEffectiveness(attackerElement, defenderElement) {
   if (!typeChart[attackerElement]) return 1.0;
@@ -25,4 +25,26 @@ export function calculateDamage(attacker, defender, move) {
   const finalDamage = Math.max(1, Math.floor(typedDamage * roll));
 
   return { damage: finalDamage, effectiveness, hit: true };
+}
+
+export function getStageForLevel(level) {
+  if (level >= stageThresholds[4]) return 4;
+  if (level >= stageThresholds[3]) return 3;
+  if (level >= stageThresholds[2]) return 2;
+  return 1;
+}
+
+export function calculateXpGain(baseXP, playerLevel, enemyLevel) {
+  const ratio = enemyLevel / playerLevel;
+  return Math.max(1, Math.floor(baseXP * ratio));
+}
+
+export function calculateStatsForLevel(baseStats, level) {
+  const bonus = (level - 1) * 3;
+  return {
+    hp:  baseStats.hp + bonus,
+    atk: baseStats.atk + bonus,
+    def: baseStats.def + bonus,
+    spd: baseStats.spd + bonus,
+  };
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getTypeEffectiveness, calculateDamage } from './battleEngine';
+import { getTypeEffectiveness, calculateDamage, calculateXpGain, calculateStatsForLevel, getStageForLevel } from './battleEngine';
 
 describe('getTypeEffectiveness', () => {
   it('returns 2.0 for fire attacking ice', () => {
@@ -63,5 +63,63 @@ describe('calculateDamage', () => {
     const result = calculateDamage(attacker, defender, lowAccMove);
     expect(result.hit).toBe(false);
     expect(result.damage).toBe(0);
+  });
+});
+
+describe('getStageForLevel', () => {
+  it('returns stage 1 for levels below 10', () => {
+    expect(getStageForLevel(1)).toBe(1);
+    expect(getStageForLevel(9)).toBe(1);
+  });
+
+  it('returns stage 2 for levels 10-24', () => {
+    expect(getStageForLevel(10)).toBe(2);
+    expect(getStageForLevel(24)).toBe(2);
+  });
+
+  it('returns stage 3 for levels 25-49', () => {
+    expect(getStageForLevel(25)).toBe(3);
+    expect(getStageForLevel(49)).toBe(3);
+  });
+
+  it('returns stage 4 for level 50+', () => {
+    expect(getStageForLevel(50)).toBe(4);
+    expect(getStageForLevel(99)).toBe(4);
+  });
+});
+
+describe('calculateXpGain', () => {
+  it('gives base XP when levels are equal', () => {
+    expect(calculateXpGain(50, 10, 10)).toBe(50);
+  });
+
+  it('gives more XP for fighting higher level enemies', () => {
+    const xp = calculateXpGain(50, 5, 10);
+    expect(xp).toBe(100);
+  });
+
+  it('gives less XP for fighting lower level enemies', () => {
+    const xp = calculateXpGain(50, 10, 5);
+    expect(xp).toBe(25);
+  });
+
+  it('gives minimum 1 XP', () => {
+    const xp = calculateXpGain(50, 99, 1);
+    expect(xp).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('calculateStatsForLevel', () => {
+  it('returns base stats at level 1', () => {
+    const base = { hp: 110, atk: 28, def: 20, spd: 18 };
+    const result = calculateStatsForLevel(base, 1);
+    expect(result).toEqual({ hp: 110, atk: 28, def: 20, spd: 18 });
+  });
+
+  it('adds 3 per stat per level above 1', () => {
+    const base = { hp: 110, atk: 28, def: 20, spd: 18 };
+    const result = calculateStatsForLevel(base, 5);
+    // 4 levels above 1 => +12 to each stat
+    expect(result).toEqual({ hp: 122, atk: 40, def: 32, spd: 30 });
   });
 });
