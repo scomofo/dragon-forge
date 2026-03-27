@@ -1,4 +1,4 @@
-import { typeChart, stageMultipliers, stageThresholds, moves as allMoves } from './gameData';
+import { typeChart, stageMultipliers, stageThresholds, moves as allMoves, STATUS_EFFECTS, STATUS_APPLY_CHANCE } from './gameData';
 
 export function getTypeEffectiveness(attackerElement, defenderElement) {
   if (!typeChart[attackerElement]) return 1.0;
@@ -50,6 +50,41 @@ export function calculateStatsForLevel(baseStats, level, shiny = false) {
   };
 }
 
+export function applyStatus(moveElement) {
+  const effect = STATUS_EFFECTS[moveElement];
+  if (!effect) return null;
+  return { effect: moveElement, turnsLeft: effect.duration };
+}
+
+export function processStatusTick(combatantState) {
+  if (!combatantState.status) {
+    return { ...combatantState, statusEvent: null };
+  }
+
+  const effect = STATUS_EFFECTS[combatantState.status.effect];
+  let hp = combatantState.hp;
+  let damage = 0;
+  const turnsLeft = combatantState.status.turnsLeft - 1;
+  const expired = turnsLeft <= 0;
+
+  if (effect.type === 'dot') {
+    damage = Math.max(1, Math.floor(combatantState.maxHp * effect.value));
+    hp = Math.max(0, hp - damage);
+  }
+
+  return {
+    ...combatantState,
+    hp,
+    status: expired ? null : { ...combatantState.status, turnsLeft },
+    statusEvent: {
+      type: effect.type,
+      damage,
+      effectName: effect.name,
+      expired,
+    },
+  };
+}
+
 export function pickNpcMove(npcMoveKeys, npcElement, playerElement) {
   const availableKeys = [...npcMoveKeys, 'basic_attack'];
 
@@ -76,7 +111,6 @@ export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey) {
   let npc = { ...npcState, defending: false };
   const events = [];
 
-  // Determine order by speed
   const playerFirst = player.spd >= npc.spd;
 
   const first = playerFirst
@@ -90,28 +124,64 @@ export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey) {
   // Resolve first attacker
   resolveAction(first, events,
     () => first.label === 'player' ? npc : player,
-    (updatedTarget) => { if (first.label === 'player') npc = updatedTarget; else player = updatedTarget; },
-    (updatedSelf) => { if (first.label === 'player') player = updatedSelf; else npc = updatedSelf; }
+    (t) => { if (first.label === 'player') npc = t; else player = t; },
+    (s) => { if (first.label === 'player') player = s; else npc = s; }
   );
 
   // Check if target is KO'd
-  const firstTargetAfter = first.label === 'player' ? npc : player;
-  if (firstTargetAfter.hp > 0) {
-    // Update second actor's state reference before resolving
+  const firstTarget = first.label === 'player' ? npc : player;
+  if (firstTarget.hp > 0) {
     second.state = second.label === 'player' ? player : npc;
 
-    // Resolve second attacker
     resolveAction(second, events,
       () => second.label === 'player' ? npc : player,
-      (updatedTarget) => { if (second.label === 'player') npc = updatedTarget; else player = updatedTarget; },
-      (updatedSelf) => { if (second.label === 'player') player = updatedSelf; else npc = updatedSelf; }
+      (t) => { if (second.label === 'player') npc = t; else player = t; },
+      (s) => { if (second.label === 'player') player = s; else npc = s; }
     );
+  }
+
+  // Process status ticks at end of turn (if alive)
+  if (player.hp > 0 && player.status) {
+    const playerTick = processStatusTick({ ...player, maxHp: playerState.maxHp || player.maxHp });
+    player = { ...player, hp: playerTick.hp, status: playerTick.status };
+    if (playerTick.statusEvent) {
+      events.push({ attacker: 'status', target: 'player', ...playerTick.statusEvent });
+    }
+  }
+  if (npc.hp > 0 && npc.status) {
+    const npcTick = processStatusTick({ ...npc, maxHp: npcState.maxHp || npc.maxHp });
+    npc = { ...npc, hp: npcTick.hp, status: npcTick.status };
+    if (npcTick.statusEvent) {
+      events.push({ attacker: 'status', target: 'npc', ...npcTick.statusEvent });
+    }
   }
 
   return { player, npc, events };
 }
 
 function resolveAction(actor, events, getTarget, setTarget, setSelf) {
+  // Check for Freeze — skip entirely
+  if (actor.state.status?.effect === 'ice') {
+    events.push({
+      attacker: actor.label,
+      action: 'statusSkip',
+      statusName: 'Freeze',
+    });
+    return;
+  }
+
+  // Check for Paralyze — 50% chance to skip
+  if (actor.state.status?.effect === 'storm') {
+    if (Math.random() < STATUS_EFFECTS.storm.value) {
+      events.push({
+        attacker: actor.label,
+        action: 'statusSkip',
+        statusName: 'Paralyze',
+      });
+      return;
+    }
+  }
+
   if (actor.moveKey === 'defend') {
     const updated = { ...actor.state, defending: true };
     setSelf(updated);
@@ -127,14 +197,37 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
 
   const move = allMoves[actor.moveKey] || allMoves.basic_attack;
   const target = getTarget();
+
+  // Apply Guard Break debuff to effective DEF
+  let effectiveDef = target.def;
+  if (target.status?.effect === 'stone') {
+    effectiveDef = Math.floor(effectiveDef * (1 - STATUS_EFFECTS.stone.value));
+  }
+
+  // Apply Blind debuff to effective accuracy
+  let effectiveAccuracy = move.accuracy;
+  if (actor.state.status?.effect === 'shadow') {
+    effectiveAccuracy = Math.max(0, effectiveAccuracy - STATUS_EFFECTS.shadow.value * 100);
+  }
+
   const result = calculateDamage(
     { atk: actor.state.atk, element: actor.state.element, stage: actor.state.stage },
-    { def: target.def, element: target.element, defending: target.defending },
-    move
+    { def: effectiveDef, element: target.element, defending: target.defending },
+    { ...move, accuracy: effectiveAccuracy }
   );
 
   const newTargetHp = Math.max(0, target.hp - result.damage);
   setTarget({ ...target, hp: newTargetHp });
+
+  // Status application roll
+  let appliedStatus = null;
+  if (result.hit && move.canApplyStatus && Math.random() < STATUS_APPLY_CHANCE) {
+    appliedStatus = applyStatus(move.element);
+    if (appliedStatus) {
+      const updatedTarget = getTarget();
+      setTarget({ ...updatedTarget, status: appliedStatus });
+    }
+  }
 
   events.push({
     attacker: actor.label,
@@ -146,5 +239,6 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
     effectiveness: result.effectiveness,
     hit: result.hit,
     targetHp: newTargetHp,
+    appliedStatus: appliedStatus ? STATUS_EFFECTS[appliedStatus.effect].name : null,
   });
 }

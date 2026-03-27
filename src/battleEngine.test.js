@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   getTypeEffectiveness, calculateDamage, calculateXpGain,
-  calculateStatsForLevel, getStageForLevel, pickNpcMove, resolveTurn
+  calculateStatsForLevel, getStageForLevel, pickNpcMove, resolveTurn,
+  applyStatus, processStatusTick
 } from './battleEngine';
 import { moves } from './gameData';
 
@@ -209,5 +210,60 @@ describe('resolveTurn', () => {
     expect(result.npc.hp).toBe(0);
     const npcAttackEvents = result.events.filter(e => e.attacker === 'npc' && e.action === 'attack');
     expect(npcAttackEvents.length).toBe(0);
+  });
+});
+
+describe('applyStatus', () => {
+  it('applies burn status from fire move', () => {
+    const result = applyStatus('fire');
+    expect(result).toEqual({ effect: 'fire', turnsLeft: 2 });
+  });
+
+  it('returns null for neutral element', () => {
+    expect(applyStatus('neutral')).toBe(null);
+  });
+
+  it('applies freeze with 1 turn duration', () => {
+    const result = applyStatus('ice');
+    expect(result).toEqual({ effect: 'ice', turnsLeft: 1 });
+  });
+});
+
+describe('processStatusTick', () => {
+  it('deals DOT damage for burn', () => {
+    const state = { hp: 100, maxHp: 100, status: { effect: 'fire', turnsLeft: 2 } };
+    const result = processStatusTick(state);
+    expect(result.hp).toBe(92);
+    expect(result.status.turnsLeft).toBe(1);
+    expect(result.statusEvent).toEqual({ type: 'dot', damage: 8, effectName: 'Burn', expired: false });
+  });
+
+  it('deals DOT damage for poison', () => {
+    const state = { hp: 100, maxHp: 100, status: { effect: 'venom', turnsLeft: 2 } };
+    const result = processStatusTick(state);
+    expect(result.hp).toBe(94);
+    expect(result.status.turnsLeft).toBe(1);
+  });
+
+  it('expires status when turnsLeft reaches 0', () => {
+    const state = { hp: 100, maxHp: 100, status: { effect: 'fire', turnsLeft: 1 } };
+    const result = processStatusTick(state);
+    expect(result.hp).toBe(92);
+    expect(result.status).toBe(null);
+    expect(result.statusEvent.expired).toBe(true);
+  });
+
+  it('returns unchanged state when no status', () => {
+    const state = { hp: 100, maxHp: 100, status: null };
+    const result = processStatusTick(state);
+    expect(result.hp).toBe(100);
+    expect(result.statusEvent).toBe(null);
+  });
+
+  it('decrements non-DOT status without damage', () => {
+    const state = { hp: 100, maxHp: 100, status: { effect: 'stone', turnsLeft: 2 } };
+    const result = processStatusTick(state);
+    expect(result.hp).toBe(100);
+    expect(result.status.turnsLeft).toBe(1);
   });
 });
