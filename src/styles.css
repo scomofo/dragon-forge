@@ -552,10 +552,14 @@ body {
 
 .egg-container {
   width: 200px;
-  height: 240px;
+  height: 260px;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.egg-sprite-canvas {
+  image-rendering: pixelated;
 }
 
 .egg-img {

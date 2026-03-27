@@ -169,14 +169,14 @@ export const elementColors = {
 };
 
 // === EGG SPRITES ===
-export const eggSprites = {
-  generic: '/assets/eggs/egg_generic.png',
-  fire:    '/assets/eggs/egg_fire.png',
-  ice:     '/assets/eggs/egg_ice.png',
-  storm:   '/assets/eggs/egg_storm.png',
-  stone:   '/assets/eggs/egg_stone.png',
-  venom:   '/assets/eggs/egg_venom.png',
-  shadow:  '/assets/eggs/egg_shadow.png',
+export const eggSheets = {
+  generic: '/assets/eggs/egg_generic_sheet.png',
+  fire:    '/assets/eggs/egg_fire_sheet.png',
+  ice:     '/assets/eggs/egg_ice_sheet.png',
+  storm:   '/assets/eggs/egg_storm_sheet.png',
+  stone:   '/assets/eggs/egg_stone_sheet.png',
+  venom:   '/assets/eggs/egg_venom_sheet.png',
+  shadow:  '/assets/eggs/egg_shadow_sheet.png',
 };
 
 // === RARITY CONFIG ===

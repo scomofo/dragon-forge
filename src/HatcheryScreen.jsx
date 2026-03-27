@@ -1,15 +1,14 @@
-import { useState, useCallback } from 'react';
-import { dragons, elementColors, eggSprites, PULL_COST } from './gameData';
+import { useState, useCallback, useRef } from 'react';
+import { dragons, elementColors, eggSheets, PULL_COST } from './gameData';
 import { executePull, applyPullResult } from './hatcheryEngine';
 import { loadSave, writeSave } from './persistence';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
+import EggSprite from './EggSprite';
 
-const ANIM_PHASES = {
+const PHASES = {
   IDLE: 'idle',
-  EGG_APPEAR: 'eggAppear',
-  EGG_SHAKE: 'eggShake',
-  BURST: 'burst',
+  HATCHING: 'hatching',
   REVEAL: 'reveal',
   GRID: 'grid',
 };
@@ -18,12 +17,27 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Hatch animation sequence: frame index, duration in ms
+const HATCH_SEQUENCE = [
+  { frame: 1, duration: 200 },   // Glow
+  { frame: 2, duration: 120 },   // Crack 1
+  { frame: 3, duration: 120 },   // Crack 2
+  { frame: 4, duration: 80 },    // Shake L
+  { frame: 5, duration: 80 },    // Shake R
+  { frame: 4, duration: 80 },    // Shake L
+  { frame: 5, duration: 80 },    // Shake R
+  { frame: 6, duration: 200 },   // Hatch burst
+  { frame: 7, duration: 300 },   // Shell
+];
+
 export default function HatcheryScreen({ onNavigate }) {
-  const [phase, setPhase] = useState(ANIM_PHASES.IDLE);
+  const [phase, setPhase] = useState(PHASES.IDLE);
+  const [eggFrame, setEggFrame] = useState(0);
+  const [eggSheet, setEggSheet] = useState(eggSheets.generic);
   const [currentResult, setCurrentResult] = useState(null);
   const [gridResults, setGridResults] = useState([]);
-  const [burstColor, setBurstColor] = useState('#fff');
   const [save, setSave] = useState(() => loadSave());
+  const skippedRef = useRef(false);
 
   const refreshSave = () => setSave(loadSave());
 
@@ -32,34 +46,30 @@ export default function HatcheryScreen({ onNavigate }) {
   const canPull10 = save.dataScraps >= PULL_COST * 10;
   const pityRemaining = 10 - save.pityCounter;
 
-  const animateSinglePull = useCallback(async (pullResult, applyResult, skipAnim = false) => {
-    const color = elementColors[pullResult.element]?.glow || '#fff';
-    setBurstColor(color);
+  const animateHatch = useCallback(async (element) => {
+    skippedRef.current = false;
+    // Show generic egg first
+    setEggSheet(eggSheets.generic);
+    setEggFrame(0);
+    setPhase(PHASES.HATCHING);
 
-    if (!skipAnim) {
-      setPhase(ANIM_PHASES.EGG_APPEAR);
-      await wait(300);
+    // Brief pause on idle frame
+    await wait(300);
+    if (skippedRef.current) return;
 
-      setPhase(ANIM_PHASES.EGG_SHAKE);
-      await wait(800);
+    // Switch to elemental egg for the hatch sequence
+    setEggSheet(eggSheets[element] || eggSheets.generic);
 
-      setPhase(ANIM_PHASES.BURST);
-      await wait(400);
+    // Play through hatch sequence
+    for (const step of HATCH_SEQUENCE) {
+      if (skippedRef.current) return;
+      setEggFrame(step.frame);
+      await wait(step.duration);
     }
-
-    setCurrentResult({ pull: pullResult, apply: applyResult });
-    setPhase(ANIM_PHASES.REVEAL);
   }, []);
 
-  const handleSkip = () => {
-    if (phase === ANIM_PHASES.EGG_APPEAR || phase === ANIM_PHASES.EGG_SHAKE || phase === ANIM_PHASES.BURST) {
-      // Skip will be handled by setting phase directly to reveal
-      // The animateSinglePull await chain will be interrupted visually
-    }
-  };
-
   const handlePull1 = async () => {
-    if (phase !== ANIM_PHASES.IDLE && phase !== ANIM_PHASES.REVEAL && phase !== ANIM_PHASES.GRID) return;
+    if (phase !== PHASES.IDLE && phase !== PHASES.REVEAL && phase !== PHASES.GRID) return;
 
     let currentSave = loadSave();
 
@@ -74,11 +84,14 @@ export default function HatcheryScreen({ onNavigate }) {
     refreshSave();
     setGridResults([]);
 
-    await animateSinglePull(pull, result);
+    await animateHatch(pull.element);
+
+    setCurrentResult({ pull, apply: result });
+    setPhase(PHASES.REVEAL);
   };
 
   const handlePull10 = async () => {
-    if (phase !== ANIM_PHASES.IDLE && phase !== ANIM_PHASES.REVEAL && phase !== ANIM_PHASES.GRID) return;
+    if (phase !== PHASES.IDLE && phase !== PHASES.REVEAL && phase !== PHASES.GRID) return;
 
     let currentSave = loadSave();
     if (currentSave.dataScraps < PULL_COST * 10) return;
@@ -98,51 +111,59 @@ export default function HatcheryScreen({ onNavigate }) {
     // Animate first pull
     const first = results[0];
     setGridResults([]);
-    await animateSinglePull(first.pull, first.apply);
+    await animateHatch(first.pull.element);
 
-    // Show remaining as grid
-    await wait(300);
+    setCurrentResult({ pull: first.pull, apply: first.apply });
+    setPhase(PHASES.REVEAL);
+
+    // After brief pause, show grid
+    await wait(500);
     setGridResults(results);
-    setPhase(ANIM_PHASES.GRID);
+    setPhase(PHASES.GRID);
+  };
+
+  const handleSkip = () => {
+    if (phase === PHASES.HATCHING) {
+      skippedRef.current = true;
+      // Jump to reveal if we have a pending result
+    }
   };
 
   const handleDismiss = () => {
-    setPhase(ANIM_PHASES.IDLE);
+    setPhase(PHASES.IDLE);
     setCurrentResult(null);
     setGridResults([]);
+    setEggFrame(0);
+    setEggSheet(eggSheets.generic);
     refreshSave();
+  };
+
+  const handleContentClick = () => {
+    if (phase === PHASES.HATCHING) {
+      handleSkip();
+    } else if (phase === PHASES.REVEAL || phase === PHASES.GRID) {
+      handleDismiss();
+    }
   };
 
   return (
     <div className="hatchery-screen">
       <NavBar activeScreen="hatchery" onNavigate={onNavigate} />
 
-      <div className="hatchery-content" onClick={phase === ANIM_PHASES.REVEAL || phase === ANIM_PHASES.GRID ? handleDismiss : handleSkip}>
+      <div className="hatchery-content" onClick={handleContentClick}>
         <div className="hatchery-title">QUANTUM INCUBATION LAB</div>
 
         <div className="egg-container">
-          {(phase === ANIM_PHASES.IDLE || phase === ANIM_PHASES.EGG_APPEAR) && (
-            <img src={eggSprites.generic} alt="Egg" className="pixelated egg-img egg-pulse" />
+          {(phase === PHASES.IDLE || phase === PHASES.HATCHING) && (
+            <EggSprite sheet={eggSheet} frame={eggFrame} />
           )}
-          {phase === ANIM_PHASES.EGG_SHAKE && (
-            <img src={eggSprites.generic} alt="Egg" className="pixelated egg-img egg-shake" />
-          )}
-          {phase === ANIM_PHASES.BURST && (
-            <div style={{ position: 'relative', width: 160, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div className="egg-burst" style={{ background: `radial-gradient(circle, ${burstColor}, transparent)` }} />
-            </div>
-          )}
-          {phase === ANIM_PHASES.REVEAL && currentResult && (
+
+          {phase === PHASES.REVEAL && currentResult && (
             <div className="reveal-result">
-              <img
-                src={eggSprites[currentResult.pull.element] || eggSprites.generic}
-                alt="Element Egg"
-                className="pixelated reveal-egg"
-              />
               <DragonSprite
                 spriteSheet={dragons[currentResult.pull.element].spriteSheet}
                 stage={1}
-                size={{ width: 160, height: 120 }}
+                size={{ width: 180, height: 140 }}
                 shiny={currentResult.pull.shiny}
               />
               <div style={{ color: elementColors[currentResult.pull.element]?.glow, fontSize: 11, marginTop: 8 }}>
@@ -162,7 +183,8 @@ export default function HatcheryScreen({ onNavigate }) {
               )}
             </div>
           )}
-          {phase === ANIM_PHASES.GRID && (
+
+          {phase === PHASES.GRID && (
             <div className="reveal-result">
               <div style={{ fontSize: 9, color: '#888', marginBottom: 8 }}>10x PULL RESULTS</div>
               <div className="pull-grid">
@@ -189,11 +211,11 @@ export default function HatcheryScreen({ onNavigate }) {
           )}
         </div>
 
-        {pityRemaining < 10 && pityRemaining > 0 && phase === ANIM_PHASES.IDLE && (
+        {pityRemaining < 10 && pityRemaining > 0 && phase === PHASES.IDLE && (
           <div className="pity-hint">Rare+ guaranteed in {pityRemaining} pulls</div>
         )}
 
-        {(phase === ANIM_PHASES.IDLE || phase === ANIM_PHASES.REVEAL || phase === ANIM_PHASES.GRID) && (
+        {(phase === PHASES.IDLE || phase === PHASES.REVEAL || phase === PHASES.GRID) && (
           <div className="pull-buttons">
             <button className="pull-btn" disabled={!canPull1} onClick={handlePull1}>
               {isFirstGame ? 'FREE PULL' : `PULL x1 — ${PULL_COST}◆`}
@@ -206,8 +228,11 @@ export default function HatcheryScreen({ onNavigate }) {
           </div>
         )}
 
-        {(phase === ANIM_PHASES.REVEAL || phase === ANIM_PHASES.GRID) && (
+        {(phase === PHASES.REVEAL || phase === PHASES.GRID) && (
           <div style={{ fontSize: 8, color: '#555', marginTop: 8 }}>Click anywhere to dismiss</div>
+        )}
+        {phase === PHASES.HATCHING && (
+          <div style={{ fontSize: 8, color: '#555', marginTop: 8 }}>Click to skip</div>
         )}
       </div>
     </div>
