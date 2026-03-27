@@ -4,11 +4,12 @@ import { getTypeEffectiveness, calculateStatsForLevel, getStageForLevel } from '
 import { loadSave } from './persistence';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
+import NavBar from './NavBar';
 
 const dragonList = Object.values(dragons);
 const npcList = Object.values(npcs);
 
-export default function BattleSelectScreen({ onBeginBattle }) {
+export default function BattleSelectScreen({ onBeginBattle, onNavigate }) {
   const [selectedDragon, setSelectedDragon] = useState(null);
   const [selectedNpc, setSelectedNpc] = useState(null);
   const save = loadSave();
@@ -30,28 +31,47 @@ export default function BattleSelectScreen({ onBeginBattle }) {
 
   return (
     <div className="battle-select">
+      <NavBar activeScreen="battleSelect" onNavigate={onNavigate} />
       <div className="battle-select-header">SELECT YOUR BATTLE</div>
 
       <div className="battle-select-panels">
         <div className="select-panel">
           <h2>YOUR DRAGONS</h2>
           {dragonList.map((dragon) => {
-            const progress = save.dragons[dragon.id] || { level: 1, xp: 0 };
+            const progress = save.dragons[dragon.id] || { level: 1, xp: 0, owned: false, shiny: false };
+            const isOwned = progress.owned;
             const stage = getStageForLevel(progress.level);
-            const stats = calculateStatsForLevel(dragon.baseStats, progress.level);
+            const stats = calculateStatsForLevel(dragon.baseStats, progress.level, progress.shiny);
             const color = elementColors[dragon.element];
+
+            if (!isOwned) {
+              return (
+                <div key={dragon.id} className="select-card" style={{ opacity: 0.4, cursor: 'default' }}>
+                  <div style={{ width: 130, height: 90, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ fontSize: 24, color: '#333' }}>?</div>
+                  </div>
+                  <div className="select-card-info">
+                    <div className="select-card-name" style={{ color: '#444' }}>???</div>
+                    <div className="select-card-stats">LOCKED — Pull from Hatchery</div>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={dragon.id}
-                className={`select-card ${selectedDragon?.id === dragon.id ? 'selected' : ''}`}
+                className={`select-card ${selectedDragon?.id === dragon.id ? 'selected' : ''} ${progress.shiny ? 'shiny-card' : ''}`}
                 style={{ borderColor: selectedDragon?.id === dragon.id ? color.primary : undefined }}
                 onClick={() => setSelectedDragon(dragon)}
               >
                 <div style={{ width: 130, height: 90, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <DragonSprite spriteSheet={dragon.spriteSheet} stage={stage} size={{ width: 130, height: 90 }} />
+                  <DragonSprite spriteSheet={dragon.spriteSheet} stage={stage} size={{ width: 130, height: 90 }} shiny={progress.shiny} />
                 </div>
                 <div className="select-card-info">
-                  <div className="select-card-name" style={{ color: color.primary }}>{dragon.name}</div>
+                  <div className="select-card-name" style={{ color: color.primary }}>
+                    {dragon.name}{progress.shiny && <span className="shiny-star">★</span>}
+                  </div>
                   <div className="select-card-stats">
                     Lv.{progress.level} | HP:{stats.hp} ATK:{stats.atk} DEF:{stats.def} SPD:{stats.spd}
                   </div>
