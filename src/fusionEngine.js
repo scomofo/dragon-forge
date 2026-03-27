@@ -75,3 +75,24 @@ export function calculateFusionStats(statsA, statsB, stabilityTier) {
 
   return fused;
 }
+
+export function executeFusion(parentA, parentB) {
+  const element = getFusionElement(parentA.element, parentB.element);
+  const stabilityTier = getStabilityTier(parentA.element, parentB.element);
+  const fusedBaseStats = calculateFusionStats(parentA.stats, parentB.stats, stabilityTier);
+  const shiny = parentA.shiny || parentB.shiny;
+
+  const bothStageIII = parentA.level >= 25 && parentB.level >= 25;
+  const level = bothStageIII ? 50 : 1;
+
+  return {
+    element,
+    stabilityTier,
+    fusedBaseStats,
+    shiny,
+    level,
+    xp: 0,
+    parentAId: parentA.id,
+    parentBId: parentB.id,
+  };
+}
