@@ -128,6 +128,26 @@ describe('calculateStatsForLevel', () => {
   });
 });
 
+describe('calculateStatsForLevel (shiny)', () => {
+  it('applies 1.2x multiplier when shiny', () => {
+    const base = { hp: 100, atk: 20, def: 20, spd: 20 };
+    const result = calculateStatsForLevel(base, 1, true);
+    expect(result).toEqual({ hp: 120, atk: 24, def: 24, spd: 24 });
+  });
+
+  it('applies shiny after level scaling', () => {
+    const base = { hp: 100, atk: 20, def: 20, spd: 20 };
+    const result = calculateStatsForLevel(base, 5, true);
+    expect(result).toEqual({ hp: 134, atk: 38, def: 38, spd: 38 });
+  });
+
+  it('no change when shiny is false', () => {
+    const base = { hp: 100, atk: 20, def: 20, spd: 20 };
+    const result = calculateStatsForLevel(base, 1, false);
+    expect(result).toEqual({ hp: 100, atk: 20, def: 20, spd: 20 });
+  });
+});
+
 describe('pickNpcMove', () => {
   it('returns a valid move key from the NPC move list', () => {
     const npcMoveKeys = ['rock_slide', 'earthquake'];

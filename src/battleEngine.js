@@ -39,13 +39,14 @@ export function calculateXpGain(baseXP, playerLevel, enemyLevel) {
   return Math.max(1, Math.floor(baseXP * ratio));
 }
 
-export function calculateStatsForLevel(baseStats, level) {
+export function calculateStatsForLevel(baseStats, level, shiny = false) {
   const bonus = (level - 1) * 3;
+  const mult = shiny ? 1.2 : 1.0;
   return {
-    hp:  baseStats.hp + bonus,
-    atk: baseStats.atk + bonus,
-    def: baseStats.def + bonus,
-    spd: baseStats.spd + bonus,
+    hp:  Math.floor((baseStats.hp + bonus) * mult),
+    atk: Math.floor((baseStats.atk + bonus) * mult),
+    def: Math.floor((baseStats.def + bonus) * mult),
+    spd: Math.floor((baseStats.spd + bonus) * mult),
   };
 }
 
