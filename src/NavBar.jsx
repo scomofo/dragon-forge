@@ -1,4 +1,5 @@
 import { loadSave } from './persistence';
+import SoundToggle from './SoundToggle';
 
 export default function NavBar({ activeScreen, onNavigate }) {
   const save = loadSave();
@@ -19,8 +20,9 @@ export default function NavBar({ activeScreen, onNavigate }) {
           BATTLES
         </button>
       </div>
-      <div className="nav-scraps">
-        ◆ {save.dataScraps}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="nav-scraps">◆ {save.dataScraps}</div>
+        <SoundToggle />
       </div>
     </div>
   );
