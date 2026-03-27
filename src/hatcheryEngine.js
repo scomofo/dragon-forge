@@ -24,3 +24,25 @@ export function rollElement(rarityTier) {
   const elements = rarityTier.elements;
   return elements[Math.floor(Math.random() * elements.length)];
 }
+
+export function rollShiny(guaranteedShiny) {
+  if (guaranteedShiny) return true;
+  return Math.random() < SHINY_CHANCE;
+}
+
+export function executePull(pityCounter) {
+  const rarityTier = rollRarity(pityCounter);
+  const element = rollElement(rarityTier);
+  const shiny = rollShiny(!!rarityTier.guaranteedShiny);
+
+  const isRarePlus = rarityTier.name === 'Rare' || rarityTier.name === 'Exotic';
+  const newPityCounter = isRarePlus ? 0 : pityCounter + 1;
+
+  return {
+    element,
+    rarityName: rarityTier.name,
+    rarityMultiplier: rarityTier.multiplier,
+    shiny,
+    newPityCounter,
+  };
+}

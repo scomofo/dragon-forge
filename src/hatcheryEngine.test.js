@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rollRarity, rollElement } from './hatcheryEngine';
+import { rollRarity, rollElement, rollShiny, executePull } from './hatcheryEngine';
 
 describe('rollRarity', () => {
   it('returns a rarity tier object', () => {
@@ -39,5 +39,46 @@ describe('rollElement', () => {
   it('returns the only element for single-element tiers', () => {
     const tier = { name: 'Rare', elements: ['shadow'], multiplier: 3 };
     expect(rollElement(tier)).toBe('shadow');
+  });
+});
+
+describe('rollShiny', () => {
+  it('returns boolean', () => {
+    expect(typeof rollShiny(false)).toBe('boolean');
+  });
+
+  it('always returns true for exotic (guaranteedShiny)', () => {
+    for (let i = 0; i < 20; i++) {
+      expect(rollShiny(true)).toBe(true);
+    }
+  });
+});
+
+describe('executePull', () => {
+  it('returns a pull result with element, rarity, and shiny', () => {
+    const result = executePull(0);
+    expect(result).toHaveProperty('element');
+    expect(result).toHaveProperty('rarityName');
+    expect(result).toHaveProperty('rarityMultiplier');
+    expect(result).toHaveProperty('shiny');
+    expect(result).toHaveProperty('newPityCounter');
+  });
+
+  it('resets pity counter on Rare+ pull', () => {
+    const result = executePull(9);
+    expect(result.newPityCounter).toBe(0);
+  });
+
+  it('increments pity counter on Common/Uncommon pull', () => {
+    let foundNonRare = false;
+    for (let i = 0; i < 100; i++) {
+      const result = executePull(0);
+      if (result.rarityName === 'Common' || result.rarityName === 'Uncommon') {
+        expect(result.newPityCounter).toBe(1);
+        foundNonRare = true;
+        break;
+      }
+    }
+    expect(foundNonRare).toBe(true);
   });
 });
