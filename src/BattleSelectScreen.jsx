@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { playSound } from './soundEngine';
 import { dragons, npcs, elementColors } from './gameData';
 import { getTypeEffectiveness, calculateStatsForLevel, getStageForLevel } from './battleEngine';
 import { loadSave } from './persistence';
@@ -26,6 +27,7 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate }) {
 
   function handleBegin() {
     if (!selectedDragon || !selectedNpc) return;
+    playSound('buttonClick');
     onBeginBattle({ dragonId: selectedDragon.id, npcId: selectedNpc.id });
   }
 
@@ -63,7 +65,7 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate }) {
                 key={dragon.id}
                 className={`select-card ${selectedDragon?.id === dragon.id ? 'selected' : ''} ${progress.shiny ? 'shiny-card' : ''}`}
                 style={{ borderColor: selectedDragon?.id === dragon.id ? color.primary : undefined }}
-                onClick={() => setSelectedDragon(dragon)}
+                onClick={() => { playSound('buttonClick'); setSelectedDragon(dragon); }}
               >
                 <div style={{ width: 130, height: 90, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <DragonSprite spriteSheet={dragon.spriteSheet} stage={stage} size={{ width: 130, height: 90 }} shiny={progress.shiny} />
@@ -90,7 +92,7 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate }) {
                 key={npc.id}
                 className={`select-card ${selectedNpc?.id === npc.id ? 'selected' : ''}`}
                 style={{ borderColor: selectedNpc?.id === npc.id ? color.primary : undefined }}
-                onClick={() => setSelectedNpc(npc)}
+                onClick={() => { playSound('buttonClick'); setSelectedNpc(npc); }}
               >
                 <div style={{ width: 60, height: 60, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <NpcSprite idleSprite={npc.idleSprite} attackSprite={npc.attackSprite} size={55} />
