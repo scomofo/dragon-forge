@@ -3,6 +3,7 @@ import TitleScreen from './TitleScreen';
 import BattleSelectScreen from './BattleSelectScreen';
 import BattleScreen from './BattleScreen';
 import HatcheryScreen from './HatcheryScreen';
+import { playMusic, stopMusic, playSound } from './soundEngine';
 
 const SCREENS = {
   TITLE: 'title',
@@ -16,20 +17,31 @@ export default function App() {
   const [battleConfig, setBattleConfig] = useState(null);
 
   function handleStartGame() {
+    playSound('screenTransition');
+    playMusic('hatchery');
     setScreen(SCREENS.HATCHERY);
   }
 
   function handleNavigate(target) {
-    if (target === 'hatchery') setScreen(SCREENS.HATCHERY);
-    else if (target === 'battleSelect') setScreen(SCREENS.BATTLE_SELECT);
+    playSound('navSwitch');
+    if (target === 'hatchery') {
+      playMusic('hatchery');
+      setScreen(SCREENS.HATCHERY);
+    } else if (target === 'battleSelect') {
+      playMusic('select');
+      setScreen(SCREENS.BATTLE_SELECT);
+    }
   }
 
   function handleBeginBattle(config) {
+    playSound('buttonClick');
+    playMusic('battle', true);
     setBattleConfig(config);
     setScreen(SCREENS.BATTLE);
   }
 
   function handleBattleEnd() {
+    playMusic('select');
     setBattleConfig(null);
     setScreen(SCREENS.BATTLE_SELECT);
   }
