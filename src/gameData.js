@@ -21,25 +21,25 @@ export const stageThresholds = { 2: 10, 3: 25, 4: 50 };
 // === MOVES ===
 export const moves = {
   // Fire
-  magma_breath:     { name: 'Magma Breath',     element: 'fire',   power: 65, accuracy: 95, vfxKey: 'MAGMA_BREATH' },
-  flame_wall:       { name: 'Flame Wall',        element: 'fire',   power: 55, accuracy: 100, vfxKey: 'FLAME_WALL' },
+  magma_breath:     { name: 'Magma Breath',     element: 'fire',   power: 65, accuracy: 95, vfxKey: 'MAGMA_BREATH', canApplyStatus: true },
+  flame_wall:       { name: 'Flame Wall',        element: 'fire',   power: 55, accuracy: 100, vfxKey: 'FLAME_WALL', canApplyStatus: true },
   // Ice
-  frost_bite:       { name: 'Frost Bite',        element: 'ice',    power: 60, accuracy: 100, vfxKey: 'FROST_BITE' },
-  blizzard:         { name: 'Blizzard',          element: 'ice',    power: 70, accuracy: 85, vfxKey: 'BLIZZARD' },
+  frost_bite:       { name: 'Frost Bite',        element: 'ice',    power: 60, accuracy: 100, vfxKey: 'FROST_BITE', canApplyStatus: true },
+  blizzard:         { name: 'Blizzard',          element: 'ice',    power: 70, accuracy: 85, vfxKey: 'BLIZZARD', canApplyStatus: true },
   // Storm
-  lightning_strike: { name: 'Lightning Strike',  element: 'storm',  power: 70, accuracy: 90, vfxKey: 'LIGHTNING_STRIKE' },
-  thunder_clap:     { name: 'Thunder Clap',      element: 'storm',  power: 55, accuracy: 100, vfxKey: 'THUNDER_CLAP' },
+  lightning_strike: { name: 'Lightning Strike',  element: 'storm',  power: 70, accuracy: 90, vfxKey: 'LIGHTNING_STRIKE', canApplyStatus: true },
+  thunder_clap:     { name: 'Thunder Clap',      element: 'storm',  power: 55, accuracy: 100, vfxKey: 'THUNDER_CLAP', canApplyStatus: true },
   // Stone
-  rock_slide:       { name: 'Rock Slide',        element: 'stone',  power: 60, accuracy: 95, vfxKey: 'ROCK_SLIDE' },
-  earthquake:       { name: 'Earthquake',        element: 'stone',  power: 75, accuracy: 85, vfxKey: 'EARTHQUAKE' },
+  rock_slide:       { name: 'Rock Slide',        element: 'stone',  power: 60, accuracy: 95, vfxKey: 'ROCK_SLIDE', canApplyStatus: true },
+  earthquake:       { name: 'Earthquake',        element: 'stone',  power: 75, accuracy: 85, vfxKey: 'EARTHQUAKE', canApplyStatus: true },
   // Venom
-  acid_spit:        { name: 'Acid Spit',         element: 'venom',  power: 60, accuracy: 100, vfxKey: 'ACID_SPIT' },
-  toxic_cloud:      { name: 'Toxic Cloud',       element: 'venom',  power: 70, accuracy: 85, vfxKey: 'TOXIC_CLOUD' },
+  acid_spit:        { name: 'Acid Spit',         element: 'venom',  power: 60, accuracy: 100, vfxKey: 'ACID_SPIT', canApplyStatus: true },
+  toxic_cloud:      { name: 'Toxic Cloud',       element: 'venom',  power: 70, accuracy: 85, vfxKey: 'TOXIC_CLOUD', canApplyStatus: true },
   // Shadow
-  shadow_strike:    { name: 'Shadow Strike',     element: 'shadow', power: 65, accuracy: 95, vfxKey: 'SHADOW_STRIKE' },
-  void_pulse:       { name: 'Void Pulse',        element: 'shadow', power: 75, accuracy: 85, vfxKey: 'VOID_PULSE' },
+  shadow_strike:    { name: 'Shadow Strike',     element: 'shadow', power: 65, accuracy: 95, vfxKey: 'SHADOW_STRIKE', canApplyStatus: true },
+  void_pulse:       { name: 'Void Pulse',        element: 'shadow', power: 75, accuracy: 85, vfxKey: 'VOID_PULSE', canApplyStatus: true },
   // Neutral
-  basic_attack:     { name: 'Basic Attack',      element: 'neutral', power: 40, accuracy: 100, vfxKey: 'BASIC_ATTACK' },
+  basic_attack:     { name: 'Basic Attack',      element: 'neutral', power: 40, accuracy: 100, vfxKey: 'BASIC_ATTACK', canApplyStatus: false },
 };
 
 // === PLAYER DRAGONS ===
@@ -190,3 +190,15 @@ export const rarityTiers = [
 export const PULL_COST = 50;
 export const SHINY_CHANCE = 0.02;
 export const PITY_THRESHOLD = 10;
+
+// === STATUS EFFECTS ===
+export const STATUS_EFFECTS = {
+  fire:   { name: 'Burn',        icon: '🔥', duration: 2, type: 'dot',     value: 0.08 },
+  ice:    { name: 'Freeze',      icon: '❄️', duration: 1, type: 'skip',    value: 1.0 },
+  storm:  { name: 'Paralyze',    icon: '⚡', duration: 2, type: 'maySkip', value: 0.5 },
+  stone:  { name: 'Guard Break', icon: '🛡️', duration: 2, type: 'debuff',  value: 0.4 },
+  venom:  { name: 'Poison',      icon: '☠️', duration: 2, type: 'dot',     value: 0.06 },
+  shadow: { name: 'Blind',       icon: '👁️', duration: 2, type: 'debuff',  value: 0.3 },
+};
+
+export const STATUS_APPLY_CHANCE = 0.30;
