@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { DRAGON_SHEET, STAGE_SCALES, DRAGON_DISPLAY } from './sprites';
 
-export default function DragonSprite({ spriteSheet, stage = 3, flipX = false, forcedFrame = null, className = '', size = null }) {
+export default function DragonSprite({ spriteSheet, stage = 3, flipX = false, forcedFrame = null, className = '', size = null, shiny = false }) {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
   const [frame, setFrame] = useState(0);
@@ -87,15 +87,19 @@ export default function DragonSprite({ spriteSheet, stage = 3, flipX = false, fo
   const width = Math.round(baseW * scale);
   const height = Math.round(baseH * scale);
 
+  const shinyFilter = shiny
+    ? 'drop-shadow(0 0 6px gold) drop-shadow(0 0 12px rgba(255,215,0,0.4))'
+    : (stage === 4 ? 'drop-shadow(0 0 8px gold)' : 'none');
+
   return (
     <canvas
       ref={canvasRef}
       width={width}
       height={height}
-      className={`dragon-sprite ${className}`}
+      className={`dragon-sprite ${className} ${shiny ? 'shiny-sprite' : ''}`}
       style={{
         imageRendering: 'pixelated',
-        filter: stage === 4 ? 'drop-shadow(0 0 8px gold)' : 'none',
+        filter: shinyFilter,
         width: `${width}px`,
         height: `${height}px`,
       }}
