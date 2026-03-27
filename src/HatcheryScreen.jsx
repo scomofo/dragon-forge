@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { playSound } from './soundEngine';
 import { dragons, elementColors, eggSheets, PULL_COST } from './gameData';
 import { executePull, applyPullResult } from './hatcheryEngine';
 import { loadSave, writeSave } from './persistence';
@@ -48,27 +49,31 @@ export default function HatcheryScreen({ onNavigate }) {
 
   const animateHatch = useCallback(async (element) => {
     skippedRef.current = false;
-    // Show generic egg first
     setEggSheet(eggSheets.generic);
     setEggFrame(0);
     setPhase(PHASES.HATCHING);
 
-    // Brief pause on idle frame
     await wait(300);
     if (skippedRef.current) return;
 
-    // Switch to elemental egg for the hatch sequence
     setEggSheet(eggSheets[element] || eggSheets.generic);
 
-    // Play through hatch sequence
     for (const step of HATCH_SEQUENCE) {
       if (skippedRef.current) return;
       setEggFrame(step.frame);
+
+      if (step.frame === 1) playSound('eggGlow');
+      else if (step.frame === 2 || step.frame === 3) playSound('eggCrack');
+      else if (step.frame === 4 || step.frame === 5) playSound('eggShake');
+      else if (step.frame === 6) playSound('hatchBurst');
+      else if (step.frame === 7) playSound('dragonReveal');
+
       await wait(step.duration);
     }
   }, []);
 
   const handlePull1 = async () => {
+    playSound('buttonClick');
     if (phase !== PHASES.IDLE && phase !== PHASES.REVEAL && phase !== PHASES.GRID) return;
 
     let currentSave = loadSave();
@@ -91,6 +96,7 @@ export default function HatcheryScreen({ onNavigate }) {
   };
 
   const handlePull10 = async () => {
+    playSound('buttonClick');
     if (phase !== PHASES.IDLE && phase !== PHASES.REVEAL && phase !== PHASES.GRID) return;
 
     let currentSave = loadSave();
