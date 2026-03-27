@@ -2,12 +2,12 @@ const STORAGE_KEY = 'dragonforge_save';
 
 const DEFAULT_SAVE = {
   dragons: {
-    fire:   { level: 1, xp: 0, owned: false, shiny: false },
-    ice:    { level: 1, xp: 0, owned: false, shiny: false },
-    storm:  { level: 1, xp: 0, owned: false, shiny: false },
-    stone:  { level: 1, xp: 0, owned: false, shiny: false },
-    venom:  { level: 1, xp: 0, owned: false, shiny: false },
-    shadow: { level: 1, xp: 0, owned: false, shiny: false },
+    fire:   { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
+    ice:    { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
+    storm:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
+    stone:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
+    venom:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
+    shadow: { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
   },
   dataScraps: 0,
   pityCounter: 0,
@@ -21,6 +21,9 @@ function migrateSave(save) {
     }
     if (d.shiny === undefined) {
       d.shiny = false;
+    }
+    if (d.fusedBaseStats === undefined) {
+      d.fusedBaseStats = null;
     }
   }
   if (save.dataScraps === undefined) save.dataScraps = 0;
@@ -91,6 +94,22 @@ export function upgradeDragonShiny(dragonId) {
   const save = loadSave();
   save.dragons[dragonId].shiny = true;
   writeSave(save);
+}
+
+export function fuseDragons(parentAId, parentBId, offspringElement, offspringLevel, offspringXp, offspringShiny, fusedBaseStats) {
+  const save = loadSave();
+  save.dragons[parentAId] = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
+  save.dragons[parentBId] = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
+  save.dragons[offspringElement] = {
+    level: offspringLevel,
+    xp: offspringXp,
+    owned: true,
+    shiny: offspringShiny,
+    fusedBaseStats,
+  };
+  save.dataScraps -= 100;
+  writeSave(save);
+  return save;
 }
 
 export function resetSave() {
