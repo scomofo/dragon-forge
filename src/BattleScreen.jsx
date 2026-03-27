@@ -1,6 +1,6 @@
 import { useReducer, useCallback, useEffect, useRef } from 'react';
 import { playSound, playMusic, stopMusic } from './soundEngine';
-import { dragons, npcs, moves, elementColors } from './gameData';
+import { dragons, npcs, moves, elementColors, STATUS_EFFECTS } from './gameData';
 import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain,
@@ -49,6 +49,8 @@ function initBattle(dragonId, npcId) {
     leveledUp: false,
     newLevel: progress.level,
     scrapsGained: 0,
+    playerStatus: null,
+    npcStatus: null,
   };
 }
 
@@ -80,6 +82,10 @@ function battleReducer(state, action) {
       return { ...state, phase: PHASES.DEFEAT };
     case 'RESET_TURN':
       return { ...state, phase: PHASES.PLAYER_TURN, playerSpriteClass: '', npcSpriteClass: '', npcAttacking: false, playerForcedFrame: null };
+    case 'SET_PLAYER_STATUS':
+      return { ...state, playerStatus: action.value };
+    case 'SET_NPC_STATUS':
+      return { ...state, npcStatus: action.value };
     default:
       return state;
   }
@@ -151,6 +157,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
         target: isPlayer ? 'npc' : 'player',
       },
     });
+    if (event.appliedStatus) {
+      playSound('statusApply');
+    }
     await wait(300);
 
     // RECOIL phase
@@ -185,6 +194,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
       def: state.playerStats.def,
       spd: state.playerStats.spd,
       defending: false,
+      status: state.playerStatus,
     };
 
     const npcState = {
@@ -197,6 +207,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
       def: state.npc.stats.def,
       spd: state.npc.stats.spd,
       defending: false,
+      status: state.npcStatus,
     };
 
     const npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, state.dragon.element);
@@ -204,6 +215,41 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
 
     for (const event of result.events) {
       await animateEvent(event, dispatch);
+    }
+
+    // Sync status from engine
+    dispatch({ type: 'SET_PLAYER_STATUS', value: result.player.status || null });
+    dispatch({ type: 'SET_NPC_STATUS', value: result.npc.status || null });
+
+    // Process status tick events (DOT, skip)
+    for (const event of result.events) {
+      if (event.attacker === 'status') {
+        if (event.damage > 0) {
+          playSound('statusTick');
+          const dmgId = ++damageIdCounter;
+          dispatch({
+            type: 'ADD_DAMAGE_NUMBER',
+            entry: { id: dmgId, damage: event.damage, effectiveness: 1.0, hit: true, target: event.target },
+          });
+          if (event.target === 'player') {
+            dispatch({ type: 'APPLY_DAMAGE_TO_PLAYER', damage: event.damage });
+          } else {
+            dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: event.damage });
+          }
+          await wait(400);
+        }
+        if (event.expired) {
+          playSound('statusExpire');
+        }
+      }
+      if (event.action === 'statusSkip') {
+        const dmgId = ++damageIdCounter;
+        dispatch({
+          type: 'ADD_DAMAGE_NUMBER',
+          entry: { id: dmgId, damage: 0, effectiveness: 1.0, hit: false, target: event.attacker === 'player' ? 'player' : 'npc' },
+        });
+        await wait(300);
+      }
     }
 
     if (result.npc.hp <= 0) {
@@ -280,6 +326,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
           <div style={{ fontSize: 8, color: '#888', marginTop: 2 }}>
             HP {state.npcHp}/{state.npcMaxHp}
           </div>
+          {state.npcStatus && (
+            <div className={`status-indicator ${STATUS_EFFECTS[state.npcStatus.effect]?.name.toLowerCase().replace(' ', '')}`}>
+              {STATUS_EFFECTS[state.npcStatus.effect]?.icon} {STATUS_EFFECTS[state.npcStatus.effect]?.name} {state.npcStatus.turnsLeft}t
+            </div>
+          )}
         </div>
 
         <div style={{ color: '#555', fontSize: 14 }}>VS</div>
@@ -301,6 +352,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
           <div style={{ fontSize: 8, color: '#888', marginTop: 2, textAlign: 'right' }}>
             HP {state.playerHp}/{state.playerMaxHp}
           </div>
+          {state.playerStatus && (
+            <div className={`status-indicator ${STATUS_EFFECTS[state.playerStatus.effect]?.name.toLowerCase().replace(' ', '')}`}>
+              {STATUS_EFFECTS[state.playerStatus.effect]?.icon} {STATUS_EFFECTS[state.playerStatus.effect]?.name} {state.playerStatus.turnsLeft}t
+            </div>
+          )}
         </div>
       </div>
 
