@@ -48,7 +48,7 @@ export default function BattleSelectScreen({ onBeginBattle }) {
                 onClick={() => setSelectedDragon(dragon)}
               >
                 <div style={{ width: 100, height: 70, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <DragonSprite spriteSheet={dragon.spriteSheet} stage={stage} />
+                  <DragonSprite spriteSheet={dragon.spriteSheet} stage={stage} size={{ width: 100, height: 70 }} />
                 </div>
                 <div className="select-card-info">
                   <div className="select-card-name" style={{ color: color.primary }}>{dragon.name}</div>

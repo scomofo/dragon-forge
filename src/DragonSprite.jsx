@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { DRAGON_SHEET, STAGE_SCALES, DRAGON_DISPLAY } from './sprites';
 
-export default function DragonSprite({ spriteSheet, stage = 3, flipX = false, forcedFrame = null, className = '' }) {
+export default function DragonSprite({ spriteSheet, stage = 3, flipX = false, forcedFrame = null, className = '', size = null }) {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
   const [frame, setFrame] = useState(0);
@@ -82,8 +82,10 @@ export default function DragonSprite({ spriteSheet, stage = 3, flipX = false, fo
   }, [imageLoaded, drawFrame]);
 
   const scale = STAGE_SCALES[stage] ?? 1.0;
-  const width = Math.round(DRAGON_DISPLAY.width * scale);
-  const height = Math.round(DRAGON_DISPLAY.height * scale);
+  const baseW = size ? size.width : DRAGON_DISPLAY.width;
+  const baseH = size ? size.height : DRAGON_DISPLAY.height;
+  const width = Math.round(baseW * scale);
+  const height = Math.round(baseH * scale);
 
   return (
     <canvas
