@@ -17,6 +17,6 @@ export const STAGE_SCALES = {
 };
 
 export const DRAGON_DISPLAY = {
-  width: 180,
-  height: 140,
+  width: 280,
+  height: 220,
 };
