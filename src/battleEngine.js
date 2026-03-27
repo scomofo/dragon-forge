@@ -1,4 +1,4 @@
-import { typeChart, stageMultipliers, stageThresholds } from './gameData';
+import { typeChart, stageMultipliers, stageThresholds, moves as allMoves } from './gameData';
 
 export function getTypeEffectiveness(attackerElement, defenderElement) {
   if (!typeChart[attackerElement]) return 1.0;
@@ -47,4 +47,103 @@ export function calculateStatsForLevel(baseStats, level) {
     def: baseStats.def + bonus,
     spd: baseStats.spd + bonus,
   };
+}
+
+export function pickNpcMove(npcMoveKeys, npcElement, playerElement) {
+  const availableKeys = [...npcMoveKeys, 'basic_attack'];
+
+  // Find super-effective moves
+  const superEffective = availableKeys.filter((key) => {
+    const move = allMoves[key];
+    return move && getTypeEffectiveness(move.element, playerElement) > 1.0;
+  });
+
+  // 70% chance to pick super-effective if available
+  if (superEffective.length > 0 && Math.random() < 0.7) {
+    return superEffective[Math.floor(Math.random() * superEffective.length)];
+  }
+
+  // Otherwise random from all available (excluding basic_attack 50% of the time)
+  const preferred = npcMoveKeys.length > 0 && Math.random() < 0.5
+    ? npcMoveKeys
+    : availableKeys;
+  return preferred[Math.floor(Math.random() * preferred.length)];
+}
+
+export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey) {
+  let player = { ...playerState, defending: false };
+  let npc = { ...npcState, defending: false };
+  const events = [];
+
+  // Determine order by speed
+  const playerFirst = player.spd >= npc.spd;
+
+  const first = playerFirst
+    ? { state: player, moveKey: playerMoveKey, label: 'player' }
+    : { state: npc, moveKey: npcMoveKey, label: 'npc' };
+
+  const second = playerFirst
+    ? { state: npc, moveKey: npcMoveKey, label: 'npc' }
+    : { state: player, moveKey: playerMoveKey, label: 'player' };
+
+  // Resolve first attacker
+  resolveAction(first, events,
+    () => first.label === 'player' ? npc : player,
+    (updatedTarget) => { if (first.label === 'player') npc = updatedTarget; else player = updatedTarget; },
+    (updatedSelf) => { if (first.label === 'player') player = updatedSelf; else npc = updatedSelf; }
+  );
+
+  // Check if target is KO'd
+  const firstTargetAfter = first.label === 'player' ? npc : player;
+  if (firstTargetAfter.hp > 0) {
+    // Update second actor's state reference before resolving
+    second.state = second.label === 'player' ? player : npc;
+
+    // Resolve second attacker
+    resolveAction(second, events,
+      () => second.label === 'player' ? npc : player,
+      (updatedTarget) => { if (second.label === 'player') npc = updatedTarget; else player = updatedTarget; },
+      (updatedSelf) => { if (second.label === 'player') player = updatedSelf; else npc = updatedSelf; }
+    );
+  }
+
+  return { player, npc, events };
+}
+
+function resolveAction(actor, events, getTarget, setTarget, setSelf) {
+  if (actor.moveKey === 'defend') {
+    const updated = { ...actor.state, defending: true };
+    setSelf(updated);
+    events.push({
+      attacker: actor.label,
+      action: 'defend',
+      damage: 0,
+      effectiveness: 1.0,
+      hit: true,
+    });
+    return;
+  }
+
+  const move = allMoves[actor.moveKey] || allMoves.basic_attack;
+  const target = getTarget();
+  const result = calculateDamage(
+    { atk: actor.state.atk, element: actor.state.element, stage: actor.state.stage },
+    { def: target.def, element: target.element, defending: target.defending },
+    move
+  );
+
+  const newTargetHp = Math.max(0, target.hp - result.damage);
+  setTarget({ ...target, hp: newTargetHp });
+
+  events.push({
+    attacker: actor.label,
+    action: 'attack',
+    moveName: move.name,
+    moveKey: actor.moveKey,
+    vfxKey: move.vfxKey,
+    damage: result.damage,
+    effectiveness: result.effectiveness,
+    hit: result.hit,
+    targetHp: newTargetHp,
+  });
 }

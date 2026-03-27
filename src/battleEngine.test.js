@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { getTypeEffectiveness, calculateDamage, calculateXpGain, calculateStatsForLevel, getStageForLevel } from './battleEngine';
+import {
+  getTypeEffectiveness, calculateDamage, calculateXpGain,
+  calculateStatsForLevel, getStageForLevel, pickNpcMove, resolveTurn
+} from './battleEngine';
+import { moves } from './gameData';
 
 describe('getTypeEffectiveness', () => {
   it('returns 2.0 for fire attacking ice', () => {
@@ -121,5 +125,69 @@ describe('calculateStatsForLevel', () => {
     const result = calculateStatsForLevel(base, 5);
     // 4 levels above 1 => +12 to each stat
     expect(result).toEqual({ hp: 122, atk: 40, def: 32, spd: 30 });
+  });
+});
+
+describe('pickNpcMove', () => {
+  it('returns a valid move key from the NPC move list', () => {
+    const npcMoveKeys = ['rock_slide', 'earthquake'];
+    const result = pickNpcMove(npcMoveKeys, 'stone', 'fire');
+    expect(['rock_slide', 'earthquake', 'basic_attack']).toContain(result);
+  });
+
+  it('favors super-effective moves', () => {
+    // Stone vs Storm => rock_slide and earthquake are both stone (2x vs storm)
+    // Run 50 times — super-effective should appear majority
+    const npcMoveKeys = ['rock_slide', 'earthquake'];
+    let superEffectiveCount = 0;
+    for (let i = 0; i < 50; i++) {
+      const result = pickNpcMove(npcMoveKeys, 'stone', 'storm');
+      const move = moves[result] || moves.basic_attack;
+      const eff = getTypeEffectiveness(move.element, 'storm');
+      if (eff > 1.0) superEffectiveCount++;
+    }
+    expect(superEffectiveCount).toBeGreaterThan(25);
+  });
+});
+
+describe('resolveTurn', () => {
+  const playerState = {
+    name: 'Magma Dragon', element: 'fire', stage: 3,
+    hp: 100, maxHp: 110, atk: 28, def: 20, spd: 18, defending: false,
+  };
+  const npcState = {
+    name: 'Firewall Sentinel', element: 'stone', stage: 3,
+    hp: 130, maxHp: 130, atk: 18, def: 32, spd: 8, defending: false,
+  };
+
+  it('returns updated player and npc state', () => {
+    const result = resolveTurn(playerState, npcState, 'magma_breath', 'rock_slide');
+    expect(result.player).toHaveProperty('hp');
+    expect(result.npc).toHaveProperty('hp');
+    expect(result.events).toBeInstanceOf(Array);
+    expect(result.events.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('faster combatant attacks first', () => {
+    // Player spd 18 > NPC spd 8, so player goes first
+    const result = resolveTurn(playerState, npcState, 'magma_breath', 'rock_slide');
+    expect(result.events[0].attacker).toBe('player');
+    expect(result.events[1].attacker).toBe('npc');
+  });
+
+  it('sets defending flag when defend is chosen', () => {
+    const result = resolveTurn(playerState, npcState, 'defend', 'rock_slide');
+    // Player chose defend — the defend event should be first (player is faster)
+    const defendEvent = result.events.find(e => e.action === 'defend');
+    expect(defendEvent).toBeDefined();
+  });
+
+  it('stops turn if first attacker KOs the target', () => {
+    const weakNpc = { ...npcState, hp: 1 };
+    const result = resolveTurn(playerState, weakNpc, 'magma_breath', 'rock_slide');
+    // NPC should be KO'd, only player attack event + no npc attack
+    expect(result.npc.hp).toBe(0);
+    const npcAttackEvents = result.events.filter(e => e.attacker === 'npc' && e.action === 'attack');
+    expect(npcAttackEvents.length).toBe(0);
   });
 });
