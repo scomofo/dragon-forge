@@ -120,6 +120,22 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
       return;
     }
 
+    if (event.action === 'reflect') {
+      playSound('defend');
+      if (isPlayer) {
+        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
+      } else {
+        dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-telegraph' });
+      }
+      await wait(500);
+      if (isPlayer) {
+        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: '' });
+      } else {
+        dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: '' });
+      }
+      return;
+    }
+
     // TELEGRAPH phase
     if (isPlayer) {
       dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
@@ -162,18 +178,30 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
     }
 
     if (event.hit) {
-      if (isPlayer) {
-        dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: event.damage });
+      if (event.reflected) {
+        // Reflected — damage goes back to attacker
+        if (isPlayer) {
+          dispatch({ type: 'APPLY_DAMAGE_TO_PLAYER', damage: event.damage });
+        } else {
+          dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: event.damage });
+        }
+        playSound('superEffective');
       } else {
-        dispatch({ type: 'APPLY_DAMAGE_TO_PLAYER', damage: event.damage });
+        // Normal — damage goes to target
+        if (isPlayer) {
+          dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: event.damage });
+        } else {
+          dispatch({ type: 'APPLY_DAMAGE_TO_PLAYER', damage: event.damage });
+        }
+        if (event.effectiveness > 1.0) playSound('superEffective');
+        else if (event.effectiveness < 1.0) playSound('resisted');
+        else playSound('attackHit');
       }
-      if (event.effectiveness > 1.0) playSound('superEffective');
-      else if (event.effectiveness < 1.0) playSound('resisted');
-      else playSound('attackHit');
     } else {
       playSound('miss');
     }
 
+    const dmgTarget = event.reflected ? (isPlayer ? 'player' : 'npc') : (isPlayer ? 'npc' : 'player');
     const dmgId = ++damageIdCounter;
     dispatch({
       type: 'ADD_DAMAGE_NUMBER',
@@ -182,7 +210,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
         damage: event.damage,
         effectiveness: event.effectiveness,
         hit: event.hit,
-        target: isPlayer ? 'npc' : 'player',
+        target: dmgTarget,
       },
     });
     if (event.appliedStatus) {
@@ -239,7 +267,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
     };
 
     const npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, state.dragon.element);
-    const result = resolveTurn(playerState, npcState, moveKey, npcMoveKey);
+    const result = resolveTurn(playerState, npcState, moveKey, npcMoveKey, state.dragon.moveKeys, state.npc.moveKeys);
 
     for (const event of result.events) {
       await animateEvent(event, dispatch);
@@ -419,6 +447,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
             flipX={true}
             forcedFrame={state.playerForcedFrame}
             className={state.playerSpriteClass}
+            element={dragon.element}
           />
           {state.damageNumbers
             .filter((d) => d.target === 'player')
