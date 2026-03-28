@@ -4,6 +4,7 @@ import { dragons, elementColors, dragonLore, ELEMENTS } from './gameData';
 import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
 import { claimMilestone } from './persistence';
 import { checkMilestones } from './journalMilestones';
+import { stageToRoman } from './utils';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
 
@@ -93,7 +94,7 @@ export default function JournalScreen({ onNavigate, save, refreshSave }) {
                     {p?.shiny && isOwned && <span className="shiny-star"> ★</span>}
                   </div>
                   <div className="journal-card-sub">
-                    {isOwned ? `Lv.${p.level} Stage ${getStageForLevel(p.level) === 4 ? 'IV' : getStageForLevel(p.level) === 3 ? 'III' : getStageForLevel(p.level) === 2 ? 'II' : 'I'}` : 'UNDISCOVERED'}
+                    {isOwned ? `Lv.${p.level} Stage ${stageToRoman(getStageForLevel(p.level))}` : 'UNDISCOVERED'}
                   </div>
                 </div>
               );
@@ -125,7 +126,7 @@ export default function JournalScreen({ onNavigate, save, refreshSave }) {
           <div className="journal-detail-meta">
             {owned ? (
               <>
-                {dragon.element.toUpperCase()} · Lv.{progress.level} · Stage {stage === 4 ? 'IV' : stage === 3 ? 'III' : stage === 2 ? 'II' : 'I'}
+                {dragon.element.toUpperCase()} · Lv.{progress.level} · Stage {stageToRoman(stage)}
                 {progress.fusedBaseStats && <span className="journal-detail-fused" style={{ marginLeft: 8 }}>FUSED</span>}
               </>
             ) : (

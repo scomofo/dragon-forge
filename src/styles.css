@@ -1,5 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+:root {
+  --bg-primary: #111118;
+  --bg-panel: #1a1a24;
+  --border-default: #333;
+  --text-primary: #e0e0e0;
+  --text-dim: #888;
+  --text-very-dim: #555;
+  --accent-fire: #ff6622;
+  --accent-fire-glow: #ff8844;
+  --accent-green: #44cc44;
+  --accent-red: #cc2222;
+  --accent-gold: #ffcc00;
+}
+
 /* === RESET === */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -272,11 +286,16 @@ body {
 .terminal-cursor {
   display: inline-block;
   width: 8px;
-  height: 12px;
+  height: 14px;
   background: #44ff44;
-  animation: blink 0.7s step-end infinite;
-  vertical-align: middle;
   margin-left: 2px;
+  vertical-align: middle;
+  animation: cursorBlink 1s step-end infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 50% { opacity: 1; }
+  50.1%, 100% { opacity: 0; }
 }
 
 .terminal-status {
@@ -358,9 +377,6 @@ body {
   animation: terminalGlitch 0.3s ease-in-out;
 }
 
-@keyframes blink {
-  50% { border-color: transparent; }
-}
 
 /* === BATTLE SELECT === */
 .battle-select {

@@ -4,7 +4,6 @@ export const DRAGON_SHEET = {
   frameWidth: 341,
   frameHeight: 256,
   totalFrames: 12,
-  idleFrames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
   lungeFrame: 3,
   frameDuration: 200,
 };
