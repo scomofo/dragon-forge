@@ -16,6 +16,7 @@ const DEFAULT_SAVE = {
   defeatedNpcs: [],
   singularityProgress: { defeated: [], finalBossPhase: 0 },
   singularityComplete: false,
+  inventory: { cores: {}, xpBoostBattles: 0, stabilityBoost: false },
 };
 
 function migrateSave(save) {
@@ -42,6 +43,9 @@ function migrateSave(save) {
     save.singularityProgress = { defeated: [], finalBossPhase: 0 };
   }
   if (save.singularityComplete === undefined) save.singularityComplete = false;
+  if (save.inventory === undefined) {
+    save.inventory = { cores: {}, xpBoostBattles: 0, stabilityBoost: false };
+  }
   return save;
 }
 
@@ -145,6 +149,42 @@ export function markSingularityComplete() {
   const save = loadSave();
   save.singularityComplete = true;
   save.singularityProgress.finalBossPhase = 4;
+  writeSave(save);
+}
+
+export function addCore(element, count = 1) {
+  const save = loadSave();
+  if (!save.inventory.cores[element]) save.inventory.cores[element] = 0;
+  save.inventory.cores[element] += count;
+  writeSave(save);
+}
+
+export function spendCores(coreMap) {
+  const save = loadSave();
+  for (const [el, count] of Object.entries(coreMap)) {
+    save.inventory.cores[el] = (save.inventory.cores[el] || 0) - count;
+    if (save.inventory.cores[el] <= 0) delete save.inventory.cores[el];
+  }
+  writeSave(save);
+}
+
+export function setXpBoost(battles) {
+  const save = loadSave();
+  save.inventory.xpBoostBattles = battles;
+  writeSave(save);
+}
+
+export function decrementXpBoost() {
+  const save = loadSave();
+  if (save.inventory.xpBoostBattles > 0) {
+    save.inventory.xpBoostBattles--;
+    writeSave(save);
+  }
+}
+
+export function setStabilityBoost(value) {
+  const save = loadSave();
+  save.inventory.stabilityBoost = value;
   writeSave(save);
 }
 
