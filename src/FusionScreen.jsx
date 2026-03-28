@@ -94,7 +94,13 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
         {phase === 'select' && (
           <>
             <div className="fusion-parents">
-              <div className={`fusion-slot ${parentA ? 'filled' : ''}`} onClick={() => parentA && setParentA(null)}>
+              <div
+                className={`fusion-slot ${parentA ? 'filled' : ''}`}
+                onClick={() => parentA && setParentA(null)}
+                tabIndex={0}
+                role="button"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (parentA) setParentA(null); } }}
+              >
                 <div className="fusion-slot-label">PARENT A</div>
                 {parentA ? (
                   <>
@@ -109,7 +115,13 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
 
               <div className="fusion-arrow">+</div>
 
-              <div className={`fusion-slot ${parentB ? 'filled' : ''}`} onClick={() => parentB && setParentB(null)}>
+              <div
+                className={`fusion-slot ${parentB ? 'filled' : ''}`}
+                onClick={() => parentB && setParentB(null)}
+                tabIndex={0}
+                role="button"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (parentB) setParentB(null); } }}
+              >
                 <div className="fusion-slot-label">PARENT B</div>
                 {parentB ? (
                   <>
@@ -152,6 +164,16 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
                       if (isSelected) return;
                       if (!parentA) selectDragon(d, 'A');
                       else if (!parentB) selectDragon(d, 'B');
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (isSelected) return;
+                        if (!parentA) selectDragon(d, 'A');
+                        else if (!parentB) selectDragon(d, 'B');
+                      }
                     }}
                   >
                     <DragonSprite spriteSheet={d.spriteSheet} stage={d.stage} size={{ width: 60, height: 45 }} shiny={d.shiny} />

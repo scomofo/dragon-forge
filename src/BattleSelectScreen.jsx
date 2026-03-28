@@ -65,6 +65,9 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                 className={`select-card ${selectedDragon?.id === dragon.id ? 'selected' : ''} ${progress.shiny ? 'shiny-card' : ''}`}
                 style={{ borderColor: selectedDragon?.id === dragon.id ? color.primary : undefined }}
                 onClick={() => { playSound('buttonClick'); setSelectedDragon(dragon); }}
+                tabIndex={0}
+                role="button"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playSound('buttonClick'); setSelectedDragon(dragon); } }}
               >
                 <div style={{ width: 130, height: 90, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <DragonSprite spriteSheet={dragon.spriteSheet} stage={stage} size={{ width: 130, height: 90 }} shiny={progress.shiny} element={dragon.element} />
@@ -92,6 +95,9 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                 className={`select-card ${selectedNpc?.id === npc.id ? 'selected' : ''}`}
                 style={{ borderColor: selectedNpc?.id === npc.id ? color.primary : undefined }}
                 onClick={() => { playSound('buttonClick'); setSelectedNpc(npc); }}
+                tabIndex={0}
+                role="button"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playSound('buttonClick'); setSelectedNpc(npc); } }}
               >
                 <div style={{ width: 60, height: 60, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <NpcSprite idleSprite={npc.idleSprite} attackSprite={npc.attackSprite} size={55} />

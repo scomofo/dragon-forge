@@ -57,6 +57,9 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, save }) {
                 key={boss.id}
                 className={`singularity-boss-card ${status} ${isSelected ? 'selected' : ''}`}
                 onClick={() => handleSelectBoss(boss.id)}
+                tabIndex={0}
+                role="button"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelectBoss(boss.id); } }}
               >
                 <div>
                   <div className="singularity-boss-name">
@@ -121,6 +124,9 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, save }) {
                       className={`singularity-dragon-option ${el === selectedDragonId ? 'selected' : ''}`}
                       style={{ borderColor: el === selectedDragonId ? color.primary : undefined }}
                       onClick={() => { playSound('buttonClick'); setSelectedDragonId(el); }}
+                      tabIndex={0}
+                      role="button"
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playSound('buttonClick'); setSelectedDragonId(el); } }}
                     >
                       {d.name}
                     </div>

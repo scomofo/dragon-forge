@@ -136,7 +136,12 @@ export default function TitleScreen({ onStart, save }) {
   };
 
   return (
-    <div className={`terminal-screen ${glitching ? 'terminal-glitch' : ''}`} onClick={handleClick}>
+    <div
+      className={`terminal-screen ${glitching ? 'terminal-glitch' : ''}`}
+      onClick={handleClick}
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); }}
+    >
       <div className="terminal-sound-toggle">
         <SoundToggle />
       </div>

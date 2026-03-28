@@ -77,6 +77,9 @@ export default function JournalScreen({ onNavigate, save, refreshSave }) {
                     borderColor: isSelected ? color.primary : undefined,
                   }}
                   onClick={() => handleSelectDragon(el)}
+                  tabIndex={0}
+                  role="button"
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelectDragon(el); } }}
                 >
                   <DragonSprite
                     spriteSheet={d.spriteSheet}
