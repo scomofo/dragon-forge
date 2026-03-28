@@ -26,6 +26,7 @@
 - [ ] 10 NPC sprite sheets (5 new NPCs × idle + attack poses)
 
 ## Remaining
-- [ ] Integrate forge/workshop prop art into shop screen background/decoration
-- [ ] Integrate sci-fi lab equipment art into fusion screen decoration
-- [ ] Dragon Bounties RPG sheet — evaluate for NPC portraits or character art
+- [x] Integrate forge/workshop prop art into shop screen background/decoration
+- [x] Integrate sci-fi lab equipment art into fusion screen decoration
+- [x] Dragon Bounties RPG sheet — used as hatchery background decoration
+- [x] Improve hatching animation — 12-step sequence with glow, shake, burst, reveal CSS phases
