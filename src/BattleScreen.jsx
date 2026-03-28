@@ -5,7 +5,7 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain,
 } from './battleEngine';
-import { loadSave, saveDragonProgress, addScraps } from './persistence';
+import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat } from './persistence';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
@@ -18,10 +18,9 @@ const PHASES = {
   DEFEAT: 'defeat',
 };
 
-function initBattle(dragonId, npcId) {
+function initBattle(dragonId, npcId, save) {
   const dragon = dragons[dragonId];
   const npc = npcs[npcId];
-  const save = loadSave();
   const progress = save.dragons[dragonId] || { level: 1, xp: 0 };
   const stage = getStageForLevel(progress.level);
   const stats = calculateStatsForLevel(progress.fusedBaseStats || dragon.baseStats, progress.level, progress.shiny);
@@ -103,8 +102,8 @@ function wait(ms) {
 
 let damageIdCounter = 0;
 
-export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
-  const [state, dispatch] = useReducer(battleReducer, null, () => initBattle(dragonId, npcId));
+export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refreshSave }) {
+  const [state, dispatch] = useReducer(battleReducer, null, () => initBattle(dragonId, npcId, save));
   const animatingRef = useRef(false);
 
   const animateEvent = useCallback(async (event, dispatch) => {
@@ -322,6 +321,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
       const leveledUp = newLevel > state.playerLevel;
       saveDragonProgress(state.dragonId, newLevel, remainingXp);
       if (scrapsGained > 0) addScraps(scrapsGained);
+      recordNpcDefeat(npcId);
+      refreshSave();
 
       dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
       playSound('ko');
