@@ -113,6 +113,12 @@ export const dragons = {
   },
 };
 
+export function getDragonSprite(dragonId, stage) {
+  const dragon = dragons[dragonId];
+  if (!dragon) return null;
+  return dragon.stageSprites?.[stage] || dragon.spriteSheet;
+}
+
 // === NPC ENEMIES ===
 export const npcs = {
   firewall_sentinel: {

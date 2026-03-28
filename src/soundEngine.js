@@ -244,7 +244,7 @@ let currentMusic = null;
 let currentTrackName = null;
 
 const MUSIC_TRACKS = {
-  title: '/assets/music/music_title.mp3',
+  title: '/assets/music/theme.mp3',
   hatchery: '/assets/music/music_hatchery.mp3',
   select: '/assets/music/music_select.mp3',
   battle: '/assets/music/music_battle.mp3',
