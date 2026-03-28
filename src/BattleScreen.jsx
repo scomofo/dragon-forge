@@ -23,6 +23,17 @@ const PHASES = {
   EPILOGUE: 'epilogue',
 };
 
+function getScaledNpcStats(baseStats, baseLevel, playerLevel) {
+  // Scale NPC stats when player out-levels them. No scaling below base level.
+  if (playerLevel <= baseLevel) return { stats: baseStats, level: baseLevel };
+  const scale = 1 + (playerLevel - baseLevel) * 0.04; // +4% per level above NPC
+  const scaledStats = {};
+  for (const key of Object.keys(baseStats)) {
+    scaledStats[key] = Math.floor(baseStats[key] * scale);
+  }
+  return { stats: scaledStats, level: Math.max(baseLevel, Math.floor(baseLevel + (playerLevel - baseLevel) * 0.5)) };
+}
+
 function initBattle(dragonId, npcId, save, battleConfig) {
   const dragon = dragons[dragonId];
 
@@ -48,7 +59,10 @@ function initBattle(dragonId, npcId, save, battleConfig) {
       flipSprite: false,
     };
   } else {
-    npc = npcs[npcId];
+    const baseNpc = npcs[npcId];
+    const progress = save.dragons[dragonId] || { level: 1, xp: 0 };
+    const scaled = getScaledNpcStats(baseNpc.stats, baseNpc.level, progress.level);
+    npc = { ...baseNpc, stats: scaled.stats, level: scaled.level };
   }
   const progress = save.dragons[dragonId] || { level: 1, xp: 0 };
   const stage = getStageForLevel(progress.level);
