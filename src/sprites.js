@@ -98,5 +98,12 @@ export const VFX_FRAMES = {
     crop: { x: 512, y: 384, w: 512, h: 256 },
     filter: null,
   },
+  VOID_RIFT: {
+    src: '/assets/vfx/shadow_flames.png',
+    sheet: { w: 1536, h: 1024 },
+    crop: { x: 512, y: 384, w: 512, h: 256 },
+    filter: 'hue-rotate(180deg) saturate(1.5)',
+  },
+  NULL_REFLECT: null, // CSS-only reflect shield effect
   BASIC_ATTACK: null, // CSS-only, no sprite
 };

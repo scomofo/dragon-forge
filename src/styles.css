@@ -1311,3 +1311,67 @@ body {
   filter: brightness(0) !important;
   animation: none !important;
 }
+
+/* === VOID DRAGON === */
+
+.void-sprite {
+  filter: hue-rotate(180deg) saturate(1.5) !important;
+}
+
+.void-sprite.shiny-sprite {
+  animation: shinyHueRotate 3s linear infinite;
+  filter: hue-rotate(180deg) saturate(1.5) drop-shadow(0 0 6px gold) !important;
+}
+
+/* Glitch status indicator */
+.status-indicator.glitch {
+  color: #00cccc;
+  border-color: #00cccc;
+  animation: glitchJitter 0.15s infinite;
+}
+
+@keyframes glitchJitter {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 1px); }
+  50% { transform: translate(2px, -1px); }
+  75% { transform: translate(-1px, -1px); }
+  100% { transform: translate(1px, 1px); }
+}
+
+/* Reflect shield — cyan shimmer */
+.vfx-reflect-shield {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid #44eeee;
+  box-shadow: 0 0 20px rgba(0, 204, 204, 0.5), inset 0 0 20px rgba(0, 204, 204, 0.2);
+  pointer-events: none;
+  z-index: 21;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+.vfx-reflect-shield-anim {
+  animation: reflectShield 500ms ease-out forwards;
+}
+
+@keyframes reflectShield {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  60% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.0); }
+}
+
+.vfx-reflected-flash {
+  animation: reflectedFlash 300ms ease-out forwards;
+}
+
+@keyframes reflectedFlash {
+  0% { opacity: 0; filter: brightness(2); }
+  30% { opacity: 1; filter: brightness(1.5); }
+  100% { opacity: 0; filter: brightness(1); }
+}
