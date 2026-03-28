@@ -267,3 +267,80 @@ describe('processStatusTick', () => {
     expect(result.status.turnsLeft).toBe(1);
   });
 });
+
+describe('Void type effectiveness', () => {
+  it('returns 1.0 for void attacking any element', () => {
+    expect(getTypeEffectiveness('void', 'fire')).toBe(1.0);
+    expect(getTypeEffectiveness('void', 'ice')).toBe(1.0);
+    expect(getTypeEffectiveness('void', 'shadow')).toBe(1.0);
+    expect(getTypeEffectiveness('void', 'void')).toBe(1.0);
+  });
+
+  it('returns 1.0 for any element attacking void', () => {
+    expect(getTypeEffectiveness('fire', 'void')).toBe(1.0);
+    expect(getTypeEffectiveness('ice', 'void')).toBe(1.0);
+    expect(getTypeEffectiveness('shadow', 'void')).toBe(1.0);
+  });
+});
+
+describe('Null Reflect', () => {
+  it('reflects damage back to attacker when target is reflecting', () => {
+    const player = {
+      name: 'Void Dragon', element: 'void', stage: 3,
+      hp: 75, atk: 34, def: 12, spd: 30, status: null,
+    };
+    const npc = {
+      name: 'Test NPC', element: 'fire', stage: 3,
+      hp: 100, atk: 20, def: 20, spd: 10, status: null,
+    };
+
+    const result = resolveTurn(player, npc, 'null_reflect', 'basic_attack');
+
+    const reflectEvent = result.events.find(e => e.action === 'reflect');
+    expect(reflectEvent).toBeDefined();
+    expect(reflectEvent.attacker).toBe('player');
+
+    const attackEvent = result.events.find(e => e.action === 'attack' && e.attacker === 'npc');
+    expect(attackEvent).toBeDefined();
+    expect(attackEvent.reflected).toBe(true);
+
+    expect(result.player.hp).toBe(75);
+    expect(result.npc.hp).toBeLessThan(100);
+  });
+
+  it('reflect has no effect if opponent defends', () => {
+    const player = {
+      name: 'Void Dragon', element: 'void', stage: 3,
+      hp: 75, atk: 34, def: 12, spd: 30, status: null,
+    };
+    const npc = {
+      name: 'Test NPC', element: 'fire', stage: 3,
+      hp: 100, atk: 20, def: 20, spd: 10, status: null,
+    };
+
+    const result = resolveTurn(player, npc, 'null_reflect', 'defend');
+
+    expect(result.player.hp).toBe(75);
+    expect(result.npc.hp).toBe(100);
+  });
+});
+
+describe('Glitch status', () => {
+  it('turn resolves normally when combatant has Glitch', () => {
+    const player = {
+      name: 'Fire Dragon', element: 'fire', stage: 3,
+      hp: 110, atk: 28, def: 20, spd: 18,
+      status: { effect: 'void', turnsLeft: 1 },
+    };
+    const npc = {
+      name: 'Test NPC', element: 'stone', stage: 3,
+      hp: 100, atk: 20, def: 20, spd: 10, status: null,
+    };
+
+    const result = resolveTurn(player, npc, 'basic_attack', 'basic_attack',
+      ['magma_breath', 'flame_wall'], ['rock_slide']);
+    expect(result.events.length).toBeGreaterThan(0);
+    const playerEvent = result.events.find(e => e.attacker === 'player');
+    expect(playerEvent).toBeDefined();
+  });
+});

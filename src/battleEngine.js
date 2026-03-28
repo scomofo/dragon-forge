@@ -86,7 +86,11 @@ export function processStatusTick(combatantState) {
 }
 
 export function pickNpcMove(npcMoveKeys, npcElement, playerElement) {
-  const availableKeys = [...npcMoveKeys, 'basic_attack'];
+  const filteredKeys = npcMoveKeys.filter(key => {
+    const move = allMoves[key];
+    return !move?.isReflect;
+  });
+  const availableKeys = [...filteredKeys, 'basic_attack'];
 
   // Find super-effective moves
   const superEffective = availableKeys.filter((key) => {
@@ -100,13 +104,13 @@ export function pickNpcMove(npcMoveKeys, npcElement, playerElement) {
   }
 
   // Otherwise random from all available (excluding basic_attack 50% of the time)
-  const preferred = npcMoveKeys.length > 0 && Math.random() < 0.5
-    ? npcMoveKeys
+  const preferred = filteredKeys.length > 0 && Math.random() < 0.5
+    ? filteredKeys
     : availableKeys;
   return preferred[Math.floor(Math.random() * preferred.length)];
 }
 
-export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey) {
+export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey, playerMoveKeys, npcMoveKeys) {
   let player = { ...playerState, defending: false };
   let npc = { ...npcState, defending: false };
   const events = [];
@@ -120,6 +124,20 @@ export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey) {
   const second = playerFirst
     ? { state: npc, moveKey: npcMoveKey, label: 'npc' }
     : { state: player, moveKey: playerMoveKey, label: 'player' };
+
+  // Glitch randomization
+  if (first.state.status?.effect === 'void') {
+    const keys = first.label === 'player' ? playerMoveKeys : npcMoveKeys;
+    if (keys && keys.length > 0) {
+      first.moveKey = keys[Math.floor(Math.random() * keys.length)];
+    }
+  }
+  if (second.state.status?.effect === 'void') {
+    const keys = second.label === 'player' ? playerMoveKeys : npcMoveKeys;
+    if (keys && keys.length > 0) {
+      second.moveKey = keys[Math.floor(Math.random() * keys.length)];
+    }
+  }
 
   // Resolve first attacker
   resolveAction(first, events,
@@ -155,6 +173,10 @@ export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey) {
       events.push({ attacker: 'status', target: 'npc', ...npcTick.statusEvent });
     }
   }
+
+  // Clear reflecting at end of turn
+  player = { ...player, reflecting: false };
+  npc = { ...npc, reflecting: false };
 
   return { player, npc, events };
 }
@@ -195,7 +217,25 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
     return;
   }
 
-  const move = allMoves[actor.moveKey] || allMoves.basic_attack;
+  const moveData = allMoves[actor.moveKey];
+  const move = moveData || allMoves.basic_attack;
+
+  // Reflect handler
+  if (moveData?.isReflect) {
+    setSelf({ ...actor.state, reflecting: true });
+    events.push({
+      attacker: actor.label,
+      action: 'reflect',
+      moveName: move.name,
+      moveKey: actor.moveKey,
+      vfxKey: move.vfxKey,
+      damage: 0,
+      effectiveness: 1.0,
+      hit: true,
+    });
+    return;
+  }
+
   const target = getTarget();
 
   // Apply Guard Break debuff to effective DEF
@@ -215,6 +255,45 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
     { def: effectiveDef, element: target.element, defending: target.defending },
     { ...move, accuracy: effectiveAccuracy }
   );
+
+  // Check if target is reflecting
+  if (target.reflecting) {
+    if (result.hit) {
+      // Reflect damage back to attacker
+      const newSelfHp = Math.max(0, actor.state.hp - result.damage);
+      setSelf({ ...actor.state, hp: newSelfHp });
+      setTarget({ ...target, reflecting: false });
+
+      events.push({
+        attacker: actor.label,
+        action: 'attack',
+        moveName: move.name,
+        moveKey: actor.moveKey,
+        vfxKey: move.vfxKey,
+        damage: result.damage,
+        effectiveness: result.effectiveness,
+        hit: result.hit,
+        reflected: true,
+        targetHp: newSelfHp,
+      });
+    } else {
+      // Miss — clear reflect, push normal miss event
+      setTarget({ ...target, reflecting: false });
+
+      events.push({
+        attacker: actor.label,
+        action: 'attack',
+        moveName: move.name,
+        moveKey: actor.moveKey,
+        vfxKey: move.vfxKey,
+        damage: 0,
+        effectiveness: result.effectiveness,
+        hit: false,
+        targetHp: target.hp,
+      });
+    }
+    return;
+  }
 
   const newTargetHp = Math.max(0, target.hp - result.damage);
   setTarget({ ...target, hp: newTargetHp });
