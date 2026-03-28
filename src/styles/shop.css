@@ -6,6 +6,17 @@
   height: calc(100vh - 48px);
   padding: 12px;
   padding-top: 48px;
+  position: relative;
+}
+
+.shop-layout::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/assets/decoration/forge_props.png') center / cover no-repeat;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .shop-tabs {
