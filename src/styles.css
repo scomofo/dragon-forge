@@ -1026,3 +1026,107 @@ body {
   animation: revealFadeIn 0.4s ease-out;
   text-align: center;
 }
+
+/* === VFX ATTACK EFFECTS === */
+
+/* Travel streak — element-colored glow blob that flies across the arena */
+.vfx-travel {
+  position: absolute;
+  width: 80px;
+  height: 40px;
+  border-radius: 50%;
+  filter: blur(8px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 20;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+}
+
+.vfx-travel-ltr {
+  animation: vfxTravelLTR 350ms ease-in-out forwards;
+}
+
+.vfx-travel-rtl {
+  animation: vfxTravelRTL 350ms ease-in-out forwards;
+}
+
+@keyframes vfxTravelLTR {
+  0%   { left: 10%; opacity: 0; transform: translateY(-50%) scale(1.0); }
+  10%  { opacity: 1; }
+  50%  { transform: translateY(calc(-50% - 15px)) scale(1.3); }
+  90%  { opacity: 1; }
+  100% { left: 80%; opacity: 0; transform: translateY(-50%) scale(1.0); }
+}
+
+@keyframes vfxTravelRTL {
+  0%   { left: 80%; opacity: 0; transform: translateY(-50%) scale(1.0); }
+  10%  { opacity: 1; }
+  50%  { transform: translateY(calc(-50% - 15px)) scale(1.3); }
+  90%  { opacity: 1; }
+  100% { left: 10%; opacity: 0; transform: translateY(-50%) scale(1.0); }
+}
+
+/* Impact frame — concept art overlay, screen-blended */
+.vfx-impact {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 21;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  opacity: 0;
+  background-repeat: no-repeat;
+  image-rendering: auto;
+}
+
+.vfx-impact-flash {
+  animation: vfxImpactFlash 400ms ease-out forwards;
+}
+
+@keyframes vfxImpactFlash {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  12%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  50%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.0); }
+}
+
+/* Basic Attack — CSS-only white slash arc */
+.vfx-basic-slash {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  pointer-events: none;
+  z-index: 21;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+.vfx-basic-slash::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.9);
+  border-right-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+.vfx-basic-slash-anim {
+  animation: vfxBasicSlash 250ms ease-out forwards;
+}
+
+@keyframes vfxBasicSlash {
+  0%   { opacity: 0; transform: translate(-50%, -50%) rotate(-30deg) scale(0.5); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(15deg) scale(1.2); }
+}
