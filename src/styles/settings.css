@@ -1,0 +1,102 @@
+/* === SETTINGS SCREEN === */
+
+.settings-layout {
+  padding: 12px;
+  padding-top: 48px;
+  height: calc(100vh - 48px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.settings-title {
+  font-size: 14px;
+  color: #ff6622;
+  text-shadow: 0 0 10px rgba(255, 102, 34, 0.3);
+}
+
+.settings-section {
+  width: 100%;
+  background: #1a1a24;
+  border: 1px solid #333;
+  border-radius: 3px;
+  padding: 16px;
+}
+
+.settings-section-title {
+  font-size: 9px;
+  color: #888;
+  margin-bottom: 12px;
+}
+
+.settings-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-option-name {
+  font-size: 9px;
+  color: #e0e0e0;
+  line-height: 1.6;
+}
+
+.settings-option-desc {
+  font-size: 7px;
+  color: #555;
+  line-height: 1.8;
+  margin-top: 2px;
+}
+
+.settings-btn {
+  padding: 6px 14px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  background: #1a1a24;
+  color: #888;
+  border: 1px solid #333;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.settings-btn:hover {
+  border-color: #888;
+  color: #e0e0e0;
+}
+
+.settings-btn-danger {
+  border-color: #cc2222;
+  color: #cc4444;
+  animation: settingsDangerPulse 1s ease-in-out infinite;
+}
+
+@keyframes settingsDangerPulse {
+  0%, 100% { box-shadow: 0 0 0px rgba(204, 34, 34, 0); }
+  50% { box-shadow: 0 0 10px rgba(204, 34, 34, 0.4); }
+}
+
+.settings-credits {
+  text-align: center;
+}
+
+.settings-credit-line {
+  font-size: 9px;
+  color: #e0e0e0;
+  line-height: 2;
+}
+
+.settings-credit-line.dim {
+  font-size: 7px;
+  color: #555;
+}
+
+@media (max-width: 768px) {
+  .settings-option { flex-direction: column; align-items: flex-start; }
+}

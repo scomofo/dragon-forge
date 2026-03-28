@@ -265,3 +265,36 @@
   .pull-grid { grid-template-columns: repeat(3, 1fr); }
   .hatchery-buttons { flex-direction: column; gap: 6px; }
 }
+
+/* === TUTORIAL OVERLAY === */
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 17, 24, 0.9);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.tutorial-card {
+  background: #1a1a24;
+  border: 2px solid #ff6622;
+  border-radius: 6px;
+  padding: 24px 32px;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(255, 102, 34, 0.2);
+}
+
+.tutorial-steps {
+  text-align: left;
+}
+
+.tutorial-step {
+  font-size: 8px;
+  color: #aaa;
+  line-height: 2.2;
+  padding-left: 4px;
+}

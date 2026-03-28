@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Toast from './Toast';
 import TitleScreen from './TitleScreen';
 import BattleSelectScreen from './BattleSelectScreen';
 import BattleScreen from './BattleScreen';
@@ -7,6 +8,7 @@ import FusionScreen from './FusionScreen';
 import JournalScreen from './JournalScreen';
 import ShopScreen from './ShopScreen';
 import StatsScreen from './StatsScreen';
+import SettingsScreen from './SettingsScreen';
 import SingularityScreen from './SingularityScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
 import { loadSave } from './persistence';
@@ -21,6 +23,7 @@ const SCREENS = {
   JOURNAL: 'journal',
   SHOP: 'shop',
   STATS: 'stats',
+  SETTINGS: 'settings',
   SINGULARITY: 'singularity',
 };
 
@@ -30,6 +33,16 @@ export default function App() {
   const [save, setSave] = useState(() => loadSave());
   const refreshSave = () => setSave(loadSave());
   const stage = getSingularityStage(save);
+  const [toasts, setToasts] = useState([]);
+
+  function showToast(message) {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message }]);
+  }
+
+  function removeToast(id) {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }
 
   function handleStartGame() {
     playSound('screenTransition');
@@ -58,6 +71,9 @@ export default function App() {
     } else if (target === 'stats') {
       playMusic('hatchery');
       setScreen(SCREENS.STATS);
+    } else if (target === 'settings') {
+      playMusic('hatchery');
+      setScreen(SCREENS.SETTINGS);
     } else if (target === 'singularity') {
       playMusic('battle', true);
       setScreen(SCREENS.SINGULARITY);
@@ -110,13 +126,16 @@ export default function App() {
         <FusionScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
       )}
       {screen === SCREENS.JOURNAL && (
-        <JournalScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+        <JournalScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} showToast={showToast} />
       )}
       {screen === SCREENS.SHOP && (
         <ShopScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
       )}
       {screen === SCREENS.STATS && (
         <StatsScreen onNavigate={handleNavigate} save={save} />
+      )}
+      {screen === SCREENS.SETTINGS && (
+        <SettingsScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
       )}
       {screen === SCREENS.SINGULARITY && (
         <SingularityScreen
@@ -137,6 +156,13 @@ export default function App() {
           refreshSave={refreshSave}
           battleConfig={battleConfig}
         />
+      )}
+      {toasts.length > 0 && (
+        <div className="toast-container">
+          {toasts.map(t => (
+            <Toast key={t.id} message={t.message} onDone={() => removeToast(t.id)} />
+          ))}
+        </div>
       )}
     </div>
   );

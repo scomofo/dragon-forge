@@ -8,7 +8,7 @@ import { stageToRoman } from './utils';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
 
-export default function JournalScreen({ onNavigate, save, refreshSave }) {
+export default function JournalScreen({ onNavigate, save, refreshSave, showToast }) {
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
   const [selectedId, setSelectedId] = useState(() => {
@@ -33,6 +33,9 @@ export default function JournalScreen({ onNavigate, save, refreshSave }) {
       }
       playSound('superEffective');
       refreshSave();
+      for (const m of toClaim) {
+        showToast(`🏆 ${m.name} — +${m.reward} ◆`);
+      }
       const claimedIds = new Set(toClaim.map(m => m.id));
       setMilestoneResults(results.map(m => claimedIds.has(m.id) ? { ...m, claimed: true, newlyClaimed: false } : m));
       setNewlyClaimed(toClaim.map(m => m.id));

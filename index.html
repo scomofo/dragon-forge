@@ -9,9 +9,32 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+    <style>
+      body { margin: 0; background: #111118; }
+      .loading-splash { position:fixed;inset:0;background:#111118;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:99999; }
+      .loading-splash-title { font-family:'Press Start 2P',monospace;font-size:18px;color:#ff6622;text-shadow:0 0 20px rgba(255,102,34,0.5); }
+      .loading-splash-bar { width:200px;height:4px;background:#222;border-radius:2px;overflow:hidden; }
+      .loading-splash-fill { height:100%;background:#ff6622;border-radius:2px;animation:splashLoad 1.5s ease-in-out forwards; }
+      .loading-splash-sub { font-family:'Press Start 2P',monospace;font-size:7px;color:#444;letter-spacing:2px; }
+      @keyframes splashLoad { from{width:0%} to{width:100%} }
+    </style>
   </head>
   <body>
+    <div id="splash" class="loading-splash">
+      <div class="loading-splash-title">DRAGON FORGE</div>
+      <div class="loading-splash-bar"><div class="loading-splash-fill"></div></div>
+      <div class="loading-splash-sub">INITIALIZING SYSTEMS</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Remove splash after React mounts
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const splash = document.getElementById('splash');
+          if (splash) splash.remove();
+        }, 2000);
+      });
+    </script>
   </body>
 </html>

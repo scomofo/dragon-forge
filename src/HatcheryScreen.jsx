@@ -36,6 +36,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const [eggFrame, setEggFrame] = useState(0);
   const [eggSheet, setEggSheet] = useState(eggSheets.generic);
   const [eggCss, setEggCss] = useState('');
+  const [showTutorial, setShowTutorial] = useState(() => Object.values(save.dragons).every(d => !d.owned));
   const [currentResult, setCurrentResult] = useState(null);
   const [gridResults, setGridResults] = useState([]);
   const skippedRef = useRef(false);
@@ -246,6 +247,22 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
           <div style={{ fontSize: 8, color: '#555', marginTop: 8 }}>Click to skip</div>
         )}
       </div>
+
+      {showTutorial && (
+        <div className="tutorial-overlay" onClick={() => setShowTutorial(false)}>
+          <div className="tutorial-card">
+            <div style={{ fontSize: 12, color: '#ff6622', marginBottom: 12 }}>WELCOME, DRAGON FORGER!</div>
+            <div className="tutorial-steps">
+              <div className="tutorial-step">1. Pull dragons from the Hatchery (your first pull is free!)</div>
+              <div className="tutorial-step">2. Build your collection in the Journal</div>
+              <div className="tutorial-step">3. Battle NPCs to earn XP and DataScraps</div>
+              <div className="tutorial-step">4. Fuse dragons to create powerful Elders</div>
+              <div className="tutorial-step">5. Stop The Singularity and save the Matrix!</div>
+            </div>
+            <div style={{ fontSize: 8, color: '#555', marginTop: 12 }}>Click anywhere to begin</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
