@@ -9,6 +9,7 @@ import { loadSave, saveDragonProgress, addScraps } from './persistence';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
+import VfxOverlay from './VfxOverlay';
 
 const PHASES = {
   PLAYER_TURN: 'playerTurn',
@@ -51,6 +52,7 @@ function initBattle(dragonId, npcId) {
     scrapsGained: 0,
     playerStatus: null,
     npcStatus: null,
+    vfxActive: null,
   };
 }
 
@@ -86,6 +88,10 @@ function battleReducer(state, action) {
       return { ...state, playerStatus: action.value };
     case 'SET_NPC_STATUS':
       return { ...state, npcStatus: action.value };
+    case 'SET_VFX':
+      return { ...state, vfxActive: action.value };
+    case 'CLEAR_VFX':
+      return { ...state, vfxActive: null };
     default:
       return state;
   }
@@ -123,6 +129,28 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
     }
     playSound('attackLaunch');
     await wait(400);
+
+    // VFX TRAVEL + IMPACT phase
+    const move = moves[event.moveKey] || moves.basic_attack;
+    const vfxElement = move.element === 'neutral' ? 'neutral' : move.element;
+    const vfxDirection = isPlayer ? 'left-to-right' : 'right-to-left';
+
+    // Create a promise that resolves when VfxOverlay calls onComplete
+    let vfxResolve;
+    const vfxPromise = new Promise((resolve) => { vfxResolve = resolve; });
+    dispatch({
+      type: 'SET_VFX',
+      value: {
+        vfxKey: event.vfxKey,
+        element: vfxElement,
+        direction: vfxDirection,
+        onComplete: () => {
+          dispatch({ type: 'CLEAR_VFX' });
+          vfxResolve();
+        },
+      },
+    });
+    await vfxPromise;
 
     // IMPACT phase
     if (isPlayer) {
@@ -405,6 +433,16 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd }) {
               />
             ))}
         </div>
+
+        {/* VFX overlay */}
+        {state.vfxActive && (
+          <VfxOverlay
+            vfxKey={state.vfxActive.vfxKey}
+            element={state.vfxActive.element}
+            direction={state.vfxActive.direction}
+            onComplete={state.vfxActive.onComplete}
+          />
+        )}
       </div>
 
       {/* Bottom panel — moves */}
