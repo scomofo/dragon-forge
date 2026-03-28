@@ -3,7 +3,7 @@ import { elementColors } from './gameData';
 import { VFX_FRAMES } from './sprites';
 
 export default function VfxOverlay({ vfxKey, element, direction, onComplete }) {
-  const [phase, setPhase] = useState('travel'); // 'travel' | 'impact' | 'done'
+  const [phase, setPhase] = useState('travel'); // 'travel' | 'impact'
   const isLTR = direction === 'left-to-right';
   const colors = elementColors[element] || elementColors.neutral;
 
@@ -20,8 +20,6 @@ export default function VfxOverlay({ vfxKey, element, direction, onComplete }) {
   const handleImpactEnd = useCallback(() => {
     onComplete();
   }, [onComplete]);
-
-  if (phase === 'done') return null;
 
   return (
     <>
@@ -53,7 +51,7 @@ export default function VfxOverlay({ vfxKey, element, direction, onComplete }) {
 }
 
 function ImpactFrame({ config, onAnimationEnd }) {
-  const { src, crop, filter } = config;
+  const { src, sheet, crop, filter } = config;
 
   // Calculate background-size and background-position to show only the crop region.
   // We want the crop region to fill a 200x200 display area.
@@ -61,20 +59,6 @@ function ImpactFrame({ config, onAnimationEnd }) {
   const scaleX = displaySize / crop.w;
   const scaleY = displaySize / crop.h;
   const scale = Math.min(scaleX, scaleY);
-
-  // Known sheet sizes for background-size calculation
-  const sheetSizes = {
-    '/assets/vfx/fire_effects.png': { w: 1024, h: 1024 },
-    '/assets/vfx/stone_explosion.png': { w: 1536, h: 1024 },
-    '/assets/vfx/storm_lightning.png': { w: 1536, h: 1024 },
-    '/assets/vfx/ice_crystals.png': { w: 1024, h: 1536 },
-    '/assets/vfx/venom_cloud.png': { w: 1536, h: 1024 },
-    '/assets/vfx/shadow_flames.png': { w: 1536, h: 1024 },
-    '/assets/vfx/stone_meteor.png': { w: 1024, h: 1536 },
-    '/assets/vfx/venom_splash.png': { w: 1536, h: 1024 },
-  };
-
-  const sheet = sheetSizes[src] || { w: 1024, h: 1024 };
   const bgW = sheet.w * scale;
   const bgH = sheet.h * scale;
   const bgX = -(crop.x * scale);
