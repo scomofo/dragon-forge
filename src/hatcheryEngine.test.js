@@ -107,7 +107,8 @@ describe('applyPullResult', () => {
     const result = applyPullResult(save, pull);
     expect(result.isNew).toBe(false);
     expect(result.xpGained).toBe(100);
-    expect(result.save.dragons.fire.xp).toBe(100);
+    expect(result.save.dragons.fire.xp).toBe(0);
+    expect(result.save.dragons.fire.level).toBe(2);
   });
 
   it('upgrades to shiny on duplicate shiny pull', () => {

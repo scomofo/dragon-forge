@@ -100,7 +100,7 @@ export default function JournalScreen({ onNavigate, save, refreshSave }) {
             })}
           </div>
           <div className="journal-discovery-count">
-            {discoveredCount}/6 DISCOVERED
+            {discoveredCount}/{ELEMENTS.length} DISCOVERED
           </div>
         </div>
 

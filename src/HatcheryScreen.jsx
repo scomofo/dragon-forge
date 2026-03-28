@@ -128,7 +128,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const handleSkip = () => {
     if (phase === PHASES.HATCHING) {
       skippedRef.current = true;
-      // Jump to reveal if we have a pending result
+      setEggFrame(7); // Jump to final reveal frame
     }
   };
 
