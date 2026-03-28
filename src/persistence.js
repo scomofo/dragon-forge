@@ -14,6 +14,8 @@ const DEFAULT_SAVE = {
   pityCounter: 0,
   milestones: [],
   defeatedNpcs: [],
+  singularityProgress: { defeated: [], finalBossPhase: 0 },
+  singularityComplete: false,
 };
 
 function migrateSave(save) {
@@ -36,6 +38,10 @@ function migrateSave(save) {
     save.dragons.void = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
   }
   if (save.defeatedNpcs === undefined) save.defeatedNpcs = [];
+  if (save.singularityProgress === undefined) {
+    save.singularityProgress = { defeated: [], finalBossPhase: 0 };
+  }
+  if (save.singularityComplete === undefined) save.singularityComplete = false;
   return save;
 }
 
@@ -119,6 +125,27 @@ export function recordNpcDefeat(npcId) {
     save.defeatedNpcs.push(npcId);
     writeSave(save);
   }
+}
+
+export function recordSingularityDefeat(bossId) {
+  const save = loadSave();
+  if (!save.singularityProgress.defeated.includes(bossId)) {
+    save.singularityProgress.defeated.push(bossId);
+    writeSave(save);
+  }
+}
+
+export function updateFinalBossPhase(phase) {
+  const save = loadSave();
+  save.singularityProgress.finalBossPhase = phase;
+  writeSave(save);
+}
+
+export function markSingularityComplete() {
+  const save = loadSave();
+  save.singularityComplete = true;
+  save.singularityProgress.finalBossPhase = 4;
+  writeSave(save);
 }
 
 export function fuseDragons(parentAId, parentBId, offspringElement, offspringLevel, offspringXp, offspringShiny, fusedBaseStats) {
