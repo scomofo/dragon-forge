@@ -82,7 +82,7 @@ export default function TitleScreen({ onStart, save }) {
     setLines((prev) => [
       ...prev,
       { text: '> ==========================================', status: null },
-      { text: '> EMERGENCY BROADCAST — DR. FELIX', status: null },
+      { text: '> EMERGENCY BROADCAST — PROF. FELIX', status: null },
       { text: '> ==========================================', status: null },
     ]);
     scrollToBottom();
