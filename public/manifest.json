@@ -1,0 +1,13 @@
+{
+  "name": "Dragon Forge",
+  "short_name": "DragonForge",
+  "description": "16-bit cyber-retro dragon breeding and combat simulator",
+  "start_url": "/dragon-forge/",
+  "display": "standalone",
+  "background_color": "#111118",
+  "theme_color": "#ff6622",
+  "icons": [
+    { "src": "/dragon-forge/assets/felix_pixel.jpg", "sizes": "192x192", "type": "image/jpeg" },
+    { "src": "/dragon-forge/assets/felix_pixel.jpg", "sizes": "512x512", "type": "image/jpeg" }
+  ]
+}

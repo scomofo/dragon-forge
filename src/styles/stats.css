@@ -59,3 +59,26 @@
 @media (max-width: 768px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+.stats-save-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.stats-save-btn {
+  padding: 6px 16px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  background: #1a1a24;
+  color: #888;
+  border: 1px solid #333;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.stats-save-btn:hover {
+  border-color: #ff6622;
+  color: #ff8844;
+}

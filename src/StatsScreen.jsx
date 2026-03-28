@@ -93,6 +93,44 @@ export default function StatsScreen({ onNavigate, save }) {
             🏆 SINGULARITY CONTAINED
           </div>
         )}
+
+        <div className="stats-save-actions">
+          <button className="stats-save-btn" onClick={() => {
+            const data = localStorage.getItem('dragonforge_save');
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dragonforge_save_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}>
+            EXPORT SAVE
+          </button>
+          <button className="stats-save-btn" onClick={() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                try {
+                  JSON.parse(ev.target.result); // validate
+                  localStorage.setItem('dragonforge_save', ev.target.result);
+                  window.location.reload();
+                } catch {
+                  alert('Invalid save file');
+                }
+              };
+              reader.readAsText(file);
+            };
+            input.click();
+          }}>
+            IMPORT SAVE
+          </button>
+        </div>
       </div>
     </div>
   );
