@@ -168,6 +168,8 @@ body {
 /* === SCREEN TRANSITIONS === */
 .screen-enter {
   animation: screenFadeIn 0.3s ease-out;
+  height: 100%;
+  width: 100%;
 }
 
 @keyframes screenFadeIn {
