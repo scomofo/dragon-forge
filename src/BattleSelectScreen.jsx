@@ -43,7 +43,8 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate }) {
             const progress = save.dragons[dragon.id] || { level: 1, xp: 0, owned: false, shiny: false };
             const isOwned = progress.owned;
             const stage = getStageForLevel(progress.level);
-            const stats = calculateStatsForLevel(dragon.baseStats, progress.level, progress.shiny);
+            const baseStats = progress.fusedBaseStats || dragon.baseStats;
+            const stats = calculateStatsForLevel(baseStats, progress.level, progress.shiny);
             const color = elementColors[dragon.element];
 
             if (!isOwned) {
