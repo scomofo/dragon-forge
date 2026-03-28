@@ -416,11 +416,13 @@ body {
 
 .select-card-name {
   font-size: 10px;
+  line-height: 1.6;
   margin-bottom: 4px;
 }
 
 .select-card-stats {
   font-size: 8px;
+  line-height: 1.8;
   color: #888;
 }
 
