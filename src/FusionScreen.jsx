@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { wait } from './utils';
 import { dragons, elementColors } from './gameData';
 import { getFusionElement, getStabilityTier, calculateFusionStats, executeFusion } from './fusionEngine';
 import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
@@ -6,10 +7,6 @@ import { fuseDragons } from './persistence';
 import { playSound } from './soundEngine';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
-
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 export default function FusionScreen({ onNavigate, save, refreshSave }) {
   const [parentA, setParentA] = useState(null);
@@ -101,7 +98,7 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
                 <div className="fusion-slot-label">PARENT A</div>
                 {parentA ? (
                   <>
-                    <DragonSprite spriteSheet={parentA.spriteSheet} stage={parentA.stage} size={{ width: 100, height: 75 }} shiny={parentA.shiny} />
+                    <DragonSprite spriteSheet={parentA.spriteSheet} stage={parentA.stage} size={{ width: 100, height: 75 }} shiny={parentA.shiny} element={parentA.element} />
                     <div style={{ fontSize: 9, color: elementColors[parentA.element]?.glow }}>{parentA.name}</div>
                     <div style={{ fontSize: 8, color: '#888' }}>Lv.{parentA.level}</div>
                   </>
@@ -116,7 +113,7 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
                 <div className="fusion-slot-label">PARENT B</div>
                 {parentB ? (
                   <>
-                    <DragonSprite spriteSheet={parentB.spriteSheet} stage={parentB.stage} size={{ width: 100, height: 75 }} shiny={parentB.shiny} />
+                    <DragonSprite spriteSheet={parentB.spriteSheet} stage={parentB.stage} size={{ width: 100, height: 75 }} shiny={parentB.shiny} element={parentB.element} />
                     <div style={{ fontSize: 9, color: elementColors[parentB.element]?.glow }}>{parentB.name}</div>
                     <div style={{ fontSize: 8, color: '#888' }}>Lv.{parentB.level}</div>
                   </>
@@ -188,6 +185,7 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
               stage={getStageForLevel(fusionResult.level)}
               size={{ width: 180, height: 140 }}
               shiny={fusionResult.shiny}
+              element={fusionResult.element}
             />
             <div style={{ color: elementColors[fusionResult.element]?.glow, fontSize: 12, marginTop: 8 }}>
               {dragons[fusionResult.element].name}

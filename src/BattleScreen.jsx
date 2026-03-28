@@ -1,4 +1,5 @@
 import { useReducer, useCallback, useEffect, useRef } from 'react';
+import { wait } from './utils';
 import { playSound, playMusic, stopMusic } from './soundEngine';
 import { dragons, npcs, moves, elementColors, STATUS_EFFECTS } from './gameData';
 import {
@@ -138,15 +139,10 @@ function battleReducer(state, action) {
   }
 }
 
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-let damageIdCounter = 0;
-
 export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refreshSave, battleConfig }) {
   const [state, dispatch] = useReducer(battleReducer, null, () => initBattle(dragonId, npcId, save, battleConfig));
   const animatingRef = useRef(false);
+  const damageIdRef = useRef(0);
 
   const animateEvent = useCallback(async (event, dispatch) => {
     const isPlayer = event.attacker === 'player';
@@ -244,7 +240,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     }
 
     const dmgTarget = event.reflected ? (isPlayer ? 'player' : 'npc') : (isPlayer ? 'npc' : 'player');
-    const dmgId = ++damageIdCounter;
+    const dmgId = ++damageIdRef.current;
     dispatch({
       type: 'ADD_DAMAGE_NUMBER',
       entry: {
@@ -324,7 +320,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       if (event.attacker === 'status') {
         if (event.damage > 0) {
           playSound('statusTick');
-          const dmgId = ++damageIdCounter;
+          const dmgId = ++damageIdRef.current;
           dispatch({
             type: 'ADD_DAMAGE_NUMBER',
             entry: { id: dmgId, damage: event.damage, effectiveness: 1.0, hit: true, target: event.target },
@@ -341,7 +337,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         }
       }
       if (event.action === 'statusSkip') {
-        const dmgId = ++damageIdCounter;
+        const dmgId = ++damageIdRef.current;
         dispatch({
           type: 'ADD_DAMAGE_NUMBER',
           entry: { id: dmgId, damage: 0, effectiveness: 1.0, hit: false, target: event.attacker === 'player' ? 'player' : 'npc' },

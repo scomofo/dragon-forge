@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { wait } from './utils';
 import { playSound } from './soundEngine';
 import { dragons, elementColors, eggSheets, PULL_COST } from './gameData';
 import { executePull, applyPullResult } from './hatcheryEngine';
@@ -13,10 +14,6 @@ const PHASES = {
   REVEAL: 'reveal',
   GRID: 'grid',
 };
-
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 // Hatch animation sequence: frame index, duration in ms
 const HATCH_SEQUENCE = [

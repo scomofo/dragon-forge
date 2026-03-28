@@ -150,6 +150,7 @@ export function markSingularityComplete() {
 
 export function fuseDragons(parentAId, parentBId, offspringElement, offspringLevel, offspringXp, offspringShiny, fusedBaseStats) {
   const save = loadSave();
+  if (save.dataScraps < 100) return null;
   save.dragons[parentAId] = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
   save.dragons[parentBId] = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
   save.dragons[offspringElement] = {

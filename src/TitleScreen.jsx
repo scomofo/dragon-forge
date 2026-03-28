@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { wait } from './utils';
 import { playSound, playMusic } from './soundEngine';
 import SoundToggle from './SoundToggle';
 import { getSingularityStage } from './singularityProgress';
@@ -12,10 +13,6 @@ const BOOT_LINES = [
   { text: '> SCANNING FOR DRAGON SIGNATURES...', status: 'WARNING', delay: 1200 },
   { text: '> STABILITY INDEX: 23% — CRITICAL', status: 'FAIL', delay: 800 },
 ];
-
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 export default function TitleScreen({ onStart, save }) {
   const [lines, setLines] = useState([]);
