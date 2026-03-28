@@ -41,16 +41,10 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
           SHOP
         </button>
         <button
-          className={`nav-tab ${activeScreen === 'stats' ? 'active' : ''}`}
-          onClick={() => onNavigate('stats')}
+          className={`nav-tab ${activeScreen === 'battleSelect' ? 'active' : ''}`}
+          onClick={() => onNavigate('battleSelect')}
         >
-          STATS
-        </button>
-        <button
-          className={`nav-tab ${activeScreen === 'settings' ? 'active' : ''}`}
-          onClick={() => onNavigate('settings')}
-        >
-          ⚙
+          BATTLES
         </button>
         {isSingularityUnlocked(save) && (
           <button
@@ -61,10 +55,16 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
           </button>
         )}
         <button
-          className={`nav-tab ${activeScreen === 'battleSelect' ? 'active' : ''}`}
-          onClick={() => onNavigate('battleSelect')}
+          className={`nav-tab ${activeScreen === 'stats' ? 'active' : ''}`}
+          onClick={() => onNavigate('stats')}
         >
-          BATTLES
+          STATS
+        </button>
+        <button
+          className={`nav-tab ${activeScreen === 'settings' ? 'active' : ''}`}
+          onClick={() => onNavigate('settings')}
+        >
+          ⚙
         </button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
