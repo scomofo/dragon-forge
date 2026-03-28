@@ -5,6 +5,7 @@ import BattleScreen from './BattleScreen';
 import HatcheryScreen from './HatcheryScreen';
 import FusionScreen from './FusionScreen';
 import JournalScreen from './JournalScreen';
+import SingularityScreen from './SingularityScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
 import { loadSave } from './persistence';
 import { getSingularityStage } from './singularityProgress';
@@ -16,6 +17,7 @@ const SCREENS = {
   BATTLE: 'battle',
   FUSION: 'fusion',
   JOURNAL: 'journal',
+  SINGULARITY: 'singularity',
 };
 
 export default function App() {
@@ -46,6 +48,9 @@ export default function App() {
     } else if (target === 'journal') {
       playMusic('hatchery');
       setScreen(SCREENS.JOURNAL);
+    } else if (target === 'singularity') {
+      playMusic('battle', true);
+      setScreen(SCREENS.SINGULARITY);
     }
   }
 
@@ -56,11 +61,31 @@ export default function App() {
     setScreen(SCREENS.BATTLE);
   }
 
+  function handleEngageBoss(config) {
+    playSound('buttonClick');
+    playMusic('battle', true);
+    setBattleConfig({
+      dragonId: config.dragonId,
+      npcId: config.boss.id,
+      boss: config.boss,
+      isSingularity: true,
+      phases: config.boss.phases || null,
+    });
+    setScreen(SCREENS.BATTLE);
+  }
+
   function handleBattleEnd() {
     refreshSave();
     playMusic('select');
     setBattleConfig(null);
     setScreen(SCREENS.BATTLE_SELECT);
+  }
+
+  function handleSingularityBattleEnd() {
+    refreshSave();
+    playMusic('battle', true);
+    setBattleConfig(null);
+    setScreen(SCREENS.SINGULARITY);
   }
 
   return (
@@ -77,6 +102,13 @@ export default function App() {
       {screen === SCREENS.JOURNAL && (
         <JournalScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
       )}
+      {screen === SCREENS.SINGULARITY && (
+        <SingularityScreen
+          onNavigate={handleNavigate}
+          onEngageBoss={handleEngageBoss}
+          save={save}
+        />
+      )}
       {screen === SCREENS.BATTLE_SELECT && (
         <BattleSelectScreen onBeginBattle={handleBeginBattle} onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
       )}
@@ -84,9 +116,10 @@ export default function App() {
         <BattleScreen
           dragonId={battleConfig.dragonId}
           npcId={battleConfig.npcId}
-          onBattleEnd={handleBattleEnd}
+          onBattleEnd={battleConfig.isSingularity ? handleSingularityBattleEnd : handleBattleEnd}
           save={save}
           refreshSave={refreshSave}
+          battleConfig={battleConfig}
         />
       )}
     </div>
