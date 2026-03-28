@@ -7,6 +7,7 @@ import FusionScreen from './FusionScreen';
 import JournalScreen from './JournalScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
 import { loadSave } from './persistence';
+import { getSingularityStage } from './singularityProgress';
 
 const SCREENS = {
   TITLE: 'title',
@@ -22,6 +23,7 @@ export default function App() {
   const [battleConfig, setBattleConfig] = useState(null);
   const [save, setSave] = useState(() => loadSave());
   const refreshSave = () => setSave(loadSave());
+  const stage = getSingularityStage(save);
 
   function handleStartGame() {
     playSound('screenTransition');
@@ -62,7 +64,7 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app${stage >= 2 ? ` corruption-stage-${stage}` : ''}`}>
       {screen === SCREENS.TITLE && (
         <TitleScreen onStart={handleStartGame} save={save} />
       )}
