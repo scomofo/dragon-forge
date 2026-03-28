@@ -8,6 +8,7 @@ const DEFAULT_SAVE = {
     stone:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
     venom:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
     shadow: { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
+    void:   { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
   },
   dataScraps: 0,
   pityCounter: 0,
@@ -30,6 +31,9 @@ function migrateSave(save) {
   if (save.dataScraps === undefined) save.dataScraps = 0;
   if (save.pityCounter === undefined) save.pityCounter = 0;
   if (save.milestones === undefined) save.milestones = [];
+  if (!save.dragons.void) {
+    save.dragons.void = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
+  }
   return save;
 }
 
