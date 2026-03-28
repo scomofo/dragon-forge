@@ -49,6 +49,16 @@ export function getMusicVolume() {
   return prefs.muted ? 0 : prefs.musicVolume;
 }
 
+export function setSfxVolume(vol) {
+  prefs.sfxVolume = Math.max(0, Math.min(1, vol));
+  savePrefs(prefs);
+}
+
+export function setMusicVolume(vol) {
+  prefs.musicVolume = Math.max(0, Math.min(1, vol));
+  savePrefs(prefs);
+}
+
 // === SYNTHESIS PRIMITIVES ===
 
 function osc(freq, duration, type = 'square', volume = 1.0, detune = 0) {

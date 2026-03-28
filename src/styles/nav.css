@@ -92,3 +92,62 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
+
+/* === SOUND CONTROLS === */
+.sound-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  position: relative;
+}
+
+.sound-settings-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px;
+}
+
+.sound-settings-btn:hover {
+  color: #aaa;
+}
+
+.sound-settings-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #1a1a24;
+  border: 1px solid #333;
+  border-radius: 3px;
+  padding: 8px;
+  z-index: 100;
+  min-width: 160px;
+}
+
+.sound-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.sound-slider-row label {
+  font-size: 7px;
+  color: #888;
+  width: 35px;
+}
+
+.sound-slider-row input[type="range"] {
+  flex: 1;
+  height: 4px;
+  accent-color: #ff6622;
+}
+
+.sound-slider-row span {
+  font-size: 7px;
+  color: #888;
+  width: 28px;
+  text-align: right;
+}
