@@ -112,3 +112,17 @@
   .select-panel { width: 100%; max-height: 40vh; }
   .select-card { gap: 8px; }
 }
+
+.daily-challenge-card {
+  border: 1px solid #ffcc00 !important;
+  background: linear-gradient(135deg, #1a1a24 0%, #2a2a18 100%);
+}
+
+.daily-challenge-card:hover {
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+}
+
+.daily-completed {
+  opacity: 0.5;
+  cursor: default !important;
+}

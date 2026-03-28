@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { playSound } from './soundEngine';
 import { dragons, npcs, elementColors } from './gameData';
 import { getTypeEffectiveness, calculateStatsForLevel, getStageForLevel } from './battleEngine';
+import { getDailyChallenge, isDailyChallengeCompleted, getDateString } from './dailyChallenge';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import NavBar from './NavBar';
@@ -26,7 +27,11 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
   function handleBegin() {
     if (!selectedDragon || !selectedNpc) return;
     playSound('buttonClick');
-    onBeginBattle({ dragonId: selectedDragon.id, npcId: selectedNpc.id });
+    if (selectedNpc.id === 'daily_challenge') {
+      onBeginBattle({ dragonId: selectedDragon.id, npcId: 'daily_challenge', dailyNpc: selectedNpc });
+    } else {
+      onBeginBattle({ dragonId: selectedDragon.id, npcId: selectedNpc.id });
+    }
   }
 
   return (
@@ -87,6 +92,39 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
 
         <div className="select-panel">
           <h2>OPPONENTS</h2>
+          {/* Daily Challenge */}
+          {(() => {
+            const daily = getDailyChallenge();
+            const completed = isDailyChallengeCompleted(save);
+            return (
+              <div
+                className={`select-card daily-challenge-card ${selectedNpc?.id === 'daily_challenge' ? 'selected' : ''} ${completed ? 'daily-completed' : ''}`}
+                style={{ borderColor: selectedNpc?.id === 'daily_challenge' ? '#ffcc00' : '#ffcc00' }}
+                onClick={() => { if (!completed) { playSound('buttonClick'); setSelectedNpc(daily); } }}
+                tabIndex={0}
+                role="button"
+                onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !completed) { e.preventDefault(); playSound('buttonClick'); setSelectedNpc(daily); } }}
+              >
+                <div style={{ width: 130, height: 90, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img src={daily.idleSprite} className="pixelated" style={{ height: '80px', filter: daily.spriteFilter || 'none' }} />
+                </div>
+                <div className="select-card-info">
+                  <div className="select-card-name" style={{ color: '#ffcc00' }}>
+                    ⚔ DAILY CHALLENGE
+                    {completed && <span style={{ color: '#44cc44', marginLeft: 6 }}>✓</span>}
+                  </div>
+                  <div className="select-card-stats">
+                    {completed ? 'COMPLETED TODAY' : `${daily.name.replace('DAILY: ', '')} · ${getDateString()}`}
+                  </div>
+                  {!completed && (
+                    <div style={{ fontSize: 7, color: '#ffcc00', marginTop: 2 }}>
+                      3x DataScraps · 2x XP
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
           {npcList.map((npc) => {
             const color = elementColors[npc.element];
             return (

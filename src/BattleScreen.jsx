@@ -6,7 +6,7 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain,
 } from './battleEngine';
-import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, addCore, decrementXpBoost, trackStat } from './persistence';
+import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, addCore, decrementXpBoost, trackStat, completeDailyChallenge } from './persistence';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
 import { EPILOGUE_LINES } from './singularityBosses';
 import DragonSprite from './DragonSprite';
@@ -58,6 +58,8 @@ function initBattle(dragonId, npcId, save, battleConfig) {
       spriteFilter: phase ? phase.spriteFilter : (boss.spriteFilter || null),
       flipSprite: false,
     };
+  } else if (battleConfig?.dailyNpc) {
+    npc = battleConfig.dailyNpc;
   } else {
     const baseNpc = npcs[npcId];
     const progress = save.dragons[dragonId] || { level: 1, xp: 0 };
@@ -428,6 +430,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           }
         } else {
           recordNpcDefeat(npcId);
+          if (battleConfig?.dailyNpc) {
+            completeDailyChallenge(battleConfig.dailyNpc.seed);
+          }
         }
         refreshSave();
 

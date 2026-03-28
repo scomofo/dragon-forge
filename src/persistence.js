@@ -18,6 +18,7 @@ const DEFAULT_SAVE = {
   singularityComplete: false,
   inventory: { cores: {}, xpBoostBattles: 0, stabilityBoost: false },
   stats: { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 },
+  lastDailyCompleted: 0,
 };
 
 function migrateSave(save) {
@@ -50,6 +51,7 @@ function migrateSave(save) {
   if (save.stats === undefined) {
     save.stats = { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 };
   }
+  if (save.lastDailyCompleted === undefined) save.lastDailyCompleted = 0;
   return save;
 }
 
@@ -222,6 +224,12 @@ export function fuseDragons(parentAId, parentBId, offspringElement, offspringLev
   save.dataScraps -= 100;
   writeSave(save);
   return save;
+}
+
+export function completeDailyChallenge(seed) {
+  const save = loadSave();
+  save.lastDailyCompleted = seed;
+  writeSave(save);
 }
 
 export function resetSave() {
