@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { dragons, elementColors } from './gameData';
 import { getFusionElement, getStabilityTier, calculateFusionStats, executeFusion } from './fusionEngine';
 import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
-import { loadSave, fuseDragons } from './persistence';
+import { fuseDragons } from './persistence';
 import { playSound } from './soundEngine';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
@@ -11,14 +11,11 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export default function FusionScreen({ onNavigate }) {
-  const [save, setSave] = useState(() => loadSave());
+export default function FusionScreen({ onNavigate, save, refreshSave }) {
   const [parentA, setParentA] = useState(null);
   const [parentB, setParentB] = useState(null);
   const [phase, setPhase] = useState('select');
   const [fusionResult, setFusionResult] = useState(null);
-
-  const refreshSave = () => setSave(loadSave());
 
   const ownedDragons = Object.entries(save.dragons)
     .filter(([, d]) => d.owned && d.level >= 10)
@@ -92,7 +89,7 @@ export default function FusionScreen({ onNavigate }) {
 
   return (
     <div className="fusion-screen">
-      <NavBar activeScreen="fusion" onNavigate={onNavigate} />
+      <NavBar activeScreen="fusion" onNavigate={onNavigate} save={save} />
 
       <div className="fusion-content">
         <div className="fusion-title">FUSION CHAMBER</div>

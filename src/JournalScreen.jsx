@@ -2,16 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { playSound } from './soundEngine';
 import { dragons, elementColors, dragonLore, ELEMENTS } from './gameData';
 import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
-import { loadSave, claimMilestone } from './persistence';
+import { claimMilestone } from './persistence';
 import { checkMilestones } from './journalMilestones';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
 
-export default function JournalScreen({ onNavigate }) {
-  const [save, setSave] = useState(() => loadSave());
+export default function JournalScreen({ onNavigate, save, refreshSave }) {
   const [selectedId, setSelectedId] = useState(() => {
-    const s = loadSave();
-    const firstOwned = ELEMENTS.find(el => s.dragons[el]?.owned);
+    const firstOwned = ELEMENTS.find(el => save.dragons[el]?.owned);
     return firstOwned || 'fire';
   });
   const [milestoneResults, setMilestoneResults] = useState([]);
@@ -23,8 +21,7 @@ export default function JournalScreen({ onNavigate }) {
     if (hasCheckedRef.current) return;
     hasCheckedRef.current = true;
 
-    const currentSave = loadSave();
-    const results = checkMilestones(currentSave);
+    const results = checkMilestones(save);
     const toClaim = results.filter(m => m.newlyClaimed);
 
     if (toClaim.length > 0) {
@@ -32,9 +29,9 @@ export default function JournalScreen({ onNavigate }) {
         claimMilestone(m.id, m.reward);
       }
       playSound('superEffective');
-      const updatedSave = loadSave();
-      setSave(updatedSave);
-      setMilestoneResults(checkMilestones(updatedSave));
+      refreshSave();
+      const claimedIds = new Set(toClaim.map(m => m.id));
+      setMilestoneResults(results.map(m => claimedIds.has(m.id) ? { ...m, claimed: true, newlyClaimed: false } : m));
       setNewlyClaimed(toClaim.map(m => m.id));
     } else {
       setMilestoneResults(results);
@@ -57,7 +54,7 @@ export default function JournalScreen({ onNavigate }) {
 
   return (
     <div>
-      <NavBar activeScreen="journal" onNavigate={onNavigate} />
+      <NavBar activeScreen="journal" onNavigate={onNavigate} save={save} />
 
       <div className="journal-layout">
         {/* Left panel — dragon grid */}
