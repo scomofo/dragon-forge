@@ -40,6 +40,10 @@
 - [ ] Sci-fi lab equipment (07_08_33 PM) — shop/fusion decoration
 - [ ] Dragon Bounties RPG sheet (05_48_15 PM) — character sprites, NPC portraits
 
+## Music & SFX
+- [ ] Theme song: `C:\Users\Scott Morley\Downloads\2026_03_28_03_18_56_949_Before_We_Ignite.mp3` — integrate as title/menu music
+- [ ] Create SFX generation instructions (for producing game sound effects)
+
 ## Future Features
 - [ ] Shop screen — spend DataScraps on items/boosts (use forge prop art)
 - [ ] Responsive design — media queries for mobile/tablet
