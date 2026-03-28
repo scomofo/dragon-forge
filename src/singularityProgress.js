@@ -11,6 +11,7 @@ export const STAGES = [
 ];
 
 export function getSingularityStage(save) {
+  if (save.singularityComplete) return 3;
   const ownedCount = BASE_ELEMENTS.filter(el => save.dragons[el]?.owned).length;
   const hasElder = Object.values(save.dragons).some(d => d.owned && d.level >= 50);
   const defeatedNpcs = save.defeatedNpcs || [];
@@ -22,4 +23,13 @@ export function getSingularityStage(save) {
   if (ownedCount >= 4) return 2;
   if (ownedCount >= 2) return 1;
   return 0;
+}
+
+export function isSingularityUnlocked(save) {
+  if (save.singularityComplete) return true;
+  const ownedCount = BASE_ELEMENTS.filter(el => save.dragons[el]?.owned).length;
+  const hasElder = Object.values(save.dragons).some(d => d.owned && d.level >= 50);
+  const defeatedNpcs = save.defeatedNpcs || [];
+  const allNpcsDefeated = BASE_NPC_IDS.every(id => defeatedNpcs.includes(id));
+  return allNpcsDefeated;
 }
