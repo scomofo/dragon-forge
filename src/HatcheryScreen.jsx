@@ -15,23 +15,27 @@ const PHASES = {
   GRID: 'grid',
 };
 
-// Hatch animation sequence: frame index, duration in ms
+// Hatch animation sequence: frame index, duration, CSS class applied to egg container
 const HATCH_SEQUENCE = [
-  { frame: 1, duration: 200 },   // Glow
-  { frame: 2, duration: 120 },   // Crack 1
-  { frame: 3, duration: 120 },   // Crack 2
-  { frame: 4, duration: 80 },    // Shake L
-  { frame: 5, duration: 80 },    // Shake R
-  { frame: 4, duration: 80 },    // Shake L
-  { frame: 5, duration: 80 },    // Shake R
-  { frame: 6, duration: 200 },   // Hatch burst
-  { frame: 7, duration: 300 },   // Shell
+  { frame: 0, duration: 400, css: 'egg-idle-pulse' },      // Idle pulse — anticipation
+  { frame: 1, duration: 500, css: 'egg-glow' },            // Glow — warm up
+  { frame: 2, duration: 300, css: 'egg-crack' },           // Crack 1
+  { frame: 3, duration: 300, css: 'egg-crack' },           // Crack 2
+  { frame: 4, duration: 150, css: 'egg-shake-anim' },      // Shake L
+  { frame: 5, duration: 150, css: 'egg-shake-anim' },      // Shake R
+  { frame: 4, duration: 120, css: 'egg-shake-anim' },      // Shake L faster
+  { frame: 5, duration: 120, css: 'egg-shake-anim' },      // Shake R faster
+  { frame: 4, duration: 80, css: 'egg-shake-intense' },    // Shake L intense
+  { frame: 5, duration: 80, css: 'egg-shake-intense' },    // Shake R intense
+  { frame: 6, duration: 400, css: 'egg-burst-anim' },      // Burst!
+  { frame: 7, duration: 500, css: 'egg-reveal' },          // Reveal
 ];
 
 export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const [phase, setPhase] = useState(PHASES.IDLE);
   const [eggFrame, setEggFrame] = useState(0);
   const [eggSheet, setEggSheet] = useState(eggSheets.generic);
+  const [eggCss, setEggCss] = useState('');
   const [currentResult, setCurrentResult] = useState(null);
   const [gridResults, setGridResults] = useState([]);
   const skippedRef = useRef(false);
@@ -45,9 +49,10 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     skippedRef.current = false;
     setEggSheet(eggSheets.generic);
     setEggFrame(0);
+    setEggCss('');
     setPhase(PHASES.HATCHING);
 
-    await wait(300);
+    await wait(400);
     if (skippedRef.current) return;
 
     setEggSheet(eggSheets[element] || eggSheets.generic);
@@ -55,6 +60,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     for (const step of HATCH_SEQUENCE) {
       if (skippedRef.current) return;
       setEggFrame(step.frame);
+      setEggCss(step.css || '');
 
       if (step.frame === 1) playSound('eggGlow');
       else if (step.frame === 2 || step.frame === 3) playSound('eggCrack');
@@ -64,6 +70,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
 
       await wait(step.duration);
     }
+    setEggCss('');
   }, []);
 
   const handlePull1 = async () => {
@@ -125,7 +132,8 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const handleSkip = () => {
     if (phase === PHASES.HATCHING) {
       skippedRef.current = true;
-      setEggFrame(7); // Jump to final reveal frame
+      setEggFrame(7);
+      setEggCss('egg-reveal');
     }
   };
 
@@ -153,7 +161,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
       <div className="hatchery-content" onClick={handleContentClick}>
         <div className="hatchery-title">QUANTUM INCUBATION LAB</div>
 
-        <div className="egg-container">
+        <div className={`egg-container ${eggCss}`}>
           {(phase === PHASES.IDLE || phase === PHASES.HATCHING) && (
             <EggSprite sheet={eggSheet} frame={eggFrame} />
           )}
