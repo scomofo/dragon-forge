@@ -49,34 +49,46 @@ export function getMusicVolume() {
   return prefs.muted ? 0 : prefs.musicVolume;
 }
 
-const ELEMENT_PITCH = {
-  fire: -100,
-  ice: 200,
-  storm: 100,
-  stone: -200,
-  venom: 50,
-  shadow: -150,
-  neutral: 0,
-};
+// === SYNTHESIS PRIMITIVES ===
 
-function playTone(freq, duration, type = 'square', volume = 1.0) {
+function osc(freq, duration, type = 'square', volume = 1.0, detune = 0) {
+  const ctx = getCtx();
+  const vol = getSfxVolume() * volume;
+  if (vol === 0) return null;
+
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  o.detune.value = detune;
+  g.gain.setValueAtTime(vol * 0.3, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration / 1000);
+  o.connect(g);
+  g.connect(ctx.destination);
+  o.start();
+  o.stop(ctx.currentTime + duration / 1000);
+  return { osc: o, gain: g };
+}
+
+function sweep(startFreq, endFreq, duration, type = 'sine', volume = 1.0) {
   const ctx = getCtx();
   const vol = getSfxVolume() * volume;
   if (vol === 0) return;
 
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = type;
-  osc.frequency.value = freq;
-  gain.gain.setValueAtTime(vol * 0.3, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration / 1000);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start();
-  osc.stop(ctx.currentTime + duration / 1000);
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(startFreq, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(Math.max(endFreq, 20), ctx.currentTime + duration / 1000);
+  g.gain.setValueAtTime(vol * 0.25, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration / 1000);
+  o.connect(g);
+  g.connect(ctx.destination);
+  o.start();
+  o.stop(ctx.currentTime + duration / 1000);
 }
 
-function playNoise(duration, filterFreq = 2000, volume = 1.0) {
+function noise(duration, filterFreq = 2000, filterType = 'lowpass', volume = 1.0) {
   const ctx = getCtx();
   const vol = getSfxVolume() * volume;
   if (vol === 0) return;
@@ -92,8 +104,9 @@ function playNoise(duration, filterFreq = 2000, volume = 1.0) {
   source.buffer = buffer;
 
   const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
+  filter.type = filterType;
   filter.frequency.value = filterFreq;
+  filter.Q.value = 1.5;
 
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(vol * 0.2, ctx.currentTime);
@@ -105,132 +118,239 @@ function playNoise(duration, filterFreq = 2000, volume = 1.0) {
   source.start();
 }
 
-function playArpeggio(notes, noteType = 'square', noteDuration = 80) {
+function arpeggio(notes, type = 'square', noteDuration = 80, volume = 0.8) {
   notes.forEach((freq, i) => {
-    setTimeout(() => playTone(freq, noteDuration, noteType, 0.8), i * noteDuration);
+    setTimeout(() => osc(freq, noteDuration, type, volume), i * noteDuration);
   });
 }
 
+function chord(freqs, duration, type = 'sine', volume = 0.5) {
+  freqs.forEach((freq, i) => {
+    osc(freq, duration, type, volume * 0.6, i * 5);
+  });
+}
+
+function delay(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+const ELEMENT_PITCH = {
+  fire: -100,
+  ice: 200,
+  storm: 100,
+  stone: -200,
+  venom: 50,
+  shadow: -150,
+  void: 300,
+  neutral: 0,
+};
+
+// === SFX DEFINITIONS ===
+
 const SFX = {
-  buttonClick: () => playTone(800, 30, 'square', 0.5),
-  buttonHover: () => playTone(800, 20, 'square', 0.2),
-  navSwitch: () => playTone(600, 15, 'sine', 0.4),
-  screenTransition: () => playNoise(200, 1500, 0.3),
+  // --- UI ---
+  buttonClick: () => {
+    osc(900, 25, 'square', 0.4);
+    osc(1200, 15, 'sine', 0.2);
+  },
 
-  terminalType: () => playTone(400, 5, 'square', 0.15),
-  terminalOk: () => playTone(600, 50, 'sine', 0.4),
-  terminalWarning: () => playTone(400, 100, 'sawtooth', 0.4),
-  terminalFail: () => { playNoise(150, 800, 0.5); playTone(150, 150, 'sine', 0.5); },
+  buttonHover: () => {
+    osc(800, 15, 'sine', 0.15);
+  },
+
+  navSwitch: () => {
+    sweep(500, 900, 80, 'sine', 0.35);
+    noise(40, 3000, 'highpass', 0.15);
+  },
+
+  screenTransition: () => {
+    noise(250, 2000, 'bandpass', 0.3);
+    sweep(200, 800, 200, 'sine', 0.2);
+  },
+
+  // --- Terminal ---
+  terminalType: () => {
+    osc(440, 8, 'square', 0.12);
+    noise(5, 4000, 'highpass', 0.08);
+  },
+
+  terminalOk: () => {
+    osc(500, 40, 'sine', 0.35);
+    setTimeout(() => osc(700, 60, 'sine', 0.3), 40);
+  },
+
+  terminalWarning: () => {
+    osc(350, 80, 'sawtooth', 0.35);
+    setTimeout(() => osc(300, 80, 'sawtooth', 0.3), 80);
+  },
+
+  terminalFail: () => {
+    noise(200, 1200, 'lowpass', 0.5);
+    osc(150, 200, 'sawtooth', 0.4);
+    osc(120, 200, 'sawtooth', 0.3);
+  },
+
   terminalGlitch: () => {
-    playNoise(300, 3000, 0.6);
-    playTone(Math.random() * 500 + 200, 100, 'sawtooth', 0.3);
-    setTimeout(() => playTone(Math.random() * 800 + 100, 80, 'square', 0.2), 100);
+    noise(350, 4000, 'lowpass', 0.5);
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => {
+        osc(Math.random() * 600 + 100, 40, 'sawtooth', 0.2);
+        noise(30, Math.random() * 3000 + 500, 'bandpass', 0.15);
+      }, i * 60);
+    }
   },
 
+  // --- Hatchery ---
   eggGlow: () => {
-    const ctx = getCtx();
-    if (getSfxVolume() === 0) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(200, ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(400, ctx.currentTime + 0.2);
-    gain.gain.setValueAtTime(getSfxVolume() * 0.2, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.2);
+    sweep(180, 450, 300, 'sine', 0.25);
+    osc(360, 300, 'sine', 0.1);
   },
-  eggCrack: () => { playNoise(50, 3000, 0.6); playTone(200, 50, 'sine', 0.5); },
-  eggShake: () => playNoise(80, 600, 0.4),
-  hatchBurst: () => {
-    playNoise(300, 4000, 0.7);
-    const ctx = getCtx();
-    if (getSfxVolume() === 0) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(300, ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(getSfxVolume() * 0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.3);
-  },
-  dragonReveal: () => playArpeggio([523, 659, 784], 'square', 100),
 
+  eggCrack: () => {
+    noise(60, 4000, 'highpass', 0.6);
+    osc(180, 40, 'triangle', 0.5);
+    osc(250, 30, 'square', 0.2);
+  },
+
+  eggShake: () => {
+    noise(100, 800, 'bandpass', 0.4);
+    osc(120, 80, 'sine', 0.2);
+  },
+
+  hatchBurst: () => {
+    noise(400, 5000, 'lowpass', 0.7);
+    sweep(200, 1500, 350, 'sine', 0.4);
+    sweep(300, 2000, 300, 'sawtooth', 0.15);
+    setTimeout(() => noise(200, 2000, 'highpass', 0.3), 100);
+  },
+
+  dragonReveal: () => {
+    arpeggio([523, 659, 784, 1047], 'sine', 90, 0.6);
+    setTimeout(() => osc(1047, 200, 'sine', 0.3), 360);
+    setTimeout(() => noise(100, 6000, 'highpass', 0.1), 200);
+  },
+
+  // --- Combat ---
   attackLaunch: (opts) => {
-    const offset = ELEMENT_PITCH[opts?.element] || 0;
-    playNoise(150, 2000 + offset, 0.4);
-    playTone(300 + offset, 100, 'sine', 0.3);
+    const p = ELEMENT_PITCH[opts?.element] || 0;
+    noise(180, 2500 + p, 'bandpass', 0.4);
+    sweep(250 + p, 500 + p, 150, 'sine', 0.3);
+    osc(300 + p, 80, 'sawtooth', 0.15);
   },
+
   attackHit: (opts) => {
-    const offset = ELEMENT_PITCH[opts?.element] || 0;
-    playNoise(80, 600 + offset, 0.6);
-    playTone(200 + offset, 60, 'sine', 0.5);
+    const p = ELEMENT_PITCH[opts?.element] || 0;
+    noise(100, 800 + p, 'lowpass', 0.6);
+    osc(180 + p, 60, 'triangle', 0.5);
+    osc(120 + p, 40, 'sine', 0.3);
+    noise(50, 3000, 'highpass', 0.2);
   },
+
   superEffective: (opts) => {
     SFX.attackHit(opts);
-    setTimeout(() => playTone(1200, 200, 'sine', 0.5), 50);
+    setTimeout(() => {
+      sweep(800, 1600, 200, 'sine', 0.4);
+      osc(1200, 150, 'square', 0.2);
+      noise(80, 5000, 'highpass', 0.2);
+    }, 60);
   },
-  resisted: () => playNoise(100, 400, 0.3),
+
+  resisted: () => {
+    noise(120, 500, 'lowpass', 0.3);
+    osc(200, 80, 'sine', 0.2);
+  },
+
   miss: () => {
-    const ctx = getCtx();
-    if (getSfxVolume() === 0) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(800, ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(400, ctx.currentTime + 0.2);
-    gain.gain.setValueAtTime(getSfxVolume() * 0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.2);
+    sweep(900, 350, 250, 'sine', 0.15);
+    noise(150, 1500, 'bandpass', 0.1);
   },
-  defend: () => { playTone(300, 150, 'sine', 0.5); playTone(450, 150, 'sine', 0.4); },
+
+  defend: () => {
+    osc(280, 120, 'triangle', 0.4);
+    osc(420, 120, 'triangle', 0.3);
+    noise(60, 2000, 'highpass', 0.3);
+    setTimeout(() => osc(560, 80, 'sine', 0.2), 60);
+  },
+
   ko: () => {
-    const ctx = getCtx();
-    if (getSfxVolume() === 0) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(200, ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(60, ctx.currentTime + 0.8);
-    gain.gain.setValueAtTime(getSfxVolume() * 0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 800;
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.8);
+    sweep(250, 50, 900, 'sawtooth', 0.35);
+    noise(600, 600, 'lowpass', 0.25);
+    setTimeout(() => noise(400, 300, 'lowpass', 0.2), 400);
+    setTimeout(() => osc(50, 500, 'sine', 0.15), 200);
   },
-  victoryFanfare: () => playArpeggio([523, 659, 784, 1047], 'square', 80),
+
+  victoryFanfare: () => {
+    arpeggio([523, 659, 784], 'square', 100, 0.5);
+    setTimeout(() => {
+      chord([1047, 1319, 1568], 400, 'sine', 0.4);
+      noise(100, 6000, 'highpass', 0.1);
+    }, 350);
+  },
+
   defeatDrone: () => {
-    playTone(60, 800, 'sawtooth', 0.4);
-    playNoise(800, 300, 0.2);
+    osc(55, 1200, 'sawtooth', 0.3);
+    osc(58, 1200, 'sawtooth', 0.25);
+    noise(1000, 400, 'lowpass', 0.2);
+    setTimeout(() => sweep(200, 55, 800, 'sine', 0.15), 200);
   },
 
-  xpGain: () => playTone(1000, 40, 'sine', 0.3),
-  levelUp: () => playArpeggio([523, 659, 784, 1047], 'square', 80),
-  scrapsEarned: () => { playTone(1400, 30, 'sine', 0.3); setTimeout(() => playTone(1400, 30, 'sine', 0.3), 60); },
+  xpGain: () => {
+    arpeggio([800, 1000, 1200], 'sine', 50, 0.35);
+  },
 
-  // Status
-  statusApply: () => { playNoise(60, 2000, 0.4); playTone(350, 80, 'sawtooth', 0.3); },
-  statusTick: () => playNoise(40, 1500, 0.25),
-  statusExpire: () => playArpeggio([400, 500, 600], 'sine', 60),
+  levelUp: () => {
+    arpeggio([523, 659, 784, 1047], 'square', 70, 0.5);
+    setTimeout(() => {
+      chord([1047, 1319], 300, 'sine', 0.3);
+      noise(60, 6000, 'highpass', 0.1);
+    }, 300);
+  },
 
-  // Fusion
-  fusionMerge: () => { playTone(300, 300, 'sine', 0.4); playTone(500, 300, 'sine', 0.4); },
-  fusionBurst: () => { playNoise(200, 4000, 0.6); playTone(600, 200, 'sine', 0.5); },
-  fusionReveal: () => playArpeggio([523, 659, 784, 1047], 'square', 100),
+  scrapsEarned: () => {
+    osc(1400, 30, 'sine', 0.3);
+    setTimeout(() => osc(1600, 30, 'sine', 0.3), 50);
+    setTimeout(() => osc(1800, 40, 'sine', 0.25), 100);
+  },
+
+  // --- Status Effects ---
+  statusApply: () => {
+    noise(80, 2500, 'bandpass', 0.4);
+    sweep(500, 200, 120, 'sawtooth', 0.3);
+    osc(300, 100, 'triangle', 0.2);
+  },
+
+  statusTick: () => {
+    noise(50, 2000, 'bandpass', 0.25);
+    osc(250, 40, 'sine', 0.15);
+  },
+
+  statusExpire: () => {
+    arpeggio([350, 450, 550, 700], 'sine', 50, 0.3);
+    noise(40, 5000, 'highpass', 0.1);
+  },
+
+  // --- Fusion ---
+  fusionMerge: () => {
+    sweep(200, 600, 500, 'sine', 0.35);
+    sweep(250, 700, 500, 'sine', 0.3);
+    noise(400, 1500, 'bandpass', 0.15);
+    setTimeout(() => osc(500, 200, 'triangle', 0.2), 200);
+  },
+
+  fusionBurst: () => {
+    noise(300, 5000, 'lowpass', 0.6);
+    sweep(300, 1500, 300, 'sine', 0.4);
+    chord([600, 900, 1200], 250, 'sine', 0.3);
+    setTimeout(() => noise(150, 3000, 'highpass', 0.3), 100);
+  },
+
+  fusionReveal: () => {
+    arpeggio([523, 659, 784, 1047], 'sine', 100, 0.5);
+    setTimeout(() => {
+      chord([1047, 1319, 1568], 500, 'sine', 0.35);
+      osc(1568, 300, 'triangle', 0.15);
+    }, 400);
+  },
 };
 
 export function playSound(name, options) {
@@ -239,6 +359,8 @@ export function playSound(name, options) {
     try { fn(options); } catch { /* ignore audio errors */ }
   }
 }
+
+// === MUSIC ===
 
 let currentMusic = null;
 let currentTrackName = null;
