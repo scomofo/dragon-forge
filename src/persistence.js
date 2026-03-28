@@ -19,6 +19,7 @@ const DEFAULT_SAVE = {
   inventory: { cores: {}, xpBoostBattles: 0, stabilityBoost: false },
   stats: { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 },
   lastDailyCompleted: 0,
+  records: { fastestWin: null, highestDamage: 0, longestStreak: 0, currentStreak: 0 },
 };
 
 function migrateSave(save) {
@@ -52,6 +53,7 @@ function migrateSave(save) {
     save.stats = { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 };
   }
   if (save.lastDailyCompleted === undefined) save.lastDailyCompleted = 0;
+  if (save.records === undefined) save.records = { fastestWin: null, highestDamage: 0, longestStreak: 0, currentStreak: 0 };
   return save;
 }
 
@@ -224,6 +226,29 @@ export function fuseDragons(parentAId, parentBId, offspringElement, offspringLev
   save.dataScraps -= 100;
   writeSave(save);
   return save;
+}
+
+export function updateRecords({ turns, maxDamage, won }) {
+  const save = loadSave();
+  if (!save.records) save.records = { fastestWin: null, highestDamage: 0, longestStreak: 0, currentStreak: 0 };
+
+  if (won) {
+    if (save.records.fastestWin === null || turns < save.records.fastestWin) {
+      save.records.fastestWin = turns;
+    }
+    save.records.currentStreak++;
+    if (save.records.currentStreak > save.records.longestStreak) {
+      save.records.longestStreak = save.records.currentStreak;
+    }
+  } else {
+    save.records.currentStreak = 0;
+  }
+
+  if (maxDamage > save.records.highestDamage) {
+    save.records.highestDamage = maxDamage;
+  }
+
+  writeSave(save);
 }
 
 export function completeDailyChallenge(seed) {

@@ -1,3 +1,5 @@
+import { assetUrl } from './utils';
+
 // === ELEMENTS ===
 export const ELEMENTS = ['fire', 'ice', 'storm', 'stone', 'venom', 'shadow', 'void'];
 
@@ -54,8 +56,8 @@ export const dragons = {
     element: 'fire',
     baseStats: { hp: 110, atk: 28, def: 20, spd: 18 },
     moveKeys: ['magma_breath', 'flame_wall'],
-    spriteSheet: '/assets/dragons/magma.png',
-    stageSprites: { 1: '/assets/dragons/magma.png', 2: '/assets/dragons/magma.png', 3: '/assets/dragons/magma.png', 4: '/assets/dragons/magma.png' },
+    spriteSheet: assetUrl('/assets/dragons/magma.png'),
+    stageSprites: { 1: assetUrl('/assets/dragons/magma.png'), 2: assetUrl('/assets/dragons/magma.png'), 3: assetUrl('/assets/dragons/magma.png'), 4: assetUrl('/assets/dragons/magma.png') },
   },
   ice: {
     id: 'ice',
@@ -63,8 +65,8 @@ export const dragons = {
     element: 'ice',
     baseStats: { hp: 100, atk: 24, def: 26, spd: 20 },
     moveKeys: ['frost_bite', 'blizzard'],
-    spriteSheet: '/assets/dragons/ice.png',
-    stageSprites: { 1: '/assets/dragons/ice.png', 2: '/assets/dragons/ice.png', 3: '/assets/dragons/ice.png', 4: '/assets/dragons/ice.png' },
+    spriteSheet: assetUrl('/assets/dragons/ice.png'),
+    stageSprites: { 1: assetUrl('/assets/dragons/ice.png'), 2: assetUrl('/assets/dragons/ice.png'), 3: assetUrl('/assets/dragons/ice.png'), 4: assetUrl('/assets/dragons/ice.png') },
   },
   storm: {
     id: 'storm',
@@ -72,8 +74,8 @@ export const dragons = {
     element: 'storm',
     baseStats: { hp: 90, atk: 30, def: 16, spd: 28 },
     moveKeys: ['lightning_strike', 'thunder_clap'],
-    spriteSheet: '/assets/dragons/lightning.png',
-    stageSprites: { 1: '/assets/dragons/lightning.png', 2: '/assets/dragons/lightning.png', 3: '/assets/dragons/lightning.png', 4: '/assets/dragons/lightning.png' },
+    spriteSheet: assetUrl('/assets/dragons/lightning.png'),
+    stageSprites: { 1: assetUrl('/assets/dragons/lightning.png'), 2: assetUrl('/assets/dragons/lightning.png'), 3: assetUrl('/assets/dragons/lightning.png'), 4: assetUrl('/assets/dragons/lightning.png') },
   },
   stone: {
     id: 'stone',
@@ -81,8 +83,8 @@ export const dragons = {
     element: 'stone',
     baseStats: { hp: 120, atk: 22, def: 30, spd: 12 },
     moveKeys: ['rock_slide', 'earthquake'],
-    spriteSheet: '/assets/dragons/stone.png',
-    stageSprites: { 1: '/assets/dragons/stone.png', 2: '/assets/dragons/stone.png', 3: '/assets/dragons/stone.png', 4: '/assets/dragons/stone.png' },
+    spriteSheet: assetUrl('/assets/dragons/stone.png'),
+    stageSprites: { 1: assetUrl('/assets/dragons/stone.png'), 2: assetUrl('/assets/dragons/stone.png'), 3: assetUrl('/assets/dragons/stone.png'), 4: assetUrl('/assets/dragons/stone.png') },
   },
   venom: {
     id: 'venom',
@@ -90,8 +92,8 @@ export const dragons = {
     element: 'venom',
     baseStats: { hp: 95, atk: 26, def: 18, spd: 24 },
     moveKeys: ['acid_spit', 'toxic_cloud'],
-    spriteSheet: '/assets/dragons/venom.png',
-    stageSprites: { 1: '/assets/dragons/venom.png', 2: '/assets/dragons/venom.png', 3: '/assets/dragons/venom.png', 4: '/assets/dragons/venom.png' },
+    spriteSheet: assetUrl('/assets/dragons/venom.png'),
+    stageSprites: { 1: assetUrl('/assets/dragons/venom.png'), 2: assetUrl('/assets/dragons/venom.png'), 3: assetUrl('/assets/dragons/venom.png'), 4: assetUrl('/assets/dragons/venom.png') },
   },
   shadow: {
     id: 'shadow',
@@ -99,8 +101,8 @@ export const dragons = {
     element: 'shadow',
     baseStats: { hp: 85, atk: 32, def: 14, spd: 26 },
     moveKeys: ['shadow_strike', 'void_pulse'],
-    spriteSheet: '/assets/dragons/shadow.png',
-    stageSprites: { 1: '/assets/dragons/shadow.png', 2: '/assets/dragons/shadow.png', 3: '/assets/dragons/shadow.png', 4: '/assets/dragons/shadow.png' },
+    spriteSheet: assetUrl('/assets/dragons/shadow.png'),
+    stageSprites: { 1: assetUrl('/assets/dragons/shadow.png'), 2: assetUrl('/assets/dragons/shadow.png'), 3: assetUrl('/assets/dragons/shadow.png'), 4: assetUrl('/assets/dragons/shadow.png') },
   },
   void: {
     id: 'void',
@@ -108,8 +110,8 @@ export const dragons = {
     element: 'void',
     baseStats: { hp: 75, atk: 34, def: 12, spd: 30 },
     moveKeys: ['void_rift', 'null_reflect'],
-    spriteSheet: '/assets/dragons/shadow.png',
-    stageSprites: { 1: '/assets/dragons/shadow.png', 2: '/assets/dragons/shadow.png', 3: '/assets/dragons/shadow.png', 4: '/assets/dragons/shadow.png' },
+    spriteSheet: assetUrl('/assets/dragons/shadow.png'),
+    stageSprites: { 1: assetUrl('/assets/dragons/shadow.png'), 2: assetUrl('/assets/dragons/shadow.png'), 3: assetUrl('/assets/dragons/shadow.png'), 4: assetUrl('/assets/dragons/shadow.png') },
   },
 };
 
@@ -131,9 +133,9 @@ export const npcs = {
     difficulty: 'Easy',
     baseXP: 25,
     scrapsReward: 30,
-    idleSprite: '/assets/npc/firewall_sentinel_sprites.png',
-    attackSprite: '/assets/npc/firewall_sentinel_attack.png',
-    arena: '/assets/arenas/npc_firewall_sentinel.png',
+    idleSprite: assetUrl('/assets/npc/firewall_sentinel_sprites.png'),
+    attackSprite: assetUrl('/assets/npc/firewall_sentinel_attack.png'),
+    arena: assetUrl('/assets/arenas/npc_firewall_sentinel.png'),
     flipSprite: false,
   },
   bit_wraith: {
@@ -146,9 +148,9 @@ export const npcs = {
     difficulty: 'Medium',
     baseXP: 40,
     scrapsReward: 50,
-    idleSprite: '/assets/npc/bit_wraith_sprites.png',
-    attackSprite: '/assets/npc/bit_wraith_attack.png',
-    arena: '/assets/arenas/npc_bit_wraith.png',
+    idleSprite: assetUrl('/assets/npc/bit_wraith_sprites.png'),
+    attackSprite: assetUrl('/assets/npc/bit_wraith_attack.png'),
+    arena: assetUrl('/assets/arenas/npc_bit_wraith.png'),
     flipSprite: false,
   },
   glitch_hydra: {
@@ -161,9 +163,9 @@ export const npcs = {
     difficulty: 'Hard',
     baseXP: 60,
     scrapsReward: 80,
-    idleSprite: '/assets/npc/glitch_hydra_sprites.png',
-    attackSprite: '/assets/npc/glitch_hydra_attack.png',
-    arena: '/assets/arenas/npc_glitch_hydra.png',
+    idleSprite: assetUrl('/assets/npc/glitch_hydra_sprites.png'),
+    attackSprite: assetUrl('/assets/npc/glitch_hydra_attack.png'),
+    arena: assetUrl('/assets/arenas/npc_glitch_hydra.png'),
     flipSprite: true,
   },
   recursive_golem: {
@@ -176,9 +178,9 @@ export const npcs = {
     difficulty: 'Boss',
     baseXP: 80,
     scrapsReward: 120,
-    idleSprite: '/assets/npc/recursive_golem_sprites.png',
-    attackSprite: '/assets/npc/recursive_golem_attack.png',
-    arena: '/assets/arenas/npc_recursive_golem.png',
+    idleSprite: assetUrl('/assets/npc/recursive_golem_sprites.png'),
+    attackSprite: assetUrl('/assets/npc/recursive_golem_attack.png'),
+    arena: assetUrl('/assets/arenas/npc_recursive_golem.png'),
   },
   buffer_overflow: {
     id: 'buffer_overflow',
@@ -190,9 +192,9 @@ export const npcs = {
     difficulty: 'Easy',
     baseXP: 30,
     scrapsReward: 40,
-    idleSprite: '/assets/npc/firewall_sentinel_sprites.png',
-    attackSprite: '/assets/npc/firewall_sentinel_attack.png',
-    arena: '/assets/arenas/npc_buffer_overflow.png',
+    idleSprite: assetUrl('/assets/npc/firewall_sentinel_sprites.png'),
+    attackSprite: assetUrl('/assets/npc/firewall_sentinel_attack.png'),
+    arena: assetUrl('/assets/arenas/npc_buffer_overflow.png'),
     spriteFilter: 'hue-rotate(340deg) saturate(1.3)',
   },
   crypto_crab: {
@@ -205,9 +207,9 @@ export const npcs = {
     difficulty: 'Medium',
     baseXP: 45,
     scrapsReward: 60,
-    idleSprite: '/assets/npc/recursive_golem_sprites.png',
-    attackSprite: '/assets/npc/recursive_golem_attack.png',
-    arena: '/assets/arenas/npc_crypto_crab.png',
+    idleSprite: assetUrl('/assets/npc/recursive_golem_sprites.png'),
+    attackSprite: assetUrl('/assets/npc/recursive_golem_attack.png'),
+    arena: assetUrl('/assets/arenas/npc_crypto_crab.png'),
     spriteFilter: 'hue-rotate(200deg) saturate(1.3)',
   },
   logic_bomb: {
@@ -220,9 +222,9 @@ export const npcs = {
     difficulty: 'Hard',
     baseXP: 65,
     scrapsReward: 90,
-    idleSprite: '/assets/npc/glitch_hydra_sprites.png',
-    attackSprite: '/assets/npc/glitch_hydra_attack.png',
-    arena: '/assets/arenas/npc_logic_bomb.png',
+    idleSprite: assetUrl('/assets/npc/glitch_hydra_sprites.png'),
+    attackSprite: assetUrl('/assets/npc/glitch_hydra_attack.png'),
+    arena: assetUrl('/assets/arenas/npc_logic_bomb.png'),
     spriteFilter: 'hue-rotate(340deg) saturate(1.5)',
   },
   phishing_siren: {
@@ -235,9 +237,9 @@ export const npcs = {
     difficulty: 'Medium',
     baseXP: 50,
     scrapsReward: 70,
-    idleSprite: '/assets/npc/bit_wraith_sprites.png',
-    attackSprite: '/assets/npc/bit_wraith_attack.png',
-    arena: '/assets/arenas/npc_phishing_siren.png',
+    idleSprite: assetUrl('/assets/npc/bit_wraith_sprites.png'),
+    attackSprite: assetUrl('/assets/npc/bit_wraith_attack.png'),
+    arena: assetUrl('/assets/arenas/npc_phishing_siren.png'),
     spriteFilter: 'hue-rotate(120deg) saturate(1.3)',
   },
   protocol_vulture: {
@@ -250,9 +252,9 @@ export const npcs = {
     difficulty: 'Boss',
     baseXP: 90,
     scrapsReward: 130,
-    idleSprite: '/assets/npc/bit_wraith_sprites.png',
-    attackSprite: '/assets/npc/bit_wraith_attack.png',
-    arena: '/assets/arenas/npc_protocol_vulture.png',
+    idleSprite: assetUrl('/assets/npc/bit_wraith_sprites.png'),
+    attackSprite: assetUrl('/assets/npc/bit_wraith_attack.png'),
+    arena: assetUrl('/assets/arenas/npc_protocol_vulture.png'),
     spriteFilter: 'saturate(1.5) contrast(1.3)',
   },
 };
@@ -282,14 +284,14 @@ export const dragonLore = {
 
 // === EGG SPRITES ===
 export const eggSheets = {
-  generic: '/assets/eggs/egg_generic_sheet.png',
-  fire:    '/assets/eggs/egg_fire_sheet.png',
-  ice:     '/assets/eggs/egg_ice_sheet.png',
-  storm:   '/assets/eggs/egg_storm_sheet.png',
-  stone:   '/assets/eggs/egg_stone_sheet.png',
-  venom:   '/assets/eggs/egg_venom_sheet.png',
-  shadow:  '/assets/eggs/egg_shadow_sheet.png',
-  void:    '/assets/eggs/egg_shadow_sheet.png',
+  generic: assetUrl('/assets/eggs/egg_generic_sheet.png'),
+  fire:    assetUrl('/assets/eggs/egg_fire_sheet.png'),
+  ice:     assetUrl('/assets/eggs/egg_ice_sheet.png'),
+  storm:   assetUrl('/assets/eggs/egg_storm_sheet.png'),
+  stone:   assetUrl('/assets/eggs/egg_stone_sheet.png'),
+  venom:   assetUrl('/assets/eggs/egg_venom_sheet.png'),
+  shadow:  assetUrl('/assets/eggs/egg_shadow_sheet.png'),
+  void:    assetUrl('/assets/eggs/egg_shadow_sheet.png'),
 };
 
 // === RARITY CONFIG ===

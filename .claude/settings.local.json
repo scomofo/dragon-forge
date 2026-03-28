@@ -59,7 +59,8 @@
       "Bash(gh api:*)",
       "Bash(npx inference:*)",
       "Skill(ai-image-generation)",
-      "Bash(sh)"
+      "Bash(sh)",
+      "Bash(cd:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

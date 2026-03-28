@@ -88,6 +88,29 @@ export default function StatsScreen({ onNavigate, save }) {
           </div>
         </div>
 
+        {/* Records */}
+        <div className="stats-title" style={{ fontSize: 10, marginTop: 12 }}>RECORDS</div>
+        <div className="stats-grid">
+          <div className="stats-card">
+            <div className="stats-card-label">Fastest Win</div>
+            <div className="stats-card-value" style={{ color: '#44cc44' }}>
+              {(save.records?.fastestWin) ? `${save.records.fastestWin} turns` : '—'}
+            </div>
+          </div>
+          <div className="stats-card">
+            <div className="stats-card-label">Highest Damage</div>
+            <div className="stats-card-value" style={{ color: '#ff6622' }}>
+              {(save.records?.highestDamage) || '—'}
+            </div>
+          </div>
+          <div className="stats-card">
+            <div className="stats-card-label">Win Streak</div>
+            <div className="stats-card-value" style={{ color: '#aa66ff' }}>
+              {save.records?.longestStreak || 0} (current: {save.records?.currentStreak || 0})
+            </div>
+          </div>
+        </div>
+
         {save.singularityComplete && (
           <div className="stats-singularity-badge">
             🏆 SINGULARITY CONTAINED

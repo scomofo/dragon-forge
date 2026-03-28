@@ -6,7 +6,7 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain,
 } from './battleEngine';
-import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, addCore, decrementXpBoost, trackStat, completeDailyChallenge } from './persistence';
+import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, addCore, decrementXpBoost, trackStat, completeDailyChallenge, updateRecords } from './persistence';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
 import { EPILOGUE_LINES } from './singularityBosses';
 import DragonSprite from './DragonSprite';
@@ -99,6 +99,8 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     vfxActive: null,
     currentPhase: 0,
     battleLog: [],
+    turnCount: 0,
+    maxDamageDealt: 0,
   };
 }
 
@@ -129,7 +131,9 @@ function battleReducer(state, action) {
     case 'SET_DEFEAT':
       return { ...state, phase: PHASES.DEFEAT };
     case 'RESET_TURN':
-      return { ...state, phase: PHASES.PLAYER_TURN, playerSpriteClass: '', npcSpriteClass: '', npcAttacking: false, playerForcedFrame: null };
+      return { ...state, phase: PHASES.PLAYER_TURN, playerSpriteClass: '', npcSpriteClass: '', npcAttacking: false, playerForcedFrame: null, turnCount: state.turnCount + 1 };
+    case 'TRACK_DAMAGE':
+      return { ...state, maxDamageDealt: Math.max(state.maxDamageDealt, action.damage) };
     case 'SET_PLAYER_STATUS':
       return { ...state, playerStatus: action.value };
     case 'SET_NPC_STATUS':
@@ -274,6 +278,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         target: dmgTarget,
       },
     });
+    // Track max damage for records
+    if (event.hit && isPlayer && !event.reflected) {
+      dispatch({ type: 'TRACK_DAMAGE', damage: event.damage });
+    }
+
     // Battle log entry for attack
     if (event.hit) {
       const effText = event.effectiveness > 1 ? ' Super effective!' : event.effectiveness < 1 ? ' Resisted.' : '';
@@ -458,6 +467,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         } else {
           trackStat('battlesWon');
           if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
+          updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: true });
           dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped });
           stopMusic();
           playSound('victoryFanfare');
@@ -471,6 +481,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       playSound('ko');
       await wait(600);
       trackStat('battlesLost');
+      updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
       dispatch({ type: 'SET_DEFEAT' });
       stopMusic();
       playSound('defeatDrone');
@@ -691,7 +702,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       {state.phase === PHASES.EPILOGUE && (
         <div className="epilogue-overlay">
           <div className="epilogue-portrait">
-            <img src="/assets/felix_pixel.jpg" alt="Professor Felix" className="pixelated" />
+            <img src={`${import.meta.env.BASE_URL}assets/felix_pixel.jpg`} alt="Professor Felix" className="pixelated" />
           </div>
           <div className="epilogue-text">
             {EPILOGUE_LINES.map((line, i) => (
