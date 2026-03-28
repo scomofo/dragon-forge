@@ -40,6 +40,12 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
         >
           SHOP
         </button>
+        <button
+          className={`nav-tab ${activeScreen === 'stats' ? 'active' : ''}`}
+          onClick={() => onNavigate('stats')}
+        >
+          STATS
+        </button>
         {isSingularityUnlocked(save) && (
           <button
             className={`nav-tab singularity-tab ${activeScreen === 'singularity' ? 'active' : ''}`}

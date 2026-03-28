@@ -12,6 +12,7 @@ import './styles/fusion.css';
 import './styles/journal.css';
 import './styles/singularity.css';
 import './styles/shop.css';
+import './styles/stats.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

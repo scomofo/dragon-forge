@@ -6,6 +6,7 @@ import HatcheryScreen from './HatcheryScreen';
 import FusionScreen from './FusionScreen';
 import JournalScreen from './JournalScreen';
 import ShopScreen from './ShopScreen';
+import StatsScreen from './StatsScreen';
 import SingularityScreen from './SingularityScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
 import { loadSave } from './persistence';
@@ -19,6 +20,7 @@ const SCREENS = {
   FUSION: 'fusion',
   JOURNAL: 'journal',
   SHOP: 'shop',
+  STATS: 'stats',
   SINGULARITY: 'singularity',
 };
 
@@ -53,6 +55,9 @@ export default function App() {
     } else if (target === 'shop') {
       playMusic('hatchery');
       setScreen(SCREENS.SHOP);
+    } else if (target === 'stats') {
+      playMusic('hatchery');
+      setScreen(SCREENS.STATS);
     } else if (target === 'singularity') {
       playMusic('battle', true);
       setScreen(SCREENS.SINGULARITY);
@@ -109,6 +114,9 @@ export default function App() {
       )}
       {screen === SCREENS.SHOP && (
         <ShopScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+      )}
+      {screen === SCREENS.STATS && (
+        <StatsScreen onNavigate={handleNavigate} save={save} />
       )}
       {screen === SCREENS.SINGULARITY && (
         <SingularityScreen
