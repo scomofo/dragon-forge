@@ -60,3 +60,27 @@
   filter: brightness(0) !important;
   animation: none !important;
 }
+
+/* === FOCUS & ACCESSIBILITY === */
+
+*:focus-visible {
+  outline: 2px solid #ff8844;
+  outline-offset: 2px;
+}
+
+button:focus-visible {
+  outline: 2px solid #ff8844;
+  outline-offset: 2px;
+  box-shadow: 0 0 8px rgba(255, 136, 68, 0.3);
+}
+
+.select-card:focus-visible,
+.journal-card:focus-visible,
+.singularity-boss-card:focus-visible,
+.fusion-picker-card:focus-visible,
+.fusion-slot:focus-visible,
+.singularity-dragon-option:focus-visible {
+  outline: 2px solid #ff8844;
+  outline-offset: 2px;
+  box-shadow: 0 0 8px rgba(255, 136, 68, 0.3);
+}

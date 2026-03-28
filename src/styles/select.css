@@ -106,3 +106,9 @@
   opacity: 0.3;
   cursor: not-allowed;
 }
+
+@media (max-width: 768px) {
+  .select-screen { flex-direction: column; }
+  .select-panel { width: 100%; max-height: 40vh; }
+  .select-card { gap: 8px; }
+}

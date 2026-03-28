@@ -178,3 +178,8 @@
   font-size: 6px;
   margin-top: 2px;
 }
+
+@media (max-width: 768px) {
+  .pull-grid { grid-template-columns: repeat(3, 1fr); }
+  .hatchery-buttons { flex-direction: column; gap: 6px; }
+}

@@ -297,3 +297,16 @@
   20%  { opacity: 1; }
   100% { opacity: 0; transform: translate(-50%, -50%) rotate(15deg) scale(1.2); }
 }
+
+@media (max-width: 1024px) {
+  .move-panel { gap: 4px; }
+  .move-btn { padding: 8px 10px; font-size: 8px; }
+}
+
+@media (max-width: 768px) {
+  .move-panel { flex-wrap: wrap; }
+  .move-btn { padding: 6px 8px; font-size: 7px; flex: 1 1 40%; }
+  .panel-top { flex-direction: column; gap: 4px; }
+  .hp-bar-container { min-width: unset; }
+  .arena-sprites { padding: 0 8px; }
+}

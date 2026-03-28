@@ -524,3 +524,10 @@
 .singularity-npc-sprite {
   image-rendering: pixelated;
 }
+
+@media (max-width: 768px) {
+  .singularity-layout { flex-direction: column; }
+  .singularity-boss-list { width: 100%; flex-direction: row; overflow-x: auto; gap: 6px; }
+  .singularity-boss-card { min-width: 140px; flex-shrink: 0; }
+  .singularity-detail { width: 100%; }
+}
