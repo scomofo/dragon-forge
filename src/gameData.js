@@ -168,6 +168,16 @@ export const elementColors = {
   neutral: { primary: '#888888', glow: '#aaaaaa' },
 };
 
+// === DRAGON LORE ===
+export const dragonLore = {
+  fire:   "Forged from the planet's molten core. Its breath can melt through starship bulkheads — handle with extreme caution.",
+  ice:    "Crystallized from subzero atmospheric anomalies. The temperature drops 30 degrees in its presence alone.",
+  storm:  "Born from a feedback loop in the planet's electromagnetic field. Faster than anything I've ever recorded.",
+  stone:  "Its hide is denser than compressed titanium. I once watched it walk through a collapsing mine without flinching.",
+  venom:  "Secretes a neurotoxin that can dissolve organic matter in seconds. Keep it away from the lab samples.",
+  shadow: "This one... shouldn't exist. It reads as a gap in the data — a hole where reality should be. Fascinating.",
+};
+
 // === EGG SPRITES ===
 export const eggSheets = {
   generic: '/assets/eggs/egg_generic_sheet.png',
