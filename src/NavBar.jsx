@@ -1,5 +1,5 @@
 import { getStageForLevel } from './battleEngine';
-import { getSingularityStage } from './singularityProgress';
+import { getSingularityStage, isSingularityUnlocked } from './singularityProgress';
 import { getTickerMessage } from './felixDialogue';
 import SoundToggle from './SoundToggle';
 
@@ -34,6 +34,14 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
         >
           JOURNAL
         </button>
+        {isSingularityUnlocked(save) && (
+          <button
+            className={`nav-tab singularity-tab ${activeScreen === 'singularity' ? 'active' : ''}`}
+            onClick={() => onNavigate('singularity')}
+          >
+            SINGULARITY
+          </button>
+        )}
         <button
           className={`nav-tab ${activeScreen === 'battleSelect' ? 'active' : ''}`}
           onClick={() => onNavigate('battleSelect')}
