@@ -201,6 +201,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         vfxKey: event.vfxKey,
         element: vfxElement,
         direction: vfxDirection,
+        targetSide: isPlayer ? 'left' : 'right',
         onComplete: () => {
           dispatch({ type: 'CLEAR_VFX' });
           vfxResolve();
@@ -560,6 +561,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             vfxKey={state.vfxActive.vfxKey}
             element={state.vfxActive.element}
             direction={state.vfxActive.direction}
+            targetSide={state.vfxActive.targetSide}
             onComplete={state.vfxActive.onComplete}
           />
         )}

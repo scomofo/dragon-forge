@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { elementColors } from './gameData';
 import { VFX_FRAMES } from './sprites';
 
-export default function VfxOverlay({ vfxKey, element, direction, onComplete }) {
+export default function VfxOverlay({ vfxKey, element, direction, onComplete, targetSide }) {
   const [phase, setPhase] = useState('travel'); // 'travel' | 'impact'
   const isLTR = direction === 'left-to-right';
   const colors = elementColors[element] || elementColors.neutral;
@@ -35,22 +35,23 @@ export default function VfxOverlay({ vfxKey, element, direction, onComplete }) {
         />
       )}
 
-      {/* Impact frame — concept art or basic slash */}
+      {/* Impact frame — concept art or basic slash, positioned on target */}
       {phase === 'impact' && vfxKey === 'BASIC_ATTACK' && (
         <div
           className="vfx-basic-slash vfx-basic-slash-anim"
+          style={{ left: targetSide === 'left' ? '15%' : '85%' }}
           onAnimationEnd={handleImpactEnd}
         />
       )}
 
       {phase === 'impact' && vfxKey !== 'BASIC_ATTACK' && VFX_FRAMES[vfxKey] && (
-        <ImpactFrame config={VFX_FRAMES[vfxKey]} onAnimationEnd={handleImpactEnd} />
+        <ImpactFrame config={VFX_FRAMES[vfxKey]} onAnimationEnd={handleImpactEnd} targetSide={targetSide} />
       )}
     </>
   );
 }
 
-function ImpactFrame({ config, onAnimationEnd }) {
+function ImpactFrame({ config, onAnimationEnd, targetSide }) {
   const { src, sheet, crop, filter } = config;
 
   // Calculate background-size and background-position to show only the crop region.
@@ -72,6 +73,7 @@ function ImpactFrame({ config, onAnimationEnd }) {
         backgroundSize: `${bgW}px ${bgH}px`,
         backgroundPosition: `${bgX}px ${bgY}px`,
         filter: filter || 'none',
+        left: targetSide === 'left' ? '15%' : '85%',
       }}
       onAnimationEnd={onAnimationEnd}
     />

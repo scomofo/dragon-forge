@@ -17,8 +17,8 @@ export const STAGE_SCALES = {
 };
 
 export const DRAGON_DISPLAY = {
-  width: 280,
-  height: 220,
+  width: 320,
+  height: 250,
 };
 
 // === VFX IMPACT FRAMES ===
