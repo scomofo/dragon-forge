@@ -55,6 +55,7 @@ export const dragons = {
     baseStats: { hp: 110, atk: 28, def: 20, spd: 18 },
     moveKeys: ['magma_breath', 'flame_wall'],
     spriteSheet: '/assets/dragons/magma.png',
+    stageSprites: { 1: '/assets/dragons/magma.png', 2: '/assets/dragons/magma.png', 3: '/assets/dragons/magma.png', 4: '/assets/dragons/magma.png' },
   },
   ice: {
     id: 'ice',
@@ -63,6 +64,7 @@ export const dragons = {
     baseStats: { hp: 100, atk: 24, def: 26, spd: 20 },
     moveKeys: ['frost_bite', 'blizzard'],
     spriteSheet: '/assets/dragons/ice.png',
+    stageSprites: { 1: '/assets/dragons/ice.png', 2: '/assets/dragons/ice.png', 3: '/assets/dragons/ice.png', 4: '/assets/dragons/ice.png' },
   },
   storm: {
     id: 'storm',
@@ -71,6 +73,7 @@ export const dragons = {
     baseStats: { hp: 90, atk: 30, def: 16, spd: 28 },
     moveKeys: ['lightning_strike', 'thunder_clap'],
     spriteSheet: '/assets/dragons/lightning.png',
+    stageSprites: { 1: '/assets/dragons/lightning.png', 2: '/assets/dragons/lightning.png', 3: '/assets/dragons/lightning.png', 4: '/assets/dragons/lightning.png' },
   },
   stone: {
     id: 'stone',
@@ -79,6 +82,7 @@ export const dragons = {
     baseStats: { hp: 120, atk: 22, def: 30, spd: 12 },
     moveKeys: ['rock_slide', 'earthquake'],
     spriteSheet: '/assets/dragons/stone.png',
+    stageSprites: { 1: '/assets/dragons/stone.png', 2: '/assets/dragons/stone.png', 3: '/assets/dragons/stone.png', 4: '/assets/dragons/stone.png' },
   },
   venom: {
     id: 'venom',
@@ -87,6 +91,7 @@ export const dragons = {
     baseStats: { hp: 95, atk: 26, def: 18, spd: 24 },
     moveKeys: ['acid_spit', 'toxic_cloud'],
     spriteSheet: '/assets/dragons/venom.png',
+    stageSprites: { 1: '/assets/dragons/venom.png', 2: '/assets/dragons/venom.png', 3: '/assets/dragons/venom.png', 4: '/assets/dragons/venom.png' },
   },
   shadow: {
     id: 'shadow',
@@ -95,6 +100,7 @@ export const dragons = {
     baseStats: { hp: 85, atk: 32, def: 14, spd: 26 },
     moveKeys: ['shadow_strike', 'void_pulse'],
     spriteSheet: '/assets/dragons/shadow.png',
+    stageSprites: { 1: '/assets/dragons/shadow.png', 2: '/assets/dragons/shadow.png', 3: '/assets/dragons/shadow.png', 4: '/assets/dragons/shadow.png' },
   },
   void: {
     id: 'void',
@@ -103,6 +109,7 @@ export const dragons = {
     baseStats: { hp: 75, atk: 34, def: 12, spd: 30 },
     moveKeys: ['void_rift', 'null_reflect'],
     spriteSheet: '/assets/dragons/shadow.png',
+    stageSprites: { 1: '/assets/dragons/shadow.png', 2: '/assets/dragons/shadow.png', 3: '/assets/dragons/shadow.png', 4: '/assets/dragons/shadow.png' },
   },
 };
 
