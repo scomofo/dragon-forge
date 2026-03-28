@@ -123,6 +123,8 @@ export default function TitleScreen({ onStart, save }) {
   }, [runBootSequence]);
 
   const handleClick = () => {
+    // Retry music on first user interaction (autoplay policy requires click)
+    playMusic('title');
     if (phase === 'boot') {
       skippedRef.current = true;
     } else if (phase === 'felix') {
