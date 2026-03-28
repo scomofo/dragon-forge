@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  --bg-primary: #111118;
+  --bg-panel: #1a1a24;
+  --border-default: #333;
+  --text-primary: #e0e0e0;
+  --text-dim: #888;
+  --text-very-dim: #555;
+  --accent-fire: #ff6622;
+  --accent-fire-glow: #ff8844;
+  --accent-green: #44cc44;
+  --accent-red: #cc2222;
+  --accent-gold: #ffcc00;
+}
+
+/* === RESET === */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* === BASE === */
+body {
+  background: #111118;
+  color: #e0e0e0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+}
+
+.app {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+/* === CRT SCANLINE OVERLAY === */
+.app::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* === PIXELATED RENDERING === */
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* === PROFESSOR FELIX FRAME === */
+.felix-frame {
+  border: 4px solid #ffffff;
+  box-shadow: inset -4px -4px 0px #888888;
+  background: #111118;
+}
+
+/* === UI PANELS === */
+.panel {
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #333;
+}
+
+.panel-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  border-bottom: 2px solid #333;
+}
+
+.panel-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 14px 20px;
+  z-index: 10;
+  border-top: 2px solid #ff6622;
+}

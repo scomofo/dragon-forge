@@ -1,0 +1,299 @@
+/* === HP BAR === */
+.hp-bar-container {
+  min-width: 180px;
+}
+
+.hp-bar-label {
+  font-size: 9px;
+  margin-bottom: 4px;
+}
+
+.hp-bar-track {
+  height: 8px;
+  background: #333;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+}
+
+/* === MOVE BUTTONS === */
+.move-panel {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.move-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  padding: 10px 16px;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.move-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.move-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.move-btn .tooltip {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000;
+  border: 1px solid #555;
+  padding: 4px 8px;
+  font-size: 8px;
+  white-space: nowrap;
+  margin-bottom: 4px;
+  border-radius: 2px;
+}
+
+.move-btn:hover .tooltip {
+  display: block;
+}
+
+/* === ARENA === */
+.arena {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  image-rendering: pixelated;
+}
+
+.arena-sprites {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10%;
+  padding-top: 40px;
+  padding-bottom: 60px;
+}
+
+/* === FLOATING DAMAGE NUMBERS === */
+@keyframes damageFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-30px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.8);
+  }
+}
+
+.damage-number {
+  position: absolute;
+  font-size: 18px;
+  font-weight: bold;
+  pointer-events: none;
+  animation: damageFloat 0.8s ease-out forwards;
+  text-shadow: 2px 2px 0px #000, -1px -1px 0px #000;
+  z-index: 20;
+}
+
+.damage-number.normal { color: #ffffff; }
+.damage-number.super-effective { color: #ff4444; font-size: 22px; }
+.damage-number.resisted { color: #888888; font-size: 14px; }
+.damage-number.miss { color: #666666; font-style: italic; }
+
+/* === ATTACK ANIMATIONS === */
+@keyframes telegraph {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(2) saturate(1.5); }
+}
+
+@keyframes recoil {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.sprite-telegraph {
+  animation: telegraph 0.4s ease-in-out;
+}
+
+.sprite-recoil {
+  animation: recoil 0.2s ease-in-out;
+}
+
+.sprite-ko {
+  animation: fadeOut 0.6s ease-out forwards;
+}
+
+/* === RESULT SCREENS === */
+.result-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 50;
+}
+
+.result-overlay h2 {
+  font-size: 20px;
+}
+
+.result-overlay.victory h2 { color: #ffcc00; }
+.result-overlay.defeat h2 { color: #ff4444; }
+
+.xp-display {
+  font-size: 10px;
+  color: #44aaff;
+}
+
+.level-up-display {
+  font-size: 12px;
+  color: #ffcc00;
+  text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+}
+
+.result-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  padding: 12px 24px;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  cursor: pointer;
+}
+
+.result-btn:hover {
+  border-color: #ff6622;
+  color: #ff8844;
+}
+
+/* === VFX ATTACK EFFECTS === */
+
+/* Travel streak — element-colored glow blob that flies across the arena */
+.vfx-travel {
+  position: absolute;
+  width: 80px;
+  height: 40px;
+  border-radius: 50%;
+  filter: blur(8px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 20;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+}
+
+.vfx-travel-ltr {
+  animation: vfxTravelLTR 350ms ease-in-out forwards;
+}
+
+.vfx-travel-rtl {
+  animation: vfxTravelRTL 350ms ease-in-out forwards;
+}
+
+@keyframes vfxTravelLTR {
+  0%   { left: 10%; opacity: 0; transform: translateY(-50%) scale(1.0); }
+  10%  { opacity: 1; }
+  50%  { transform: translateY(calc(-50% - 15px)) scale(1.3); }
+  90%  { opacity: 1; }
+  100% { left: 80%; opacity: 0; transform: translateY(-50%) scale(1.0); }
+}
+
+@keyframes vfxTravelRTL {
+  0%   { left: 80%; opacity: 0; transform: translateY(-50%) scale(1.0); }
+  10%  { opacity: 1; }
+  50%  { transform: translateY(calc(-50% - 15px)) scale(1.3); }
+  90%  { opacity: 1; }
+  100% { left: 10%; opacity: 0; transform: translateY(-50%) scale(1.0); }
+}
+
+/* Impact frame — concept art overlay, screen-blended */
+.vfx-impact {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 21;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  opacity: 0;
+  background-repeat: no-repeat;
+  image-rendering: auto;
+}
+
+.vfx-impact-flash {
+  animation: vfxImpactFlash 400ms ease-out forwards;
+}
+
+@keyframes vfxImpactFlash {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  12%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  50%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.0); }
+}
+
+/* Basic Attack — CSS-only white slash arc */
+.vfx-basic-slash {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  pointer-events: none;
+  z-index: 21;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+.vfx-basic-slash::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.9);
+  border-right-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+.vfx-basic-slash-anim {
+  animation: vfxBasicSlash 250ms ease-out forwards;
+}
+
+@keyframes vfxBasicSlash {
+  0%   { opacity: 0; transform: translate(-50%, -50%) rotate(-30deg) scale(0.5); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(15deg) scale(1.2); }
+}

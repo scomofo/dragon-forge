@@ -1,0 +1,190 @@
+/* === FUSION SCREEN === */
+.fusion-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.fusion-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.fusion-title {
+  font-size: 14px;
+  color: #ff6622;
+  text-shadow: 0 0 10px rgba(255, 102, 34, 0.3);
+}
+
+.fusion-parents {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.fusion-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #1a1a2e;
+  border: 2px dashed #444;
+  border-radius: 8px;
+  min-width: 160px;
+  min-height: 180px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fusion-slot:hover {
+  border-color: #666;
+}
+
+.fusion-slot.filled {
+  border-style: solid;
+  border-color: #ff6622;
+}
+
+.fusion-slot-label {
+  font-size: 8px;
+  color: #888;
+}
+
+.fusion-arrow {
+  font-size: 20px;
+  color: #ff6622;
+}
+
+.fusion-preview {
+  text-align: center;
+  padding: 12px 20px;
+  background: #1a1a2e;
+  border: 1px solid #444;
+  border-radius: 6px;
+  min-width: 250px;
+}
+
+.fusion-preview h3 {
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.fusion-preview-element {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.fusion-preview-stability {
+  font-size: 9px;
+  margin-bottom: 4px;
+}
+
+.fusion-preview-stability.stable { color: #44ff44; }
+.fusion-preview-stability.normal { color: #e0e0e0; }
+.fusion-preview-stability.unstable { color: #ff4444; }
+
+.fusion-preview-stats {
+  font-size: 8px;
+  color: #888;
+}
+
+.fusion-warning {
+  font-size: 8px;
+  color: #ff4444;
+  margin-top: 4px;
+}
+
+.fusion-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  padding: 12px 24px;
+  background: #1a1a2e;
+  color: #ff6622;
+  border: 2px solid #ff6622;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fusion-btn:hover:not(:disabled) {
+  background: #ff6622;
+  color: #111118;
+}
+
+.fusion-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: #444;
+  color: #444;
+}
+
+.fusion-dragon-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-width: 500px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.fusion-picker-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 8px;
+  transition: all 0.15s;
+}
+
+.fusion-picker-card:hover {
+  border-color: #666;
+}
+
+.fusion-picker-card.selected {
+  border-color: #ff6622;
+  box-shadow: 0 0 8px rgba(255, 102, 34, 0.2);
+}
+
+.fusion-picker-card.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.fusion-animation-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.fusion-flash {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  animation: fusionFlash 0.3s ease-out;
+}
+
+@keyframes fusionFlash {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.fusion-result-card {
+  animation: revealFadeIn 0.4s ease-out;
+  text-align: center;
+}

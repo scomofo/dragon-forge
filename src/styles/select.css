@@ -1,0 +1,108 @@
+/* === BATTLE SELECT === */
+.battle-select {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.battle-select-header {
+  text-align: center;
+  padding: 16px;
+  font-size: 14px;
+  color: #ff6622;
+}
+
+.battle-select-panels {
+  display: flex;
+  flex: 1;
+  gap: 16px;
+  padding: 0 16px;
+  overflow: hidden;
+}
+
+.select-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.select-panel h2 {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.select-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.select-card:hover {
+  border-color: #666;
+}
+
+.select-card.selected {
+  border-color: #ff6622;
+  box-shadow: 0 0 10px rgba(255, 102, 34, 0.2);
+}
+
+.select-card-info {
+  flex: 1;
+}
+
+.select-card-name {
+  font-size: 10px;
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
+
+.select-card-stats {
+  font-size: 8px;
+  line-height: 1.8;
+  color: #888;
+}
+
+.matchup-indicator {
+  text-align: center;
+  padding: 12px;
+  font-size: 11px;
+}
+
+.matchup-indicator.super-effective { color: #ff4444; }
+.matchup-indicator.resisted { color: #888888; }
+.matchup-indicator.neutral { color: #e0e0e0; }
+
+.battle-select-footer {
+  padding: 16px;
+  text-align: center;
+}
+
+.begin-battle-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  padding: 14px 28px;
+  background: #1a1a2e;
+  color: #ff6622;
+  border: 2px solid #ff6622;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.begin-battle-btn:hover:not(:disabled) {
+  background: #ff6622;
+  color: #111118;
+}
+
+.begin-battle-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}

@@ -1,0 +1,94 @@
+/* === NAV BAR === */
+.nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.9);
+  border-bottom: 2px solid #333;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-tab {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  padding: 8px 16px;
+  background: #1a1a2e;
+  color: #888;
+  border: 1px solid #333;
+  border-radius: 4px 4px 0 0;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.nav-tab:hover {
+  color: #ccc;
+  border-color: #555;
+}
+
+.nav-tab.active {
+  color: #ff6622;
+  border-color: #ff6622;
+  border-bottom-color: transparent;
+  background: #111118;
+}
+
+.nav-scraps {
+  font-size: 10px;
+  color: #ffcc00;
+}
+
+.sound-toggle {
+  font-size: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: 8px;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.sound-toggle:hover {
+  opacity: 1;
+}
+
+/* === SINGULARITY TICKER === */
+
+.nav-ticker {
+  font-size: 7px;
+  line-height: 1.6;
+  letter-spacing: 1px;
+  padding: 0 8px;
+  white-space: nowrap;
+  font-family: 'Press Start 2P', monospace;
+}
+
+.nav-ticker.stage-0,
+.nav-ticker.stage-1 {
+  color: #44cc44;
+}
+
+.nav-ticker.stage-2,
+.nav-ticker.stage-3 {
+  color: #cccc44;
+}
+
+.nav-ticker.stage-4,
+.nav-ticker.stage-5 {
+  color: #cc4444;
+}
+
+.nav-ticker.stage-4,
+.nav-ticker.stage-5 {
+  animation: tickerBlink 1.5s ease-in-out infinite;
+}
+
+@keyframes tickerBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
