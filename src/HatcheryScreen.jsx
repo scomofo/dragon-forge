@@ -171,6 +171,7 @@ export default function HatcheryScreen({ onNavigate }) {
                 stage={1}
                 size={{ width: 180, height: 140 }}
                 shiny={currentResult.pull.shiny}
+                element={currentResult.pull.element}
               />
               <div style={{ color: elementColors[currentResult.pull.element]?.glow, fontSize: 11, marginTop: 8 }}>
                 {dragons[currentResult.pull.element].name}

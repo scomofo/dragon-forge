@@ -86,6 +86,7 @@ export default function JournalScreen({ onNavigate }) {
                     size={{ width: 80, height: 60 }}
                     shiny={p?.shiny}
                     className={isOwned ? '' : 'undiscovered-silhouette'}
+                    element={el}
                   />
                   <div
                     className="journal-card-name"
@@ -113,6 +114,7 @@ export default function JournalScreen({ onNavigate }) {
             stage={stage}
             shiny={progress?.shiny && owned}
             className={owned ? '' : 'undiscovered-silhouette'}
+            element={dragon.element}
           />
 
           <div
