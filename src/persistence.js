@@ -13,6 +13,7 @@ const DEFAULT_SAVE = {
   dataScraps: 0,
   pityCounter: 0,
   milestones: [],
+  defeatedNpcs: [],
 };
 
 function migrateSave(save) {
@@ -34,6 +35,7 @@ function migrateSave(save) {
   if (!save.dragons.void) {
     save.dragons.void = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
   }
+  if (save.defeatedNpcs === undefined) save.defeatedNpcs = [];
   return save;
 }
 
@@ -109,6 +111,14 @@ export function claimMilestone(milestoneId, reward) {
   save.dataScraps += reward;
   writeSave(save);
   return true;
+}
+
+export function recordNpcDefeat(npcId) {
+  const save = loadSave();
+  if (!save.defeatedNpcs.includes(npcId)) {
+    save.defeatedNpcs.push(npcId);
+    writeSave(save);
+  }
 }
 
 export function fuseDragons(parentAId, parentBId, offspringElement, offspringLevel, offspringXp, offspringShiny, fusedBaseStats) {
