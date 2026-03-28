@@ -1,15 +1,16 @@
 // === ELEMENTS ===
-export const ELEMENTS = ['fire', 'ice', 'storm', 'stone', 'venom', 'shadow'];
+export const ELEMENTS = ['fire', 'ice', 'storm', 'stone', 'venom', 'shadow', 'void'];
 
 // === TYPE EFFECTIVENESS ===
 // typeChart[attacker][defender] = multiplier
 export const typeChart = {
-  fire:   { fire: 0.5, ice: 2.0, storm: 1.0, stone: 0.5, venom: 2.0, shadow: 1.0 },
-  ice:    { fire: 0.5, ice: 0.5, storm: 2.0, stone: 1.0, venom: 1.0, shadow: 2.0 },
-  storm:  { fire: 1.0, ice: 0.5, storm: 0.5, stone: 2.0, venom: 1.0, shadow: 2.0 },
-  stone:  { fire: 2.0, ice: 1.0, storm: 0.5, stone: 0.5, venom: 2.0, shadow: 1.0 },
-  venom:  { fire: 0.5, ice: 1.0, storm: 1.0, stone: 0.5, venom: 0.5, shadow: 2.0 },
-  shadow: { fire: 1.0, ice: 0.5, storm: 0.5, stone: 1.0, venom: 0.5, shadow: 0.5 },
+  fire:   { fire: 0.5, ice: 2.0, storm: 1.0, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0 },
+  ice:    { fire: 0.5, ice: 0.5, storm: 2.0, stone: 1.0, venom: 1.0, shadow: 2.0, void: 1.0 },
+  storm:  { fire: 1.0, ice: 0.5, storm: 0.5, stone: 2.0, venom: 1.0, shadow: 2.0, void: 1.0 },
+  stone:  { fire: 2.0, ice: 1.0, storm: 0.5, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0 },
+  venom:  { fire: 0.5, ice: 1.0, storm: 1.0, stone: 0.5, venom: 0.5, shadow: 2.0, void: 1.0 },
+  shadow: { fire: 1.0, ice: 0.5, storm: 0.5, stone: 1.0, venom: 0.5, shadow: 0.5, void: 1.0 },
+  void:   { fire: 1.0, ice: 1.0, storm: 1.0, stone: 1.0, venom: 1.0, shadow: 1.0, void: 1.0 },
 };
 
 // === STAGE MULTIPLIERS ===
@@ -38,6 +39,9 @@ export const moves = {
   // Shadow
   shadow_strike:    { name: 'Shadow Strike',     element: 'shadow', power: 65, accuracy: 95, vfxKey: 'SHADOW_STRIKE', canApplyStatus: true },
   void_pulse:       { name: 'Void Pulse',        element: 'shadow', power: 75, accuracy: 85, vfxKey: 'VOID_PULSE', canApplyStatus: true },
+  // Void
+  void_rift:      { name: 'Void Rift',      element: 'void',  power: 80, accuracy: 80, vfxKey: 'VOID_RIFT', canApplyStatus: true },
+  null_reflect:   { name: 'Null Reflect',    element: 'void',  power: 0,  accuracy: 100, vfxKey: 'NULL_REFLECT', canApplyStatus: false, isReflect: true },
   // Neutral
   basic_attack:     { name: 'Basic Attack',      element: 'neutral', power: 40, accuracy: 100, vfxKey: 'BASIC_ATTACK', canApplyStatus: false },
 };
@@ -90,6 +94,14 @@ export const dragons = {
     element: 'shadow',
     baseStats: { hp: 85, atk: 32, def: 14, spd: 26 },
     moveKeys: ['shadow_strike', 'void_pulse'],
+    spriteSheet: '/assets/dragons/shadow.png',
+  },
+  void: {
+    id: 'void',
+    name: 'Void Dragon',
+    element: 'void',
+    baseStats: { hp: 75, atk: 34, def: 12, spd: 30 },
+    moveKeys: ['void_rift', 'null_reflect'],
     spriteSheet: '/assets/dragons/shadow.png',
   },
 };
@@ -166,6 +178,7 @@ export const elementColors = {
   venom:   { primary: '#44cc44', glow: '#66ee66' },
   shadow:  { primary: '#8844aa', glow: '#aa66cc' },
   neutral: { primary: '#888888', glow: '#aaaaaa' },
+  void:    { primary: '#00cccc', glow: '#44eeee' },
 };
 
 // === DRAGON LORE ===
@@ -176,6 +189,7 @@ export const dragonLore = {
   stone:  "Its hide is denser than compressed titanium. I once watched it walk through a collapsing mine without flinching.",
   venom:  "Secretes a neurotoxin that can dissolve organic matter in seconds. Keep it away from the lab samples.",
   shadow: "This one... shouldn't exist. It reads as a gap in the data — a hole where reality should be. Fascinating.",
+  void:   "It came from beyond the Elemental Matrix — a tear in the simulation itself. I don't think it belongs to any element. I don't think it belongs to this reality at all.",
 };
 
 // === EGG SPRITES ===
@@ -187,6 +201,7 @@ export const eggSheets = {
   stone:   '/assets/eggs/egg_stone_sheet.png',
   venom:   '/assets/eggs/egg_venom_sheet.png',
   shadow:  '/assets/eggs/egg_shadow_sheet.png',
+  void:    '/assets/eggs/egg_shadow_sheet.png',
 };
 
 // === RARITY CONFIG ===
@@ -194,7 +209,7 @@ export const rarityTiers = [
   { name: 'Common',   chance: 0.50, elements: ['fire', 'ice'], multiplier: 1 },
   { name: 'Uncommon', chance: 0.30, elements: ['storm', 'venom', 'stone'], multiplier: 2 },
   { name: 'Rare',     chance: 0.15, elements: ['shadow'], multiplier: 3 },
-  { name: 'Exotic',   chance: 0.05, elements: ['shadow'], multiplier: 5, guaranteedShiny: true },
+  { name: 'Exotic',   chance: 0.05, elements: ['void'], multiplier: 5, guaranteedShiny: true },
 ];
 
 export const PULL_COST = 50;
@@ -209,6 +224,7 @@ export const STATUS_EFFECTS = {
   stone:  { name: 'Guard Break', icon: '🛡️', duration: 2, type: 'debuff',  value: 0.4 },
   venom:  { name: 'Poison',      icon: '☠️', duration: 2, type: 'dot',     value: 0.06 },
   shadow: { name: 'Blind',       icon: '👁️', duration: 2, type: 'debuff',  value: 0.3 },
+  void:   { name: 'Glitch',      icon: '🌀', duration: 1, type: 'randomize', value: 1.0 },
 };
 
 export const STATUS_APPLY_CHANCE = 0.30;
