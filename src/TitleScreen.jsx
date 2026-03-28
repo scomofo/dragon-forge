@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { playSound, playMusic } from './soundEngine';
 import SoundToggle from './SoundToggle';
+import { getSingularityStage } from './singularityProgress';
+import { getTerminalDialogue } from './felixDialogue';
 
 const BOOT_LINES = [
   { text: '> DRAGON FORGE SYSTEMS v2.7.1', status: null, delay: 600 },
@@ -11,22 +13,11 @@ const BOOT_LINES = [
   { text: '> STABILITY INDEX: 23% — CRITICAL', status: 'FAIL', delay: 800 },
 ];
 
-const FELIX_LINES = [
-  '"The Elemental Matrix is collapsing.',
-  ' Something is draining it from the inside.',
-  ' I\'ve traced the source... The Singularity.',
-  ' It\'s consuming dragon energy faster than',
-  ' we can stabilize it."',
-  '',
-  '"I need a Dragon Forger. Someone who can',
-  ' hatch, train, and fight. That\'s you."',
-];
-
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export default function TitleScreen({ onStart }) {
+export default function TitleScreen({ onStart, save }) {
   const [lines, setLines] = useState([]);
   const [typingText, setTypingText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
@@ -57,6 +48,7 @@ export default function TitleScreen({ onStart }) {
 
   const runBootSequence = useCallback(async () => {
     playMusic('title');
+    const currentDialogue = getTerminalDialogue(getSingularityStage(save));
 
     for (const line of BOOT_LINES) {
       if (skippedRef.current) break;
@@ -102,7 +94,7 @@ export default function TitleScreen({ onStart }) {
     scrollToBottom();
 
     skippedRef.current = false;
-    for (const line of FELIX_LINES) {
+    for (const line of currentDialogue) {
       if (skippedRef.current) break;
       if (line === '') {
         setFelixLines((prev) => [...prev, '']);
@@ -116,7 +108,7 @@ export default function TitleScreen({ onStart }) {
     }
 
     if (skippedRef.current) {
-      setFelixLines([...FELIX_LINES]);
+      setFelixLines([...currentDialogue]);
       setTypingText('');
     }
 
@@ -124,7 +116,7 @@ export default function TitleScreen({ onStart }) {
     setShowButton(true);
     setShowCursor(false);
     scrollToBottom();
-  }, [typeText]);
+  }, [typeText, save]);
 
   useEffect(() => {
     runBootSequence();
