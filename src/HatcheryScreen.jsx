@@ -31,16 +31,13 @@ const HATCH_SEQUENCE = [
   { frame: 7, duration: 300 },   // Shell
 ];
 
-export default function HatcheryScreen({ onNavigate }) {
+export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const [phase, setPhase] = useState(PHASES.IDLE);
   const [eggFrame, setEggFrame] = useState(0);
   const [eggSheet, setEggSheet] = useState(eggSheets.generic);
   const [currentResult, setCurrentResult] = useState(null);
   const [gridResults, setGridResults] = useState([]);
-  const [save, setSave] = useState(() => loadSave());
   const skippedRef = useRef(false);
-
-  const refreshSave = () => setSave(loadSave());
 
   const isFirstGame = Object.values(save.dragons).every(d => !d.owned);
   const canPull1 = isFirstGame || save.dataScraps >= PULL_COST;
@@ -154,7 +151,7 @@ export default function HatcheryScreen({ onNavigate }) {
 
   return (
     <div className="hatchery-screen">
-      <NavBar activeScreen="hatchery" onNavigate={onNavigate} />
+      <NavBar activeScreen="hatchery" onNavigate={onNavigate} save={save} />
 
       <div className="hatchery-content" onClick={handleContentClick}>
         <div className="hatchery-title">QUANTUM INCUBATION LAB</div>
