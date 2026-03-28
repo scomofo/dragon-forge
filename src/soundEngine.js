@@ -226,6 +226,11 @@ const SFX = {
   statusApply: () => { playNoise(60, 2000, 0.4); playTone(350, 80, 'sawtooth', 0.3); },
   statusTick: () => playNoise(40, 1500, 0.25),
   statusExpire: () => playArpeggio([400, 500, 600], 'sine', 60),
+
+  // Fusion
+  fusionMerge: () => { playTone(300, 300, 'sine', 0.4); playTone(500, 300, 'sine', 0.4); },
+  fusionBurst: () => { playNoise(200, 4000, 0.6); playTone(600, 200, 'sine', 0.5); },
+  fusionReveal: () => playArpeggio([523, 659, 784, 1047], 'square', 100),
 };
 
 export function playSound(name, options) {
