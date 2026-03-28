@@ -11,6 +11,7 @@ const DEFAULT_SAVE = {
   },
   dataScraps: 0,
   pityCounter: 0,
+  milestones: [],
 };
 
 function migrateSave(save) {
@@ -28,6 +29,7 @@ function migrateSave(save) {
   }
   if (save.dataScraps === undefined) save.dataScraps = 0;
   if (save.pityCounter === undefined) save.pityCounter = 0;
+  if (save.milestones === undefined) save.milestones = [];
   return save;
 }
 
@@ -94,6 +96,15 @@ export function upgradeDragonShiny(dragonId) {
   const save = loadSave();
   save.dragons[dragonId].shiny = true;
   writeSave(save);
+}
+
+export function claimMilestone(milestoneId, reward) {
+  const save = loadSave();
+  if (save.milestones.includes(milestoneId)) return false;
+  save.milestones.push(milestoneId);
+  save.dataScraps += reward;
+  writeSave(save);
+  return true;
 }
 
 export function fuseDragons(parentAId, parentBId, offspringElement, offspringLevel, offspringXp, offspringShiny, fusedBaseStats) {
