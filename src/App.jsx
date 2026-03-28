@@ -6,6 +6,7 @@ import HatcheryScreen from './HatcheryScreen';
 import FusionScreen from './FusionScreen';
 import JournalScreen from './JournalScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
+import { loadSave } from './persistence';
 
 const SCREENS = {
   TITLE: 'title',
@@ -19,6 +20,8 @@ const SCREENS = {
 export default function App() {
   const [screen, setScreen] = useState(SCREENS.TITLE);
   const [battleConfig, setBattleConfig] = useState(null);
+  const [save, setSave] = useState(() => loadSave());
+  const refreshSave = () => setSave(loadSave());
 
   function handleStartGame() {
     playSound('screenTransition');
@@ -27,6 +30,7 @@ export default function App() {
   }
 
   function handleNavigate(target) {
+    refreshSave();
     playSound('navSwitch');
     if (target === 'hatchery') {
       playMusic('hatchery');
@@ -51,6 +55,7 @@ export default function App() {
   }
 
   function handleBattleEnd() {
+    refreshSave();
     playMusic('select');
     setBattleConfig(null);
     setScreen(SCREENS.BATTLE_SELECT);
@@ -59,25 +64,27 @@ export default function App() {
   return (
     <div className="app">
       {screen === SCREENS.TITLE && (
-        <TitleScreen onStart={handleStartGame} />
+        <TitleScreen onStart={handleStartGame} save={save} />
       )}
       {screen === SCREENS.HATCHERY && (
-        <HatcheryScreen onNavigate={handleNavigate} />
+        <HatcheryScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
       )}
       {screen === SCREENS.FUSION && (
-        <FusionScreen onNavigate={handleNavigate} />
+        <FusionScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
       )}
       {screen === SCREENS.JOURNAL && (
-        <JournalScreen onNavigate={handleNavigate} />
+        <JournalScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
       )}
       {screen === SCREENS.BATTLE_SELECT && (
-        <BattleSelectScreen onBeginBattle={handleBeginBattle} onNavigate={handleNavigate} />
+        <BattleSelectScreen onBeginBattle={handleBeginBattle} onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
       )}
       {screen === SCREENS.BATTLE && battleConfig && (
         <BattleScreen
           dragonId={battleConfig.dragonId}
           npcId={battleConfig.npcId}
           onBattleEnd={handleBattleEnd}
+          save={save}
+          refreshSave={refreshSave}
         />
       )}
     </div>
