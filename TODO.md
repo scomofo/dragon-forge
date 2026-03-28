@@ -1,51 +1,31 @@
 # Dragon Forge — To Do
 
 ## Completed
-- [x] Intro page: all text repeats — fixed (StrictMode guard)
-- [x] Egg animations are janky — fixed (simplified render cycle)
-- [x] Fusion screen: dragon tiles off-center — fixed (centered grid)
-- [x] VFX impact frames overlay target — fixed (positioned on target side)
-- [x] Felix portrait metadata/bg — fixed (object-position + bg color)
-- [x] Dragon sizing — fixed (display size increased to 320x250)
-- [x] Code review fixes — XP off-by-one, hatchery skip, 7/6 counter, scraps guard, dead code, CSS cleanup
+- [x] Intro page text repeats — fixed
+- [x] Egg animations janky — fixed
+- [x] Fusion tiles off-center — fixed
+- [x] VFX impact overlay target — fixed
+- [x] Felix portrait metadata/bg — fixed
+- [x] Dragon sizing — fixed
+- [x] Code review fixes — XP, hatchery skip, counter, scraps guard, dead code, CSS
+- [x] New NPCs — 5 integrated with filtered sprites
+- [x] Element arenas — copied from handoff
+- [x] Special arenas — copied, gravity chamber for final boss
+- [x] Egg sheets — 4 updated from handoff
+- [x] Per-stage sprite paths — stageSprites data added, getDragonSprite helper
+- [x] Theme song — integrated as title music
+- [x] SFX generation guide — written to handoff/
+- [x] Gene Scrambler — copied to assets/vfx
+- [x] CSS split — 10 per-screen modules
+- [x] Responsive design — tablet + mobile breakpoints
+- [x] Keyboard navigation — focus-visible + onKeyDown
+- [x] Shop screen — buy items, forge with cores, core drops from battles
 
-## From Handoff Guides
+## Needs Art Generation
+- [ ] 24 dragon evolution sprite sheets (6 elements × 4 stages: Baby, Juvenile, Adult, Elder)
+- [ ] 10 NPC sprite sheets (5 new NPCs × idle + attack poses)
 
-### Dragon Evolution Sprites (DRAGON_EVOLUTION_SPRITE_GUIDE.md)
-- [ ] Generate 24 sprite sheets (6 elements × 4 stages) — Baby, Juvenile, Adult, Elder
-- [ ] Integrate per-stage sprites into DragonSprite (code supports stage scaling, needs per-stage sprite paths)
-- [ ] Update gameData.js dragons to have per-stage spriteSheet paths instead of single sheet
-
-### New NPCs (in handoff/arenas/)
-- [ ] Integrate 5 new NPC enemies: Buffer Overflow, Crypto Crab, Logic Bomb, Phishing Siren, Protocol Vulture
-- [ ] Add to gameData.js with stats, moves, difficulty tiers, arenas
-- [ ] Add to BattleSelectScreen NPC picker
-
-### Element-Specific Arenas (in handoff/arenas/)
-- [ ] Integrate 6 element arenas: fire, ice, storm, stone, venom, shadow
-- [ ] Replace NPC-keyed arenas with element-keyed arenas (NPC fights in their element's arena)
-- [ ] Copy from handoff/arenas/ to assets/arenas/
-
-### Special Arenas (in handoff/arenas/)
-- [ ] Integrate special arenas: asteroid_field, crystal, grave_of_first_dragon, gravity_chamber
-- [ ] Design which content uses these (boss fights? special events?)
-
-### Egg Sprites (EGG_SPRITE_GUIDE.md)
-- [ ] Egg spritesheet JSON metadata exists in handoff/eggs/ — may need integration
-- [ ] Individual egg PNGs available per element — could enhance hatchery reveal
-
-## Art Assets Not Yet Used
-- [ ] Gene Scrambler effect (06_11_29 PM) — fusion screen VFX
-- [ ] Forge/workshop props (06_43_18 PM) — shop screen items
-- [ ] Sci-fi lab equipment (07_08_33 PM) — shop/fusion decoration
-- [ ] Dragon Bounties RPG sheet (05_48_15 PM) — character sprites, NPC portraits
-
-## Music & SFX
-- [ ] Theme song: `C:\Users\Scott Morley\Downloads\2026_03_28_03_18_56_949_Before_We_Ignite.mp3` — integrate as title/menu music
-- [ ] Create SFX generation instructions (for producing game sound effects)
-
-## Future Features
-- [ ] Shop screen — spend DataScraps on items/boosts (use forge prop art)
-- [ ] Responsive design — media queries for mobile/tablet
-- [ ] Keyboard navigation / accessibility
-- [ ] Split styles.css into per-screen modules
+## Remaining
+- [ ] Integrate forge/workshop prop art into shop screen background/decoration
+- [ ] Integrate sci-fi lab equipment art into fusion screen decoration
+- [ ] Dragon Bounties RPG sheet — evaluate for NPC portraits or character art
