@@ -96,6 +96,7 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     npcStatus: null,
     vfxActive: null,
     currentPhase: 0,
+    battleLog: [],
   };
 }
 
@@ -135,6 +136,8 @@ function battleReducer(state, action) {
       return { ...state, vfxActive: action.value };
     case 'CLEAR_VFX':
       return { ...state, vfxActive: null };
+    case 'ADD_LOG':
+      return { ...state, battleLog: [...state.battleLog, action.text] };
     case 'PHASE_SHIFT':
       return {
         ...state,
@@ -161,8 +164,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
   const animateEvent = useCallback(async (event, dispatch) => {
     const isPlayer = event.attacker === 'player';
+    const who = isPlayer ? 'You' : event.moveName ? 'Enemy' : 'Status';
 
     if (event.action === 'defend') {
+      dispatch({ type: 'ADD_LOG', text: `${who} defended.` });
       playSound('defend');
       if (isPlayer) {
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
@@ -173,6 +178,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     }
 
     if (event.action === 'reflect') {
+      dispatch({ type: 'ADD_LOG', text: `${who} used Null Reflect!` });
       playSound('defend');
       if (isPlayer) {
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
@@ -266,7 +272,16 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         target: dmgTarget,
       },
     });
+    // Battle log entry for attack
+    if (event.hit) {
+      const effText = event.effectiveness > 1 ? ' Super effective!' : event.effectiveness < 1 ? ' Resisted.' : '';
+      const reflectText = event.reflected ? ' REFLECTED!' : '';
+      dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — ${event.damage} dmg.${effText}${reflectText}` });
+    } else {
+      dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — missed!` });
+    }
     if (event.appliedStatus) {
+      dispatch({ type: 'ADD_LOG', text: `${event.appliedStatus} applied!` });
       playSound('statusApply');
     }
     await wait(300);
@@ -588,6 +603,15 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           />
         )}
       </div>
+
+      {/* Battle log */}
+      {state.battleLog.length > 0 && (
+        <div className="battle-log">
+          {state.battleLog.slice(-4).map((text, i) => (
+            <div key={i} className="battle-log-entry">{text}</div>
+          ))}
+        </div>
+      )}
 
       {/* Bottom panel — moves */}
       <div className="panel panel-bottom">

@@ -310,3 +310,30 @@
   .hp-bar-container { min-width: unset; }
   .arena-sprites { padding: 0 8px; }
 }
+
+/* === BATTLE LOG === */
+.battle-log {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 400px;
+  width: 90%;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #333;
+  border-radius: 3px;
+  padding: 4px 8px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.battle-log-entry {
+  font-size: 7px;
+  line-height: 1.8;
+  color: #aaa;
+}
+
+.battle-log-entry:last-child {
+  color: #e0e0e0;
+}
+
