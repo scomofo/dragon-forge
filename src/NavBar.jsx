@@ -27,6 +27,12 @@ export default function NavBar({ activeScreen, onNavigate }) {
           </button>
         )}
         <button
+          className={`nav-tab ${activeScreen === 'journal' ? 'active' : ''}`}
+          onClick={() => onNavigate('journal')}
+        >
+          JOURNAL
+        </button>
+        <button
           className={`nav-tab ${activeScreen === 'battleSelect' ? 'active' : ''}`}
           onClick={() => onNavigate('battleSelect')}
         >

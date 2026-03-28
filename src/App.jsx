@@ -4,6 +4,7 @@ import BattleSelectScreen from './BattleSelectScreen';
 import BattleScreen from './BattleScreen';
 import HatcheryScreen from './HatcheryScreen';
 import FusionScreen from './FusionScreen';
+import JournalScreen from './JournalScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
 
 const SCREENS = {
@@ -12,6 +13,7 @@ const SCREENS = {
   BATTLE_SELECT: 'battleSelect',
   BATTLE: 'battle',
   FUSION: 'fusion',
+  JOURNAL: 'journal',
 };
 
 export default function App() {
@@ -35,6 +37,9 @@ export default function App() {
     } else if (target === 'fusion') {
       playMusic('hatchery');
       setScreen(SCREENS.FUSION);
+    } else if (target === 'journal') {
+      playMusic('hatchery');
+      setScreen(SCREENS.JOURNAL);
     }
   }
 
@@ -61,6 +66,9 @@ export default function App() {
       )}
       {screen === SCREENS.FUSION && (
         <FusionScreen onNavigate={handleNavigate} />
+      )}
+      {screen === SCREENS.JOURNAL && (
+        <JournalScreen onNavigate={handleNavigate} />
       )}
       {screen === SCREENS.BATTLE_SELECT && (
         <BattleSelectScreen onBeginBattle={handleBeginBattle} onNavigate={handleNavigate} />
