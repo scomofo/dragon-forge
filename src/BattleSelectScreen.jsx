@@ -79,7 +79,7 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                 </div>
                 <div className="select-card-info">
                   <div className="select-card-name" style={{ color: color.primary }}>
-                    {progress.nickname || dragon.name}{progress.shiny && <span className="shiny-star">★</span>}
+                    {color.icon} {progress.nickname || dragon.name}{progress.shiny && <span className="shiny-star">★</span>}
                   </div>
                   <div className="select-card-stats">
                     Lv.{progress.level} | HP:{stats.hp} ATK:{stats.atk} DEF:{stats.def} SPD:{stats.spd}
@@ -141,7 +141,7 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                   <NpcSprite idleSprite={npc.idleSprite} attackSprite={npc.attackSprite} size={55} />
                 </div>
                 <div className="select-card-info">
-                  <div className="select-card-name" style={{ color: color.primary }}>{npc.name}</div>
+                  <div className="select-card-name" style={{ color: color.primary }}>{color.icon} {npc.name}</div>
                   <div className="select-card-stats">
                     Lv.{npc.level} | {npc.difficulty} | {npc.element.toUpperCase()}
                   </div>

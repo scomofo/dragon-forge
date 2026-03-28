@@ -261,14 +261,14 @@ export const npcs = {
 
 // === ELEMENT COLORS (for UI) ===
 export const elementColors = {
-  fire:    { primary: '#ff6622', glow: '#ff8844' },
-  ice:     { primary: '#44aaff', glow: '#66ccff' },
-  storm:   { primary: '#aa66ff', glow: '#cc88ff' },
-  stone:   { primary: '#aa8844', glow: '#ccaa66' },
-  venom:   { primary: '#44cc44', glow: '#66ee66' },
-  shadow:  { primary: '#8844aa', glow: '#aa66cc' },
-  neutral: { primary: '#888888', glow: '#aaaaaa' },
-  void:    { primary: '#00cccc', glow: '#44eeee' },
+  fire:    { primary: '#ff6622', glow: '#ff8844', icon: '🔥' },
+  ice:     { primary: '#44aaff', glow: '#66ccff', icon: '❄️' },
+  storm:   { primary: '#aa66ff', glow: '#cc88ff', icon: '⚡' },
+  stone:   { primary: '#aa8844', glow: '#ccaa66', icon: '🪨' },
+  venom:   { primary: '#44cc44', glow: '#66ee66', icon: '☠️' },
+  shadow:  { primary: '#8844aa', glow: '#aa66cc', icon: '👁️' },
+  neutral: { primary: '#888888', glow: '#aaaaaa', icon: '⚔️' },
+  void:    { primary: '#00cccc', glow: '#44eeee', icon: '🌀' },
 };
 
 // === DRAGON LORE ===

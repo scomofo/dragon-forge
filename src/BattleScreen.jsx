@@ -514,7 +514,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       <div className="panel panel-top">
         <div className="hp-bar-container">
           <div className="hp-bar-label" style={{ color: npcColor.glow }}>
-            {npc.name} <span style={{ color: '#888' }}>Lv.{npc.level}</span>
+            {npcColor.icon} {npc.name} <span style={{ color: '#888' }}>Lv.{npc.level}</span>
             {state.currentPhase > 0 && battleConfig?.phases && (
               <span className="phase-indicator">
                 PHASE {(state.currentPhase || 0) + 1}/{battleConfig.phases.length}
@@ -544,7 +544,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
         <div className="hp-bar-container" style={{ textAlign: 'right' }}>
           <div className="hp-bar-label" style={{ color: playerColor.glow }}>
-            <span style={{ color: '#888' }}>Lv.{state.playerLevel}</span> {save.dragons[dragonId]?.nickname || dragon.name}
+            <span style={{ color: '#888' }}>Lv.{state.playerLevel}</span> {playerColor.icon} {save.dragons[dragonId]?.nickname || dragon.name}
           </div>
           <div className="hp-bar-track">
             <div

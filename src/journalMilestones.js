@@ -69,6 +69,77 @@ export const MILESTONES = [
       return { met: hasFused, progress: hasFused ? '1/1' : '0/1' };
     },
   },
+  {
+    id: 'battle_veteran',
+    name: 'Battle Veteran',
+    description: 'Win 10 battles',
+    reward: 150,
+    check: (save) => {
+      const wins = save.stats?.battlesWon || 0;
+      return { met: wins >= 10, progress: `${Math.min(wins, 10)}/10` };
+    },
+  },
+  {
+    id: 'battle_champion',
+    name: 'Battle Champion',
+    description: 'Win 50 battles',
+    reward: 500,
+    check: (save) => {
+      const wins = save.stats?.battlesWon || 0;
+      return { met: wins >= 50, progress: `${Math.min(wins, 50)}/50` };
+    },
+  },
+  {
+    id: 'core_collector',
+    name: 'Core Collector',
+    description: 'Collect 50 element cores',
+    reward: 200,
+    check: (save) => {
+      const cores = save.inventory?.cores || {};
+      const total = Object.values(cores).reduce((sum, n) => sum + n, 0);
+      return { met: total >= 50, progress: `${Math.min(total, 50)}/50` };
+    },
+  },
+  {
+    id: 'scraps_hoarder',
+    name: 'DataScraps Hoarder',
+    description: 'Earn 5000 total DataScraps',
+    reward: 300,
+    check: (save) => {
+      const earned = save.stats?.totalScrapsEarned || 0;
+      return { met: earned >= 5000, progress: `${Math.min(earned, 5000)}/5000` };
+    },
+  },
+  {
+    id: 'pull_addict',
+    name: 'Pull Addict',
+    description: 'Complete 50 hatchery pulls',
+    reward: 200,
+    check: (save) => {
+      const pulls = save.stats?.totalPulls || 0;
+      return { met: pulls >= 50, progress: `${Math.min(pulls, 50)}/50` };
+    },
+  },
+  {
+    id: 'void_hunter',
+    name: 'Void Hunter',
+    description: 'Obtain the Void Dragon',
+    reward: 500,
+    check: (save) => {
+      const hasVoid = save.dragons.void?.owned;
+      return { met: hasVoid, progress: hasVoid ? '1/1' : '0/1' };
+    },
+  },
+  {
+    id: 'win_streak_5',
+    name: 'Hot Streak',
+    description: 'Win 5 battles in a row',
+    reward: 250,
+    check: (save) => {
+      const streak = save.records?.longestStreak || 0;
+      return { met: streak >= 5, progress: `${Math.min(streak, 5)}/5` };
+    },
+  },
 ];
 
 export function checkMilestones(save) {
