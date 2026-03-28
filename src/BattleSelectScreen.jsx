@@ -144,6 +144,12 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                   <div className="select-card-name" style={{ color: color.primary }}>{color.icon} {npc.name}</div>
                   <div className="select-card-stats">
                     Lv.{npc.level} | {npc.difficulty} | {npc.element.toUpperCase()}
+                    {selectedDragon && (() => {
+                      const eff = getTypeEffectiveness(selectedDragon.element, npc.element);
+                      if (eff > 1) return <span style={{ color: '#44cc44', marginLeft: 6 }}>▲ WEAK</span>;
+                      if (eff < 1) return <span style={{ color: '#cc4444', marginLeft: 6 }}>▼ RESIST</span>;
+                      return null;
+                    })()}
                   </div>
                 </div>
               </div>

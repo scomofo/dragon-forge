@@ -120,42 +120,60 @@ export default function App() {
         <TitleScreen onStart={handleStartGame} save={save} />
       )}
       {screen === SCREENS.HATCHERY && (
-        <HatcheryScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+        <div className="screen-enter" key="hatchery">
+          <HatcheryScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+        </div>
       )}
       {screen === SCREENS.FUSION && (
-        <FusionScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+        <div className="screen-enter" key="fusion">
+          <FusionScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+        </div>
       )}
       {screen === SCREENS.JOURNAL && (
-        <JournalScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} showToast={showToast} />
+        <div className="screen-enter" key="journal">
+          <JournalScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} showToast={showToast} />
+        </div>
       )}
       {screen === SCREENS.SHOP && (
-        <ShopScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+        <div className="screen-enter" key="shop">
+          <ShopScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+        </div>
       )}
       {screen === SCREENS.STATS && (
-        <StatsScreen onNavigate={handleNavigate} save={save} />
+        <div className="screen-enter" key="stats">
+          <StatsScreen onNavigate={handleNavigate} save={save} />
+        </div>
       )}
       {screen === SCREENS.SETTINGS && (
-        <SettingsScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+        <div className="screen-enter" key="settings">
+          <SettingsScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+        </div>
       )}
       {screen === SCREENS.SINGULARITY && (
-        <SingularityScreen
-          onNavigate={handleNavigate}
-          onEngageBoss={handleEngageBoss}
-          save={save}
-        />
+        <div className="screen-enter" key="singularity">
+          <SingularityScreen
+            onNavigate={handleNavigate}
+            onEngageBoss={handleEngageBoss}
+            save={save}
+          />
+        </div>
       )}
       {screen === SCREENS.BATTLE_SELECT && (
-        <BattleSelectScreen onBeginBattle={handleBeginBattle} onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+        <div className="screen-enter" key="battleSelect">
+          <BattleSelectScreen onBeginBattle={handleBeginBattle} onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+        </div>
       )}
       {screen === SCREENS.BATTLE && battleConfig && (
-        <BattleScreen
-          dragonId={battleConfig.dragonId}
-          npcId={battleConfig.npcId}
-          onBattleEnd={battleConfig.isSingularity ? handleSingularityBattleEnd : handleBattleEnd}
-          save={save}
-          refreshSave={refreshSave}
-          battleConfig={battleConfig}
-        />
+        <div className="screen-enter" key="battle">
+          <BattleScreen
+            dragonId={battleConfig.dragonId}
+            npcId={battleConfig.npcId}
+            onBattleEnd={battleConfig.isSingularity ? handleSingularityBattleEnd : handleBattleEnd}
+            save={save}
+            refreshSave={refreshSave}
+            battleConfig={battleConfig}
+          />
+        </div>
       )}
       {toasts.length > 0 && (
         <div className="toast-container">

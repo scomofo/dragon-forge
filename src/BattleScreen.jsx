@@ -1,4 +1,4 @@
-import { useReducer, useCallback, useEffect, useRef } from 'react';
+import { useState, useReducer, useCallback, useEffect, useRef } from 'react';
 import { wait } from './utils';
 import { playSound, playMusic, stopMusic } from './soundEngine';
 import { dragons, npcs, moves, elementColors, STATUS_EFFECTS } from './gameData';
@@ -167,6 +167,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const [state, dispatch] = useReducer(battleReducer, null, () => initBattle(dragonId, npcId, save, battleConfig));
   const animatingRef = useRef(false);
   const damageIdRef = useRef(0);
+  const [autoBattle, setAutoBattle] = useState(false);
 
   const animateEvent = useCallback(async (event, dispatch) => {
     const isPlayer = event.attacker === 'player';
@@ -312,6 +313,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     dispatch({ type: 'SET_PLAYER_FORCED_FRAME', value: null });
     await wait(200);
   }, []);
+
+  useEffect(() => {
+    if (autoBattle && state.phase === PHASES.PLAYER_TURN && !animatingRef.current) {
+      const playerMoveKeys = [...state.dragon.moveKeys, 'basic_attack'];
+      const autoMove = pickNpcMove(playerMoveKeys, state.dragon.element, state.npc.element, state.npcStatus);
+      setTimeout(() => handleMoveSelect(autoMove), 500);
+    }
+  }, [autoBattle, state.phase]);
 
   const handleMoveSelect = useCallback(async (moveKey) => {
     if (animatingRef.current) return;
@@ -662,6 +671,13 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           >
             <span className="tooltip">Halves damage this turn</span>
             DEFEND
+          </button>
+          <button
+            className="move-btn"
+            style={{ borderColor: autoBattle ? '#44cc44' : '#666', color: autoBattle ? '#44cc44' : '#666', fontSize: 7 }}
+            onClick={() => setAutoBattle(!autoBattle)}
+          >
+            {autoBattle ? 'AUTO: ON' : 'AUTO: OFF'}
           </button>
         </div>
       </div>
