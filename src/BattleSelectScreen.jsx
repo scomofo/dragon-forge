@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { playSound } from './soundEngine';
 import { dragons, npcs, elementColors } from './gameData';
 import { getTypeEffectiveness, calculateStatsForLevel, getStageForLevel } from './battleEngine';
-import { loadSave } from './persistence';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import NavBar from './NavBar';
@@ -10,10 +9,9 @@ import NavBar from './NavBar';
 const dragonList = Object.values(dragons);
 const npcList = Object.values(npcs);
 
-export default function BattleSelectScreen({ onBeginBattle, onNavigate }) {
+export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, refreshSave }) {
   const [selectedDragon, setSelectedDragon] = useState(null);
   const [selectedNpc, setSelectedNpc] = useState(null);
-  const save = loadSave();
 
   function getMatchup() {
     if (!selectedDragon || !selectedNpc) return null;
@@ -33,7 +31,7 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate }) {
 
   return (
     <div className="battle-select">
-      <NavBar activeScreen="battleSelect" onNavigate={onNavigate} />
+      <NavBar activeScreen="battleSelect" onNavigate={onNavigate} save={save} />
       <div className="battle-select-header">SELECT YOUR BATTLE</div>
 
       <div className="battle-select-panels">
