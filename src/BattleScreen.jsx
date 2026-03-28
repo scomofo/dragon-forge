@@ -6,7 +6,8 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain,
 } from './battleEngine';
-import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete } from './persistence';
+import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, addCore, decrementXpBoost } from './persistence';
+import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
 import { EPILOGUE_LINES } from './singularityBosses';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
@@ -372,7 +373,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         await wait(1000);
       } else {
         // True victory
-        const xpGained = calculateXpGain(state.npc.baseXP || 50, state.playerLevel, state.npc.level);
+        let xpGained = calculateXpGain(state.npc.baseXP || 50, state.playerLevel, state.npc.level);
+        if (save.inventory?.xpBoostBattles > 0) {
+          xpGained *= 2;
+          decrementXpBoost();
+        }
         const scrapsGained = state.npc.scrapsReward || 0;
         const newXp = state.playerXp + xpGained;
         const xpPerLevel = 100;
@@ -396,6 +401,13 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           recordNpcDefeat(npcId);
         }
         refreshSave();
+
+        // Core drops
+        const npcElement = state.npc.element;
+        if (Math.random() < CORE_DROP_CHANCE) {
+          const coreCount = Math.random() < CORE_DOUBLE_CHANCE ? 2 : 1;
+          addCore(npcElement, coreCount);
+        }
 
         dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
         playSound('ko');
