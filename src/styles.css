@@ -1375,3 +1375,39 @@ body {
   30% { opacity: 1; filter: brightness(1.5); }
   100% { opacity: 0; filter: brightness(1); }
 }
+
+/* === SINGULARITY TICKER === */
+
+.nav-ticker {
+  font-size: 7px;
+  line-height: 1.6;
+  letter-spacing: 1px;
+  padding: 0 8px;
+  white-space: nowrap;
+  font-family: 'Press Start 2P', monospace;
+}
+
+.nav-ticker.stage-0,
+.nav-ticker.stage-1 {
+  color: #44cc44;
+}
+
+.nav-ticker.stage-2,
+.nav-ticker.stage-3 {
+  color: #cccc44;
+}
+
+.nav-ticker.stage-4,
+.nav-ticker.stage-5 {
+  color: #cc4444;
+}
+
+.nav-ticker.stage-4,
+.nav-ticker.stage-5 {
+  animation: tickerBlink 1.5s ease-in-out infinite;
+}
+
+@keyframes tickerBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
