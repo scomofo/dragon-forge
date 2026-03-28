@@ -345,7 +345,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       status: state.npcStatus,
     };
 
-    const npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, state.dragon.element);
+    const npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, state.dragon.element, state.playerStatus);
     const result = resolveTurn(playerState, npcState, moveKey, npcMoveKey, state.dragon.moveKeys, state.npc.moveKeys);
 
     for (const event of result.events) {

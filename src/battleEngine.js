@@ -85,7 +85,7 @@ export function processStatusTick(combatantState) {
   };
 }
 
-export function pickNpcMove(npcMoveKeys, npcElement, playerElement) {
+export function pickNpcMove(npcMoveKeys, npcElement, playerElement, playerStatus) {
   const filteredKeys = npcMoveKeys.filter(key => {
     const move = allMoves[key];
     return !move?.isReflect;
@@ -103,8 +103,25 @@ export function pickNpcMove(npcMoveKeys, npcElement, playerElement) {
     return superEffective[Math.floor(Math.random() * superEffective.length)];
   }
 
-  // Otherwise random from all available (excluding basic_attack 50% of the time)
-  const preferred = filteredKeys.length > 0 && Math.random() < 0.5
+  // If target has no status, prefer status-applying moves (40% chance)
+  if (!playerStatus && Math.random() < 0.4) {
+    const statusMoves = filteredKeys.filter(key => {
+      const move = allMoves[key];
+      return move?.canApplyStatus;
+    });
+    if (statusMoves.length > 0) {
+      return statusMoves[Math.floor(Math.random() * statusMoves.length)];
+    }
+  }
+
+  // Prefer higher-power moves (60% chance to pick strongest)
+  if (filteredKeys.length > 1 && Math.random() < 0.6) {
+    const sorted = [...filteredKeys].sort((a, b) => (allMoves[b]?.power || 0) - (allMoves[a]?.power || 0));
+    return sorted[0];
+  }
+
+  // Otherwise random from themed moves
+  const preferred = filteredKeys.length > 0 && Math.random() < 0.7
     ? filteredKeys
     : availableKeys;
   return preferred[Math.floor(Math.random() * preferred.length)];
