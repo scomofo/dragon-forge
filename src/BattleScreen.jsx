@@ -470,8 +470,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       stopMusic();
       playSound('defeatDrone');
     } else {
-      const playerHpPct = result.player.hp / state.playerMaxHp;
-      const npcHpPct = result.npc.hp / state.npcMaxHp;
+      const playerHpPct = result.player.hp / (result.player.maxHp || state.playerMaxHp);
+      const npcHpPct = result.npc.hp / (result.npc.maxHp || state.npcMaxHp);
       if (playerHpPct < 0.25 || npcHpPct < 0.25) {
         playMusic('battleIntense');
       } else {
