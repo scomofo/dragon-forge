@@ -17,6 +17,7 @@ const DEFAULT_SAVE = {
   singularityProgress: { defeated: [], finalBossPhase: 0 },
   singularityComplete: false,
   inventory: { cores: {}, xpBoostBattles: 0, stabilityBoost: false },
+  stats: { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 },
 };
 
 function migrateSave(save) {
@@ -45,6 +46,9 @@ function migrateSave(save) {
   if (save.singularityComplete === undefined) save.singularityComplete = false;
   if (save.inventory === undefined) {
     save.inventory = { cores: {}, xpBoostBattles: 0, stabilityBoost: false };
+  }
+  if (save.stats === undefined) {
+    save.stats = { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 };
   }
   return save;
 }
@@ -121,6 +125,13 @@ export function claimMilestone(milestoneId, reward) {
   save.dataScraps += reward;
   writeSave(save);
   return true;
+}
+
+export function trackStat(statKey, amount = 1) {
+  const save = loadSave();
+  if (!save.stats) save.stats = {};
+  save.stats[statKey] = (save.stats[statKey] || 0) + amount;
+  writeSave(save);
 }
 
 export function setDragonNickname(dragonId, nickname) {

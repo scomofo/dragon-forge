@@ -3,7 +3,7 @@ import { wait } from './utils';
 import { dragons, elementColors } from './gameData';
 import { getFusionElement, getStabilityTier, calculateFusionStats, executeFusion } from './fusionEngine';
 import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
-import { fuseDragons } from './persistence';
+import { fuseDragons, trackStat } from './persistence';
 import { playSound } from './soundEngine';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
@@ -58,6 +58,7 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
       result.element, result.level, result.xp,
       result.shiny, result.fusedBaseStats
     );
+    trackStat('fusionsCompleted');
 
     playSound('fusionReveal');
     setFusionResult(result);

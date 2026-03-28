@@ -3,7 +3,7 @@ import { wait } from './utils';
 import { playSound } from './soundEngine';
 import { dragons, elementColors, eggSheets, PULL_COST } from './gameData';
 import { executePull, applyPullResult } from './hatcheryEngine';
-import { loadSave, writeSave } from './persistence';
+import { loadSave, writeSave, trackStat } from './persistence';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
 import EggSprite from './EggSprite';
@@ -87,6 +87,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     const pull = executePull(currentSave.pityCounter);
     const result = applyPullResult(currentSave, pull);
     writeSave(result.save);
+    trackStat('totalPulls');
     refreshSave();
     setGridResults([]);
 
@@ -113,6 +114,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     }
 
     writeSave(currentSave);
+    trackStat('totalPulls', 10);
     refreshSave();
 
     // Animate first pull

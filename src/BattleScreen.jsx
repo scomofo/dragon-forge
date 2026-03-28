@@ -6,7 +6,7 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain,
 } from './battleEngine';
-import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, addCore, decrementXpBoost } from './persistence';
+import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, addCore, decrementXpBoost, trackStat } from './persistence';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
 import { EPILOGUE_LINES } from './singularityBosses';
 import DragonSprite from './DragonSprite';
@@ -443,10 +443,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         await wait(600);
 
         if (battleConfig?.isSingularity && phases && !save.singularityComplete) {
+          trackStat('battlesWon');
+          if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
           dispatch({ type: 'SET_EPILOGUE', xpGained, scrapsGained });
           stopMusic();
           playSound('victoryFanfare');
         } else {
+          trackStat('battlesWon');
+          if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
           dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained });
           stopMusic();
           playSound('victoryFanfare');
@@ -459,6 +463,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-ko' });
       playSound('ko');
       await wait(600);
+      trackStat('battlesLost');
       dispatch({ type: 'SET_DEFEAT' });
       stopMusic();
       playSound('defeatDrone');
