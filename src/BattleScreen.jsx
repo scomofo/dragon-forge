@@ -5,7 +5,8 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain,
 } from './battleEngine';
-import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat } from './persistence';
+import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete } from './persistence';
+import { EPILOGUE_LINES } from './singularityBosses';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
@@ -16,11 +17,37 @@ const PHASES = {
   ANIMATING: 'animating',
   VICTORY: 'victory',
   DEFEAT: 'defeat',
+  PHASE_SHIFT: 'phaseShift',
+  EPILOGUE: 'epilogue',
 };
 
-function initBattle(dragonId, npcId, save) {
+function initBattle(dragonId, npcId, save, battleConfig) {
   const dragon = dragons[dragonId];
-  const npc = npcs[npcId];
+
+  let npc;
+  if (battleConfig?.boss) {
+    const boss = battleConfig.boss;
+    const phase = boss.phases ? boss.phases[0] : null;
+    npc = {
+      id: boss.id,
+      name: phase ? phase.name : boss.name,
+      element: phase ? phase.element : boss.element,
+      level: phase ? phase.level : boss.level,
+      stats: phase ? phase.stats : boss.stats,
+      moveKeys: phase ? phase.moveKeys : boss.moveKeys,
+      difficulty: boss.difficulty,
+      baseXP: boss.baseXP,
+      scrapsReward: boss.scrapsReward,
+      idleSprite: boss.idleSprite,
+      attackSprite: boss.attackSprite,
+      arena: boss.arena,
+      arenaFilter: boss.arenaFilter || null,
+      spriteFilter: phase ? phase.spriteFilter : (boss.spriteFilter || null),
+      flipSprite: false,
+    };
+  } else {
+    npc = npcs[npcId];
+  }
   const progress = save.dragons[dragonId] || { level: 1, xp: 0 };
   const stage = getStageForLevel(progress.level);
   const stats = calculateStatsForLevel(progress.fusedBaseStats || dragon.baseStats, progress.level, progress.shiny);
@@ -52,6 +79,7 @@ function initBattle(dragonId, npcId, save) {
     playerStatus: null,
     npcStatus: null,
     vfxActive: null,
+    currentPhase: 0,
   };
 }
 
@@ -91,6 +119,20 @@ function battleReducer(state, action) {
       return { ...state, vfxActive: action.value };
     case 'CLEAR_VFX':
       return { ...state, vfxActive: null };
+    case 'PHASE_SHIFT':
+      return {
+        ...state,
+        npc: { ...state.npc, ...action.npcUpdate },
+        npcHp: action.npcUpdate.stats.hp,
+        npcMaxHp: action.npcUpdate.stats.hp,
+        npcStatus: null,
+        npcSpriteClass: '',
+        npcAttacking: false,
+        phase: PHASES.PLAYER_TURN,
+        currentPhase: (state.currentPhase || 0) + 1,
+      };
+    case 'SET_EPILOGUE':
+      return { ...state, phase: PHASES.EPILOGUE, xpGained: action.xpGained, scrapsGained: action.scrapsGained };
     default:
       return state;
   }
@@ -102,8 +144,8 @@ function wait(ms) {
 
 let damageIdCounter = 0;
 
-export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refreshSave }) {
-  const [state, dispatch] = useReducer(battleReducer, null, () => initBattle(dragonId, npcId, save));
+export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refreshSave, battleConfig }) {
+  const [state, dispatch] = useReducer(battleReducer, null, () => initBattle(dragonId, npcId, save, battleConfig));
   const animatingRef = useRef(false);
 
   const animateEvent = useCallback(async (event, dispatch) => {
@@ -308,31 +350,73 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     }
 
     if (result.npc.hp <= 0) {
-      const xpGained = calculateXpGain(state.npc.baseXP, state.playerLevel, state.npc.level);
-      const scrapsGained = state.npc.scrapsReward || 0;
-      const newXp = state.playerXp + xpGained;
-      const xpPerLevel = 100;
-      let newLevel = state.playerLevel;
-      let remainingXp = newXp;
-      while (remainingXp >= xpPerLevel) {
-        remainingXp -= xpPerLevel;
-        newLevel++;
-      }
-      const leveledUp = newLevel > state.playerLevel;
-      saveDragonProgress(state.dragonId, newLevel, remainingXp);
-      if (scrapsGained > 0) addScraps(scrapsGained);
-      recordNpcDefeat(npcId);
-      refreshSave();
+      const phases = battleConfig?.phases;
+      const currentPhaseIndex = state.currentPhase || 0;
 
-      dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
-      playSound('ko');
-      await wait(600);
-      dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained });
-      stopMusic();
-      playSound('victoryFanfare');
-      playSound('xpGain');
-      if (scrapsGained > 0) setTimeout(() => playSound('scrapsEarned'), 200);
-      if (leveledUp) setTimeout(() => playSound('levelUp'), 400);
+      if (phases && currentPhaseIndex < phases.length - 1) {
+        // Phase shift — boss transforms
+        const nextPhase = phases[currentPhaseIndex + 1];
+        dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
+        playSound('ko');
+        await wait(600);
+
+        playSound('terminalGlitch');
+        dispatch({
+          type: 'PHASE_SHIFT',
+          npcUpdate: {
+            name: nextPhase.name,
+            element: nextPhase.element,
+            level: nextPhase.level,
+            stats: nextPhase.stats,
+            moveKeys: nextPhase.moveKeys,
+            spriteFilter: nextPhase.spriteFilter,
+          },
+        });
+        await wait(1000);
+      } else {
+        // True victory
+        const xpGained = calculateXpGain(state.npc.baseXP || 50, state.playerLevel, state.npc.level);
+        const scrapsGained = state.npc.scrapsReward || 0;
+        const newXp = state.playerXp + xpGained;
+        const xpPerLevel = 100;
+        let newLevel = state.playerLevel;
+        let remainingXp = newXp;
+        while (remainingXp >= xpPerLevel) {
+          remainingXp -= xpPerLevel;
+          newLevel++;
+        }
+        const leveledUp = newLevel > state.playerLevel;
+        saveDragonProgress(state.dragonId, newLevel, remainingXp);
+        if (scrapsGained > 0) addScraps(scrapsGained);
+
+        if (battleConfig?.isSingularity) {
+          if (phases) {
+            markSingularityComplete();
+          } else {
+            recordSingularityDefeat(npcId);
+          }
+        } else {
+          recordNpcDefeat(npcId);
+        }
+        refreshSave();
+
+        dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
+        playSound('ko');
+        await wait(600);
+
+        if (battleConfig?.isSingularity && phases && !save.singularityComplete) {
+          dispatch({ type: 'SET_EPILOGUE', xpGained, scrapsGained });
+          stopMusic();
+          playSound('victoryFanfare');
+        } else {
+          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained });
+          stopMusic();
+          playSound('victoryFanfare');
+          playSound('xpGain');
+          if (scrapsGained > 0) setTimeout(() => playSound('scrapsEarned'), 200);
+          if (leveledUp) setTimeout(() => playSound('levelUp'), 400);
+        }
+      }
     } else if (result.player.hp <= 0) {
       dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-ko' });
       playSound('ko');
@@ -363,13 +447,18 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       {/* Arena background */}
-      <div className="arena pixelated" style={{ backgroundImage: `url(${npc.arena})` }} />
+      <div className="arena pixelated" style={{ backgroundImage: `url(${npc.arena})`, filter: state.npc.arenaFilter || 'none' }} />
 
       {/* Top bar — HP */}
       <div className="panel panel-top">
         <div className="hp-bar-container">
           <div className="hp-bar-label" style={{ color: npcColor.glow }}>
             {npc.name} <span style={{ color: '#888' }}>Lv.{npc.level}</span>
+            {state.currentPhase > 0 && battleConfig?.phases && (
+              <span className="phase-indicator">
+                PHASE {(state.currentPhase || 0) + 1}/{battleConfig.phases.length}
+              </span>
+            )}
           </div>
           <div className="hp-bar-track">
             <div
@@ -426,6 +515,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             isAttacking={state.npcAttacking}
             className={state.npcSpriteClass}
             flipX={npc.flipSprite}
+            style={{ filter: state.npc.spriteFilter || 'none' }}
           />
           {state.damageNumbers
             .filter((d) => d.target === 'npc')
@@ -529,6 +619,27 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             <br />— Professor Felix
           </p>
           <button className="result-btn" onClick={onBattleEnd}>TRY AGAIN</button>
+        </div>
+      )}
+
+      {/* Epilogue overlay */}
+      {state.phase === PHASES.EPILOGUE && (
+        <div className="epilogue-overlay">
+          <div className="epilogue-portrait">
+            <img src="/assets/felix_pixel.jpg" alt="Professor Felix" className="pixelated" />
+          </div>
+          <div className="epilogue-text">
+            {EPILOGUE_LINES.map((line, i) => (
+              <div key={i}>"{line}"</div>
+            ))}
+          </div>
+          <div className="epilogue-rewards">
+            <div style={{ color: '#44aaff' }}>+{state.xpGained} XP</div>
+            {state.scrapsGained > 0 && <div style={{ color: '#ffcc00' }}>+{state.scrapsGained} ◆</div>}
+          </div>
+          <button className="epilogue-btn" onClick={onBattleEnd}>
+            RETURN TO THE FORGE
+          </button>
         </div>
       )}
     </div>
