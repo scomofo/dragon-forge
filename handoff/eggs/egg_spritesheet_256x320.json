@@ -1,0 +1,78 @@
+{
+  "frameWidth": 256,
+  "frameHeight": 320,
+  "frames": [
+    {
+      "name": "egg_fire",
+      "x": 0,
+      "y": 0,
+      "w": 256,
+      "h": 320,
+      "col": 0,
+      "row": 0
+    },
+    {
+      "name": "egg_ice",
+      "x": 256,
+      "y": 0,
+      "w": 256,
+      "h": 320,
+      "col": 1,
+      "row": 0
+    },
+    {
+      "name": "egg_shadow",
+      "x": 512,
+      "y": 0,
+      "w": 256,
+      "h": 320,
+      "col": 2,
+      "row": 0
+    },
+    {
+      "name": "egg_storm",
+      "x": 768,
+      "y": 0,
+      "w": 256,
+      "h": 320,
+      "col": 3,
+      "row": 0
+    },
+    {
+      "name": "egg_generic",
+      "x": 0,
+      "y": 320,
+      "w": 256,
+      "h": 320,
+      "col": 0,
+      "row": 1
+    },
+    {
+      "name": "egg_stone",
+      "x": 256,
+      "y": 320,
+      "w": 256,
+      "h": 320,
+      "col": 1,
+      "row": 1
+    },
+    {
+      "name": "egg_venom",
+      "x": 512,
+      "y": 320,
+      "w": 256,
+      "h": 320,
+      "col": 2,
+      "row": 1
+    },
+    {
+      "name": "egg_darkshadow",
+      "x": 768,
+      "y": 320,
+      "w": 256,
+      "h": 320,
+      "col": 3,
+      "row": 1
+    }
+  ]
+}

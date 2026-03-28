@@ -74,7 +74,7 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                 </div>
                 <div className="select-card-info">
                   <div className="select-card-name" style={{ color: color.primary }}>
-                    {dragon.name}{progress.shiny && <span className="shiny-star">★</span>}
+                    {progress.nickname || dragon.name}{progress.shiny && <span className="shiny-star">★</span>}
                   </div>
                   <div className="select-card-stats">
                     Lv.{progress.level} | HP:{stats.hp} ATK:{stats.atk} DEF:{stats.def} SPD:{stats.spd}

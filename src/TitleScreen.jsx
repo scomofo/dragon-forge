@@ -174,7 +174,6 @@ export default function TitleScreen({ onStart, save }) {
                 src="/assets/felix_pixel.jpg"
                 alt="Professor Felix"
                 className="pixelated"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
             </div>
             <div className="terminal-dialogue">

@@ -123,7 +123,7 @@ function battleReducer(state, action) {
     case 'SET_PHASE':
       return { ...state, phase: action.phase };
     case 'SET_VICTORY':
-      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0 };
+      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null };
     case 'SET_DEFEAT':
       return { ...state, phase: PHASES.DEFEAT };
     case 'RESET_TURN':
@@ -432,10 +432,12 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         refreshSave();
 
         // Core drops
+        let coreDropped = null;
         const npcElement = state.npc.element;
         if (Math.random() < CORE_DROP_CHANCE) {
           const coreCount = Math.random() < CORE_DOUBLE_CHANCE ? 2 : 1;
           addCore(npcElement, coreCount);
+          coreDropped = { element: npcElement, count: coreCount };
         }
 
         dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
@@ -451,7 +453,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         } else {
           trackStat('battlesWon');
           if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
-          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained });
+          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped });
           stopMusic();
           playSound('victoryFanfare');
           playSound('xpGain');
@@ -526,7 +528,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
         <div className="hp-bar-container" style={{ textAlign: 'right' }}>
           <div className="hp-bar-label" style={{ color: playerColor.glow }}>
-            <span style={{ color: '#888' }}>Lv.{state.playerLevel}</span> {dragon.name}
+            <span style={{ color: '#888' }}>Lv.{state.playerLevel}</span> {save.dragons[dragonId]?.nickname || dragon.name}
           </div>
           <div className="hp-bar-track">
             <div
@@ -658,6 +660,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           )}
           {state.leveledUp && (
             <div className="level-up-display">LEVEL UP! Now Lv.{state.newLevel}</div>
+          )}
+          {state.coreDropped && (
+            <div style={{ fontSize: 9, color: elementColors[state.coreDropped.element]?.glow || '#44aaff', marginTop: 4 }}>
+              +{state.coreDropped.count} {state.coreDropped.element.toUpperCase()} CORE{state.coreDropped.count > 1 ? 'S' : ''}
+            </div>
           )}
           <button className="result-btn" onClick={onBattleEnd}>CONTINUE</button>
         </div>
