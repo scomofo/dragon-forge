@@ -28,6 +28,7 @@ export default function TitleScreen({ onStart, save }) {
   const [glitching, setGlitching] = useState(false);
   const skippedRef = useRef(false);
   const containerRef = useRef(null);
+  const hasBootedRef = useRef(false);
 
   const scrollToBottom = () => {
     if (containerRef.current) {
@@ -119,6 +120,8 @@ export default function TitleScreen({ onStart, save }) {
   }, [typeText, save]);
 
   useEffect(() => {
+    if (hasBootedRef.current) return;
+    hasBootedRef.current = true;
     runBootSequence();
   }, [runBootSequence]);
 
