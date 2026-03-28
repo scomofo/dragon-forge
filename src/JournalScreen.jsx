@@ -2,13 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import { playSound } from './soundEngine';
 import { dragons, elementColors, dragonLore, ELEMENTS } from './gameData';
 import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
-import { claimMilestone } from './persistence';
+import { claimMilestone, setDragonNickname } from './persistence';
 import { checkMilestones } from './journalMilestones';
 import { stageToRoman } from './utils';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
 
 export default function JournalScreen({ onNavigate, save, refreshSave }) {
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
   const [selectedId, setSelectedId] = useState(() => {
     const firstOwned = ELEMENTS.find(el => save.dragons[el]?.owned);
     return firstOwned || 'fire';
@@ -118,13 +120,46 @@ export default function JournalScreen({ onNavigate, save, refreshSave }) {
             element={dragon.element}
           />
 
-          <div
-            className="journal-detail-name"
-            style={{ color: owned ? elementColors[dragon.element].glow : '#444' }}
-          >
-            {owned ? dragon.name.toUpperCase() : '???'}
-            {owned && progress?.shiny && <span className="shiny-star"> ★</span>}
-          </div>
+          {owned && editingName ? (
+            <input
+              className="journal-nickname-input"
+              style={{ color: elementColors[dragon.element].glow }}
+              value={nameInput}
+              maxLength={20}
+              autoFocus
+              onChange={(e) => setNameInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setDragonNickname(selectedId, nameInput.trim() || null);
+                  refreshSave();
+                  setEditingName(false);
+                } else if (e.key === 'Escape') {
+                  setEditingName(false);
+                }
+              }}
+              onBlur={() => {
+                setDragonNickname(selectedId, nameInput.trim() || null);
+                refreshSave();
+                setEditingName(false);
+              }}
+            />
+          ) : (
+            <div
+              className="journal-detail-name"
+              style={{ color: owned ? elementColors[dragon.element].glow : '#444', cursor: owned ? 'pointer' : 'default' }}
+              onClick={() => {
+                if (owned) {
+                  setNameInput(progress?.nickname || dragon.name);
+                  setEditingName(true);
+                }
+              }}
+              title={owned ? 'Click to rename' : ''}
+            >
+              {owned ? (progress?.nickname || dragon.name).toUpperCase() : '???'}
+              {owned && progress?.shiny && <span className="shiny-star"> ★</span>}
+              {owned && <span style={{ fontSize: 7, color: '#555', marginLeft: 6 }}>✏</span>}
+            </div>
+          )}
 
           <div className="journal-detail-meta">
             {owned ? (

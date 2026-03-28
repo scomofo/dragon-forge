@@ -123,6 +123,14 @@ export function claimMilestone(milestoneId, reward) {
   return true;
 }
 
+export function setDragonNickname(dragonId, nickname) {
+  const save = loadSave();
+  if (save.dragons[dragonId]) {
+    save.dragons[dragonId].nickname = nickname || null;
+    writeSave(save);
+  }
+}
+
 export function recordNpcDefeat(npcId) {
   const save = loadSave();
   if (!save.defeatedNpcs.includes(npcId)) {

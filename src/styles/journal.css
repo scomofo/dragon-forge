@@ -165,3 +165,17 @@
   .journal-detail { width: 100%; max-height: 50vh; }
   .journal-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+.journal-nickname-input {
+  font-family: "Press Start 2P", monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  background: #111118;
+  border: 1px solid #ff6622;
+  border-radius: 3px;
+  padding: 4px 8px;
+  text-align: center;
+  outline: none;
+  width: 200px;
+}
+
