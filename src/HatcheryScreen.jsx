@@ -27,8 +27,7 @@ const HATCH_SEQUENCE = [
   { frame: 5, duration: 120, css: 'egg-shake-anim' },      // Shake R faster
   { frame: 4, duration: 80, css: 'egg-shake-intense' },    // Shake L intense
   { frame: 5, duration: 80, css: 'egg-shake-intense' },    // Shake R intense
-  { frame: 6, duration: 400, css: 'egg-burst-anim' },      // Burst!
-  { frame: 7, duration: 500, css: 'egg-reveal' },          // Reveal
+  { frame: 6, duration: 400, css: 'egg-burst-anim' },      // Burst! (skip frame 7 — bottom shell fragment)
 ];
 
 export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
@@ -66,8 +65,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
       if (step.frame === 1) playSound('eggGlow');
       else if (step.frame === 2 || step.frame === 3) playSound('eggCrack');
       else if (step.frame === 4 || step.frame === 5) playSound('eggShake');
-      else if (step.frame === 6) playSound('hatchBurst');
-      else if (step.frame === 7) playSound('dragonReveal');
+      else if (step.frame === 6) { playSound('hatchBurst'); setTimeout(() => playSound('dragonReveal'), 200); }
 
       await wait(step.duration);
     }
@@ -135,8 +133,8 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const handleSkip = () => {
     if (phase === PHASES.HATCHING) {
       skippedRef.current = true;
-      setEggFrame(7);
-      setEggCss('egg-reveal');
+      setEggFrame(6);
+      setEggCss('egg-burst-anim');
     }
   };
 
