@@ -76,7 +76,12 @@
       "Bash(cp handoff/npc/crypto_crab_sprites.jpeg public/assets/npc/crypto_crab_sprites.jpeg)",
       "Bash(cp handoff/npc/crypto_crab_attack.jpeg public/assets/npc/crypto_crab_attack.jpeg)",
       "Bash(cp handoff/npc/buffer_overflow_sprites.jpeg public/assets/npc/)",
-      "Bash(cp handoff/npc/buffer_overflow_attack.jpeg public/assets/npc/)"
+      "Bash(cp handoff/npc/buffer_overflow_attack.jpeg public/assets/npc/)",
+      "Bash(D=\"Dev/df/handoff/npc\")",
+      "Bash(P=\"Dev/df/public/assets/npc\")",
+      "Bash(cp \"$DL/2026_03_29_04_01_58_454_831810.jpeg\" \"$D/logic_bomb_sprites.jpeg\")",
+      "Bash(cp \"$DL/2026_03_29_04_03_32_140_981244.jpeg\" \"$D/logic_bomb_attack.jpeg\")",
+      "Bash(cp \"$DL/2026_03_29_04_06_31_281_288635.jpeg\" \"$D/phishing_siren_sprites.jpeg\")"
     ]
   },
   "enableAllProjectMcpServers": true,

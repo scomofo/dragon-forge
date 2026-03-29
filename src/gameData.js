@@ -220,10 +220,9 @@ export const npcs = {
     difficulty: 'Hard',
     baseXP: 65,
     scrapsReward: 90,
-    idleSprite: assetUrl('/assets/npc/glitch_hydra_sprites.png'),
-    attackSprite: assetUrl('/assets/npc/glitch_hydra_attack.png'),
+    idleSprite: assetUrl('/assets/npc/logic_bomb_sprites.jpeg'),
+    attackSprite: assetUrl('/assets/npc/logic_bomb_attack.jpeg'),
     arena: assetUrl('/assets/arenas/npc_logic_bomb.png'),
-    spriteFilter: 'hue-rotate(340deg) saturate(1.5)',
   },
   phishing_siren: {
     id: 'phishing_siren',
@@ -235,10 +234,9 @@ export const npcs = {
     difficulty: 'Medium',
     baseXP: 50,
     scrapsReward: 70,
-    idleSprite: assetUrl('/assets/npc/bit_wraith_sprites.png'),
-    attackSprite: assetUrl('/assets/npc/bit_wraith_attack.png'),
+    idleSprite: assetUrl('/assets/npc/phishing_siren_sprites.jpeg'),
+    attackSprite: assetUrl('/assets/npc/phishing_siren_attack.jpeg'),
     arena: assetUrl('/assets/arenas/npc_phishing_siren.png'),
-    spriteFilter: 'hue-rotate(120deg) saturate(1.3)',
   },
   protocol_vulture: {
     id: 'protocol_vulture',
@@ -250,10 +248,9 @@ export const npcs = {
     difficulty: 'Boss',
     baseXP: 90,
     scrapsReward: 130,
-    idleSprite: assetUrl('/assets/npc/bit_wraith_sprites.png'),
-    attackSprite: assetUrl('/assets/npc/bit_wraith_attack.png'),
+    idleSprite: assetUrl('/assets/npc/protocol_vulture_sprites.jpeg'),
+    attackSprite: assetUrl('/assets/npc/protocol_vulture_attack.jpeg'),
     arena: assetUrl('/assets/arenas/npc_protocol_vulture.png'),
-    spriteFilter: 'saturate(1.5) contrast(1.3)',
   },
 };
 
