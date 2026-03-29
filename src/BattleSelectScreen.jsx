@@ -75,7 +75,7 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playSound('buttonClick'); setSelectedDragon(dragon); } }}
               >
                 <div style={{ width: 130, height: 90, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <DragonSprite spriteSheet={dragon.spriteSheet} stage={stage} size={{ width: 130, height: 90 }} shiny={progress.shiny} element={dragon.element} />
+                  <DragonSprite spriteSheet={dragon.stageSprites?.[stage] || dragon.spriteSheet} stage={stage} size={{ width: 130, height: 90 }} shiny={progress.shiny} element={dragon.element} />
                 </div>
                 <div className="select-card-info">
                   <div className="select-card-name" style={{ color: color.primary }}>

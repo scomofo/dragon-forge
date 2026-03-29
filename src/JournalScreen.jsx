@@ -87,7 +87,7 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelectDragon(el); } }}
                 >
                   <DragonSprite
-                    spriteSheet={d.spriteSheet}
+                    spriteSheet={isOwned ? (d.stageSprites?.[getStageForLevel(p.level)] || d.spriteSheet) : d.spriteSheet}
                     stage={isOwned ? getStageForLevel(p.level) : 1}
                     size={{ width: 80, height: 60 }}
                     shiny={p?.shiny}
@@ -116,7 +116,7 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
         {/* Right panel — detail */}
         <div className="journal-detail">
           <DragonSprite
-            spriteSheet={dragon.spriteSheet}
+            spriteSheet={owned ? (dragon.stageSprites?.[stage] || dragon.spriteSheet) : dragon.spriteSheet}
             stage={stage}
             shiny={progress?.shiny && owned}
             className={owned ? '' : 'undiscovered-silhouette'}

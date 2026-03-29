@@ -57,7 +57,7 @@ export const dragons = {
     baseStats: { hp: 110, atk: 28, def: 20, spd: 18 },
     moveKeys: ['magma_breath', 'flame_wall'],
     spriteSheet: assetUrl('/assets/dragons/magma.png'),
-    stageSprites: { 1: assetUrl('/assets/dragons/magma.png'), 2: assetUrl('/assets/dragons/magma.png'), 3: assetUrl('/assets/dragons/magma.png'), 4: assetUrl('/assets/dragons/magma.png') },
+    stageSprites: { 1: assetUrl('/assets/dragons/fire_stage1.png'), 2: assetUrl('/assets/dragons/fire_stage2.png'), 3: assetUrl('/assets/dragons/fire_stage3.png'), 4: assetUrl('/assets/dragons/fire_stage4.png') },
   },
   ice: {
     id: 'ice',
@@ -66,7 +66,7 @@ export const dragons = {
     baseStats: { hp: 100, atk: 24, def: 26, spd: 20 },
     moveKeys: ['frost_bite', 'blizzard'],
     spriteSheet: assetUrl('/assets/dragons/ice.png'),
-    stageSprites: { 1: assetUrl('/assets/dragons/ice.png'), 2: assetUrl('/assets/dragons/ice.png'), 3: assetUrl('/assets/dragons/ice.png'), 4: assetUrl('/assets/dragons/ice.png') },
+    stageSprites: { 1: assetUrl('/assets/dragons/ice_stage1.png'), 2: assetUrl('/assets/dragons/ice_stage2.png'), 3: assetUrl('/assets/dragons/ice_stage3.png'), 4: assetUrl('/assets/dragons/ice_stage4.png') },
   },
   storm: {
     id: 'storm',
@@ -75,7 +75,7 @@ export const dragons = {
     baseStats: { hp: 90, atk: 30, def: 16, spd: 28 },
     moveKeys: ['lightning_strike', 'thunder_clap'],
     spriteSheet: assetUrl('/assets/dragons/lightning.png'),
-    stageSprites: { 1: assetUrl('/assets/dragons/lightning.png'), 2: assetUrl('/assets/dragons/lightning.png'), 3: assetUrl('/assets/dragons/lightning.png'), 4: assetUrl('/assets/dragons/lightning.png') },
+    stageSprites: { 1: assetUrl('/assets/dragons/storm_stage1.png'), 2: assetUrl('/assets/dragons/storm_stage2.png'), 3: assetUrl('/assets/dragons/storm_stage3.png'), 4: assetUrl('/assets/dragons/storm_stage4.png') },
   },
   stone: {
     id: 'stone',
@@ -84,7 +84,7 @@ export const dragons = {
     baseStats: { hp: 120, atk: 22, def: 30, spd: 12 },
     moveKeys: ['rock_slide', 'earthquake'],
     spriteSheet: assetUrl('/assets/dragons/stone.png'),
-    stageSprites: { 1: assetUrl('/assets/dragons/stone.png'), 2: assetUrl('/assets/dragons/stone.png'), 3: assetUrl('/assets/dragons/stone.png'), 4: assetUrl('/assets/dragons/stone.png') },
+    stageSprites: { 1: assetUrl('/assets/dragons/stone_stage1.png'), 2: assetUrl('/assets/dragons/stone_stage2.png'), 3: assetUrl('/assets/dragons/stone_stage3.png'), 4: assetUrl('/assets/dragons/stone_stage4.png') },
   },
   venom: {
     id: 'venom',
@@ -93,7 +93,7 @@ export const dragons = {
     baseStats: { hp: 95, atk: 26, def: 18, spd: 24 },
     moveKeys: ['acid_spit', 'toxic_cloud'],
     spriteSheet: assetUrl('/assets/dragons/venom.png'),
-    stageSprites: { 1: assetUrl('/assets/dragons/venom.png'), 2: assetUrl('/assets/dragons/venom.png'), 3: assetUrl('/assets/dragons/venom.png'), 4: assetUrl('/assets/dragons/venom.png') },
+    stageSprites: { 1: assetUrl('/assets/dragons/venom_stage1.png'), 2: assetUrl('/assets/dragons/venom_stage2.png'), 3: assetUrl('/assets/dragons/venom_stage3.png'), 4: assetUrl('/assets/dragons/venom_stage4.png') },
   },
   shadow: {
     id: 'shadow',
@@ -102,7 +102,7 @@ export const dragons = {
     baseStats: { hp: 85, atk: 32, def: 14, spd: 26 },
     moveKeys: ['shadow_strike', 'void_pulse'],
     spriteSheet: assetUrl('/assets/dragons/shadow.png'),
-    stageSprites: { 1: assetUrl('/assets/dragons/shadow.png'), 2: assetUrl('/assets/dragons/shadow.png'), 3: assetUrl('/assets/dragons/shadow.png'), 4: assetUrl('/assets/dragons/shadow.png') },
+    stageSprites: { 1: assetUrl('/assets/dragons/shadow_stage1.png'), 2: assetUrl('/assets/dragons/shadow_stage2.png'), 3: assetUrl('/assets/dragons/shadow_stage3.png'), 4: assetUrl('/assets/dragons/shadow_stage4.png') },
   },
   void: {
     id: 'void',

@@ -603,7 +603,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
         <div style={{ position: 'relative' }}>
           <DragonSprite
-            spriteSheet={dragon.spriteSheet}
+            spriteSheet={dragon.stageSprites?.[state.playerStage] || dragon.spriteSheet}
             stage={state.playerStage}
             flipX={true}
             forcedFrame={state.playerForcedFrame}

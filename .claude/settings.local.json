@@ -60,7 +60,17 @@
       "Bash(npx inference:*)",
       "Skill(ai-image-generation)",
       "Bash(sh)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Read(//c/Users/Scott Morley/**)",
+      "Bash(mkdir -p Dev/df/handoff/dragons Dev/df/handoff/npc)",
+      "Bash(DL=\"Downloads\")",
+      "Bash(D=\"Dev/df/handoff/dragons\")",
+      "Bash(N=\"Dev/df/handoff/npc\")",
+      "Bash(sed -i \"s|stageSprites: { 1: assetUrl\\(''/assets/dragons/magma.png''\\), 2: assetUrl\\(''/assets/dragons/magma.png''\\), 3: assetUrl\\(''/assets/dragons/magma.png''\\), 4: assetUrl\\(''/assets/dragons/magma.png''\\) }|stageSprites: { 1: assetUrl\\(''/assets/dragons/fire_stage1.png''\\), 2: assetUrl\\(''/assets/dragons/fire_stage2.png''\\), 3: assetUrl\\(''/assets/dragons/fire_stage3.png''\\), 4: assetUrl\\(''/assets/dragons/fire_stage4.png''\\) }|\" src/gameData.js)",
+      "Bash(sed -i \"s|stageSprites: { 1: assetUrl\\(''/assets/dragons/ice.png''\\), 2: assetUrl\\(''/assets/dragons/ice.png''\\), 3: assetUrl\\(''/assets/dragons/ice.png''\\), 4: assetUrl\\(''/assets/dragons/ice.png''\\) }|stageSprites: { 1: assetUrl\\(''/assets/dragons/ice_stage1.png''\\), 2: assetUrl\\(''/assets/dragons/ice_stage2.png''\\), 3: assetUrl\\(''/assets/dragons/ice_stage3.png''\\), 4: assetUrl\\(''/assets/dragons/ice_stage4.png''\\) }|\" src/gameData.js)",
+      "Bash(sed -i \"s|stageSprites: { 1: assetUrl\\(''/assets/dragons/lightning.png''\\), 2: assetUrl\\(''/assets/dragons/lightning.png''\\), 3: assetUrl\\(''/assets/dragons/lightning.png''\\), 4: assetUrl\\(''/assets/dragons/lightning.png''\\) }|stageSprites: { 1: assetUrl\\(''/assets/dragons/storm_stage1.png''\\), 2: assetUrl\\(''/assets/dragons/storm_stage2.png''\\), 3: assetUrl\\(''/assets/dragons/storm_stage3.png''\\), 4: assetUrl\\(''/assets/dragons/storm_stage4.png''\\) }|\" src/gameData.js)",
+      "Bash(sed -i \"s|stageSprites: { 1: assetUrl\\(''/assets/dragons/stone.png''\\), 2: assetUrl\\(''/assets/dragons/stone.png''\\), 3: assetUrl\\(''/assets/dragons/stone.png''\\), 4: assetUrl\\(''/assets/dragons/stone.png''\\) }|stageSprites: { 1: assetUrl\\(''/assets/dragons/stone_stage1.png''\\), 2: assetUrl\\(''/assets/dragons/stone_stage2.png''\\), 3: assetUrl\\(''/assets/dragons/stone_stage3.png''\\), 4: assetUrl\\(''/assets/dragons/stone_stage4.png''\\) }|\" src/gameData.js)",
+      "Bash(sed -i \"s|stageSprites: { 1: assetUrl\\(''/assets/dragons/venom.png''\\), 2: assetUrl\\(''/assets/dragons/venom.png''\\), 3: assetUrl\\(''/assets/dragons/venom.png''\\), 4: assetUrl\\(''/assets/dragons/venom.png''\\) }|stageSprites: { 1: assetUrl\\(''/assets/dragons/venom_stage1.png''\\), 2: assetUrl\\(''/assets/dragons/venom_stage2.png''\\), 3: assetUrl\\(''/assets/dragons/venom_stage3.png''\\), 4: assetUrl\\(''/assets/dragons/venom_stage4.png''\\) }|\" src/gameData.js)"
     ]
   },
   "enableAllProjectMcpServers": true,
