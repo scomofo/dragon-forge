@@ -32,28 +32,30 @@ describe('calculateDamage', () => {
   it('calculates super-effective damage correctly', () => {
     // baseDamage = (28 * 1.0 * 2) - (20 * 0.5) = 56 - 10 = 46
     // typedDamage = 46 * 2.0 = 92
-    // finalDamage = floor(92 * rand(0.85..1.0)) => 78..92
+    // non-crit range: 78..92; crit (1.5x) range: 117..138
     const result = calculateDamage(attacker, defender, move);
     expect(result.damage).toBeGreaterThanOrEqual(78);
-    expect(result.damage).toBeLessThanOrEqual(92);
+    expect(result.damage).toBeLessThanOrEqual(138);
     expect(result.effectiveness).toBe(2.0);
     expect(result.hit).toBe(true);
   });
 
   it('halves damage when defender is defending', () => {
     const defendingTarget = { ...defender, defending: true };
+    // non-crit range: 39..46; crit (1.5x) range: 58..69
     const result = calculateDamage(attacker, defendingTarget, move);
     expect(result.damage).toBeGreaterThanOrEqual(39);
-    expect(result.damage).toBeLessThanOrEqual(46);
+    expect(result.damage).toBeLessThanOrEqual(69);
   });
 
   it('applies stage multiplier', () => {
     const stage1Attacker = { ...attacker, stage: 1 };
     // baseDamage = (28 * 0.5 * 2) - (20 * 0.5) = 28 - 10 = 18
     // typedDamage = 18 * 2.0 = 36
+    // non-crit range: 30..36; crit (1.5x) range: 45..54
     const result = calculateDamage(stage1Attacker, defender, move);
     expect(result.damage).toBeGreaterThanOrEqual(30);
-    expect(result.damage).toBeLessThanOrEqual(36);
+    expect(result.damage).toBeLessThanOrEqual(54);
   });
 
   it('returns minimum 1 damage', () => {
@@ -342,5 +344,57 @@ describe('Glitch status', () => {
     expect(result.events.length).toBeGreaterThan(0);
     const playerEvent = result.events.find(e => e.attacker === 'player');
     expect(playerEvent).toBeDefined();
+  });
+});
+
+describe('calculateDamage critical hits', () => {
+  const attacker = { atk: 28, element: 'fire', stage: 3 };
+  const defender = { def: 20, element: 'ice', defending: false };
+  const move = { element: 'fire', power: 65, accuracy: 100 };
+
+  it('returns isCritical flag on result', () => {
+    const result = calculateDamage(attacker, defender, move);
+    expect(typeof result.isCritical).toBe('boolean');
+  });
+
+  it('critical hits deal 1.5x damage', () => {
+    const originalRandom = Math.random;
+    let callCount = 0;
+    Math.random = () => {
+      callCount++;
+      if (callCount === 1) return 0.5;  // accuracy: 50 < 100, hit
+      if (callCount === 2) return 0.0; // damage roll: lowest (0.85)
+      if (callCount === 3) return 0.05; // crit: 5 < 10, critical!
+      return 0.0;
+    };
+
+    const result = calculateDamage(attacker, defender, move);
+    expect(result.isCritical).toBe(true);
+    expect(result.damage).toBe(117);
+
+    Math.random = originalRandom;
+  });
+
+  it('non-critical hits have isCritical false', () => {
+    const originalRandom = Math.random;
+    let callCount = 0;
+    Math.random = () => {
+      callCount++;
+      if (callCount === 1) return 0.5;  // accuracy: hit
+      if (callCount === 2) return 0.0; // damage roll
+      if (callCount === 3) return 0.99; // crit: no crit
+      return 0.0;
+    };
+
+    const result = calculateDamage(attacker, defender, move);
+    expect(result.isCritical).toBe(false);
+
+    Math.random = originalRandom;
+  });
+
+  it('misses cannot be critical', () => {
+    const lowAccMove = { element: 'fire', power: 65, accuracy: 0 };
+    const result = calculateDamage(attacker, defender, lowAccMove);
+    expect(result.isCritical).toBe(false);
   });
 });

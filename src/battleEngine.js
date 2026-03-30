@@ -1,5 +1,8 @@
 import { typeChart, stageMultipliers, stageThresholds, moves as allMoves, STATUS_EFFECTS, STATUS_APPLY_CHANCE } from './gameData';
 
+export const CRIT_CHANCE = 0.10;
+export const CRIT_MULTIPLIER = 1.5;
+
 export function getTypeEffectiveness(attackerElement, defenderElement) {
   if (!typeChart[attackerElement]) return 1.0;
   return typeChart[attackerElement][defenderElement] ?? 1.0;
@@ -9,7 +12,7 @@ export function calculateDamage(attacker, defender, move) {
   // Accuracy check
   const accuracyRoll = Math.random() * 100;
   if (accuracyRoll > move.accuracy) {
-    return { damage: 0, effectiveness: 1.0, hit: false };
+    return { damage: 0, effectiveness: 1.0, hit: false, isCritical: false };
   }
 
   const stageMult = stageMultipliers[attacker.stage] ?? 1.0;
@@ -22,9 +25,14 @@ export function calculateDamage(attacker, defender, move) {
   }
 
   const roll = 0.85 + Math.random() * 0.15;
-  const finalDamage = Math.max(1, Math.floor(typedDamage * roll));
+  let finalDamage = Math.max(1, Math.floor(typedDamage * roll));
 
-  return { damage: finalDamage, effectiveness, hit: true };
+  const isCritical = Math.random() < CRIT_CHANCE;
+  if (isCritical) {
+    finalDamage = Math.floor(finalDamage * CRIT_MULTIPLIER);
+  }
+
+  return { damage: finalDamage, effectiveness, hit: true, isCritical };
 }
 
 export function getStageForLevel(level) {
@@ -291,6 +299,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
         effectiveness: result.effectiveness,
         hit: result.hit,
         reflected: true,
+        isCritical: result.isCritical,
         targetHp: newSelfHp,
       });
     } else {
@@ -334,6 +343,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
     damage: result.damage,
     effectiveness: result.effectiveness,
     hit: result.hit,
+    isCritical: result.isCritical,
     targetHp: newTargetHp,
     appliedStatus: appliedStatus ? STATUS_EFFECTS[appliedStatus.effect].name : null,
   });
