@@ -13,6 +13,11 @@ import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
 import VfxOverlay from './VfxOverlay';
+import {
+  screenShake, hitFlash, criticalHit, shatterKO,
+  shieldUp, shieldDeflect, shieldDismiss,
+  statusAuraApply, npcLunge, playerLunge, hitSquash,
+} from './animationEngine';
 
 const PHASES = {
   PLAYER_TURN: 'playerTurn',
@@ -169,6 +174,16 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const damageIdRef = useRef(0);
   const [autoBattle, setAutoBattle] = useState(false);
 
+  const battleContainerRef = useRef(null);
+  const playerSpriteContainerRef = useRef(null);
+  const npcSpriteContainerRef = useRef(null);
+  const playerSpriteRef = useRef(null);
+  const npcSpriteImgRef = useRef(null);
+  const shieldRef = useRef(null);
+  const playerAuraRef = useRef(null);
+  const npcAuraRef = useRef(null);
+  const damageStaggerRef = useRef(0);
+
   const animateEvent = useCallback(async (event, dispatch) => {
     const isPlayer = event.attacker === 'player';
     const who = isPlayer ? 'You' : event.moveName ? 'Enemy' : 'Status';
@@ -176,6 +191,13 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     if (event.action === 'defend') {
       dispatch({ type: 'ADD_LOG', text: `${who} defended.` });
       playSound('defend');
+      const targetContainer = isPlayer ? playerSpriteContainerRef.current : npcSpriteContainerRef.current;
+      if (targetContainer) {
+        const shield = shieldUp(targetContainer, isPlayer ? state.dragon.element : state.npc.element);
+        if (isPlayer) {
+          shieldRef.current = shield;
+        }
+      }
       if (isPlayer) {
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
         await wait(400);
@@ -238,14 +260,17 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     if (isPlayer) {
       dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: '' });
       dispatch({ type: 'SET_PLAYER_FORCED_FRAME', value: 3 });
+      const spriteEl = playerSpriteRef.current?.getCanvas?.() || playerSpriteContainerRef.current;
+      if (spriteEl) playerLunge(spriteEl, 'left');
     } else {
       dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: '' });
       dispatch({ type: 'SET_NPC_ATTACKING', value: true });
+      const npcEl = npcSpriteImgRef.current;
+      if (npcEl) npcLunge(npcEl, state.npc.flipSprite ? 'left' : 'right');
     }
 
     if (event.hit) {
       if (event.reflected) {
-        // Reflected — damage goes back to attacker
         if (isPlayer) {
           dispatch({ type: 'APPLY_DAMAGE_TO_PLAYER', damage: event.damage });
         } else {
@@ -253,7 +278,6 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         }
         playSound('superEffective');
       } else {
-        // Normal — damage goes to target
         if (isPlayer) {
           dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: event.damage });
         } else {
@@ -263,12 +287,45 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         else if (event.effectiveness < 1.0) playSound('resisted');
         else playSound('attackHit');
       }
+
+      const container = battleContainerRef.current;
+      const targetContainer = isPlayer
+        ? (event.reflected ? playerSpriteContainerRef.current : npcSpriteContainerRef.current)
+        : (event.reflected ? npcSpriteContainerRef.current : playerSpriteContainerRef.current);
+      const targetSide = isPlayer ? (event.reflected ? 'right' : 'left') : (event.reflected ? 'left' : 'right');
+
+      const targetDefending = isPlayer ? state.npcDefending : state.playerDefending;
+      if (targetDefending && shieldRef.current) {
+        shieldDeflect(shieldRef.current.element, targetContainer, isPlayer ? 'right' : 'left');
+        if (container) screenShake(container, 3, 0.15);
+      } else if (event.isCritical && container) {
+        await new Promise(resolve => {
+          const tl = criticalHit(container, targetContainer, targetSide);
+          tl.eventCallback('onComplete', resolve);
+        });
+      } else if (container) {
+        const hpRatio = event.damage / (isPlayer ? state.npcMaxHp : state.playerMaxHp);
+        const intensity = 4 + hpRatio * 8;
+        screenShake(container, Math.min(intensity, 8), 0.2);
+        if (targetContainer) {
+          const flashColor = event.effectiveness > 1.0
+            ? (elementColors[move.element]?.primary || '#ffffff')
+            : '#ffffff';
+          hitFlash(targetContainer, flashColor);
+        }
+      }
+
+      const hitTarget = isPlayer
+        ? (event.reflected ? playerSpriteContainerRef.current : npcSpriteContainerRef.current)
+        : (event.reflected ? npcSpriteContainerRef.current : playerSpriteContainerRef.current);
+      if (hitTarget) hitSquash(hitTarget);
     } else {
       playSound('miss');
     }
 
     const dmgTarget = event.reflected ? (isPlayer ? 'player' : 'npc') : (isPlayer ? 'npc' : 'player');
     const dmgId = ++damageIdRef.current;
+    const staggerIdx = damageStaggerRef.current++;
     dispatch({
       type: 'ADD_DAMAGE_NUMBER',
       entry: {
@@ -277,18 +334,19 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         effectiveness: event.effectiveness,
         hit: event.hit,
         target: dmgTarget,
+        isCritical: event.isCritical || false,
+        staggerIndex: staggerIdx,
       },
     });
-    // Track max damage for records
     if (event.hit && isPlayer && !event.reflected) {
       dispatch({ type: 'TRACK_DAMAGE', damage: event.damage });
     }
 
-    // Battle log entry for attack
     if (event.hit) {
+      const critText = event.isCritical ? ' CRITICAL!' : '';
       const effText = event.effectiveness > 1 ? ' Super effective!' : event.effectiveness < 1 ? ' Resisted.' : '';
       const reflectText = event.reflected ? ' REFLECTED!' : '';
-      dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — ${event.damage} dmg.${effText}${reflectText}` });
+      dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — ${event.damage} dmg.${critText}${effText}${reflectText}` });
     } else {
       dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — missed!` });
     }
@@ -298,7 +356,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     }
     await wait(300);
 
-    // RECOIL phase
+    damageStaggerRef.current = 0;
+
     if (isPlayer) {
       dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-recoil' });
     } else {
@@ -306,13 +365,18 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     }
     await wait(200);
 
-    // RESOLUTION
     dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: '' });
     dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: '' });
     dispatch({ type: 'SET_NPC_ATTACKING', value: false });
     dispatch({ type: 'SET_PLAYER_FORCED_FRAME', value: null });
+
+    if (shieldRef.current) {
+      shieldDismiss(shieldRef.current.element, shieldRef.current.timeline);
+      shieldRef.current = null;
+    }
+
     await wait(200);
-  }, []);
+  }, [state]);
 
   useEffect(() => {
     if (autoBattle && state.phase === PHASES.PLAYER_TURN && !animatingRef.current) {
@@ -321,6 +385,13 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       setTimeout(() => handleMoveSelect(autoMove), 500);
     }
   }, [autoBattle, state.phase]);
+
+  useEffect(() => {
+    return () => {
+      if (playerAuraRef.current) playerAuraRef.current.kill();
+      if (npcAuraRef.current) npcAuraRef.current.kill();
+    };
+  }, []);
 
   const handleMoveSelect = useCallback(async (moveKey) => {
     if (animatingRef.current) return;
@@ -365,6 +436,27 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     dispatch({ type: 'SET_PLAYER_STATUS', value: result.player.status || null });
     dispatch({ type: 'SET_NPC_STATUS', value: result.npc.status || null });
 
+    // Apply/remove status auras
+    if (result.player.status && !playerAuraRef.current) {
+      const spriteEl = playerSpriteRef.current?.getCanvas?.() || playerSpriteContainerRef.current;
+      if (spriteEl) {
+        playerAuraRef.current = statusAuraApply(spriteEl, result.player.status.effect);
+      }
+    } else if (!result.player.status && playerAuraRef.current) {
+      playerAuraRef.current.kill();
+      playerAuraRef.current = null;
+    }
+
+    if (result.npc.status && !npcAuraRef.current) {
+      const npcEl = npcSpriteImgRef.current || npcSpriteContainerRef.current;
+      if (npcEl) {
+        npcAuraRef.current = statusAuraApply(npcEl, result.npc.status.effect);
+      }
+    } else if (!result.npc.status && npcAuraRef.current) {
+      npcAuraRef.current.kill();
+      npcAuraRef.current = null;
+    }
+
     // Process status tick events (DOT, skip)
     for (const event of result.events) {
       if (event.attacker === 'status') {
@@ -373,7 +465,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           const dmgId = ++damageIdRef.current;
           dispatch({
             type: 'ADD_DAMAGE_NUMBER',
-            entry: { id: dmgId, damage: event.damage, effectiveness: 1.0, hit: true, target: event.target },
+            entry: { id: dmgId, damage: event.damage, effectiveness: 1.0, hit: true, target: event.target, isStatusTick: true, statusElement: event.target === 'player' ? state.playerStatus?.effect : state.npcStatus?.effect },
           });
           if (event.target === 'player') {
             dispatch({ type: 'APPLY_DAMAGE_TO_PLAYER', damage: event.damage });
@@ -403,9 +495,17 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       if (phases && currentPhaseIndex < phases.length - 1) {
         // Phase shift — boss transforms
         const nextPhase = phases[currentPhaseIndex + 1];
-        dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
         playSound('ko');
-        await wait(600);
+        const phaseNpcEl = npcSpriteImgRef.current;
+        if (phaseNpcEl) {
+          await new Promise(resolve => {
+            const tl = shatterKO(phaseNpcEl, state.npc.element);
+            tl.eventCallback('onComplete', resolve);
+          });
+        } else {
+          dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
+          await wait(600);
+        }
 
         playSound('terminalGlitch');
         dispatch({
@@ -463,9 +563,17 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           coreDropped = { element: npcElement, count: coreCount };
         }
 
-        dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
         playSound('ko');
-        await wait(600);
+        const victoryNpcEl = npcSpriteImgRef.current;
+        if (victoryNpcEl) {
+          await new Promise(resolve => {
+            const tl = shatterKO(victoryNpcEl, state.npc.element);
+            tl.eventCallback('onComplete', resolve);
+          });
+        } else {
+          dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
+          await wait(600);
+        }
 
         if (battleConfig?.isSingularity && phases && !save.singularityComplete) {
           trackStat('battlesWon');
@@ -486,9 +594,17 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         }
       }
     } else if (result.player.hp <= 0) {
-      dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-ko' });
       playSound('ko');
-      await wait(600);
+      const playerCanvas = playerSpriteRef.current?.getCanvas?.();
+      if (playerCanvas) {
+        await new Promise(resolve => {
+          const tl = shatterKO(playerCanvas, state.dragon.element);
+          tl.eventCallback('onComplete', resolve);
+        });
+      } else {
+        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-ko' });
+        await wait(600);
+      }
       trackStat('battlesLost');
       updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
       dispatch({ type: 'SET_DEFEAT' });
@@ -515,7 +631,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const npcColor = elementColors[npc.element];
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div ref={battleContainerRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
       {/* Arena background */}
       <div className="arena pixelated" style={{ backgroundImage: `url(${npc.arena})`, filter: state.npc.arenaFilter || 'none' }} />
 
@@ -578,8 +694,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
       {/* Arena sprites */}
       <div className="arena-sprites">
-        <div style={{ position: 'relative' }}>
+        <div ref={npcSpriteContainerRef} style={{ position: 'relative' }}>
           <NpcSprite
+            ref={npcSpriteImgRef}
             idleSprite={npc.idleSprite}
             attackSprite={npc.attackSprite}
             isAttacking={state.npcAttacking}
@@ -595,14 +712,19 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                 damage={d.damage}
                 effectiveness={d.effectiveness}
                 hit={d.hit}
+                isCritical={d.isCritical || false}
+                isStatusTick={d.isStatusTick || false}
+                statusElement={d.statusElement}
+                staggerIndex={d.staggerIndex || 0}
                 position={{ x: 40, y: -20 }}
                 onComplete={() => dispatch({ type: 'REMOVE_DAMAGE_NUMBER', id: d.id })}
               />
             ))}
         </div>
 
-        <div style={{ position: 'relative' }}>
+        <div ref={playerSpriteContainerRef} style={{ position: 'relative' }}>
           <DragonSprite
+            ref={playerSpriteRef}
             spriteSheet={dragon.stageSprites?.[state.playerStage] || dragon.spriteSheet}
             stage={state.playerStage}
             flipX={true}
@@ -618,6 +740,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                 damage={d.damage}
                 effectiveness={d.effectiveness}
                 hit={d.hit}
+                isCritical={d.isCritical || false}
+                isStatusTick={d.isStatusTick || false}
+                statusElement={d.statusElement}
+                staggerIndex={d.staggerIndex || 0}
                 position={{ x: 40, y: -20 }}
                 onComplete={() => dispatch({ type: 'REMOVE_DAMAGE_NUMBER', id: d.id })}
               />
