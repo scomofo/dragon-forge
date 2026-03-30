@@ -1,11 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { DRAGON_SHEET, STAGE_SCALES, DRAGON_DISPLAY } from './sprites';
 
-export default function DragonSprite({ spriteSheet, stage = 3, flipX = false, forcedFrame = null, className = '', size = null, shiny = false, element = '' }) {
+const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, flipX = false, forcedFrame = null, className = '', size = null, shiny = false, element = '' }, ref) {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
   const [frame, setFrame] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    getCanvas: () => canvasRef.current,
+  }));
 
   // Load sprite sheet image
   useEffect(() => {
@@ -105,4 +109,6 @@ export default function DragonSprite({ spriteSheet, stage = 3, flipX = false, fo
       }}
     />
   );
-}
+});
+
+export default DragonSprite;

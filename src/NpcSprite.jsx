@@ -1,8 +1,11 @@
-export default function NpcSprite({ idleSprite, attackSprite, isAttacking = false, className = '', size = 160, flipX = false, style = {} }) {
+import { forwardRef } from 'react';
+
+const NpcSprite = forwardRef(function NpcSprite({ idleSprite, attackSprite, isAttacking = false, className = '', size = 160, flipX = false, style = {} }, ref) {
   const src = isAttacking ? attackSprite : idleSprite;
 
   return (
     <img
+      ref={ref}
       className={`npc-sprite pixelated ${className}`}
       src={src}
       alt="NPC"
@@ -15,4 +18,6 @@ export default function NpcSprite({ idleSprite, attackSprite, isAttacking = fals
       }}
     />
   );
-}
+});
+
+export default NpcSprite;
