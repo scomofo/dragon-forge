@@ -103,6 +103,7 @@ export const dragons = {
     moveKeys: ['shadow_strike', 'void_pulse'],
     spriteSheet: assetUrl('/assets/dragons/shadow.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/shadow_stage1.png'), 2: assetUrl('/assets/dragons/shadow_stage2.png'), 3: assetUrl('/assets/dragons/shadow_stage3.png'), 4: assetUrl('/assets/dragons/shadow_stage4.png') },
+    facesLeft: true,
   },
   void: {
     id: 'void',
@@ -112,6 +113,7 @@ export const dragons = {
     moveKeys: ['void_rift', 'null_reflect'],
     spriteSheet: assetUrl('/assets/dragons/shadow.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/shadow.png'), 2: assetUrl('/assets/dragons/shadow.png'), 3: assetUrl('/assets/dragons/shadow.png'), 4: assetUrl('/assets/dragons/shadow.png') },
+    facesLeft: true,
   },
 };
 

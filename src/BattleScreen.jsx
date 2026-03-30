@@ -302,6 +302,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         await new Promise(resolve => {
           const tl = criticalHit(container, targetContainer, targetSide);
           tl.eventCallback('onComplete', resolve);
+          setTimeout(resolve, 800);
         });
       } else if (container) {
         const hpRatio = event.damage / (isPlayer ? state.npcMaxHp : state.playerMaxHp);
@@ -501,6 +502,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           await new Promise(resolve => {
             const tl = shatterKO(phaseNpcEl, state.npc.element);
             tl.eventCallback('onComplete', resolve);
+            setTimeout(resolve, 1200);
           });
         } else {
           dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
@@ -569,6 +571,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           await new Promise(resolve => {
             const tl = shatterKO(victoryNpcEl, state.npc.element);
             tl.eventCallback('onComplete', resolve);
+            setTimeout(resolve, 1200);
           });
         } else {
           dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
@@ -600,6 +603,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         await new Promise(resolve => {
           const tl = shatterKO(playerCanvas, state.dragon.element);
           tl.eventCallback('onComplete', resolve);
+          setTimeout(resolve, 1200);
         });
       } else {
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-ko' });
@@ -727,7 +731,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             ref={playerSpriteRef}
             spriteSheet={dragon.stageSprites?.[state.playerStage] || dragon.spriteSheet}
             stage={state.playerStage}
-            flipX={true}
+            flipX={!dragon.facesLeft}
             forcedFrame={state.playerForcedFrame}
             className={state.playerSpriteClass}
             element={dragon.element}

@@ -11,12 +11,18 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
     getCanvas: () => canvasRef.current,
   }));
 
+  const actualFramesRef = useRef(DRAGON_SHEET.totalFrames);
+
   // Load sprite sheet image
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       imageRef.current = img;
+      // Detect actual frame count from image dimensions
+      const cols = Math.floor(img.width / DRAGON_SHEET.frameWidth);
+      const rows = Math.floor(img.height / DRAGON_SHEET.frameHeight);
+      actualFramesRef.current = Math.min(DRAGON_SHEET.totalFrames, cols * rows);
       setImageLoaded(true);
     };
     img.src = spriteSheet;
@@ -25,12 +31,13 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
   // Animate frames
   useEffect(() => {
     if (forcedFrame !== null) {
-      setFrame(forcedFrame);
+      const clamped = Math.min(forcedFrame, actualFramesRef.current - 1);
+      setFrame(clamped);
       return;
     }
 
     const interval = setInterval(() => {
-      setFrame((prev) => (prev + 1) % DRAGON_SHEET.totalFrames);
+      setFrame((prev) => (prev + 1) % actualFramesRef.current);
     }, DRAGON_SHEET.frameDuration);
 
     return () => clearInterval(interval);
