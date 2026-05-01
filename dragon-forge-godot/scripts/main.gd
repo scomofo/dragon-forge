@@ -37,6 +37,8 @@ func _ready() -> void:
 	opening_overlay.completed.connect(_on_opening_sequence_completed)
 	if opening_overlay.should_show_for_profile(player_profile):
 		opening_overlay.start(player_profile)
+	else:
+		_play_music_context("world_wandering")
 
 func _unhandled_input(event: InputEvent) -> void:
 	if opening_overlay != null and opening_overlay.is_sequence_active() and event.is_pressed():
@@ -47,6 +49,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_encounter_requested(enemy_id: String, context: Dictionary = {}) -> void:
 	world_scene.visible = false
 	battle_scene.visible = true
+	_play_music_context("battle_tension")
 	battle_scene.start_battle(player_profile, enemy_id, context)
 
 func _on_dungeon_requested(dungeon_id: String, context: Dictionary = {}) -> void:
@@ -64,18 +67,26 @@ func _on_profile_changed(next_profile: Dictionary) -> void:
 func _on_opening_sequence_completed(next_profile: Dictionary) -> void:
 	player_profile = next_profile.duplicate(true)
 	world_scene.set_profile(player_profile)
+	_play_music_context("world_wandering")
 
 func _on_battle_closed() -> void:
 	battle_scene.visible = false
 	world_scene.visible = true
+	_play_music_context("world_wandering")
 	world_scene.set_profile(player_profile)
 
 func _on_dungeon_closed(next_profile: Dictionary, result: Dictionary) -> void:
 	player_profile = next_profile.duplicate(true)
 	dungeon_scene.visible = false
 	world_scene.visible = true
+	_play_music_context("world_wandering")
 	world_scene.set_profile(player_profile)
 	world_scene.apply_dungeon_result(result)
+
+func _play_music_context(context_id: String) -> void:
+	var director := get_node_or_null("/root/AudioDirector")
+	if director != null and director.has_method("play_music_context"):
+		director.call("play_music_context", context_id)
 
 func _save_game() -> void:
 	var state: Dictionary = world_scene.export_state()

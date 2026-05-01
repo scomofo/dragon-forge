@@ -149,6 +149,7 @@ func _render_page() -> void:
 		return
 	var page: Dictionary = pages[page_index]
 	current_audio_profile = SfxData.get_opening_sequence_audio_profile(str(page.get("tone", "system")))
+	_play_audio_cue(str(page.get("tone", "system")))
 	title_label.text = "%s\n%s" % [
 		str(sequence_profile.get("title", "ASTRAEUS EMERGENCY WAKE")),
 		str(sequence_profile.get("subtitle", "Operator signal recovered")),
@@ -166,3 +167,8 @@ func _render_page() -> void:
 	progress_bar.max_value = maxi(1, pages.size())
 	progress_bar.value = page_index + 1
 	prompt_label.text = "SPACE/ENTER advances  %02d/%02d" % [page_index + 1, pages.size()]
+
+func _play_audio_cue(tone: String) -> void:
+	var director := get_node_or_null("/root/AudioDirector")
+	if director != null and director.has_method("play_opening_sequence_cue"):
+		current_audio_profile = director.call("play_opening_sequence_cue", tone)

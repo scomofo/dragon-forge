@@ -24,6 +24,7 @@ const HardwareDungeonData := preload("res://scripts/sim/hardware_dungeon_data.gd
 const WeaverData := preload("res://scripts/sim/weaver_data.gd")
 const BattleVfxData := preload("res://scripts/sim/battle_vfx_data.gd")
 const SfxData := preload("res://scripts/sim/sfx_data.gd")
+const AudioDirectorService := preload("res://scripts/sim/audio_director.gd")
 const LoreCanon := preload("res://scripts/sim/lore_canon.gd")
 const StoryData := preload("res://scripts/sim/story_data.gd")
 const ProceduralVfxOverlay := preload("res://scripts/vfx/procedural_vfx_overlay.gd")
@@ -43,6 +44,7 @@ func _init() -> void:
 	var world := WorldData.create_world_state()
 	_assert_story_world_lore(world)
 	_assert_opening_sequence_overlay()
+	_assert_audio_director()
 	_assert(WorldData.get_current_tile(world)["id"] == "new_landing", "starts in New Landing")
 	world = WorldData.move_player(world, "east")
 	_assert(WorldData.get_current_tile(world)["id"] == "testing_fields", "moves one overworld tile east into testing fields")
@@ -1377,6 +1379,18 @@ func _assert_opening_sequence_overlay() -> void:
 	var battle_music := SfxData.get_music_profile("battle_tension")
 	_assert(map_music["nes_style"] and map_music["mood"] == "uneasy_wonder" and battle_music["tempo_bpm"] > map_music["tempo_bpm"], "music schema separates wandering and tense battle loops")
 	overlay.free()
+
+func _assert_audio_director() -> void:
+	var director := AudioDirectorService.new()
+	var opening_cue: Dictionary = director.play_opening_sequence_cue("warning")
+	_assert(opening_cue["music"]["id"] == "opening_sequence" and opening_cue["sfx"]["id"] == "opening_warning_pulse", "audio director routes opening scene cue to music and SFX profiles")
+	var battle_music: Dictionary = director.play_music_context("battle_tension")
+	_assert(battle_music["runtime_ready"] and battle_music["id"] == "battle_tension" and battle_music["intensity"] >= 0.9, "audio director can switch to battle tension runtime music")
+	director.play_music_context("world_wandering")
+	var state: Dictionary = director.get_audio_state_for_test()
+	_assert(state["current_music"]["id"] == "world_wandering" and state["last_sfx"]["id"] == "opening_warning_pulse" and state["cue_count"] >= 5, "audio director tracks current map music, last SFX, and cue history")
+	_assert(state["playback_mode"] == "profile_router_until_stream_assets_land", "audio director declares the current runtime playback mode")
+	director.free()
 
 func _has_command(commands: Array, id: String) -> bool:
 	for command in commands:
