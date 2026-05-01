@@ -1,4 +1,4 @@
-extends Node
+extends Control
 
 const DragonProgression := preload("res://scripts/sim/dragon_progression.gd")
 const WorldScene := preload("res://scenes/world/world_scene.tscn")
@@ -17,9 +17,9 @@ func _ready() -> void:
 	world_scene = WorldScene.instantiate()
 	battle_scene = BattleScene.instantiate()
 	dungeon_scene = HardwareDungeonScene.instantiate()
-	add_child(world_scene)
-	add_child(battle_scene)
-	add_child(dungeon_scene)
+	_attach_fullscreen_scene(world_scene)
+	_attach_fullscreen_scene(battle_scene)
+	_attach_fullscreen_scene(dungeon_scene)
 	battle_scene.visible = false
 	dungeon_scene.visible = false
 	opening_overlay = OpeningSequenceOverlay.new()
@@ -39,6 +39,16 @@ func _ready() -> void:
 		opening_overlay.start(player_profile)
 	else:
 		_play_music_context("world_wandering")
+
+func _attach_fullscreen_scene(scene: Control) -> void:
+	scene.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scene.offset_left = 0
+	scene.offset_top = 0
+	scene.offset_right = 0
+	scene.offset_bottom = 0
+	scene.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scene.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	add_child(scene)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if opening_overlay != null and opening_overlay.is_sequence_active() and event.is_pressed():

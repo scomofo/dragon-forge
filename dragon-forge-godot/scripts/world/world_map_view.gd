@@ -7,6 +7,8 @@ signal selected_action_requested(command: Dictionary)
 const VisualSystemData := preload("res://scripts/sim/visual_system_data.gd")
 
 const DESIRED_TILE_SIZE := 26.0
+const MIN_TILE_SIZE := 10.0
+const MAP_VIEW_MARGIN := 8.0
 const CAMERA_LERP := 10.0
 
 const KIND_COLORS := {
@@ -344,6 +346,34 @@ func get_tile_render_profile(tile: Dictionary, position: Vector2i = Vector2i.ZER
 		"detail_alpha": 0.72 if role != "route" else 0.52,
 		"edge_color": TERRAIN_EDGE_COLORS.get(kind, Color("#f4ead2")),
 		"soft_inset": 0.08 if role == "terrain" else 0.03,
+	}
+
+func get_map_fit_profile(source_world: Dictionary = {}, viewport_size: Vector2 = Vector2.ZERO) -> Dictionary:
+	if source_world.is_empty():
+		source_world = world
+	if source_world.is_empty() or not source_world.has("tiles"):
+		return {}
+	var rows: Array = source_world["tiles"]
+	if rows.is_empty():
+		return {}
+	var columns := int(rows[0].size())
+	var row_count := int(rows.size())
+	var safe_viewport := viewport_size
+	if safe_viewport.x <= 0.0 or safe_viewport.y <= 0.0:
+		safe_viewport = size
+	var fitted_tile_size := _fit_tile_size(rows, safe_viewport)
+	var map_size := Vector2(float(columns), float(row_count)) * fitted_tile_size
+	return {
+		"columns": columns,
+		"rows": row_count,
+		"viewport_size": safe_viewport,
+		"tile_size": fitted_tile_size,
+		"map_size": map_size,
+		"fits_x": map_size.x <= safe_viewport.x - MAP_VIEW_MARGIN * 2.0 + 0.01,
+		"fits_y": map_size.y <= safe_viewport.y - MAP_VIEW_MARGIN * 2.0 + 0.01,
+		"visible_fraction_x": clampf((safe_viewport.x - MAP_VIEW_MARGIN * 2.0) / maxf(map_size.x, 1.0), 0.0, 1.0),
+		"visible_fraction_y": clampf((safe_viewport.y - MAP_VIEW_MARGIN * 2.0) / maxf(map_size.y, 1.0), 0.0, 1.0),
+		"layout_mode": "fit_full_overworld" if map_size.x <= safe_viewport.x - MAP_VIEW_MARGIN * 2.0 + 0.01 and map_size.y <= safe_viewport.y - MAP_VIEW_MARGIN * 2.0 + 0.01 else "camera_scroll",
 	}
 
 func get_tile_visual_profile_for_position(map_world: Dictionary, position: Vector2i) -> Dictionary:
@@ -1991,10 +2021,23 @@ func _draw() -> void:
 func _update_layout() -> void:
 	var rows: Array = world["tiles"]
 	var columns: int = rows[0].size()
-	tile_size = min(DESIRED_TILE_SIZE, max(14.0, floor(size.y / 15.0)))
+	tile_size = _fit_tile_size(rows, size)
 	var map_size := Vector2(columns * tile_size, rows.size() * tile_size)
 	var raw_origin := (size * 0.5 - (camera_position + Vector2(0.5, 0.5)) * tile_size).floor()
 	map_origin = _clamp_origin(raw_origin, map_size)
+
+func _fit_tile_size(rows: Array, viewport_size: Vector2) -> float:
+	if rows.is_empty() or viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return DESIRED_TILE_SIZE
+	var columns := int(rows[0].size())
+	var row_count := int(rows.size())
+	var available := Vector2(
+		maxf(MIN_TILE_SIZE, viewport_size.x - MAP_VIEW_MARGIN * 2.0),
+		maxf(MIN_TILE_SIZE, viewport_size.y - MAP_VIEW_MARGIN * 2.0)
+	)
+	var fit_x: float = floor(available.x / maxf(float(columns), 1.0))
+	var fit_y: float = floor(available.y / maxf(float(row_count), 1.0))
+	return clampf(minf(DESIRED_TILE_SIZE, minf(fit_x, fit_y)), MIN_TILE_SIZE, DESIRED_TILE_SIZE)
 
 func _draw_ocean_backdrop() -> void:
 	var rows: Array = world["tiles"]
@@ -3846,11 +3889,11 @@ func _clamp_origin(raw_origin: Vector2, map_size: Vector2) -> Vector2:
 	if map_size.x <= size.x:
 		origin.x = floor((size.x - map_size.x) * 0.5)
 	else:
-		origin.x = clampf(origin.x, size.x - map_size.x - 8.0, 8.0)
+		origin.x = clampf(origin.x, size.x - map_size.x - MAP_VIEW_MARGIN, MAP_VIEW_MARGIN)
 	if map_size.y <= size.y:
 		origin.y = floor((size.y - map_size.y) * 0.5)
 	else:
-		origin.y = clampf(origin.y, size.y - map_size.y - 8.0, 8.0)
+		origin.y = clampf(origin.y, size.y - map_size.y - MAP_VIEW_MARGIN, MAP_VIEW_MARGIN)
 	return origin
 
 func _edge_point_for_direction(direction: Vector2) -> Vector2:
