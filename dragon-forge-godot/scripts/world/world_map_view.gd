@@ -11,8 +11,8 @@ const CAMERA_LERP := 10.0
 
 const KIND_COLORS := {
 	"field": Color("#87d82f"),
-	"lab": Color("#b7b7a3"),
-	"forge": Color("#8b2d24"),
+	"lab": Color("#70ff8f"),
+	"forge": Color("#7a241c"),
 	"archive": Color("#a6a69b"),
 	"gate": Color("#50332b"),
 	"jungle": Color("#1f8f37"),
@@ -30,6 +30,16 @@ const TILE_STYLE_PROFILES := {
 		"terrain_motif": "pastoral_patchwork",
 		"accent_color": Color("#c9ff6a"),
 		"detail_count": 3,
+	},
+	"lab": {
+		"terrain_motif": "safe_workshop_beacon",
+		"accent_color": Color("#70ff8f"),
+		"detail_count": 5,
+	},
+	"forge": {
+		"terrain_motif": "magma_marsh",
+		"accent_color": Color("#ff8a4c"),
+		"detail_count": 4,
 	},
 	"jungle": {
 		"terrain_motif": "data_cable_canopy",
@@ -282,6 +292,20 @@ func get_tile_map_identity_profile(tile: Dictionary) -> Dictionary:
 			identity["map_glyph"] = "CACHE"
 			tags.append("CRT BINARY")
 			tags.append("ACTIVE MEMORY")
+	if str(tile.get("id", "")) == "forge_lab":
+		identity["map_glyph"] = "WORKSHOP"
+		identity["safe_zone_role"] = "FELIX SAFE WORKSHOP"
+		identity["chapter_role"] = "TRAIN + SAVE + DUNGEON"
+		identity["next_route"] = "Cooling Intake"
+		identity["interactive_surface"] = "workshop_dungeon_entry"
+		tags.append("FELIX")
+		tags.append("SAFE")
+		tags.append("TRAIN")
+	if str(tile.get("id", "")) == "digital_forge":
+		identity["map_glyph"] = "HATCHERY"
+		identity["chapter_role"] = "DRAGON HATCHERY"
+		identity["interactive_surface"] = "hatchery_ring"
+		tags.append("DRAGON REGISTRY")
 	if str(tile.get("hazard_id", "")) == "white_out_purge":
 		tags.append("WHITE-OUT")
 		identity["purge_rule"] = "Find green shielded ports before the sector wipe."
@@ -875,9 +899,9 @@ func get_tile_marker_profile(tile: Dictionary, cleared: bool = false) -> Diction
 	elif tile.get("id", "") == "forge_lab":
 		marker_kind = "safe_dungeon"
 		ring_color = Color("#70ff8f")
-		fill_color = Color("#123d29")
-		icon = "S"
-		pulse_alpha = 0.34
+		fill_color = Color("#082f20")
+		icon = "FW"
+		pulse_alpha = 0.44
 	elif tile.get("hatchery_flow", false):
 		marker_kind = "hatchery"
 		ring_color = Color("#c0c8ff")
@@ -1229,6 +1253,7 @@ func get_map_status_panel_profile(pressure: Dictionary = {}) -> Dictionary:
 func get_tile_tooltip_profile(tile: Dictionary, carried_gear: Variant = null) -> Dictionary:
 	var badges: Array[String] = []
 	if tile.get("id", "") == "forge_lab":
+		badges.append("WORKSHOP")
 		badges.append("SAFE")
 	if str(tile.get("dungeon_id", "")) != "":
 		badges.append("DUNGEON")
@@ -1271,6 +1296,15 @@ func get_tile_tooltip_profile(tile: Dictionary, carried_gear: Variant = null) ->
 
 func get_tile_action_profile(tile: Dictionary) -> Dictionary:
 	var required_gear := _gear_for_relic_code(str(tile.get("requires_relic_code", "")))
+	if tile.get("id", "") == "forge_lab":
+		return {
+			"action_kind": "dungeon",
+			"primary_label": "Enter Cooling Intake",
+			"detail_label": "Felix Workshop: train, save, socket relics",
+			"reward_label": "Cooling Intake Relay",
+			"route_hint": "Safe workshop dungeon entry",
+			"action_color": Color("#70ff8f"),
+		}
 	if required_gear != "":
 		return {
 			"action_kind": "access_port",
@@ -2130,6 +2164,16 @@ func _draw_tile_style_overlay(profile: Dictionary, tile_rect: Rect2, position: V
 	var s := tile_rect.size.x
 	var center := tile_rect.get_center()
 	match motif:
+		"safe_workshop_beacon":
+			draw_rect(tile_rect.grow(-s * 0.18), Color("#0b3f28", 0.68))
+			draw_rect(tile_rect.grow(-s * 0.28), Color(accent.r, accent.g, accent.b, 0.34), false, 2.0)
+			draw_line(center + Vector2(-s * 0.22, 0.0), center + Vector2(s * 0.22, 0.0), Color("#f9f4df", 0.78), 1.5)
+			draw_line(center + Vector2(0.0, -s * 0.22), center + Vector2(0.0, s * 0.22), Color("#f9f4df", 0.78), 1.5)
+		"magma_marsh":
+			for i in count:
+				var y := tile_rect.position.y + s * (0.18 + float(i) * 0.14)
+				draw_line(Vector2(tile_rect.position.x + s * 0.14, y), Vector2(tile_rect.end.x - s * 0.14, y + sin(float(position.x + i)) * s * 0.08), Color(accent.r, accent.g, accent.b, 0.28), 1.0)
+			draw_circle(center, s * 0.08, Color("#ff594d", 0.28))
 		"data_cable_canopy":
 			for i in count:
 				var x := tile_rect.position.x + s * (0.16 + float(i) * 0.16)

@@ -97,9 +97,9 @@ const LANDMARKS := {
 	},
 	Vector2i(13, 10): {
 		"id": "forge_lab",
-		"label": "Felix Basement Lab",
+		"label": "Felix Workshop",
 		"kind": "lab",
-		"description": "Cables, cracked mugs, and impossible instruments crowd Felix's hiding place.",
+		"description": "A green-lit safe workshop under the village: save, train, socket Anvil relics, and enter the Cooling Intake hardware dungeon.",
 		"lore_signal": "Astraeus telemetry leaks through Felix's basement instruments whenever Skye gets close.",
 		"skye_objective": "Use the Forge as a stable route before Mirror Admin classifies Skye as corrupted memory.",
 		"dungeon_id": "cooling_intake",
