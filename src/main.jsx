@@ -6,6 +6,7 @@ import './styles/components.css';
 import './styles/nav.css';
 import './styles/terminal.css';
 import './styles/battle.css';
+import './styles/campaignMap.css';
 import './styles/hatchery.css';
 import './styles/select.css';
 import './styles/fusion.css';

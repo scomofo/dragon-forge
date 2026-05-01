@@ -41,6 +41,12 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
           SHOP
         </button>
         <button
+          className={`nav-tab ${activeScreen === 'map' ? 'active' : ''}`}
+          onClick={() => onNavigate('map')}
+        >
+          MAP
+        </button>
+        <button
           className={`nav-tab ${activeScreen === 'battleSelect' ? 'active' : ''}`}
           onClick={() => onNavigate('battleSelect')}
         >

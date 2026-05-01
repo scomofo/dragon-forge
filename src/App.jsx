@@ -6,6 +6,7 @@ import BattleScreen from './BattleScreen';
 import HatcheryScreen from './HatcheryScreen';
 import FusionScreen from './FusionScreen';
 import JournalScreen from './JournalScreen';
+import CampaignMapScreen from './CampaignMapScreen';
 import ShopScreen from './ShopScreen';
 import StatsScreen from './StatsScreen';
 import SettingsScreen from './SettingsScreen';
@@ -22,6 +23,7 @@ const SCREENS = {
   BATTLE: 'battle',
   FUSION: 'fusion',
   JOURNAL: 'journal',
+  MAP: 'map',
   SHOP: 'shop',
   STATS: 'stats',
   SETTINGS: 'settings',
@@ -70,6 +72,9 @@ export default function App() {
     } else if (target === 'shop') {
       playMusic('hatchery');
       setScreen(SCREENS.SHOP);
+    } else if (target === 'map') {
+      playMusic('mapWander');
+      setScreen(SCREENS.MAP);
     } else if (target === 'stats') {
       playMusic('hatchery');
       setScreen(SCREENS.STATS);
@@ -87,14 +92,26 @@ export default function App() {
 
   function handleBeginBattle(config) {
     playSound('buttonClick');
-    playMusic('battle', true);
+    playMusic('battleTense', true);
     setBattleConfig(config);
+    setScreen(SCREENS.BATTLE);
+  }
+
+  function handleBeginCampaignBattle(config) {
+    playSound('buttonClick');
+    playMusic('battleTense', true);
+    setBattleConfig({
+      dragonId: config.dragonId,
+      npcId: config.npcId,
+      campaignNodeId: config.nodeId,
+      returnScreen: SCREENS.MAP,
+    });
     setScreen(SCREENS.BATTLE);
   }
 
   function handleEngageBoss(config) {
     playSound('buttonClick');
-    playMusic('battle', true);
+    playMusic('battleTense', true);
     setBattleConfig({
       dragonId: config.dragonId,
       npcId: config.boss.id,
@@ -107,9 +124,10 @@ export default function App() {
 
   function handleBattleEnd() {
     refreshSave();
-    playMusic('select');
+    const returnScreen = battleConfig?.returnScreen;
+    playMusic(returnScreen === SCREENS.MAP ? 'mapWander' : 'select');
     setBattleConfig(null);
-    setScreen(SCREENS.BATTLE_SELECT);
+    setScreen(returnScreen || SCREENS.BATTLE_SELECT);
   }
 
   function handleSingularityBattleEnd() {
@@ -137,6 +155,15 @@ export default function App() {
       {screen === SCREENS.JOURNAL && (
         <div className="screen-enter" key="journal">
           <JournalScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} showToast={showToast} />
+        </div>
+      )}
+      {screen === SCREENS.MAP && (
+        <div className="screen-enter" key="map">
+          <CampaignMapScreen
+            onNavigate={handleNavigate}
+            onBeginCampaignBattle={handleBeginCampaignBattle}
+            save={save}
+          />
         </div>
       )}
       {screen === SCREENS.SHOP && (

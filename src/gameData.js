@@ -102,8 +102,8 @@ export const dragons = {
     baseStats: { hp: 85, atk: 32, def: 14, spd: 26 },
     moveKeys: ['shadow_strike', 'void_pulse'],
     spriteSheet: assetUrl('/assets/dragons/shadow.png'),
-    stageSprites: { 1: assetUrl('/assets/dragons/shadow_stage1.png'), 2: assetUrl('/assets/dragons/shadow_stage2.png'), 3: assetUrl('/assets/dragons/shadow_stage3.png'), 4: assetUrl('/assets/dragons/shadow_stage4.png') },
-    facesLeft: true,
+    stageSprites: { 1: assetUrl('/assets/dragons/shadow_stage2.png'), 2: assetUrl('/assets/dragons/shadow_stage2.png'), 3: assetUrl('/assets/dragons/shadow_stage3.png'), 4: assetUrl('/assets/dragons/shadow_stage4.png') },
+    facesLeft: false,
   },
   void: {
     id: 'void',
@@ -212,6 +212,7 @@ export const npcs = {
     idleSprite: assetUrl('/assets/npc/crypto_crab_sprites.png'),
     attackSprite: assetUrl('/assets/npc/crypto_crab_attack.png'),
     arena: assetUrl('/assets/arenas/npc_crypto_crab.png'),
+    flipSprite: true,
   },
   logic_bomb: {
     id: 'logic_bomb',
@@ -240,6 +241,7 @@ export const npcs = {
     idleSprite: assetUrl('/assets/npc/phishing_siren_sprites.png'),
     attackSprite: assetUrl('/assets/npc/phishing_siren_attack.png'),
     arena: assetUrl('/assets/arenas/npc_phishing_siren.png'),
+    flipSprite: true,
   },
   protocol_vulture: {
     id: 'protocol_vulture',
@@ -254,6 +256,7 @@ export const npcs = {
     idleSprite: assetUrl('/assets/npc/protocol_vulture_sprites.png'),
     attackSprite: assetUrl('/assets/npc/protocol_vulture_attack.png'),
     arena: assetUrl('/assets/arenas/npc_protocol_vulture.png'),
+    flipSprite: true,
   },
 };
 

@@ -6,13 +6,16 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain,
 } from './battleEngine';
-import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, addCore, decrementXpBoost, trackStat, completeDailyChallenge, updateRecords } from './persistence';
+import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, addCore, decrementXpBoost, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
+import { FRAGMENT_TRIGGERS } from './forgeData';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
 import { EPILOGUE_LINES } from './singularityBosses';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
 import VfxOverlay from './VfxOverlay';
+import { getBattlePresentationProfile, getBattleResultCallout, shouldAnimateBattleEvent } from './battlePresentation';
+import useGamepadController from './useGamepadController';
 import {
   screenShake, hitFlash, criticalHit, shatterKO,
   shieldUp, shieldDeflect, shieldDismiss,
@@ -38,6 +41,66 @@ function getScaledNpcStats(baseStats, baseLevel, playerLevel) {
     scaledStats[key] = Math.floor(baseStats[key] * scale);
   }
   return { stats: scaledStats, level: Math.max(baseLevel, Math.floor(baseLevel + (playerLevel - baseLevel) * 0.5)) };
+}
+
+function getHpState(current, max) {
+  const ratio = max > 0 ? current / max : 0;
+  if (ratio <= 0.25) return 'danger';
+  if (ratio <= 0.5) return 'warning';
+  return 'stable';
+}
+
+function getMoveEffectivenessLabel(moveElement, defenderElement) {
+  if (!moveElement || moveElement === 'neutral') return 'NORMAL';
+  const chart = {
+    fire: { strong: ['ice'], weak: ['stone', 'fire'] },
+    ice: { strong: ['storm'], weak: ['fire', 'ice'] },
+    storm: { strong: ['stone'], weak: ['ice', 'storm'] },
+    stone: { strong: ['fire'], weak: ['storm', 'stone'] },
+    venom: { strong: ['stone'], weak: ['shadow', 'venom'] },
+    shadow: { strong: ['venom'], weak: ['fire', 'shadow'] },
+  };
+  if (chart[moveElement]?.strong.includes(defenderElement)) return 'ADVANTAGE';
+  if (chart[moveElement]?.weak.includes(defenderElement)) return 'RESISTED';
+  return 'NORMAL';
+}
+
+function getMoveProfileText(moveKeys) {
+  return moveKeys
+    .map((key) => moves[key]?.element)
+    .filter(Boolean)
+    .map((element) => element.toUpperCase())
+    .filter((element, index, list) => list.indexOf(element) === index)
+    .slice(0, 3)
+    .join(' / ') || 'UNKNOWN';
+}
+
+function getBattleEdge(playerHpPercent, npcHpPercent, playerHpState, npcHpState) {
+  if (playerHpState === 'danger') {
+    return { tone: 'danger', label: 'DANGER', detail: 'HOLD LINE' };
+  }
+  if (npcHpState === 'danger') {
+    return { tone: 'advantage', label: 'PRESSURE', detail: 'FINISH IT' };
+  }
+  const delta = playerHpPercent - npcHpPercent;
+  if (delta >= 18) return { tone: 'advantage', label: 'EDGE', detail: 'PLAYER' };
+  if (delta <= -18) return { tone: 'warning', label: 'EDGE', detail: 'ENEMY' };
+  return { tone: 'neutral', label: 'EDGE', detail: 'EVEN' };
+}
+
+function getBattleRank(turnCount, maxDamage, playerHpPercent) {
+  let score = 0;
+  if (turnCount <= 3) score += 2;
+  else if (turnCount <= 5) score += 1;
+  if (maxDamage >= 24) score += 2;
+  else if (maxDamage >= 14) score += 1;
+  if (playerHpPercent >= 70) score += 2;
+  else if (playerHpPercent >= 40) score += 1;
+
+  if (score >= 6) return 'S';
+  if (score >= 4) return 'A';
+  if (score >= 2) return 'B';
+  return 'C';
 }
 
 function initBattle(dragonId, npcId, save, battleConfig) {
@@ -103,6 +166,7 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     playerStatus: null,
     npcStatus: null,
     vfxActive: null,
+    battleCallout: null,
     currentPhase: 0,
     battleLog: [],
     turnCount: 0,
@@ -148,6 +212,10 @@ function battleReducer(state, action) {
       return { ...state, vfxActive: action.value };
     case 'CLEAR_VFX':
       return { ...state, vfxActive: null };
+    case 'SET_BATTLE_CALLOUT':
+      return { ...state, battleCallout: action.value };
+    case 'CLEAR_BATTLE_CALLOUT':
+      return { ...state, battleCallout: null };
     case 'ADD_LOG':
       return { ...state, battleLog: [...state.battleLog, action.text] };
     case 'PHASE_SHIFT':
@@ -174,6 +242,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const animatingRef = useRef(false);
   const damageIdRef = useRef(0);
   const [autoBattle, setAutoBattle] = useState(false);
+  const [selectedMoveKey, setSelectedMoveKey] = useState(null);
+  const [controllerFocusIndex, setControllerFocusIndex] = useState(0);
 
   const battleContainerRef = useRef(null);
   const playerSpriteContainerRef = useRef(null);
@@ -191,6 +261,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     if (event.action === 'defend') {
       dispatch({ type: 'ADD_LOG', text: `${who} defended.` });
+      playSound('combatMessage');
       playSound('defend');
       const targetContainer = isPlayer ? playerSpriteContainerRef.current : npcSpriteContainerRef.current;
       if (targetContainer) {
@@ -209,6 +280,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     if (event.action === 'reflect') {
       dispatch({ type: 'ADD_LOG', text: `${who} used Null Reflect!` });
+      playSound('combatMessage');
       playSound('defend');
       if (isPlayer) {
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
@@ -224,18 +296,20 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       return;
     }
 
+    const move = moves[event.moveKey] || moves.basic_attack;
+    const profile = getBattlePresentationProfile(event, move);
+
     // TELEGRAPH phase
     if (isPlayer) {
-      dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
+      dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: profile.attackerClass });
       dispatch({ type: 'SET_PLAYER_FORCED_FRAME', value: null });
     } else {
-      dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-telegraph' });
+      dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: profile.attackerClass });
     }
     playSound('attackLaunch');
-    await wait(400);
+    await wait(profile.anticipationMs);
 
     // VFX TRAVEL + IMPACT phase
-    const move = moves[event.moveKey] || moves.basic_attack;
     const vfxElement = move.element === 'neutral' ? 'neutral' : move.element;
     const vfxDirection = isPlayer ? 'left-to-right' : 'right-to-left';
 
@@ -288,14 +362,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       }
       // Hit-sound chosen now, played after hit-stop so it lands at the freeze peak
       const hitSoundName = event.reflected
-        ? 'superEffective'
+        ? profile.sound
         : event.isCritical
-          ? 'criticalHit'
+          ? profile.sound
           : event.effectiveness > 1.0
-            ? 'superEffective'
+            ? profile.sound
             : event.effectiveness < 1.0
-              ? 'resisted'
-              : 'attackHit';
+              ? profile.sound
+              : profile.sound;
 
       const container = battleContainerRef.current;
       const targetContainer = isPlayer
@@ -315,7 +389,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         if (container) pixelShake(container, 3, 0.12);
       } else if (event.isCritical && container) {
         // Hit-stop before the crit cinematic for that NES "moment of impact" pause
-        await hitStop(0.11);
+        await hitStop(profile.impactPauseMs / 1000);
         playSound(hitSoundName, { element: move.element });
         await new Promise(resolve => {
           const tl = criticalHit(container, targetContainer, targetSide);
@@ -328,14 +402,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         const hpRatio = event.damage / (isPlayer ? state.npcMaxHp : state.playerMaxHp);
         const isHeavy = event.effectiveness > 1.0 || hpRatio > 0.25;
         // Universal hit-stop: short on normal, longer on super-effective
-        await hitStop(isHeavy ? 0.09 : 0.05);
+        await hitStop(profile.impactPauseMs / 1000);
         playSound(hitSoundName, { element: move.element });
-        const intensity = Math.min(8, Math.round(4 + hpRatio * 8));
+        const intensity = Math.max(profile.shake, Math.min(8, Math.round(4 + hpRatio * 8)));
         pixelShake(container, intensity, 0.18);
         if (targetContainer) {
           const flashColor = event.effectiveness > 1.0
             ? (elementColors[move.element]?.primary || '#ffffff')
-            : '#ffffff';
+            : profile.flashColor;
           hitFlash(targetContainer, flashColor);
         }
         if (targetSpriteEl) hitFlicker(targetSpriteEl, isHeavy ? 4 : 3);
@@ -349,10 +423,22 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         : (event.reflected ? npcSpriteContainerRef.current : playerSpriteContainerRef.current);
       if (hitTarget) hitSquash(hitTarget);
     } else {
-      playSound('miss');
+      playSound(profile.sound);
+      const whiffTarget = isPlayer ? npcSpriteContainerRef.current : playerSpriteContainerRef.current;
+      if (whiffTarget) {
+        dispatch({
+          type: isPlayer ? 'SET_NPC_SPRITE_CLASS' : 'SET_PLAYER_SPRITE_CLASS',
+          value: profile.defenderClass,
+        });
+      }
     }
 
     const dmgTarget = event.reflected ? (isPlayer ? 'player' : 'npc') : (isPlayer ? 'npc' : 'player');
+    const callout = getBattleResultCallout(event);
+    if (callout) {
+      dispatch({ type: 'SET_BATTLE_CALLOUT', value: callout });
+      setTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 620);
+    }
     const dmgId = ++damageIdRef.current;
     const staggerIdx = damageStaggerRef.current++;
     dispatch({
@@ -364,6 +450,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         hit: event.hit,
         target: dmgTarget,
         isCritical: event.isCritical || false,
+        variant: profile.damageVariant,
         staggerIndex: staggerIdx,
       },
     });
@@ -376,21 +463,39 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       const effText = event.effectiveness > 1 ? ' Super effective!' : event.effectiveness < 1 ? ' Resisted.' : '';
       const reflectText = event.reflected ? ' REFLECTED!' : '';
       dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — ${event.damage} dmg.${critText}${effText}${reflectText}` });
+      playSound('combatMessage');
     } else {
       dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — missed!` });
+      playSound('combatMessage');
     }
     if (event.appliedStatus) {
       dispatch({ type: 'ADD_LOG', text: `${event.appliedStatus} applied!` });
+      playSound('combatMessage');
       playSound('statusApply');
+      const statusId = ++damageIdRef.current;
+      dispatch({
+        type: 'ADD_DAMAGE_NUMBER',
+        entry: {
+          id: statusId,
+          damage: 0,
+          effectiveness: 1.0,
+          hit: true,
+          target: dmgTarget,
+          variant: 'status',
+          label: event.appliedStatus.toUpperCase(),
+          staggerIndex: staggerIdx + 1,
+          position: { x: 54, y: -54 },
+        },
+      });
     }
-    await wait(300);
+    await wait(profile.recoveryMs);
 
     damageStaggerRef.current = 0;
 
     if (isPlayer) {
-      dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-recoil' });
+      dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: profile.defenderClass || 'sprite-recoil' });
     } else {
-      dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-recoil' });
+      dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: profile.defenderClass || 'sprite-recoil' });
     }
     await wait(200);
 
@@ -425,9 +530,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
   const handleMoveSelect = useCallback(async (moveKey) => {
     if (animatingRef.current) return;
-    playSound('buttonClick');
+    playSound('commandSelect', { element: moves[moveKey]?.element });
+    setSelectedMoveKey(moveKey);
     animatingRef.current = true;
     dispatch({ type: 'START_ANIMATION' });
+    playSound('commandExecute', { element: moves[moveKey]?.element });
 
     const playerState = {
       name: state.dragon.name,
@@ -459,7 +566,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     const result = resolveTurn(playerState, npcState, moveKey, npcMoveKey, state.dragon.moveKeys, state.npc.moveKeys);
 
     for (const event of result.events) {
-      await animateEvent(event, dispatch);
+      if (shouldAnimateBattleEvent(event)) {
+        await animateEvent(event, dispatch);
+      }
     }
 
     // Sync status from engine
@@ -509,6 +618,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         }
       }
       if (event.action === 'statusSkip') {
+        const skippedName = event.attacker === 'player' ? 'You' : 'Enemy';
+        dispatch({ type: 'ADD_LOG', text: `${skippedName} cannot move — ${event.statusName}!` });
+        playSound('combatMessage');
         const dmgId = ++damageIdRef.current;
         dispatch({
           type: 'ADD_DAMAGE_NUMBER',
@@ -610,6 +722,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         if (battleConfig?.isSingularity && phases && !save.singularityComplete) {
           trackStat('battlesWon');
           if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
+          runFragmentUnlockPass();
+          dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-celebrate' });
           dispatch({ type: 'SET_EPILOGUE', xpGained, scrapsGained });
           stopMusic();
           stopHeartbeat();
@@ -618,6 +732,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           trackStat('battlesWon');
           if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
           updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: true });
+          runFragmentUnlockPass();
+          dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-celebrate' });
           dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped });
           stopMusic();
           stopHeartbeat();
@@ -642,6 +758,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       }
       trackStat('battlesLost');
       updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
+      dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-defeated' });
       dispatch({ type: 'SET_DEFEAT' });
       stopMusic();
       stopHeartbeat();
@@ -664,22 +781,95 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     }
 
     animatingRef.current = false;
+    setSelectedMoveKey(null);
   }, [state, animateEvent]);
 
   const dragon = state.dragon;
   const npc = state.npc;
   const playerMoves = [...dragon.moveKeys.map((k) => ({ key: k, ...moves[k] })), { key: 'basic_attack', ...moves.basic_attack }];
+  const controllerCommandCount = playerMoves.length + 2;
   const playerColor = elementColors[dragon.element];
   const npcColor = elementColors[npc.element];
+  const playerHpState = getHpState(state.playerHp, state.playerMaxHp);
+  const npcHpState = getHpState(state.npcHp, state.npcMaxHp);
+  const playerHpPercent = Math.max(0, Math.min(100, (state.playerHp / state.playerMaxHp) * 100));
+  const npcHpPercent = Math.max(0, Math.min(100, (state.npcHp / state.npcMaxHp) * 100));
+  const isResolvingTurn = state.phase !== PHASES.PLAYER_TURN;
+  const battleEdge = getBattleEdge(playerHpPercent, npcHpPercent, playerHpState, npcHpState);
+  const battleRank = getBattleRank(state.turnCount + 1, state.maxDamageDealt, playerHpPercent);
+
+  useEffect(() => {
+    setControllerFocusIndex((index) => Math.min(index, controllerCommandCount - 1));
+  }, [controllerCommandCount]);
+
+  useGamepadController({
+    onDirectionPress: (direction) => {
+      if (isResolvingTurn) return;
+      if (direction === 'LEFT' || direction === 'UP') {
+        playSound('uiHover');
+        setControllerFocusIndex((index) => (index - 1 + controllerCommandCount) % controllerCommandCount);
+      }
+      if (direction === 'RIGHT' || direction === 'DOWN') {
+        playSound('uiHover');
+        setControllerFocusIndex((index) => (index + 1) % controllerCommandCount);
+      }
+    },
+    onButtonPress: (button) => {
+      if (button === 'Y') {
+        playSound('uiConfirm');
+        setAutoBattle((enabled) => !enabled);
+        setControllerFocusIndex(controllerCommandCount - 1);
+        return;
+      }
+      if (isResolvingTurn) return;
+      if (button === 'B') {
+        setControllerFocusIndex(playerMoves.length);
+        handleMoveSelect('defend');
+        return;
+      }
+      if (button === 'A' || button === 'START') {
+        if (controllerFocusIndex < playerMoves.length) {
+          handleMoveSelect(playerMoves[controllerFocusIndex].key);
+        } else if (controllerFocusIndex === playerMoves.length) {
+          handleMoveSelect('defend');
+        } else {
+          playSound('uiConfirm');
+          setAutoBattle((enabled) => !enabled);
+        }
+      }
+    },
+  });
 
   return (
-    <div ref={battleContainerRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+    <div
+      ref={battleContainerRef}
+      className={`battle-screen ${isResolvingTurn ? 'resolving' : 'awaiting'} player-${playerHpState} npc-${npcHpState}`}
+      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
+    >
       {/* Arena background */}
       <div className="arena pixelated" style={{ backgroundImage: `url(${npc.arena})`, filter: state.npc.arenaFilter || 'none' }} />
+      <div className="arena-overlay" aria-hidden="true" />
+      <div className="battle-telemetry-grid" aria-hidden="true">
+        <span className="telemetry-node node-a" />
+        <span className="telemetry-node node-b" />
+        <span className="telemetry-node node-c" />
+      </div>
+      <div className="battle-scanline-sweep" aria-hidden="true" />
+      <div className="battle-frame-corners" aria-hidden="true">
+        <span className="corner tl" />
+        <span className="corner tr" />
+        <span className="corner bl" />
+        <span className="corner br" />
+        <span className="target-tick left" />
+        <span className="target-tick right" />
+      </div>
 
       {/* Top bar — HP */}
       <div className="panel panel-top">
-        <div className="hp-bar-container">
+        <div
+          className={`hp-bar-container combatant-card enemy ${npcHpState}`}
+          style={{ '--combatant-color': npcColor.primary, '--combatant-glow': npcColor.glow }}
+        >
           <div className="hp-bar-label" style={{ color: npcColor.glow }}>
             {npcColor.icon} {npc.name} <span style={{ color: '#888' }}>Lv.{npc.level}</span>
             {state.currentPhase > 0 && battleConfig?.phases && (
@@ -692,13 +882,19 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             <div
               className="hp-bar-fill"
               style={{
-                width: `${(state.npcHp / state.npcMaxHp) * 100}%`,
+                width: `${npcHpPercent}%`,
                 background: `linear-gradient(90deg, ${npcColor.primary}, ${npcColor.glow})`,
               }}
             />
           </div>
-          <div style={{ fontSize: 8, color: '#888', marginTop: 2 }}>
-            HP {state.npcHp}/{state.npcMaxHp}
+          <div className="hp-meta">
+            <span>HP {state.npcHp}/{state.npcMaxHp}</span>
+            <span>{npcHpState.toUpperCase()}</span>
+          </div>
+          <div className="combat-stat-strip">
+            <span>ATK <strong>{npc.stats.atk}</strong></span>
+            <span>DEF <strong>{npc.stats.def}</strong></span>
+            <span>SPD <strong>{npc.stats.spd}</strong></span>
           </div>
           {state.npcStatus && (
             <div className={`status-indicator ${STATUS_EFFECTS[state.npcStatus.effect]?.name.toLowerCase().replace(' ', '')}`}>
@@ -707,9 +903,16 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           )}
         </div>
 
-        <div style={{ color: '#555', fontSize: 14 }}>VS</div>
+        <div className="turn-chip">
+          <span>{isResolvingTurn ? 'RESOLVING' : 'PLAYER TURN'}</span>
+          <strong>TURN {state.turnCount + 1}</strong>
+          <small>ENEMY: {getMoveProfileText(npc.moveKeys)}</small>
+        </div>
 
-        <div className="hp-bar-container" style={{ textAlign: 'right' }}>
+        <div
+          className={`hp-bar-container combatant-card player ${playerHpState}`}
+          style={{ '--combatant-color': playerColor.primary, '--combatant-glow': playerColor.glow }}
+        >
           <div className="hp-bar-label" style={{ color: playerColor.glow }}>
             <span style={{ color: '#888' }}>Lv.{state.playerLevel}</span> {playerColor.icon} {save.dragons[dragonId]?.nickname || dragon.name}
           </div>
@@ -717,14 +920,20 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             <div
               className="hp-bar-fill"
               style={{
-                width: `${(state.playerHp / state.playerMaxHp) * 100}%`,
+                width: `${playerHpPercent}%`,
                 background: `linear-gradient(90deg, ${playerColor.primary}, ${playerColor.glow})`,
                 marginLeft: 'auto',
               }}
             />
           </div>
-          <div style={{ fontSize: 8, color: '#888', marginTop: 2, textAlign: 'right' }}>
-            HP {state.playerHp}/{state.playerMaxHp}
+          <div className="hp-meta">
+            <span>{playerHpState.toUpperCase()}</span>
+            <span>HP {state.playerHp}/{state.playerMaxHp}</span>
+          </div>
+          <div className="combat-stat-strip player">
+            <span>ATK <strong>{state.playerStats.atk}</strong></span>
+            <span>DEF <strong>{state.playerStats.def}</strong></span>
+            <span>SPD <strong>{state.playerStats.spd}</strong></span>
           </div>
           {state.playerStatus && (
             <div className={`status-indicator ${STATUS_EFFECTS[state.playerStatus.effect]?.name.toLowerCase().replace(' ', '')}`}>
@@ -736,7 +945,16 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
       {/* Arena sprites */}
       <div className="arena-sprites">
-        <div ref={npcSpriteContainerRef} style={{ position: 'relative' }}>
+        <div
+          ref={npcSpriteContainerRef}
+          className={`combatant-anchor enemy ${npcHpState}`}
+          style={{ '--anchor-color': npcColor.primary, '--anchor-glow': npcColor.glow }}
+        >
+          <span className="combatant-scan-pad enemy" aria-hidden="true" />
+          <div className="combatant-nameplate enemy">
+            <span>HOSTILE</span>
+            <strong>{npc.name}</strong>
+          </div>
           <NpcSprite
             ref={npcSpriteImgRef}
             idleSprite={npc.idleSprite}
@@ -757,14 +975,25 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                 isCritical={d.isCritical || false}
                 isStatusTick={d.isStatusTick || false}
                 statusElement={d.statusElement}
+                variant={d.variant}
+                label={d.label}
                 staggerIndex={d.staggerIndex || 0}
-                position={{ x: 40, y: -20 }}
+                position={d.position || { x: 40, y: -20 }}
                 onComplete={() => dispatch({ type: 'REMOVE_DAMAGE_NUMBER', id: d.id })}
               />
             ))}
         </div>
 
-        <div ref={playerSpriteContainerRef} style={{ position: 'relative' }}>
+        <div
+          ref={playerSpriteContainerRef}
+          className={`combatant-anchor player ${playerHpState}`}
+          style={{ '--anchor-color': playerColor.primary, '--anchor-glow': playerColor.glow }}
+        >
+          <span className="combatant-scan-pad player" aria-hidden="true" />
+          <div className="combatant-nameplate player">
+            <span>GUARDIAN</span>
+            <strong>{save.dragons[dragonId]?.nickname || dragon.name}</strong>
+          </div>
           <DragonSprite
             ref={playerSpriteRef}
             spriteSheet={dragon.stageSprites?.[state.playerStage] || dragon.spriteSheet}
@@ -785,8 +1014,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                 isCritical={d.isCritical || false}
                 isStatusTick={d.isStatusTick || false}
                 statusElement={d.statusElement}
+                variant={d.variant}
+                label={d.label}
                 staggerIndex={d.staggerIndex || 0}
-                position={{ x: 40, y: -20 }}
+                position={d.position || { x: 40, y: -20 }}
                 onComplete={() => dispatch({ type: 'REMOVE_DAMAGE_NUMBER', id: d.id })}
               />
             ))}
@@ -804,48 +1035,93 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         )}
       </div>
 
+      <div className={`battle-edge-chip ${battleEdge.tone} ${state.battleLog.length > 0 ? 'log-open' : ''}`}>
+        <span>{battleEdge.label}</span>
+        <strong>{battleEdge.detail}</strong>
+      </div>
+
+      {state.battleCallout && (
+        <div className={`battle-callout ${state.battleCallout.variant}`}>
+          {state.battleCallout.text}
+        </div>
+      )}
+
       {/* Battle log */}
       {state.battleLog.length > 0 && (
-        <div className="battle-log">
-          {state.battleLog.slice(-4).map((text, i) => (
-            <div key={i} className="battle-log-entry">{text}</div>
+        <div className={`battle-log ${state.phase === PHASES.ANIMATING ? 'resolving' : ''}`}>
+          <div className="battle-log-title">
+            <span><i aria-hidden="true" /> COMBAT FEED</span>
+            <strong>{state.phase === PHASES.ANIMATING ? 'LIVE' : 'READY'}</strong>
+          </div>
+          {state.battleLog.slice(-3).map((text, i) => (
+            <div key={`${text}-${i}`} className={`battle-log-entry ${i === Math.min(2, state.battleLog.length - 1) ? 'latest' : ''}`}>
+              <span aria-hidden="true">▸</span>
+              <p>{text}</p>
+            </div>
           ))}
         </div>
       )}
 
       {/* Bottom panel — moves */}
       <div className="panel panel-bottom">
+        <div className="move-panel-header">
+          <span>{isResolvingTurn ? 'EXECUTING COMMAND' : 'SELECT TECHNIQUE'}</span>
+          <strong>{selectedMoveKey ? (moves[selectedMoveKey]?.name || selectedMoveKey).toUpperCase() : 'READY'}</strong>
+        </div>
+        <div className={`command-readout ${isResolvingTurn ? 'resolving' : 'ready'}`} aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <i />
+        </div>
         <div className="move-panel">
-          {playerMoves.map((move) => {
+          {playerMoves.map((move, index) => {
             const moveColor = elementColors[move.element] || elementColors.neutral;
+            const isResolving = isResolvingTurn;
+            const isSelected = selectedMoveKey === move.key;
+            const matchup = getMoveEffectivenessLabel(move.element, npc.element);
             return (
               <button
                 key={move.key}
-                className="move-btn"
-                style={{ borderColor: moveColor.primary, color: moveColor.glow }}
-                disabled={state.phase !== PHASES.PLAYER_TURN}
+                className={`move-btn ${isSelected ? 'selected' : ''} ${controllerFocusIndex === index ? 'controller-focus' : ''} ${isResolving && !isSelected ? 'dimmed' : ''} ${matchup.toLowerCase()}`}
+                style={{ '--move-color': moveColor.primary, '--move-glow': moveColor.glow, borderColor: moveColor.primary, color: moveColor.glow }}
+                disabled={isResolving}
                 onClick={() => handleMoveSelect(move.key)}
               >
                 <span className="tooltip">PWR:{move.power} ACC:{move.accuracy}%</span>
-                {move.name.toUpperCase()}
+                <strong>{move.name.toUpperCase()}</strong>
+                <span className="move-meta">
+                  <i>{moveColor.icon} {move.element.toUpperCase()}</i>
+                  <i>PWR {move.power}</i>
+                  <i>{matchup}</i>
+                </span>
               </button>
             );
           })}
           <button
-            className="move-btn"
-            style={{ borderColor: '#44aa44', color: '#66cc66' }}
+            className={`move-btn ${selectedMoveKey === 'defend' ? 'selected' : ''} ${controllerFocusIndex === playerMoves.length ? 'controller-focus' : ''} ${state.phase !== PHASES.PLAYER_TURN && selectedMoveKey !== 'defend' ? 'dimmed' : ''}`}
+            style={{ '--move-color': '#44aa44', '--move-glow': '#66cc66', borderColor: '#44aa44', color: '#66cc66' }}
             disabled={state.phase !== PHASES.PLAYER_TURN}
             onClick={() => handleMoveSelect('defend')}
           >
             <span className="tooltip">Halves damage this turn</span>
-            DEFEND
+            <strong>DEFEND</strong>
+            <span className="move-meta">
+              <i>SHIELD</i>
+              <i>DMG -50%</i>
+              <i>GUARD</i>
+            </span>
           </button>
           <button
-            className="move-btn"
-            style={{ borderColor: autoBattle ? '#44cc44' : '#666', color: autoBattle ? '#44cc44' : '#666', fontSize: 7 }}
+            className={`move-btn auto ${autoBattle ? 'selected' : ''} ${controllerFocusIndex === playerMoves.length + 1 ? 'controller-focus' : ''}`}
+            style={{ '--move-color': autoBattle ? '#44cc44' : '#666', '--move-glow': autoBattle ? '#44cc44' : '#888', borderColor: autoBattle ? '#44cc44' : '#666', color: autoBattle ? '#44cc44' : '#888' }}
             onClick={() => setAutoBattle(!autoBattle)}
           >
-            {autoBattle ? 'AUTO: ON' : 'AUTO: OFF'}
+            <strong>{autoBattle ? 'AUTO: ON' : 'AUTO: OFF'}</strong>
+            <span className="move-meta">
+              <i>AI LOOP</i>
+              <i>{autoBattle ? 'ARMED' : 'MANUAL'}</i>
+            </span>
           </button>
         </div>
       </div>
@@ -853,32 +1129,78 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       {/* Victory overlay */}
       {state.phase === PHASES.VICTORY && (
         <div className="result-overlay victory">
-          <h2>VICTORY!</h2>
-          <div className="xp-display">+{state.xpGained} XP</div>
-          {state.scrapsGained > 0 && (
-            <div className="xp-display" style={{ color: '#ffcc00' }}>+{state.scrapsGained} ◆</div>
-          )}
+          <div className="result-card">
+            <span className="result-kicker">COMBAT COMPLETE</span>
+            <h2>VICTORY!</h2>
+            <div className={`battle-rank rank-${battleRank.toLowerCase()}`}>
+              <span>BATTLE RANK</span>
+              <strong>{battleRank}</strong>
+            </div>
+            <div className="result-summary-grid">
+              <div>
+                <span>XP</span>
+                <strong>+{state.xpGained}</strong>
+              </div>
+              <div>
+                <span>SCRAPS</span>
+                <strong>{state.scrapsGained > 0 ? `+${state.scrapsGained}` : '0'}</strong>
+              </div>
+              <div>
+                <span>TURNS</span>
+                <strong>{state.turnCount + 1}</strong>
+              </div>
+              <div>
+                <span>MAX HIT</span>
+                <strong>{state.maxDamageDealt}</strong>
+              </div>
+            </div>
           {state.leveledUp && (
             <div className="level-up-display">LEVEL UP! Now Lv.{state.newLevel}</div>
           )}
           {state.coreDropped && (
-            <div style={{ fontSize: 9, color: elementColors[state.coreDropped.element]?.glow || '#44aaff', marginTop: 4 }}>
+            <div className="core-drop-display" style={{ color: elementColors[state.coreDropped.element]?.glow || '#44aaff' }}>
               +{state.coreDropped.count} {state.coreDropped.element.toUpperCase()} CORE{state.coreDropped.count > 1 ? 'S' : ''}
             </div>
           )}
-          <button className="result-btn" onClick={onBattleEnd}>CONTINUE</button>
+            <button className="result-btn" onClick={onBattleEnd}>CONTINUE</button>
+          </div>
         </div>
       )}
 
       {/* Defeat overlay */}
       {state.phase === PHASES.DEFEAT && (
         <div className="result-overlay defeat">
-          <h2>DEFEATED</h2>
-          <p style={{ fontSize: 9, color: '#44ff44', maxWidth: 400, textAlign: 'center', lineHeight: 1.8 }}>
-            "Hmm, a setback! But every great Dragon Forger learns from defeat. Recalibrate and try again!"
-            <br />— Professor Felix
-          </p>
-          <button className="result-btn" onClick={onBattleEnd}>TRY AGAIN</button>
+          <div className="result-card">
+            <span className="result-kicker">SIGNAL LOST</span>
+            <h2>DEFEATED</h2>
+            <div className="battle-rank rank-retry">
+              <span>ASSESSMENT</span>
+              <strong>RETRY</strong>
+            </div>
+            <div className="result-summary-grid">
+              <div>
+                <span>TURNS</span>
+                <strong>{state.turnCount + 1}</strong>
+              </div>
+              <div>
+                <span>MAX HIT</span>
+                <strong>{state.maxDamageDealt}</strong>
+              </div>
+              <div>
+                <span>ENEMY HP</span>
+                <strong>{state.npcHp}/{state.npcMaxHp}</strong>
+              </div>
+              <div>
+                <span>STATUS</span>
+                <strong>RETRY</strong>
+              </div>
+            </div>
+            <p>
+              "Hmm, a setback! But every great Dragon Forger learns from defeat. Recalibrate and try again!"
+              <br />— Professor Felix
+            </p>
+            <button className="result-btn" onClick={onBattleEnd}>TRY AGAIN</button>
+          </div>
         </div>
       )}
 
