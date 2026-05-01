@@ -3,12 +3,14 @@ extends Control
 signal completed(profile: Dictionary)
 
 const DragonProgression := preload("res://scripts/sim/dragon_progression.gd")
+const SfxData := preload("res://scripts/sim/sfx_data.gd")
 const StoryData := preload("res://scripts/sim/story_data.gd")
 
 var profile := {}
 var sequence_profile := {}
 var pages: Array[Dictionary] = []
 var page_index := 0
+var current_audio_profile := {}
 var panel: PanelContainer
 var title_label: Label
 var speaker_label: Label
@@ -28,6 +30,12 @@ func is_sequence_active() -> bool:
 
 func get_sequence_profile_for_test() -> Dictionary:
 	return StoryData.opening_sequence_profile()
+
+func get_audio_profile_for_test(tone: String) -> Dictionary:
+	return SfxData.get_opening_sequence_audio_profile(tone)
+
+func get_current_audio_profile_for_test() -> Dictionary:
+	return current_audio_profile.duplicate(true)
 
 func start(next_profile: Dictionary) -> void:
 	profile = next_profile.duplicate(true)
@@ -140,11 +148,20 @@ func _render_page() -> void:
 	if pages.is_empty():
 		return
 	var page: Dictionary = pages[page_index]
+	current_audio_profile = SfxData.get_opening_sequence_audio_profile(str(page.get("tone", "system")))
 	title_label.text = "%s\n%s" % [
 		str(sequence_profile.get("title", "ASTRAEUS EMERGENCY WAKE")),
 		str(sequence_profile.get("subtitle", "Operator signal recovered")),
 	]
 	speaker_label.text = str(page.get("speaker", "SYSTEM"))
+	if page.get("tone", "system") == "warning":
+		speaker_label.add_theme_color_override("font_color", Color("#ff594d"))
+	elif page.get("tone", "system") == "objective":
+		speaker_label.add_theme_color_override("font_color", Color("#ffd166"))
+	elif page.get("tone", "system") == "mentor":
+		speaker_label.add_theme_color_override("font_color", Color("#70ff8f"))
+	else:
+		speaker_label.add_theme_color_override("font_color", Color("#8fe6ff"))
 	body_label.text = str(page.get("body", ""))
 	progress_bar.max_value = maxi(1, pages.size())
 	progress_bar.value = page_index + 1

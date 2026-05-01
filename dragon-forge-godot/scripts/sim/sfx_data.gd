@@ -38,6 +38,69 @@ const UI_SFX := {
 		"combined_effect": "sector_purge_threat",
 		"priority": 5,
 	},
+	"opening_boot_tick": {
+		"world_layer": "distant_relay_clack",
+		"system_layer": "low_square_clock_110hz",
+		"combined_effect": "astraeus_wake_sequence",
+		"priority": 4,
+	},
+	"opening_warning_pulse": {
+		"world_layer": "sub_bass_pressure_swell",
+		"system_layer": "descending_minor_alarm",
+		"combined_effect": "great_reset_threat",
+		"priority": 5,
+	},
+	"felix_radio_lock": {
+		"world_layer": "workshop_radio_static",
+		"system_layer": "carrier_signal_lock",
+		"combined_effect": "felix_first_contact",
+		"priority": 3,
+	},
+	"objective_chime": {
+		"world_layer": "dragon_heart_thump",
+		"system_layer": "ascending_guardian_chime",
+		"combined_effect": "skye_objective_confirmed",
+		"priority": 4,
+	},
+}
+
+const MUSIC_PROFILES := {
+	"opening_sequence": {
+		"id": "opening_sequence",
+		"mood": "tense",
+		"tempo_bpm": 92,
+		"loop": true,
+		"lead_voice": "muted_square_alarm",
+		"bass_voice": "low_pulse_wave",
+		"percussion": "relay_clock_ticks",
+		"progression": ["D2", "F2", "C#2", "A1"],
+		"intensity": 0.86,
+		"ducking": 0.35,
+	},
+	"world_wandering": {
+		"id": "world_wandering",
+		"mood": "uneasy_wonder",
+		"tempo_bpm": 108,
+		"loop": true,
+		"lead_voice": "warm_triangle_melody",
+		"bass_voice": "soft_square_root_motion",
+		"percussion": "light_step_ticks",
+		"progression": ["G2", "B2", "A2", "E2"],
+		"intensity": 0.42,
+		"ducking": 0.12,
+	},
+	"battle_tension": {
+		"id": "battle_tension",
+		"mood": "urgent",
+		"tempo_bpm": 138,
+		"loop": true,
+		"lead_voice": "bitcrushed_saw_warning",
+		"bass_voice": "square_octave_drive",
+		"percussion": "noise_snare_gate",
+		"progression": ["E2", "F2", "D2", "C2"],
+		"intensity": 0.94,
+		"ducking": 0.2,
+	},
 }
 
 static func get_ui_sfx_profile(event_id: String) -> Dictionary:
@@ -47,6 +110,34 @@ static func get_ui_sfx_profile(event_id: String) -> Dictionary:
 		result["id"] = event_id
 		result["dual_tone"] = true
 	return result
+
+static func get_music_profile(context_id: String) -> Dictionary:
+	var profile: Dictionary = MUSIC_PROFILES.get(context_id, {})
+	var result := profile.duplicate(true)
+	if not result.is_empty():
+		result["nes_style"] = true
+		result["channel_budget"] = {
+			"pulse_1": result.get("lead_voice", ""),
+			"pulse_2": "counterline_or_alarm",
+			"triangle": result.get("bass_voice", ""),
+			"noise": result.get("percussion", ""),
+		}
+	return result
+
+static func get_opening_sequence_audio_profile(tone: String = "system") -> Dictionary:
+	var cue_id := "opening_boot_tick"
+	if tone == "warning":
+		cue_id = "opening_warning_pulse"
+	elif tone == "mentor":
+		cue_id = "felix_radio_lock"
+	elif tone == "objective":
+		cue_id = "objective_chime"
+	return {
+		"presentation": "nes_audio_scene_cue",
+		"music": get_music_profile("opening_sequence"),
+		"sfx": get_ui_sfx_profile(cue_id),
+		"tone": tone,
+	}
 
 static func get_torque_meter_sfx(state: Dictionary) -> Dictionary:
 	if bool(state.get("sparks", false)) or str(state.get("zone_label", "")) == "RED SLIP":

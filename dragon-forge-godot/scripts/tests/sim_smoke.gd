@@ -1370,6 +1370,12 @@ func _assert_opening_sequence_overlay() -> void:
 	_assert(not overlay.should_show_for_profile(seen_profile), "opening overlay stays hidden once the opening flag is saved")
 	var overlay_profile := overlay.get_sequence_profile_for_test()
 	_assert(overlay_profile["id"] == "opening_sequence_seen" and overlay_profile["boot_lines"].size() >= 6 and overlay_profile["felix_lines"].size() >= 4, "opening overlay consumes boot and Felix first-contact lines")
+	var opening_audio := overlay.get_audio_profile_for_test("warning")
+	_assert(opening_audio["presentation"] == "nes_audio_scene_cue" and opening_audio["music"]["id"] == "opening_sequence" and opening_audio["music"]["mood"] == "tense", "opening overlay exposes tense NES-style music profile")
+	_assert(opening_audio["sfx"]["id"] == "opening_warning_pulse" and opening_audio["sfx"]["dual_tone"], "opening overlay exposes warning SFX profile")
+	var map_music := SfxData.get_music_profile("world_wandering")
+	var battle_music := SfxData.get_music_profile("battle_tension")
+	_assert(map_music["nes_style"] and map_music["mood"] == "uneasy_wonder" and battle_music["tempo_bpm"] > map_music["tempo_bpm"], "music schema separates wandering and tense battle loops")
 	overlay.free()
 
 func _has_command(commands: Array, id: String) -> bool:
