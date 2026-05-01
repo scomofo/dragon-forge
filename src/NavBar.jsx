@@ -46,6 +46,12 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
         >
           BATTLES
         </button>
+        <button
+          className={`nav-tab ${activeScreen === 'forge' ? 'active' : ''}`}
+          onClick={() => onNavigate('forge')}
+        >
+          FORGE
+        </button>
         {isSingularityUnlocked(save) && (
           <button
             className={`nav-tab singularity-tab ${activeScreen === 'singularity' ? 'active' : ''}`}

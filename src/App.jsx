@@ -10,6 +10,7 @@ import ShopScreen from './ShopScreen';
 import StatsScreen from './StatsScreen';
 import SettingsScreen from './SettingsScreen';
 import SingularityScreen from './SingularityScreen';
+import ForgeScreen from './ForgeScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
 import { loadSave } from './persistence';
 import { getSingularityStage } from './singularityProgress';
@@ -25,6 +26,7 @@ const SCREENS = {
   STATS: 'stats',
   SETTINGS: 'settings',
   SINGULARITY: 'singularity',
+  FORGE: 'forge',
 };
 
 export default function App() {
@@ -77,6 +79,9 @@ export default function App() {
     } else if (target === 'singularity') {
       playMusic('battle', true);
       setScreen(SCREENS.SINGULARITY);
+    } else if (target === 'forge') {
+      playMusic('hatchery');
+      setScreen(SCREENS.FORGE);
     }
   }
 
@@ -156,6 +161,11 @@ export default function App() {
             onEngageBoss={handleEngageBoss}
             save={save}
           />
+        </div>
+      )}
+      {screen === SCREENS.FORGE && (
+        <div className="screen-enter" key="forge">
+          <ForgeScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
         </div>
       )}
       {screen === SCREENS.BATTLE_SELECT && (
