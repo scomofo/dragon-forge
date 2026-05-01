@@ -1,10 +1,7 @@
+import { OPENING_FELIX_LINES } from './loreCanon';
+
 const TERMINAL_DIALOGUE = {
-  0: [
-    '"Welcome to the Dragon Forge.',
-    ' I\'m Professor Felix.',
-    ' We have work to do — the Elemental',
-    ' Matrix needs new guardians."',
-  ],
+  0: OPENING_FELIX_LINES,
   1: [
     '"Interesting... I\'m picking up anomalous',
     ' readings in the Matrix.',

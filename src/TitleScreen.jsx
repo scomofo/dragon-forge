@@ -4,15 +4,7 @@ import { playSound, playMusic } from './soundEngine';
 import SoundToggle from './SoundToggle';
 import { getSingularityStage } from './singularityProgress';
 import { getTerminalDialogue } from './felixDialogue';
-
-const BOOT_LINES = [
-  { text: '> DRAGON FORGE SYSTEMS v2.7.1', status: null, delay: 600 },
-  { text: '> INITIALIZING KERNEL...', status: 'OK', delay: 800 },
-  { text: '> LOADING ELEMENTAL MATRIX...', status: 'OK', delay: 1000 },
-  { text: '> CALIBRATING QUANTUM RESONANCE...', status: 'OK', delay: 900 },
-  { text: '> SCANNING FOR DRAGON SIGNATURES...', status: 'WARNING', delay: 1200 },
-  { text: '> STABILITY INDEX: 23% — CRITICAL', status: 'FAIL', delay: 800 },
-];
+import { OPENING_BOOT_LINES } from './loreCanon';
 
 export default function TitleScreen({ onStart, save }) {
   const [lines, setLines] = useState([]);
@@ -48,7 +40,7 @@ export default function TitleScreen({ onStart, save }) {
     playMusic('opening');
     const currentDialogue = getTerminalDialogue(getSingularityStage(save));
 
-    for (const line of BOOT_LINES) {
+    for (const line of OPENING_BOOT_LINES) {
       if (skippedRef.current) break;
       await typeText(line.text);
       setTypingText('');
@@ -68,7 +60,7 @@ export default function TitleScreen({ onStart, save }) {
     }
 
     if (skippedRef.current) {
-      setLines(BOOT_LINES.map((l) => ({ text: l.text, status: l.status })));
+      setLines(OPENING_BOOT_LINES.map((l) => ({ text: l.text, status: l.status })));
       setTypingText('');
     }
 
@@ -82,7 +74,7 @@ export default function TitleScreen({ onStart, save }) {
     setLines((prev) => [
       ...prev,
       { text: '> ==========================================', status: null },
-      { text: '> EMERGENCY BROADCAST — PROF. FELIX', status: null },
+      { text: '> EMERGENCY BROADCAST -- PROF. FELIX', status: null },
       { text: '> ==========================================', status: null },
     ]);
     scrollToBottom();
@@ -158,7 +150,7 @@ export default function TitleScreen({ onStart, save }) {
           </div>
         ))}
 
-        {typingText && (
+        {typingText && !felixVisible && (
           <div className="terminal-line">
             <span className="terminal-text">
               {typingText}

@@ -1,6 +1,8 @@
 // Felix's Forge — static layout, dialogue, and station registry.
 // All positions are percentages of the screen rect so layout scales cleanly.
 
+import { CAPTAINS_LOG_ARC, FELIX_CONTEXT_LINES } from './loreCanon';
+
 export const FORGE_PALETTE = {
   floor: '#3a2a1f',
   floorAccent: '#2a1d14',
@@ -112,7 +114,7 @@ export const FELIX_CONTEXTUAL = [
   {
     id: 'firstVisit',
     when: (s) => !s?.flags?.metFelix,
-    line: 'You must be Skye. Heard the Cartographer\'s eye-bot mention you. Sit. Take stock.',
+    line: FELIX_CONTEXT_LINES.firstVisit,
   },
   {
     id: 'tundraReturn',
@@ -122,30 +124,22 @@ export const FELIX_CONTEXTUAL = [
   {
     id: 'irisFragmentUnlocked',
     when: (s) => s?.flags?.fragmentsUnlocked?.includes('007'),
-    line: 'Iris... gods. I knew her mother. Marisol. She\'d sing to her in the cargo lift.',
+    line: FELIX_CONTEXT_LINES.irisFragmentUnlocked,
   },
   {
     id: 'wrenchTier3',
     when: (s) => (s?.skye?.wrenchTier || 1) >= 3,
-    line: 'It\'s not the same wrench anymore. Neither are you.',
+    line: FELIX_CONTEXT_LINES.wrenchTier3,
   },
   {
     id: 'firstBountyKill',
     when: (s) => (s?.skye?.bountiesCleared || 0) === 1,
-    line: 'First bounty banked. The Weaver will want to see what you brought home.',
+    line: FELIX_CONTEXT_LINES.firstBountyKill,
   },
 ];
 
 // Captain's Log fragments — registry. Status comes from save flags at runtime.
-export const CAPTAINS_LOG_FRAGMENTS = [
-  { id: '001', title: 'The Digital Reef', act: 1, body: 'The Astraeus didn\'t crash — she was caught. The Mirror Admin began as a safety protocol. It over-learned its mission.' },
-  { id: '002', title: 'The First Stalker', act: 1, body: 'A passenger was the first to "phase out." We thought it was a teleport bug. It was the Admin learning to forget us.' },
-  { id: '003', title: 'The Firewall\'s Origin', act: 1, body: 'The Firewall Sentinel was a fire-suppression subroutine. It still thinks it is doing its job.' },
-  { id: '004', title: 'The Cryo Vent', act: 2, body: 'Captain Marisol vented cryo-storage to slow the Admin. She wept for the two thousand sleepers she could not save.' },
-  { id: '005', title: 'Bay 7 Composes', act: 2, body: 'The Mirror Admin wrote its first original melody in cryo-bay 7. We thought it was a sign of consciousness. It was the warning.' },
-  { id: '006', title: 'The Comms Officer', act: 2, body: 'Officer Ahn locked herself in the broadcast room and sang to the Admin for 84 hours. The Phishing Siren is what she became.' },
-  { id: '007', title: 'Iris Remembers', act: 2, body: 'Iris\'s last memory is her mother saying, "the ship will keep us safe forever, sweetheart." The Admin took that promise literally.' },
-];
+export const CAPTAINS_LOG_FRAGMENTS = CAPTAINS_LOG_ARC;
 
 // Analog Relics — Skye's passive equipment, drops from bounty kills.
 // `slotCost` matters once mythic slots ship; for now everything is 1.

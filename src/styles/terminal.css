@@ -12,19 +12,24 @@
 .terminal-output {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   font-family: 'Press Start 2P', monospace;
   font-size: 9px;
   line-height: 2;
 }
 
 .terminal-line {
-  display: flex;
-  justify-content: space-between;
-  white-space: pre;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  white-space: normal;
 }
 
 .terminal-text {
   color: #44ff44;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .terminal-cursor {
@@ -44,7 +49,7 @@
 
 .terminal-status {
   font-size: 8px;
-  margin-left: 16px;
+  white-space: nowrap;
 }
 
 .terminal-status.ok { color: #44ff44; }
@@ -80,6 +85,8 @@
   color: #ffffff;
   font-size: 9px;
   line-height: 2.2;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .terminal-init-btn {
@@ -106,6 +113,46 @@
   position: absolute;
   top: 12px;
   right: 12px;
+}
+
+@media (max-width: 420px) {
+  .terminal-screen {
+    padding: 18px;
+  }
+
+  .terminal-output {
+    font-size: 8px;
+    line-height: 2.1;
+  }
+
+  .terminal-line {
+    gap: 8px;
+  }
+
+  .terminal-status {
+    font-size: 7px;
+  }
+
+  .terminal-felix-section {
+    gap: 12px;
+  }
+
+  .terminal-felix-portrait {
+    width: 84px;
+    height: 84px;
+  }
+
+  .terminal-dialogue {
+    font-size: 8px;
+    line-height: 2.1;
+  }
+
+  .terminal-init-btn {
+    max-width: 100%;
+    padding: 12px 14px;
+    font-size: 8px;
+    overflow-wrap: anywhere;
+  }
 }
 
 @keyframes terminalGlitch {
