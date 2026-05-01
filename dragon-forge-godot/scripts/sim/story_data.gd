@@ -30,6 +30,18 @@ static func felix_first_contact_lines() -> Array[String]:
 		"The dragons are living guardian protocols. If they bond to you, they can hold the Matrix together.",
 	]
 
+static func opening_sequence_profile() -> Dictionary:
+	return {
+		"id": "opening_sequence_seen",
+		"title": "ASTRAEUS EMERGENCY WAKE",
+		"subtitle": "Operator signal recovered: SKYE",
+		"boot_lines": opening_boot_lines(),
+		"felix_lines": felix_first_contact_lines(),
+		"stakes": "Mirror Admin override active. Great Reset countdown hidden behind corrupted telemetry.",
+		"first_objective": "Find Felix Workshop, bond with the Root Dragon, and keep the rendered world from being classified as dead memory.",
+		"presentation": "tense_boot_first_contact",
+	}
+
 static func bios_lines(tile_id: String) -> Array[String]:
 	var source: Array = BIOS_DIALOGUE.get(tile_id, ["B.I.O.S. STANDBY: Awaiting stable connection."])
 	var lines: Array[String] = []

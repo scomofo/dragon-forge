@@ -32,6 +32,7 @@ const BattleSceneScript := preload("res://scripts/battle/battle_scene.gd")
 const ThreadfallOverlay := preload("res://scripts/world/threadfall_overlay.gd")
 const WorldMapView := preload("res://scripts/world/world_map_view.gd")
 const WorldScene := preload("res://scripts/world/world_scene.gd")
+const OpeningSequenceOverlay := preload("res://scripts/world/opening_sequence_overlay.gd")
 const HardwareDungeonScene := preload("res://scenes/dungeon/hardware_dungeon_scene.tscn")
 const ActOneProgressionData := preload("res://scripts/sim/act_one_progression_data.gd")
 const ActTwoProgressionData := preload("res://scripts/sim/act_two_progression_data.gd")
@@ -41,6 +42,7 @@ func _init() -> void:
 	_assert_lore_canon()
 	var world := WorldData.create_world_state()
 	_assert_story_world_lore(world)
+	_assert_opening_sequence_overlay()
 	_assert(WorldData.get_current_tile(world)["id"] == "new_landing", "starts in New Landing")
 	world = WorldData.move_player(world, "east")
 	_assert(WorldData.get_current_tile(world)["id"] == "testing_fields", "moves one overworld tile east into testing fields")
@@ -1356,6 +1358,19 @@ func _assert_story_world_lore(world: Dictionary) -> void:
 	var forge_tile := WorldData.get_tile_at(world, Vector2i(13, 10))
 	_assert(str(forge_tile.get("lore_signal", "")).contains("Astraeus"), "world lore signal exposes Astraeus at Felix lab")
 	_assert(str(forge_tile.get("skye_objective", "")).contains("Skye"), "world lore objective frames Skye's route")
+
+func _assert_opening_sequence_overlay() -> void:
+	var opening := StoryData.opening_sequence_profile()
+	_assert(opening["presentation"] == "tense_boot_first_contact", "opening sequence has a tense first-contact presentation profile")
+	_assert(str(opening["stakes"]).contains("Great Reset") and str(opening["first_objective"]).contains("Root Dragon"), "opening sequence carries Great Reset stakes and first objective")
+	var overlay := OpeningSequenceOverlay.new()
+	var fresh_profile := DragonProgression.create_profile("fire")
+	_assert(overlay.should_show_for_profile(fresh_profile), "opening overlay shows before the opening flag is saved")
+	var seen_profile := DragonProgression.set_mission_flag(fresh_profile, "opening_sequence_seen")
+	_assert(not overlay.should_show_for_profile(seen_profile), "opening overlay stays hidden once the opening flag is saved")
+	var overlay_profile := overlay.get_sequence_profile_for_test()
+	_assert(overlay_profile["id"] == "opening_sequence_seen" and overlay_profile["boot_lines"].size() >= 6 and overlay_profile["felix_lines"].size() >= 4, "opening overlay consumes boot and Felix first-contact lines")
+	overlay.free()
 
 func _has_command(commands: Array, id: String) -> bool:
 	for command in commands:

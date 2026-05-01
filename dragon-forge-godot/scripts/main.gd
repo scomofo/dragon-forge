@@ -4,11 +4,13 @@ const DragonProgression := preload("res://scripts/sim/dragon_progression.gd")
 const WorldScene := preload("res://scenes/world/world_scene.tscn")
 const BattleScene := preload("res://scenes/battle/battle_scene.tscn")
 const HardwareDungeonScene := preload("res://scenes/dungeon/hardware_dungeon_scene.tscn")
+const OpeningSequenceOverlay := preload("res://scripts/world/opening_sequence_overlay.gd")
 const SAVE_PATH := "user://dragon_forge_save.json"
 
 var world_scene: Control
 var battle_scene: Control
 var dungeon_scene: Control
+var opening_overlay
 var player_profile := DragonProgression.create_profile("fire")
 
 func _ready() -> void:
@@ -20,6 +22,8 @@ func _ready() -> void:
 	add_child(dungeon_scene)
 	battle_scene.visible = false
 	dungeon_scene.visible = false
+	opening_overlay = OpeningSequenceOverlay.new()
+	add_child(opening_overlay)
 
 	world_scene.set_profile(player_profile)
 	world_scene.encounter_requested.connect(_on_encounter_requested)
@@ -30,6 +34,15 @@ func _ready() -> void:
 	battle_scene.profile_changed.connect(_on_profile_changed)
 	battle_scene.battle_closed.connect(_on_battle_closed)
 	dungeon_scene.dungeon_closed.connect(_on_dungeon_closed)
+	opening_overlay.completed.connect(_on_opening_sequence_completed)
+	if opening_overlay.should_show_for_profile(player_profile):
+		opening_overlay.start(player_profile)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if opening_overlay != null and opening_overlay.is_sequence_active() and event.is_pressed():
+		if event.is_action_pressed("confirm") or event.is_action_pressed("cancel"):
+			opening_overlay.advance()
+			get_viewport().set_input_as_handled()
 
 func _on_encounter_requested(enemy_id: String, context: Dictionary = {}) -> void:
 	world_scene.visible = false
@@ -47,6 +60,10 @@ func _on_dungeon_requested(dungeon_id: String, context: Dictionary = {}) -> void
 
 func _on_profile_changed(next_profile: Dictionary) -> void:
 	player_profile = next_profile.duplicate(true)
+
+func _on_opening_sequence_completed(next_profile: Dictionary) -> void:
+	player_profile = next_profile.duplicate(true)
+	world_scene.set_profile(player_profile)
 
 func _on_battle_closed() -> void:
 	battle_scene.visible = false
