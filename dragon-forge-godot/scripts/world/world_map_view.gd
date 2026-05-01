@@ -322,6 +322,7 @@ func get_scene_readability_profile(source_world: Dictionary = {}) -> Dictionary:
 		"transition_edges": transition_edges,
 		"landmark_count": landmark_count,
 		"tile_paint_style": "regional_masses_with_soft_tiles",
+		"terrain_sprite_style": "chunky_nes_overworld_metatiles",
 		"route_layer_style": "continuous_access_road",
 		"landmark_plate_style": "raised_poi_plate",
 	}
@@ -2320,41 +2321,62 @@ func _draw_terrain_detail(kind: String, tile_rect: Rect2, position: Vector2i) ->
 	var center := tile_rect.get_center()
 	var s := tile_rect.size.x
 	if kind == "water":
-		draw_line(tile_rect.position + Vector2(s * 0.18, s * 0.55), tile_rect.position + Vector2(s * 0.82, s * 0.55), Color("#9be8ff", 0.45), 1.0)
+		draw_rect(tile_rect.grow(-s * 0.14), Color("#094d82", 0.36))
+		draw_line(tile_rect.position + Vector2(s * 0.12, s * 0.42), tile_rect.position + Vector2(s * 0.45, s * 0.34), Color("#9be8ff", 0.72), 1.2)
+		draw_line(tile_rect.position + Vector2(s * 0.48, s * 0.62), tile_rect.position + Vector2(s * 0.86, s * 0.54), Color("#d7fbff", 0.5), 1.0)
 	elif kind == "field":
+		var grass_color := Color("#d7f784", 0.74)
+		draw_line(center + Vector2(-s * 0.22, s * 0.24), center + Vector2(-s * 0.1, s * 0.02), grass_color, 1.2)
+		draw_line(center + Vector2(-s * 0.02, s * 0.22), center + Vector2(s * 0.08, -s * 0.02), grass_color, 1.2)
 		if (position.x + position.y) % 3 == 0:
-			draw_circle(center, max(1.0, s * 0.08), Color("#c9ff6a", 0.7))
+			draw_rect(Rect2(center + Vector2(s * 0.18, -s * 0.18), Vector2(maxf(1.0, s * 0.08), maxf(1.0, s * 0.08))), Color("#f4ead2", 0.62))
 	elif kind == "jungle":
-		draw_rect(Rect2(tile_rect.position + Vector2(s * 0.25, s * 0.18), Vector2(s * 0.5, s * 0.62)), Color("#063f20"))
-		draw_circle(center + Vector2(0, -s * 0.15), s * 0.24, Color("#3bb64a"))
+		draw_rect(Rect2(center + Vector2(-s * 0.07, s * 0.05), Vector2(s * 0.14, s * 0.42)), Color("#3b2618"))
+		draw_circle(center + Vector2(-s * 0.12, -s * 0.08), s * 0.2, Color("#0f6f31"))
+		draw_circle(center + Vector2(s * 0.1, -s * 0.12), s * 0.22, Color("#3bb64a"))
+		draw_circle(center + Vector2(0.0, -s * 0.24), s * 0.2, Color("#75d95d"))
 	elif kind == "archive":
 		var peaks := PackedVector2Array([
 			tile_rect.position + Vector2(s * 0.1, s * 0.86),
 			tile_rect.position + Vector2(s * 0.48, s * 0.16),
 			tile_rect.position + Vector2(s * 0.9, s * 0.86),
 		])
-		draw_polygon(peaks, PackedColorArray([Color("#d1d1c7"), Color("#d1d1c7"), Color("#d1d1c7")]))
-		draw_polyline(peaks, Color("#4f504d"), 1.0)
+		draw_polygon(peaks, PackedColorArray([Color("#d1d1c7"), Color("#e7e2d0"), Color("#8f8d82")]))
+		draw_polyline(peaks, Color("#4f504d"), 1.4)
+		draw_line(tile_rect.position + Vector2(s * 0.48, s * 0.18), tile_rect.position + Vector2(s * 0.42, s * 0.46), Color("#f9f4df", 0.82), 1.0)
 	elif kind == "salt":
-		draw_line(tile_rect.position + Vector2(s * 0.12, s * 0.68), tile_rect.position + Vector2(s * 0.88, s * 0.36), Color("#fff3cf", 0.8), 1.0)
+		draw_rect(tile_rect.grow(-s * 0.18), Color("#fff3cf", 0.24))
+		draw_line(tile_rect.position + Vector2(s * 0.12, s * 0.68), tile_rect.position + Vector2(s * 0.88, s * 0.36), Color("#fff3cf", 0.86), 1.2)
+		draw_line(tile_rect.position + Vector2(s * 0.2, s * 0.36), tile_rect.position + Vector2(s * 0.72, s * 0.22), Color("#f9f4df", 0.54), 1.0)
 	elif kind == "lunar":
-		draw_circle(center, s * 0.27, Color("#c0c0c0"))
-		draw_circle(center + Vector2(s * 0.14, -s * 0.1), s * 0.24, KIND_COLORS["lunar"])
+		draw_circle(center, s * 0.34, Color("#c0c0c0"))
+		draw_circle(center + Vector2(s * 0.14, -s * 0.1), s * 0.27, KIND_COLORS["lunar"])
+		draw_circle(center + Vector2(-s * 0.12, s * 0.1), maxf(1.0, s * 0.06), Color("#f9f4df", 0.62))
 	elif kind == "hardware":
-		draw_rect(tile_rect.grow(-s * 0.16), Color("#c7cac1"))
+		draw_rect(tile_rect.grow(-s * 0.12), Color("#c7cac1", 0.9))
 		draw_rect(tile_rect.grow(-s * 0.28), Color("#30342e"))
+		draw_line(tile_rect.position + Vector2(s * 0.18, s * 0.28), tile_rect.end - Vector2(s * 0.18, s * 0.28), Color("#b7fffb", 0.58), 1.0)
 	elif kind == "kernel":
 		draw_rect(tile_rect.grow(-s * 0.18), Color("#7afcff", 0.28))
 		draw_line(tile_rect.position + Vector2(s * 0.18, s * 0.2), tile_rect.position + Vector2(s * 0.86, s * 0.74), Color("#7afcff", 0.75), 1.0)
 		draw_line(tile_rect.position + Vector2(s * 0.82, s * 0.18), tile_rect.position + Vector2(s * 0.2, s * 0.82), Color("#f4ead2", 0.35), 1.0)
 	elif kind == "forge":
-		draw_circle(center, s * 0.36, Color("#d65c2c"))
-		draw_circle(center, s * 0.18, Color("#ffe076"))
+		draw_polygon(PackedVector2Array([
+			center + Vector2(-s * 0.34, s * 0.26),
+			center + Vector2(-s * 0.18, -s * 0.26),
+			center + Vector2(s * 0.02, s * 0.08),
+			center + Vector2(s * 0.22, -s * 0.28),
+			center + Vector2(s * 0.36, s * 0.26),
+		]), PackedColorArray([Color("#d65c2c"), Color("#ff8a4c"), Color("#ffe076"), Color("#ff594d"), Color("#7a241c")]))
+		draw_line(center + Vector2(-s * 0.26, s * 0.18), center + Vector2(s * 0.26, s * 0.18), Color("#ffe076", 0.84), 1.0)
 	elif kind == "gate":
-		draw_arc(center, s * 0.34, PI, TAU, 12, Color("#f5ce91"), 2.0)
+		draw_arc(center, s * 0.38, PI, TAU, 12, Color("#f5ce91"), 2.4)
+		draw_rect(Rect2(center + Vector2(-s * 0.34, -s * 0.02), Vector2(s * 0.68, s * 0.42)), Color("#2b1611", 0.7))
+		draw_rect(Rect2(center + Vector2(-s * 0.24, s * 0.08), Vector2(s * 0.48, s * 0.28)), Color("#f5ce91", 0.24), false, 1.0)
 	elif kind == "lab":
-		draw_rect(tile_rect.grow(-s * 0.18), Color("#dad8c9"))
-		draw_rect(Rect2(tile_rect.position + Vector2(s * 0.32, s * 0.18), Vector2(s * 0.36, s * 0.22)), Color("#6f3f35"))
+		draw_rect(tile_rect.grow(-s * 0.16), Color("#0b3f28", 0.86))
+		draw_rect(Rect2(tile_rect.position + Vector2(s * 0.24, s * 0.18), Vector2(s * 0.52, s * 0.26)), Color("#f4ead2", 0.82))
+		draw_rect(Rect2(tile_rect.position + Vector2(s * 0.36, s * 0.46), Vector2(s * 0.28, s * 0.34)), Color("#123d29"))
 	elif kind == "arena":
 		draw_circle(center, s * 0.42, Color("#2a1110"))
 		draw_arc(center, s * 0.35, 0.0, TAU, 18, Color("#f0b66c"), 2.0)

@@ -63,6 +63,7 @@ var action_box: VBoxContainer
 var mission_box: VBoxContainer
 var dragon_box: VBoxContainer
 var technique_box: VBoxContainer
+var side_scroll: ScrollContainer
 var compass_display: CompassDisplay
 var ticket_popup: PanelContainer
 var ticket_title_label: Label
@@ -162,6 +163,14 @@ func get_sidebar_console_profile() -> Dictionary:
 		"readability_label": "AAA READY" if readability_score >= 0.78 else "POLISHING",
 		"uses_framed_cards": true,
 		"presentation": "playable_1991_equipment_log_screen",
+	}
+
+func get_world_layout_profile() -> Dictionary:
+	return {
+		"map_has_expand_fill": map_view != null and map_view.size_flags_vertical == Control.SIZE_EXPAND_FILL,
+		"sidebar_scrolls": side_scroll != null and side_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED,
+		"sidebar_min_width": side_scroll.custom_minimum_size.x if side_scroll != null else 0.0,
+		"layout_contract": "bounded_map_with_scrollable_sidebar",
 	}
 
 func import_state(state: Dictionary) -> void:
@@ -282,10 +291,16 @@ func _build_ui() -> void:
 	map_view.selected_action_requested.connect(_on_map_action_requested)
 	content.add_child(map_view)
 
+	side_scroll = ScrollContainer.new()
+	side_scroll.custom_minimum_size = Vector2(360, 0)
+	side_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content.add_child(side_scroll)
+
 	var side := VBoxContainer.new()
-	side.custom_minimum_size = Vector2(360, 0)
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	side.add_theme_constant_override("separation", 14)
-	content.add_child(side)
+	side_scroll.add_child(side)
 
 	detail_label = Label.new()
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
