@@ -762,6 +762,7 @@ static func _terrain_tile(symbol: String, position: Vector2i) -> Dictionary:
 		return wall
 	var tile := terrain.duplicate(true)
 	tile["id"] = "tile_%d_%d" % [position.x, position.y]
+	tile["source_symbol"] = symbol
 	return tile
 
 static func _navigation_alert_severity(quest_id: String, tile: Dictionary, profile: Dictionary) -> float:

@@ -73,6 +73,36 @@ const TILE_STYLE_PROFILES := {
 	},
 }
 
+const TILE_BASE_ALPHA := {
+	"field": 0.66,
+	"jungle": 0.72,
+	"archive": 0.7,
+	"salt": 0.68,
+	"hardware": 0.72,
+	"lunar": 0.68,
+	"forge": 0.74,
+	"gate": 0.76,
+	"lab": 0.82,
+	"arena": 0.78,
+	"kernel": 0.78,
+	"water": 0.82,
+	"wall": 0.82,
+}
+
+const TERRAIN_EDGE_COLORS := {
+	"field": Color("#d7f784"),
+	"jungle": Color("#62d96a"),
+	"archive": Color("#e3e0d0"),
+	"salt": Color("#fff3cf"),
+	"hardware": Color("#b7fffb"),
+	"lunar": Color("#d6d7ff"),
+	"forge": Color("#ff8a4c"),
+	"gate": Color("#f5ce91"),
+	"lab": Color("#70ff8f"),
+	"arena": Color("#f0b66c"),
+	"kernel": Color("#7afcff"),
+}
+
 const LANDMARK_KINDS := {
 	"forge": true,
 	"lab": true,
@@ -252,7 +282,69 @@ func get_tile_style_profile(kind: String) -> Dictionary:
 	})
 	var result := profile.duplicate(true)
 	result["kind"] = kind
+	result["base_color"] = KIND_COLORS.get(kind, Color("#222222"))
+	result["base_alpha"] = TILE_BASE_ALPHA.get(kind, 0.72)
 	return result
+
+func get_scene_readability_profile(source_world: Dictionary = {}) -> Dictionary:
+	if source_world.is_empty():
+		source_world = world
+	if source_world.is_empty() or not source_world.has("tiles"):
+		return {}
+	var rows: Array = source_world["tiles"]
+	var biome_counts := {}
+	var road_tiles := 0
+	var transition_edges := 0
+	var landmark_count := 0
+	for y in rows.size():
+		var row: Array = rows[y]
+		for x in row.size():
+			var tile: Dictionary = row[x]
+			var kind := str(tile.get("kind", "wall"))
+			biome_counts[kind] = int(biome_counts.get(kind, 0)) + 1
+			if str(tile.get("source_symbol", "")) == "=":
+				road_tiles += 1
+			if _is_landmark(tile):
+				landmark_count += 1
+			var position := Vector2i(x, y)
+			var right_kind := _neighbor_kind(rows, position, Vector2i.RIGHT)
+			var down_kind := _neighbor_kind(rows, position, Vector2i.DOWN)
+			if right_kind != "" and right_kind != kind:
+				transition_edges += 1
+			if down_kind != "" and down_kind != kind:
+				transition_edges += 1
+	return {
+		"biome_count": biome_counts.keys().size(),
+		"biome_counts": biome_counts,
+		"road_tiles": road_tiles,
+		"transition_edges": transition_edges,
+		"landmark_count": landmark_count,
+		"tile_paint_style": "regional_masses_with_soft_tiles",
+		"route_layer_style": "continuous_access_road",
+		"landmark_plate_style": "raised_poi_plate",
+	}
+
+func get_tile_render_profile(tile: Dictionary, position: Vector2i = Vector2i.ZERO) -> Dictionary:
+	var kind := str(tile.get("kind", "wall"))
+	var style := get_tile_style_profile(kind)
+	var base: Color = style.get("base_color", Color("#222222"))
+	var alpha := float(style.get("base_alpha", 0.72))
+	var symbol := str(tile.get("source_symbol", ""))
+	var role := "terrain"
+	if symbol == "=":
+		role = "route"
+		alpha = 0.9
+	elif _is_landmark(tile):
+		role = "landmark"
+		alpha = 0.92
+	var variation := 0.92 + fmod(float(position.x * 17 + position.y * 31), 7.0) * 0.018
+	return {
+		"role": role,
+		"base_color": Color(base.r * variation, base.g * variation, base.b * variation, alpha),
+		"detail_alpha": 0.72 if role != "route" else 0.52,
+		"edge_color": TERRAIN_EDGE_COLORS.get(kind, Color("#f4ead2")),
+		"soft_inset": 0.08 if role == "terrain" else 0.03,
+	}
 
 func get_tile_visual_profile_for_position(map_world: Dictionary, position: Vector2i) -> Dictionary:
 	var tile := _tile_from_world_state(map_world, position)
@@ -1855,7 +1947,9 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#071521"))
 	_draw_ocean_backdrop()
 	_draw_premium_map_underlay()
+	_draw_biome_mass_underlay()
 	_draw_tiles()
+	_draw_access_road_layer()
 	_draw_integrity_zones()
 	_draw_cartographic_weather()
 	_draw_partition_boundaries()
@@ -1923,6 +2017,28 @@ func _draw_premium_map_underlay() -> void:
 		var inset := float(i) * 3.0
 		draw_rect(map_rect.grow(11.0 - inset), Color(chrome.r, chrome.g, chrome.b, 0.035), false, 1.0)
 
+func _draw_biome_mass_underlay() -> void:
+	var rows: Array = world["tiles"]
+	for y in rows.size():
+		var row: Array = rows[y]
+		for x in row.size():
+			var tile: Dictionary = row[x]
+			var kind := str(tile.get("kind", "wall"))
+			if kind == "water":
+				continue
+			var tile_rect := _tile_rect(Vector2i(x, y))
+			if not tile_rect.intersects(Rect2(Vector2.ZERO, size).grow(tile_size * 2.0)):
+				continue
+			var color: Color = KIND_COLORS.get(kind, Color("#222222"))
+			var mass_alpha := 0.16
+			if kind == "field":
+				mass_alpha = 0.12
+			elif kind == "forge" or kind == "kernel" or kind == "hardware":
+				mass_alpha = 0.2
+			draw_rect(tile_rect.grow(tile_size * 0.42), Color(color.r, color.g, color.b, mass_alpha))
+			if (x + y) % 5 == 0:
+				draw_circle(tile_rect.get_center(), tile_size * 0.72, Color(color.r, color.g, color.b, mass_alpha * 0.48))
+
 func _draw_tiles() -> void:
 	var rows: Array = world["tiles"]
 	var integrity_vfx := get_map_integrity_vfx_profile()
@@ -1941,12 +2057,57 @@ func _draw_tiles() -> void:
 			elif str(visual_profile.get("aesthetic", "")) == "clinical_active_memory":
 				var palette: Dictionary = visual_profile.get("palette", {})
 				color = palette.get("deep_blue", color)
-			draw_rect(tile_rect, color)
-			_draw_terrain_detail(kind, tile_rect, Vector2i(x, y))
-			_draw_tile_style_overlay(get_tile_style_profile(kind), tile_rect, Vector2i(x, y))
-			_draw_tile_visual_overlay(visual_profile, tile_rect, Vector2i(x, y))
+			var render_profile := get_tile_render_profile(tile, Vector2i(x, y))
+			var base_color: Color = render_profile.get("base_color", Color(color.r, color.g, color.b, 0.72))
+			if str(visual_profile.get("aesthetic", "")) != "":
+				base_color = Color(color.r, color.g, color.b, maxf(base_color.a, 0.76))
+			var inset := tile_size * float(render_profile.get("soft_inset", 0.08))
+			draw_rect(tile_rect.grow(-inset), base_color)
+			_draw_terrain_detail(kind, tile_rect.grow(-inset * 1.8), Vector2i(x, y))
+			_draw_tile_style_overlay(get_tile_style_profile(kind), tile_rect.grow(-inset), Vector2i(x, y))
+			_draw_tile_visual_overlay(visual_profile, tile_rect.grow(-inset), Vector2i(x, y))
 			_draw_danger_detail(tile, tile_rect, Vector2i(x, y))
 			_draw_integrity_detail(integrity_vfx, tile_rect, Vector2i(x, y))
+			_draw_terrain_transition_edges(rows, Vector2i(x, y), tile_rect, render_profile)
+
+func _draw_terrain_transition_edges(rows: Array, position: Vector2i, tile_rect: Rect2, render_profile: Dictionary) -> void:
+	var row: Array = rows[position.y]
+	var tile: Dictionary = row[position.x]
+	var kind := str(tile.get("kind", "wall"))
+	var edge_color: Color = render_profile.get("edge_color", Color("#f4ead2"))
+	var alpha := 0.26
+	var right_kind := _neighbor_kind(rows, position, Vector2i.RIGHT)
+	var down_kind := _neighbor_kind(rows, position, Vector2i.DOWN)
+	if right_kind != "" and right_kind != kind:
+		draw_line(Vector2(tile_rect.end.x, tile_rect.position.y + tile_size * 0.12), Vector2(tile_rect.end.x, tile_rect.end.y - tile_size * 0.12), Color(edge_color.r, edge_color.g, edge_color.b, alpha), 1.0)
+	if down_kind != "" and down_kind != kind:
+		draw_line(Vector2(tile_rect.position.x + tile_size * 0.12, tile_rect.end.y), Vector2(tile_rect.end.x - tile_size * 0.12, tile_rect.end.y), Color(edge_color.r, edge_color.g, edge_color.b, alpha), 1.0)
+
+func _draw_access_road_layer() -> void:
+	var rows: Array = world["tiles"]
+	var road_color := Color("#f2e0ad")
+	var shadow_color := Color("#321f12")
+	for y in rows.size():
+		var row: Array = rows[y]
+		for x in row.size():
+			var tile: Dictionary = row[x]
+			if str(tile.get("source_symbol", "")) != "=":
+				continue
+			var position := Vector2i(x, y)
+			var rect := _tile_rect(position)
+			if not rect.intersects(Rect2(Vector2.ZERO, size).grow(tile_size)):
+				continue
+			var center := rect.get_center()
+			draw_circle(center, tile_size * 0.27, Color(shadow_color.r, shadow_color.g, shadow_color.b, 0.34))
+			draw_circle(center, tile_size * 0.2, Color(road_color.r, road_color.g, road_color.b, 0.76))
+			for delta in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+				var neighbor: Vector2i = position + delta
+				var neighbor_tile := _tile_from_world_state(world, neighbor)
+				if str(neighbor_tile.get("source_symbol", "")) != "=":
+					continue
+				var end := center + Vector2(delta.x, delta.y) * tile_size * 0.5
+				draw_line(center, end, Color(shadow_color.r, shadow_color.g, shadow_color.b, 0.38), maxf(2.0, tile_size * 0.24))
+				draw_line(center, end, Color(road_color.r, road_color.g, road_color.b, 0.86), maxf(1.2, tile_size * 0.14))
 
 func _draw_integrity_detail(profile: Dictionary, tile_rect: Rect2, position: Vector2i) -> void:
 	var dither_alpha := float(profile.get("dither_alpha", 0.0))
@@ -2276,7 +2437,9 @@ func _draw_landmark_marker(tile: Dictionary, tile_rect: Rect2) -> void:
 	var pulse_alpha := float(marker.get("pulse_alpha", 0.14))
 	var pulse := (sin(Time.get_ticks_msec() / 190.0 + center.x * 0.01) + 1.0) * 0.5
 
-	draw_rect(tile_rect.grow(-s * 0.08), Color("#1a140d", 0.42), false, 1.0)
+	draw_rect(tile_rect.grow(s * 0.12), Color("#02070b", 0.34))
+	draw_rect(tile_rect.grow(s * 0.04), Color(ring_color.r, ring_color.g, ring_color.b, 0.16))
+	draw_rect(tile_rect.grow(-s * 0.06), Color("#1a140d", 0.5), false, 1.0)
 	if marker_kind != "none":
 		draw_circle(center, s * (0.3 + pulse * 0.08), Color(ring_color.r, ring_color.g, ring_color.b, pulse_alpha))
 		draw_circle(center, s * 0.24, Color(fill_color.r, fill_color.g, fill_color.b, 0.82))
@@ -3472,6 +3635,16 @@ func _tile_from_world_state(map_world: Dictionary, position: Vector2i) -> Dictio
 	if position.x < 0 or position.x >= row.size():
 		return {}
 	return row[position.x]
+
+func _neighbor_kind(rows: Array, position: Vector2i, delta: Vector2i) -> String:
+	var neighbor: Vector2i = position + delta
+	if neighbor.y < 0 or neighbor.y >= rows.size():
+		return ""
+	var row: Array = rows[neighbor.y]
+	if neighbor.x < 0 or neighbor.x >= row.size():
+		return ""
+	var tile: Dictionary = row[neighbor.x]
+	return str(tile.get("kind", "wall"))
 
 func _append_unique_string(values: Array[String], value: String) -> void:
 	if not values.has(value):
