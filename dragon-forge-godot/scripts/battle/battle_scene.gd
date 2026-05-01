@@ -66,6 +66,9 @@ func start_battle(profile_snapshot: Dictionary, enemy_id: String = "firewall_sen
 	enemy_sprite.texture = _texture_from_png(ENEMY_TEXTURE, _fallback_enemy_texture(enemy_id))
 	enemy_sprite.modulate = _enemy_modulate(enemy_id, 1)
 	backdrop.set_context(battle_context, enemy_id)
+	var opening_bark := _lore_bark_for_enemy(enemy_id)
+	if opening_bark != "":
+		battle["log"].append(opening_bark)
 	_stop_idle_animation()
 	_refresh()
 	_start_idle_animation()
@@ -848,6 +851,19 @@ func _maybe_award_victory() -> void:
 		battle["log"].append("%s is marked clear on the overworld map." % battle_context.get("location_label", "Arena"))
 	if reward["key_item"] == "diagnostic_lens":
 		battle["log"].append("B.I.O.S. unlocks the Diagnostic Lens overlay.")
+	var victory_bark := _lore_bark_for_enemy(str(battle["enemy_id"]), true)
+	if victory_bark != "":
+		battle["log"].append(victory_bark)
+
+func get_lore_bark_for_test(enemy_id: String, victory: bool = false) -> String:
+	return _lore_bark_for_enemy(enemy_id, victory)
+
+func _lore_bark_for_enemy(enemy_id: String, victory: bool = false) -> String:
+	if not enemy_id.contains("mirror") and not enemy_id.contains("daemon") and not enemy_id.contains("sentinel"):
+		return ""
+	if victory:
+		return "Skye forced one more route to stay real."
+	return "Mirror Admin pressure rising. Guardian protocol handshake required."
 
 func _latest_log_contains(fragment: String) -> bool:
 	for line in battle.get("log", []):

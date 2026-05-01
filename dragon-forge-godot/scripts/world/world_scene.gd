@@ -194,6 +194,9 @@ func get_dungeon_entry_card_for_test(current: Dictionary) -> Dictionary:
 func socket_anvil_kit_for_test(dungeon_id: String) -> Dictionary:
 	return _socket_anvil_kit(dungeon_id)
 
+func get_lore_panel_lines_for_test(current: Dictionary) -> Array[String]:
+	return _lore_panel_lines(current)
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible or not event.is_pressed():
 		return
@@ -1162,6 +1165,13 @@ func _rebuild_action_panel(current: Dictionary) -> void:
 	)
 	save_row.add_child(load_button)
 
+	for line in _lore_panel_lines(current):
+		var lore_label := Label.new()
+		lore_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lore_label.add_theme_font_size_override("font_size", 13)
+		lore_label.text = line
+		action_box.add_child(lore_label)
+
 	if DragonProgression.has_key_item(profile, "root_access"):
 		var admin_button := Button.new()
 		admin_button.text = "Hide Admin Overlay" if admin_overlay_visible else "Show Admin Overlay"
@@ -1323,6 +1333,14 @@ func _rebuild_action_panel(current: Dictionary) -> void:
 		action_box.add_child(mission_hint)
 
 	_add_npc_and_sidequest_controls(current)
+
+func _lore_panel_lines(current: Dictionary) -> Array[String]:
+	var lines: Array[String] = []
+	if current.has("lore_signal"):
+		lines.append("[SYS] %s" % str(current["lore_signal"]))
+	if current.has("skye_objective"):
+		lines.append("[SKYE] %s" % str(current["skye_objective"]))
+	return lines
 
 func _request_dungeon(current: Dictionary) -> void:
 	var dungeon_id := str(current.get("dungeon_id", ""))

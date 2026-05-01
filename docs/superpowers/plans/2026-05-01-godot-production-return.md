@@ -184,7 +184,7 @@ git commit -m "Surface Skye lore in Godot world data"
 - Modify: `dragon-forge-godot/scripts/battle/battle_scene.gd`
 - Test: `dragon-forge-godot/scripts/tests/sim_smoke.gd`
 
-- [ ] **Step 1: Show world lore signal in the action panel**
+- [x] **Step 1: Show world lore signal in the action panel**
 
 In `world_scene.gd`, find the action/objective panel refresh function that reads selected/current location data. After the primary description text is assigned, append:
 
@@ -197,7 +197,7 @@ if location.has("skye_objective"):
 
 Use the actual local array/property name from the panel refresh function. Keep the display read-only; do not add new interaction state.
 
-- [ ] **Step 2: Add battle barks only for Admin/security encounters**
+- [x] **Step 2: Add battle barks only for Admin/security encounters**
 
 In `battle_scene.gd`, add a helper:
 
@@ -212,7 +212,7 @@ func _lore_bark_for_enemy(enemy_id: String, victory: bool = false) -> String:
 
 Call it when a battle starts and when a battle resolves, using the existing floating text/log mechanism. If the helper returns `""`, do nothing.
 
-- [ ] **Step 3: Run smoke test and one headless scene load**
+- [x] **Step 3: Run smoke test and one headless scene load**
 
 Run:
 
@@ -223,7 +223,7 @@ Run:
 
 Expected: both exit code `0`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add dragon-forge-godot/scripts/world/world_scene.gd dragon-forge-godot/scripts/battle/battle_scene.gd dragon-forge-godot/scripts/tests/sim_smoke.gd
