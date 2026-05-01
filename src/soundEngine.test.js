@@ -39,6 +39,10 @@ describe('sound effect schema', () => {
       role: 'battle-tense',
       mood: 'tense',
     });
+    expect(getMusicDefinition('opening')).toMatchObject({
+      role: 'opening-sequence',
+      mood: 'tense',
+    });
     expect(getMusicSchema().battleIntense.mood).toBe('danger');
   });
 });

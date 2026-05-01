@@ -45,7 +45,7 @@ export default function TitleScreen({ onStart, save }) {
   }, []);
 
   const runBootSequence = useCallback(async () => {
-    playMusic('title');
+    playMusic('opening');
     const currentDialogue = getTerminalDialogue(getSingularityStage(save));
 
     for (const line of BOOT_LINES) {
@@ -124,7 +124,7 @@ export default function TitleScreen({ onStart, save }) {
 
   const handleClick = () => {
     // Retry music on first user interaction (autoplay policy requires click)
-    playMusic('title');
+    playMusic('opening');
     if (phase === 'boot') {
       skippedRef.current = true;
     } else if (phase === 'felix') {

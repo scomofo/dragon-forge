@@ -266,6 +266,7 @@ const SOUND_ALIASES = {
 
 const MUSIC_SCHEMA = {
   title: { role: 'boot-theme', mood: 'mysterious', source: 'asset', path: '/assets/music/theme.mp3' },
+  openingTense: { role: 'opening-sequence', mood: 'tense', source: 'asset', path: '/assets/music/music_battle_intense.mp3' },
   hatchery: { role: 'home-base', mood: 'warm', source: 'asset', path: '/assets/music/music_hatchery.mp3' },
   select: { role: 'menu-selection', mood: 'focused', source: 'asset', path: '/assets/music/music_select.mp3' },
   mapWander: { role: 'map-wandering', mood: 'wandering', source: 'asset', path: '/assets/music/music_select.mp3' },
@@ -278,6 +279,7 @@ const MUSIC_ALIASES = {
   map: 'mapWander',
   wandering: 'mapWander',
   tenseBattle: 'battleTense',
+  opening: 'openingTense',
 };
 
 const SOUND_DEFINITIONS = Object.entries(SFX_SCHEMA).reduce((defs, [category, entries]) => {
@@ -625,6 +627,7 @@ let currentTrackName = null;
 
 const MUSIC_TRACKS = {
   title: '/assets/music/theme.mp3',
+  openingTense: '/assets/music/music_battle_intense.mp3',
   hatchery: '/assets/music/music_hatchery.mp3',
   select: '/assets/music/music_select.mp3',
   mapWander: '/assets/music/music_select.mp3',
