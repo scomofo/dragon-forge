@@ -9,6 +9,7 @@ import {
   listRelics,
   getRelic,
   getBulkheadView,
+  getCaptainLogDisplay,
   pickFelixLine,
   findNearestStation,
 } from './forgeData';
@@ -50,7 +51,7 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
     }
     for (const [id, predicate] of Object.entries(FRAGMENT_TRIGGERS)) {
       if (save?.flags?.fragmentsUnlocked?.includes(id)) continue;
-      try { if (predicate(save) || (id === '001')) { unlockFragment(id); mutated = true; } } catch { /* ignore */ }
+      try { if (predicate(save) || ['001', '002'].includes(id)) { unlockFragment(id); mutated = true; } } catch { /* ignore */ }
     }
     if ((save?.skye?.relicsOwned?.length || 0) === 0) {
       grantRelic('iron_knuckle');
@@ -472,10 +473,11 @@ function ConsoleOverlay({ save, onClose }) {
     <OverlayShell title="CAPTAIN'S LOG — CRT TERMINAL" accent={FORGE_PALETTE.consoleGreen} onClose={onClose}>
       <div style={{ fontFamily: 'monospace', fontSize: 12 }}>
         {CAPTAINS_LOG_FRAGMENTS.map((f) => {
-          const isUnlocked = unlocked.includes(f.id);
+          const entry = getCaptainLogDisplay(f, unlocked);
+          const isUnlocked = entry.isUnlocked;
           return (
             <div
-              key={f.id}
+              key={entry.id}
               style={{
                 padding: 8,
                 margin: '6px 0',
@@ -485,11 +487,10 @@ function ConsoleOverlay({ save, onClose }) {
               }}
             >
               <div style={{ color: isUnlocked ? FORGE_PALETTE.consoleGreen : '#777', letterSpacing: 1 }}>
-                FRAGMENT {f.id} — {isUnlocked ? f.title.toUpperCase() : '[DEFRAGMENTING...]'}
+                {entry.heading}
+                {!isUnlocked && <span style={{ color: '#555' }}> [{entry.status}]</span>}
               </div>
-              {isUnlocked && (
-                <div style={{ marginTop: 6, color: '#cfe2c9' }}>{f.body}</div>
-              )}
+              <div style={{ marginTop: 6, color: isUnlocked ? '#cfe2c9' : '#777' }}>{entry.body}</div>
             </div>
           );
         })}

@@ -9,7 +9,14 @@ import {
   WORLD_CANON,
 } from './loreCanon';
 import { getTerminalDialogue } from './felixDialogue';
-import { CAPTAINS_LOG_FRAGMENTS, FELIX_CONTEXTUAL } from './forgeData';
+import {
+  CAPTAINS_LOG_FRAGMENTS,
+  FELIX_CONTEXTUAL,
+  FELIX_IDLE_LINES,
+  FORGE_STATIONS,
+  FRAGMENT_TRIGGERS,
+  getCaptainLogDisplay,
+} from './forgeData';
 
 describe('runtime lore canon', () => {
   test('defines the core Skye/Felix/world premise', () => {
@@ -60,4 +67,33 @@ test('Forge lore hub exposes Skye canon fragments and contextual lines', () => {
 
   const firstVisit = FELIX_CONTEXTUAL.find((entry) => entry.id === 'firstVisit');
   expect(firstVisit.line).toContain('Skye');
+});
+
+test('Forge station prompts carry the runtime mythology into ordinary play', () => {
+  const stationText = FORGE_STATIONS.map((station) => station.description).join(' ');
+  const felixText = FELIX_IDLE_LINES.join(' ');
+
+  expect(stationText).toContain('Skye');
+  expect(stationText).toContain('Astraeus');
+  expect(stationText).toContain('Mirror Admin');
+  expect(stationText).toContain('rendered world');
+  expect(felixText).toContain('Skye');
+  expect(felixText).toContain('protocols');
+});
+
+test('Captain log reveals early lore and teases locked entries by title', () => {
+  const freshSave = { flags: { metFelix: true }, stats: { battlesWon: 0 } };
+  expect(FRAGMENT_TRIGGERS['001'](freshSave)).toBe(true);
+  expect(FRAGMENT_TRIGGERS['002'](freshSave)).toBe(true);
+
+  const unlockedEntry = getCaptainLogDisplay(CAPTAINS_LOG_FRAGMENTS[0], ['001']);
+  expect(unlockedEntry.heading).toContain('THE RENDERED WORLD');
+  expect(unlockedEntry.body).toContain('Astraeus');
+  expect(unlockedEntry.status).toBe('DECRYPTED');
+
+  const lockedEntry = getCaptainLogDisplay(CAPTAINS_LOG_FRAGMENTS[2], ['001', '002']);
+  expect(lockedEntry.heading).toContain('SKYE SIGNAL');
+  expect(lockedEntry.body).toContain('Recover field signal');
+  expect(lockedEntry.body).not.toContain('operator');
+  expect(lockedEntry.status).toBe('SIGNAL LOCKED');
 });

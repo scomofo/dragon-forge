@@ -37,7 +37,7 @@ export const FORGE_STATIONS = [
     glow: FORGE_PALETTE.hatcheryCyan,
     pulseMs: 1200,
     proximity: 14,
-    description: 'A circle of cabling and crystalline matrix cradling 1-3 dragon eggs. The pulse syncs with their dreaming.',
+    description: 'Guardian protocol eggs sleep inside a cable-ring matrix. They answer Skye before they answer Felix.',
   },
   {
     id: STATION_IDS.SAVE_LANTERN,
@@ -47,7 +47,7 @@ export const FORGE_STATIONS = [
     glow: FORGE_PALETTE.lanternWarm,
     pulseMs: 1500,
     proximity: 10,
-    description: 'A salvaged lantern. Resting here refills HP and Capacitors but advances the world by one cycle.',
+    description: 'A save lantern wired to Astraeus memory. Rest here, but every cycle gives the Mirror Admin another look.',
   },
   {
     id: STATION_IDS.ANVIL,
@@ -57,7 +57,7 @@ export const FORGE_STATIONS = [
     glow: FORGE_PALETTE.coalGlow,
     pulseMs: 800,
     proximity: 12,
-    description: 'Felix\'s anvil. Coals breathe orange beneath. Equip Analog Relics here.',
+    description: 'Felix forged the anvil from Astraeus engine iron. Analog Relics still bite through rendered lies.',
   },
   {
     id: STATION_IDS.CONSOLE,
@@ -67,7 +67,7 @@ export const FORGE_STATIONS = [
     glow: FORGE_PALETTE.consoleGreen,
     pulseMs: 1100,
     proximity: 12,
-    description: 'A salvaged CRT lashed to a column. Captain\'s Log fragments and narrative saves live here.',
+    description: 'A salvaged CRT on a bad-sector loop. Captain\'s Log fragments prove the rendered world was lived in.',
   },
   {
     id: STATION_IDS.FELIX,
@@ -87,7 +87,7 @@ export const FORGE_STATIONS = [
     glow: FORGE_PALETTE.jungleDay,
     pulseMs: 0,
     proximity: 8,
-    description: 'A jagged hole in the hull. Step through to leave the Forge.',
+    description: 'A jagged render breach. Step through to leave the Forge and test what the Admin changed outside.',
   },
 ];
 
@@ -106,6 +106,10 @@ export const FELIX_IDLE_LINES = [
   'The Mirror Admin started as a kindness. Don\'t forget that.',
   'Felix isn\'t my real name. It\'s what the kids could pronounce.',
   'When the lantern flickers blue, the deck has shifted again. Adjust your stance.',
+  'Skye, if the sky looks too perfect, duck. Perfect means the Admin is rendering over a wound.',
+  'Dragons are protocols with tempers. Treat them like partners, not equipment.',
+  'The old Astraeus fans still spin under your boots. That sound is not weather.',
+  'If the Console repeats a log, read it twice. Memory fights deletion by stuttering.',
 ];
 
 // Context-aware dialogue — keyed by save-state predicates evaluated at runtime.
@@ -140,6 +144,11 @@ export const FELIX_CONTEXTUAL = [
 
 // Captain's Log fragments — registry. Status comes from save flags at runtime.
 export const CAPTAINS_LOG_FRAGMENTS = CAPTAINS_LOG_ARC;
+
+export const CAPTAINS_LOG_LOCKED_COPY = {
+  prefix: 'SIGNAL LOCKED',
+  body: 'Recover field signal to decrypt this body.',
+};
 
 // Analog Relics — Skye's passive equipment, drops from bounty kills.
 // `slotCost` matters once mythic slots ship; for now everything is 1.
@@ -218,7 +227,7 @@ export function listRelics() { return Object.values(RELICS); }
 // condition is satisfied.
 export const FRAGMENT_TRIGGERS = {
   '001': (s) => !!s?.flags?.metFelix,
-  '002': (s) => (s?.stats?.battlesWon || 0) >= 1,
+  '002': (s) => !!s?.flags?.metFelix,
   '003': (s) => (s?.stats?.battlesWon || 0) >= 3,
   '004': (s) => (s?.flags?.currentAct || 1) >= 2,
   '005': (s) => (s?.flags?.currentAct || 1) >= 2 && (s?.stats?.battlesWon || 0) >= 5,
@@ -236,6 +245,17 @@ export const BULKHEAD_VIEWS = {
 
 export function getBulkheadView(actNumber) {
   return BULKHEAD_VIEWS[actNumber] || BULKHEAD_VIEWS[1];
+}
+
+export function getCaptainLogDisplay(fragment, unlockedIds = []) {
+  const isUnlocked = unlockedIds.includes(fragment.id);
+  return {
+    ...fragment,
+    isUnlocked,
+    heading: `FRAGMENT ${fragment.id} - ${fragment.title.toUpperCase()}`,
+    body: isUnlocked ? fragment.body : CAPTAINS_LOG_LOCKED_COPY.body,
+    status: isUnlocked ? 'DECRYPTED' : CAPTAINS_LOG_LOCKED_COPY.prefix,
+  };
 }
 
 export function pickFelixLine(save) {
