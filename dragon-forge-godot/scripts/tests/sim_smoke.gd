@@ -1386,10 +1386,13 @@ func _assert_audio_director() -> void:
 	_assert(opening_cue["music"]["id"] == "opening_sequence" and opening_cue["sfx"]["id"] == "opening_warning_pulse", "audio director routes opening scene cue to music and SFX profiles")
 	var battle_music: Dictionary = director.play_music_context("battle_tension")
 	_assert(battle_music["runtime_ready"] and battle_music["id"] == "battle_tension" and battle_music["intensity"] >= 0.9, "audio director can switch to battle tension runtime music")
+	_assert(battle_music["synth_plan"]["presentation"] == "procedural_nes_music_plan" and battle_music["synth_plan"]["channels"]["pulse_1"].size() >= 4, "audio director attaches procedural NES music synth steps")
 	director.play_music_context("world_wandering")
 	var state: Dictionary = director.get_audio_state_for_test()
 	_assert(state["current_music"]["id"] == "world_wandering" and state["last_sfx"]["id"] == "opening_warning_pulse" and state["cue_count"] >= 5, "audio director tracks current map music, last SFX, and cue history")
-	_assert(state["playback_mode"] == "profile_router_until_stream_assets_land", "audio director declares the current runtime playback mode")
+	_assert(state["last_music_synth_plan"]["channels"]["triangle"].size() >= 4 and state["last_sfx_synth_plan"]["presentation"] == "procedural_nes_sfx_plan", "audio director tracks music and SFX synth plans")
+	_assert(state["playback_mode"] == "procedural_nes_synth_router", "audio director declares procedural synth routing as the current playback mode")
+	_assert(SfxData.note_to_frequency("A4") == 440.0 and SfxData.note_to_frequency("A3") < 230.0, "SFX data can convert note names into synth frequencies")
 	director.free()
 
 func _has_command(commands: Array, id: String) -> bool:

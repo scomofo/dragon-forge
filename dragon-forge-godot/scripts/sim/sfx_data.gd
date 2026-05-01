@@ -124,6 +124,69 @@ static func get_music_profile(context_id: String) -> Dictionary:
 		}
 	return result
 
+static func get_music_synth_plan(profile: Dictionary) -> Dictionary:
+	if profile.is_empty():
+		return {}
+	var notes: Array = profile.get("progression", [])
+	var lead_steps: Array = []
+	var bass_steps: Array = []
+	for note in notes:
+		var note_text := str(note)
+		lead_steps.append({
+			"note": note_text,
+			"frequency": note_to_frequency(note_text),
+			"wave": "pulse",
+			"duty": 0.25 if profile.get("mood", "") == "urgent" else 0.5,
+		})
+		bass_steps.append({
+			"note": _transpose_octave(note_text, -1),
+			"frequency": note_to_frequency(_transpose_octave(note_text, -1)),
+			"wave": "triangle",
+			"duty": 0.5,
+		})
+	return {
+		"presentation": "procedural_nes_music_plan",
+		"music_id": profile.get("id", ""),
+		"tempo_bpm": int(profile.get("tempo_bpm", 120)),
+		"step_seconds": 60.0 / float(maxi(1, int(profile.get("tempo_bpm", 120)))),
+		"loop": bool(profile.get("loop", true)),
+		"channels": {
+			"pulse_1": lead_steps,
+			"pulse_2": _counterline_steps(notes),
+			"triangle": bass_steps,
+			"noise": [{
+				"pattern": profile.get("percussion", "noise_tick"),
+				"frequency": 1800.0,
+				"wave": "noise",
+			}],
+		},
+		"master_gain": clampf(float(profile.get("intensity", 0.5)) * 0.28, 0.04, 0.32),
+	}
+
+static func get_sfx_synth_plan(profile: Dictionary) -> Dictionary:
+	if profile.is_empty():
+		return {}
+	var priority := int(profile.get("priority", 1))
+	return {
+		"presentation": "procedural_nes_sfx_plan",
+		"sfx_id": profile.get("id", ""),
+		"duration": 0.08 + float(priority) * 0.035,
+		"world_layer": profile.get("world_layer", ""),
+		"system_layer": profile.get("system_layer", ""),
+		"channels": {
+			"pulse_1": [{
+				"frequency": 220.0 + float(priority) * 55.0,
+				"wave": "pulse",
+				"duty": 0.25,
+			}],
+			"noise": [{
+				"frequency": 900.0 + float(priority) * 180.0,
+				"wave": "noise",
+			}],
+		},
+		"master_gain": clampf(0.08 + float(priority) * 0.035, 0.08, 0.28),
+	}
+
 static func get_opening_sequence_audio_profile(tone: String = "system") -> Dictionary:
 	var cue_id := "opening_boot_tick"
 	if tone == "warning":
@@ -157,3 +220,54 @@ static func get_anomaly_sfx(anomaly_id: String, pressure: Dictionary) -> Diction
 	if anomaly_id == "mirror_admin_sentinel" and bool(pressure.get("active", false)):
 		return get_ui_sfx_profile("mirror_admin_purge")
 	return {}
+
+static func note_to_frequency(note: String) -> float:
+	var text := note.strip_edges()
+	if text.length() < 2:
+		return 440.0
+	var names := {
+		"C": -9,
+		"C#": -8,
+		"Db": -8,
+		"D": -7,
+		"D#": -6,
+		"Eb": -6,
+		"E": -5,
+		"F": -4,
+		"F#": -3,
+		"Gb": -3,
+		"G": -2,
+		"G#": -1,
+		"Ab": -1,
+		"A": 0,
+		"A#": 1,
+		"Bb": 1,
+		"B": 2,
+	}
+	var note_name := text.substr(0, 2) if text.length() >= 3 and (text[1] == "#" or text[1] == "b") else text.substr(0, 1)
+	var octave_text := text.substr(note_name.length())
+	var octave := int(octave_text) if octave_text.is_valid_int() else 4
+	var semitone: int = int(names.get(note_name, 0)) + (octave - 4) * 12
+	return 440.0 * pow(2.0, float(semitone) / 12.0)
+
+static func _counterline_steps(notes: Array) -> Array:
+	var steps: Array = []
+	for index in notes.size():
+		var source := str(notes[index])
+		var shifted := _transpose_octave(source, 1 if index % 2 == 0 else 0)
+		steps.append({
+			"note": shifted,
+			"frequency": note_to_frequency(shifted),
+			"wave": "pulse",
+			"duty": 0.125,
+		})
+	return steps
+
+static func _transpose_octave(note: String, octaves: int) -> String:
+	var text := note.strip_edges()
+	if text.length() < 2:
+		return note
+	var note_name := text.substr(0, 2) if text.length() >= 3 and (text[1] == "#" or text[1] == "b") else text.substr(0, 1)
+	var octave_text := text.substr(note_name.length())
+	var octave := int(octave_text) if octave_text.is_valid_int() else 4
+	return "%s%d" % [note_name, octave + octaves]
