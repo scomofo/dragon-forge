@@ -147,6 +147,91 @@ export const CAPTAINS_LOG_FRAGMENTS = [
   { id: '007', title: 'Iris Remembers', act: 2, body: 'Iris\'s last memory is her mother saying, "the ship will keep us safe forever, sweetheart." The Admin took that promise literally.' },
 ];
 
+// Analog Relics — Skye's passive equipment, drops from bounty kills.
+// `slotCost` matters once mythic slots ship; for now everything is 1.
+export const RELICS = {
+  iron_knuckle: {
+    id: 'iron_knuckle',
+    name: 'Iron Knuckle',
+    icon: '✊',
+    slotCost: 1,
+    mythic: false,
+    source: 'Recursive Golem (Cooling Intake boss)',
+    effect: 'Heavy poise damage +1.',
+  },
+  hydra_cog: {
+    id: 'hydra_cog',
+    name: 'Hydra Cog',
+    icon: '⚙',
+    slotCost: 1,
+    mythic: false,
+    source: 'Glitch Hydra (Tundra boss)',
+    effect: 'Heavy can chain twice on hit.',
+  },
+  coolant_core: {
+    id: 'coolant_core',
+    name: 'Coolant Core',
+    icon: '❄',
+    slotCost: 1,
+    mythic: false,
+    source: 'Tundra Bit-Wraith swarm bonus',
+    effect: 'Capacitor stuns last +50%.',
+  },
+  phase_lens: {
+    id: 'phase_lens',
+    name: 'Phase Lens',
+    icon: '◉',
+    slotCost: 2,
+    mythic: false,
+    source: 'Sub-routine Stalker (rare drop)',
+    effect: 'Roll i-frames extend to 12f.',
+  },
+  twin_forge: {
+    id: 'twin_forge',
+    name: 'Twin Forge',
+    icon: '⚒',
+    slotCost: 2,
+    mythic: false,
+    source: 'Volcanic miniboss',
+    effect: 'Light chain extends to 4 hits.',
+  },
+  resonant_fork: {
+    id: 'resonant_fork',
+    name: 'Resonant Tuning Fork',
+    icon: '♪',
+    slotCost: 1,
+    mythic: false,
+    source: 'Lattice-Singer (The Last Verse)',
+    effect: 'Every 4th Heavy pulses an AOE that strips frostbite.',
+  },
+  astraeus_engine: {
+    id: 'astraeus_engine',
+    name: 'Astraeus Engine',
+    icon: '★',
+    slotCost: 1,
+    mythic: true,
+    source: 'Mirror Admin\'s Sanctum (Act IV)',
+    effect: 'All bounty windows last 50% longer.',
+  },
+};
+
+export function getRelic(id) { return RELICS[id] || null; }
+export function listRelics() { return Object.values(RELICS); }
+
+// Map fragment IDs to a save-flag-derivable trigger condition. Used by the
+// auto-unlock pass on relevant game events. Everything is opt-in: the engine
+// calls maybeUnlockFragments(save) and the helper only flips fragments whose
+// condition is satisfied.
+export const FRAGMENT_TRIGGERS = {
+  '001': (s) => !!s?.flags?.metFelix,
+  '002': (s) => (s?.stats?.battlesWon || 0) >= 1,
+  '003': (s) => (s?.stats?.battlesWon || 0) >= 3,
+  '004': (s) => (s?.flags?.currentAct || 1) >= 2,
+  '005': (s) => (s?.flags?.currentAct || 1) >= 2 && (s?.stats?.battlesWon || 0) >= 5,
+  '006': (s) => (s?.flags?.currentAct || 1) >= 2 && (s?.stats?.battlesWon || 0) >= 8,
+  '007': (s) => (s?.flags?.currentAct || 1) >= 3,
+};
+
 // Bulkhead view by act — palette + parallax variant key.
 export const BULKHEAD_VIEWS = {
   1: { variant: 'jungle', palette: [FORGE_PALETTE.jungleDay, '#5a8c3a', '#2c4a1c'] },

@@ -4,10 +4,24 @@ import {
   FORGE_STATIONS,
   STATION_IDS,
   CAPTAINS_LOG_FRAGMENTS,
+  RELICS,
+  FRAGMENT_TRIGGERS,
+  listRelics,
+  getRelic,
   getBulkheadView,
   pickFelixLine,
   findNearestStation,
 } from './forgeData';
+import {
+  setFlag,
+  unlockFragment,
+  grantRelic,
+  equipRelic as persistEquipRelic,
+  unequipRelic as persistUnequipRelic,
+  setCompanionDragon,
+} from './persistence';
+import { dragons as DRAGON_DEFS, elementColors } from './gameData';
+import DragonSprite from './DragonSprite';
 import { playSound } from './soundEngine';
 
 // Movement step (in 0-100 grid units) per keypress.
@@ -24,6 +38,27 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
   const view = getBulkheadView(act);
 
   const nearest = findNearestStation(skyePos);
+
+  // First-visit + auto-unlock pass: mark Felix met, unlock any fragments whose
+  // triggers are already satisfied, and grant a starter relic so the Anvil
+  // equip UI has something to show before bounty drops are wired in.
+  useEffect(() => {
+    let mutated = false;
+    if (!save?.flags?.metFelix) {
+      setFlag('metFelix', true);
+      mutated = true;
+    }
+    for (const [id, predicate] of Object.entries(FRAGMENT_TRIGGERS)) {
+      if (save?.flags?.fragmentsUnlocked?.includes(id)) continue;
+      try { if (predicate(save) || (id === '001')) { unlockFragment(id); mutated = true; } } catch { /* ignore */ }
+    }
+    if ((save?.skye?.relicsOwned?.length || 0) === 0) {
+      grantRelic('iron_knuckle');
+      mutated = true;
+    }
+    if (mutated) refreshSave?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const closeOverlay = useCallback(() => {
     setOverlay(null);
@@ -110,9 +145,9 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
 
       <ProximityHud nearest={nearest} />
 
-      {overlay === 'anvil' && <AnvilOverlay save={save} onClose={closeOverlay} />}
+      {overlay === 'anvil' && <AnvilOverlay save={save} onClose={closeOverlay} refreshSave={refreshSave} />}
       {overlay === 'console' && <ConsoleOverlay save={save} onClose={closeOverlay} />}
-      {overlay === 'hatcheryRing' && <HatcheryRingOverlay save={save} onClose={closeOverlay} onNavigate={onNavigate} />}
+      {overlay === 'hatcheryRing' && <HatcheryRingOverlay save={save} onClose={closeOverlay} onNavigate={onNavigate} refreshSave={refreshSave} />}
       {overlay === 'lantern' && <LanternOverlay save={save} onClose={closeOverlay} refreshSave={refreshSave} />}
       {overlay === 'felix' && <FelixOverlay line={felixLine} onClose={closeOverlay} />}
 
@@ -320,19 +355,114 @@ function OverlayShell({ title, accent = '#c9a567', onClose, children }) {
   );
 }
 
-function AnvilOverlay({ save, onClose }) {
+function AnvilOverlay({ save, onClose, refreshSave }) {
   const tier = save?.skye?.wrenchTier || 1;
   const slots = save?.skye?.relicSlots || 1;
-  const equipped = save?.skye?.equippedRelics || [];
+  const owned = save?.skye?.relicsOwned || [];
+  const equipped = save?.skye?.relicsEquipped || [];
+  const [, force] = useState(0);
+  const refresh = () => { refreshSave?.(); force(n => n + 1); };
+
+  function toggle(relicId) {
+    if (equipped.includes(relicId)) {
+      persistUnequipRelic(relicId);
+      playSound('navSwitch');
+    } else {
+      if (equipped.length >= slots) {
+        playSound('terminalWarning');
+        return;
+      }
+      persistEquipRelic(relicId);
+      playSound('terminalOk');
+    }
+    refresh();
+  }
+
   return (
     <OverlayShell title="THE ANVIL — LOADOUT" accent={FORGE_PALETTE.coalGlow} onClose={onClose}>
-      <p style={{ margin: '4px 0', color: '#ccc' }}>Wrench Tier: <strong style={{ color: FORGE_PALETTE.emberOrange }}>T{tier}</strong></p>
-      <p style={{ margin: '4px 0', color: '#ccc' }}>Relic Slots: <strong>{equipped.length} / {slots}</strong></p>
-      <hr style={{ border: 0, borderTop: '1px solid #444', margin: '12px 0' }} />
-      <p style={{ color: '#888', fontSize: 12, fontStyle: 'italic' }}>
-        Relic equip UI coming online. Bring back drops from bounty kills to populate this list.
-      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div>
+          <span style={{ color: '#ccc' }}>Wrench Tier: </span>
+          <strong style={{ color: FORGE_PALETTE.emberOrange }}>T{tier}</strong>
+        </div>
+        <div>
+          <span style={{ color: '#ccc' }}>Relic Slots: </span>
+          <strong style={{ color: FORGE_PALETTE.emberOrange }}>{equipped.length} / {slots}</strong>
+        </div>
+      </div>
+
+      {owned.length === 0 ? (
+        <p style={{ color: '#888', fontSize: 12, fontStyle: 'italic' }}>
+          No relics yet. Defeat bounty targets to claim Analog Relics.
+        </p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <RelicColumn
+            title="OWNED"
+            accent={FORGE_PALETTE.coalGlow}
+            ids={owned.filter(id => !equipped.includes(id))}
+            actionLabel="EQUIP"
+            onAction={toggle}
+            disabled={equipped.length >= slots}
+          />
+          <RelicColumn
+            title="EQUIPPED"
+            accent={FORGE_PALETTE.emberOrange}
+            ids={equipped}
+            actionLabel="REMOVE"
+            onAction={toggle}
+          />
+        </div>
+      )}
     </OverlayShell>
+  );
+}
+
+function RelicColumn({ title, accent, ids, actionLabel, onAction, disabled = false }) {
+  return (
+    <div style={{ border: `1px solid ${accent}55`, padding: 8, minHeight: 160 }}>
+      <div style={{ color: accent, letterSpacing: 2, fontSize: 11, marginBottom: 6 }}>{title}</div>
+      {ids.length === 0 ? (
+        <div style={{ color: '#666', fontSize: 11, fontStyle: 'italic' }}>(empty)</div>
+      ) : ids.map(id => {
+        const r = getRelic(id);
+        if (!r) return null;
+        return (
+          <div
+            key={id}
+            style={{
+              padding: 6,
+              margin: '4px 0',
+              background: 'rgba(0,0,0,0.4)',
+              border: '1px solid #2a1d14',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <div style={{ fontSize: 18, width: 24, textAlign: 'center', color: r.mythic ? '#ffcc55' : accent }}>{r.icon}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, color: '#fff' }}>{r.name}{r.mythic ? ' ★' : ''}</div>
+              <div style={{ fontSize: 10, color: '#aaa' }}>{r.effect}</div>
+            </div>
+            <button
+              onClick={() => onAction(id)}
+              disabled={disabled}
+              style={{
+                background: disabled ? '#222' : 'transparent',
+                color: disabled ? '#555' : accent,
+                border: `1px solid ${disabled ? '#333' : accent}`,
+                padding: '2px 6px',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 10,
+                letterSpacing: 1,
+              }}
+            >{actionLabel}</button>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -368,21 +498,96 @@ function ConsoleOverlay({ save, onClose }) {
   );
 }
 
-function HatcheryRingOverlay({ onClose, onNavigate }) {
+function HatcheryRingOverlay({ save, onClose, onNavigate, refreshSave }) {
+  const [, force] = useState(0);
+  const ownedIds = Object.entries(save?.dragons || {})
+    .filter(([, d]) => d.owned)
+    .map(([id]) => id);
+  const companionId = save?.skye?.companionDragonId || null;
+  const companionLockedUntilAct = 4;
+  const companionUnlocked = (save?.flags?.currentAct || 1) >= companionLockedUntilAct;
+
+  function pickCompanion(id) {
+    if (!companionUnlocked) {
+      playSound('terminalWarning');
+      return;
+    }
+    setCompanionDragon(companionId === id ? null : id);
+    playSound('terminalOk');
+    refreshSave?.();
+    force(n => n + 1);
+  }
+
   return (
     <OverlayShell title="HATCHERY RING" accent={FORGE_PALETTE.hatcheryCyan} onClose={onClose}>
-      <p style={{ color: '#ccc' }}>Egg care, bonding, and Act IV companion selection happen here.</p>
-      <p style={{ color: '#888', fontSize: 12, fontStyle: 'italic', marginTop: 12 }}>
-        Routes through the existing Hatchery system for now.
-      </p>
-      <button
-        onClick={() => { onClose(); onNavigate?.('hatchery'); }}
-        style={{
-          marginTop: 14, padding: '6px 14px', background: FORGE_PALETTE.hatcheryCyan,
-          color: '#001318', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-          letterSpacing: 1, fontWeight: 'bold',
-        }}
-      >OPEN HATCHERY</button>
+      {ownedIds.length === 0 ? (
+        <div>
+          <p style={{ color: '#ccc' }}>No dragons yet. Visit the Hatchery to pull your first egg.</p>
+          <button
+            onClick={() => { onClose(); onNavigate?.('hatchery'); }}
+            style={{
+              marginTop: 14, padding: '6px 14px', background: FORGE_PALETTE.hatcheryCyan,
+              color: '#001318', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              letterSpacing: 1, fontWeight: 'bold',
+            }}
+          >OPEN HATCHERY</button>
+        </div>
+      ) : (
+        <div>
+          <div style={{ fontSize: 11, color: '#aaa', letterSpacing: 1, marginBottom: 10 }}>
+            {companionUnlocked
+              ? 'Select a dragon to bond as your Act IV companion.'
+              : `Companion bonding unlocks in Act ${companionLockedUntilAct}. View and manage dragons below.`}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+            {ownedIds.map(id => {
+              const d = save.dragons[id];
+              const def = DRAGON_DEFS[id];
+              const elem = elementColors[def?.element] || elementColors.neutral;
+              const stage = Math.min(4, Math.max(1, Math.ceil(d.level / 4)));
+              const isCompanion = companionId === id;
+              return (
+                <div
+                  key={id}
+                  onClick={() => pickCompanion(id)}
+                  style={{
+                    border: `2px solid ${isCompanion ? FORGE_PALETTE.hatcheryCyan : elem.primary + '88'}`,
+                    background: isCompanion ? `${FORGE_PALETTE.hatcheryCyan}11` : 'rgba(0,0,0,0.4)',
+                    padding: 8,
+                    cursor: companionUnlocked ? 'pointer' : 'default',
+                    textAlign: 'center',
+                    boxShadow: isCompanion ? `0 0 12px ${FORGE_PALETTE.hatcheryCyan}` : 'none',
+                    opacity: companionUnlocked ? 1 : 0.85,
+                  }}
+                >
+                  <div style={{ height: 70, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <DragonSprite
+                      spriteSheet={def?.stageSprites?.[stage] || def?.spriteSheet}
+                      stage={stage}
+                      element={def?.element || ''}
+                      shiny={d.shiny}
+                      size={{ width: 64, height: 64 }}
+                    />
+                  </div>
+                  <div style={{ fontSize: 11, color: elem.primary, marginTop: 4 }}>{def?.name || id}</div>
+                  <div style={{ fontSize: 10, color: '#aaa' }}>Lv {d.level} · Stage {stage}</div>
+                  {isCompanion && (
+                    <div style={{ fontSize: 9, color: FORGE_PALETTE.hatcheryCyan, marginTop: 2, letterSpacing: 1 }}>★ COMPANION</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <button
+            onClick={() => { onClose(); onNavigate?.('hatchery'); }}
+            style={{
+              marginTop: 16, padding: '6px 14px', background: 'transparent',
+              color: FORGE_PALETTE.hatcheryCyan, border: `1px solid ${FORGE_PALETTE.hatcheryCyan}`,
+              cursor: 'pointer', fontFamily: 'inherit', letterSpacing: 1,
+            }}
+          >OPEN FULL HATCHERY</button>
+        </div>
+      )}
     </OverlayShell>
   );
 }

@@ -20,6 +20,20 @@ const DEFAULT_SAVE = {
   stats: { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 },
   lastDailyCompleted: 0,
   records: { fastestWin: null, highestDamage: 0, longestStreak: 0, currentStreak: 0 },
+  flags: {
+    currentAct: 1,
+    metFelix: false,
+    lastZone: null,
+    fragmentsUnlocked: [],
+  },
+  skye: {
+    wrenchTier: 1,
+    relicSlots: 1,
+    relicsOwned: [],
+    relicsEquipped: [],
+    bountiesCleared: 0,
+    companionDragonId: null,
+  },
 };
 
 function migrateSave(save) {
@@ -54,6 +68,24 @@ function migrateSave(save) {
   }
   if (save.lastDailyCompleted === undefined) save.lastDailyCompleted = 0;
   if (save.records === undefined) save.records = { fastestWin: null, highestDamage: 0, longestStreak: 0, currentStreak: 0 };
+  if (save.flags === undefined) {
+    save.flags = { currentAct: 1, metFelix: false, lastZone: null, fragmentsUnlocked: [] };
+  } else {
+    if (save.flags.currentAct === undefined) save.flags.currentAct = 1;
+    if (save.flags.metFelix === undefined) save.flags.metFelix = false;
+    if (save.flags.lastZone === undefined) save.flags.lastZone = null;
+    if (!Array.isArray(save.flags.fragmentsUnlocked)) save.flags.fragmentsUnlocked = [];
+  }
+  if (save.skye === undefined) {
+    save.skye = { wrenchTier: 1, relicSlots: 1, relicsOwned: [], relicsEquipped: [], bountiesCleared: 0, companionDragonId: null };
+  } else {
+    if (save.skye.wrenchTier === undefined) save.skye.wrenchTier = 1;
+    if (save.skye.relicSlots === undefined) save.skye.relicSlots = 1;
+    if (!Array.isArray(save.skye.relicsOwned)) save.skye.relicsOwned = [];
+    if (!Array.isArray(save.skye.relicsEquipped)) save.skye.relicsEquipped = [];
+    if (save.skye.bountiesCleared === undefined) save.skye.bountiesCleared = 0;
+    if (save.skye.companionDragonId === undefined) save.skye.companionDragonId = null;
+  }
   return save;
 }
 
@@ -259,4 +291,55 @@ export function completeDailyChallenge(seed) {
 
 export function resetSave() {
   localStorage.removeItem(STORAGE_KEY);
+}
+
+// === FORGE / SKYE STATE ===
+
+export function unlockFragment(fragmentId) {
+  const save = loadSave();
+  if (!save.flags.fragmentsUnlocked.includes(fragmentId)) {
+    save.flags.fragmentsUnlocked.push(fragmentId);
+    writeSave(save);
+    return true;
+  }
+  return false;
+}
+
+export function setFlag(key, value) {
+  const save = loadSave();
+  save.flags[key] = value;
+  writeSave(save);
+}
+
+export function setCompanionDragon(dragonId) {
+  const save = loadSave();
+  save.skye.companionDragonId = dragonId;
+  writeSave(save);
+}
+
+export function grantRelic(relicId) {
+  const save = loadSave();
+  if (!save.skye.relicsOwned.includes(relicId)) {
+    save.skye.relicsOwned.push(relicId);
+    writeSave(save);
+    return true;
+  }
+  return false;
+}
+
+export function equipRelic(relicId) {
+  const save = loadSave();
+  if (!save.skye.relicsOwned.includes(relicId)) return false;
+  if (save.skye.relicsEquipped.includes(relicId)) return false;
+  if (save.skye.relicsEquipped.length >= save.skye.relicSlots) return false;
+  save.skye.relicsEquipped.push(relicId);
+  writeSave(save);
+  return true;
+}
+
+export function unequipRelic(relicId) {
+  const save = loadSave();
+  save.skye.relicsEquipped = save.skye.relicsEquipped.filter(id => id !== relicId);
+  writeSave(save);
+  return true;
 }
