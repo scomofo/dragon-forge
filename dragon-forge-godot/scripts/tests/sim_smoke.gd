@@ -380,7 +380,7 @@ func _init() -> void:
 		"thread_zones": [{ "position": Vector2i(26, 4), "intensity": 0.86 }],
 		"safe_zones": [Vector2i(13, 10)],
 	})
-	_assert(premium_map["grade"] == "CINEMATIC" and premium_map["vignette_alpha"] >= 0.3 and premium_map["focus_dim_alpha"] > 0.0, "premium map presentation profile adds cinematic vignette and selected-focus dimming")
+	_assert(premium_map["grade"] == "CINEMATIC" and premium_map["vignette_alpha"] >= 0.2 and premium_map["focus_dim_alpha"] > 0.0, "premium map presentation profile adds readable cinematic vignette and selected-focus dimming")
 	_assert(premium_map["overlay_budget"].has("diagnostic_sweep") and premium_map["chrome_color"] == Color("#7afcff"), "premium map presentation prioritizes expensive chrome and diagnostic overlays")
 	_assert(premium_map["layer_mix"]["selected_action"] == 1.0 and premium_map["layer_mix"]["weather"] < premium_map["layer_mix"]["diagnostic_sweep"], "premium map presentation keeps selected actions crisp while subordinating ambience")
 	_assert(premium_map["layer_mix"]["boundary"] < 1.0 and premium_map["layer_mix"]["mission_pressure"] <= 0.85, "premium map presentation budgets secondary overlays below primary focus")
@@ -391,6 +391,14 @@ func _init() -> void:
 	var purge_transition: Dictionary = map_view.get_map_transition_choreography_profile("purge_enter")
 	_assert(purge_transition["steps"][0]["layer"] == "palette_grade" and _has_transition_layer(purge_transition["steps"], "diagnostic_sweep"), "map transition choreography stages purge color grade before scan sweeps")
 	map_view.set_selected_tile_position(Vector2i(-1, -1))
+	var calm_map: Dictionary = map_view.get_premium_map_presentation_profile({})
+	_assert(calm_map["grade"] == "EXPLORATION_READABLE" and calm_map["exploration_mode"], "premium map presentation defaults to a calm exploration layer budget")
+	_assert(calm_map["layer_mix"]["mission_pressure"] == 0.0 and calm_map["layer_mix"]["altitude"] == 0.0 and calm_map["layer_mix"]["labels"] == 0.0 and calm_map["layer_mix"]["route_panel"] == 0.0, "premium map presentation suppresses background panels and diagnostic clutter during normal exploration")
+	var purge_map: Dictionary = map_view.get_premium_map_presentation_profile({
+		"purge_active": true,
+		"safe_zones": [Vector2i(13, 10)],
+	})
+	_assert(not purge_map["exploration_mode"] and purge_map["grade"] == "CINEMATIC" and purge_map["layer_mix"]["route_panel"] > 0.0, "premium map presentation restores cinematic overlays during purge pressure")
 	var boundary_profiles: Array = map_view.get_partition_boundary_profiles(marker_world)
 	_assert(boundary_profiles.size() > 20 and boundary_profiles[0].has("start") and boundary_profiles[0].has("end"), "world map exposes drawable partition boundary profiles between terrain systems")
 	_assert(_has_boundary_kind(boundary_profiles, "jungle_hardware") and _has_boundary_kind(boundary_profiles, "water_land"), "world map classifies jungle-hardware and water-land boundary glow types")

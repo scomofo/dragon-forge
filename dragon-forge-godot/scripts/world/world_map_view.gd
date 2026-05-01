@@ -631,33 +631,39 @@ func get_premium_map_presentation_profile(pressure: Dictionary = {}) -> Dictiona
 		overlay_budget.append("focus_dim")
 	if source_pressure.get("safe_zones", []).size() > 0:
 		overlay_budget.append("safe_beacon")
+	var exploration_mode := not purge_active and highest_thread <= 0.2 and not has_selection and diagnostic_fade <= 0.01
 	var layer_mix := {
-		"weather": clampf(0.72 - drama * 0.22, 0.42, 0.72),
-		"boundary": clampf(0.68 - drama * 0.18, 0.44, 0.68),
-		"mission_pressure": clampf(0.82 - drama * 0.12, 0.58, 0.82),
-		"altitude": clampf(0.78 - drama * 0.1, 0.56, 0.78),
+		"weather": 0.14 if exploration_mode else clampf(0.42 - drama * 0.14, 0.22, 0.42),
+		"boundary": 0.18 if exploration_mode else clampf(0.38 - drama * 0.12, 0.24, 0.38),
+		"mission_pressure": 0.0 if exploration_mode else clampf(0.58 - drama * 0.12, 0.38, 0.58),
+		"altitude": 0.0 if exploration_mode else clampf(0.42 - drama * 0.08, 0.28, 0.42),
 		"diagnostic_sweep": clampf(0.48 + drama * 0.52, 0.48, 1.0),
 		"route_preview": 1.0,
 		"selected_action": 1.0,
+		"labels": 0.0 if exploration_mode else 0.8,
+		"route_panel": 0.0 if exploration_mode else 1.0,
+		"chrome": 0.38 if exploration_mode else 0.72,
+		"grade": 0.42 if exploration_mode else 1.0,
 	}
 	var palette_grade := {
 		"shadow_tint": Color("#02070b"),
 		"midtone_tint": Color("#09202a"),
 		"highlight_tint": Color("#d7fbff"),
 		"gold_warmth": Color("#ffd166"),
-		"contrast_lift": 0.08 + drama * 0.08,
-		"desaturation": 0.06 + drama * 0.05,
-		"bloom_alpha": 0.035 + drama * 0.045,
+		"contrast_lift": 0.04 + drama * 0.07,
+		"desaturation": 0.03 + drama * 0.04,
+		"bloom_alpha": 0.015 + drama * 0.035,
 	}
 	return {
-		"grade": "CINEMATIC",
+		"grade": "EXPLORATION_READABLE" if exploration_mode else "CINEMATIC",
 		"drama": drama,
-		"vignette_alpha": 0.22 + drama * 0.26,
+		"exploration_mode": exploration_mode,
+		"vignette_alpha": 0.08 + drama * 0.18,
 		"focus_dim_alpha": 0.18 + drama * 0.12 if has_selection else 0.0,
 		"chrome_color": Color("#7afcff"),
 		"gold_accent": Color("#ffd166"),
-		"glass_alpha": 0.16 + drama * 0.08,
-		"scanline_alpha": 0.05 + drama * 0.05,
+		"glass_alpha": 0.06 + drama * 0.06,
+		"scanline_alpha": 0.015 + drama * 0.04,
 		"overlay_budget": overlay_budget,
 		"layer_mix": layer_mix,
 		"palette_grade": palette_grade,
@@ -2258,7 +2264,9 @@ func _draw_mission_pressure_overlay() -> void:
 		return
 	var font := get_theme_default_font()
 	var pulse := (sin(Time.get_ticks_msec() / 170.0) + 1.0) * 0.5
-	var layer_alpha := _premium_layer_alpha("mission_pressure")
+	var layer_alpha: float = _premium_layer_alpha("mission_pressure")
+	if layer_alpha <= 0.01:
+		return
 	for profile in profiles:
 		var position: Vector2i = profile.get("position", Vector2i(-1, -1))
 		if position.x < 0:
@@ -2289,7 +2297,9 @@ func _draw_altitude_contours() -> void:
 		return
 	var font := get_theme_default_font()
 	var pulse := (sin(Time.get_ticks_msec() / 210.0) + 1.0) * 0.5
-	var layer_alpha := _premium_layer_alpha("altitude")
+	var layer_alpha: float = _premium_layer_alpha("altitude")
+	if layer_alpha <= 0.01:
+		return
 	for contour in contours:
 		var position: Vector2i = contour.get("position", Vector2i(-1, -1))
 		if position.x < 0:
@@ -2861,6 +2871,9 @@ func _draw_diagnostic_sweep() -> void:
 
 func _draw_region_labels() -> void:
 	var font := get_theme_default_font()
+	var layer_alpha: float = _premium_layer_alpha("labels")
+	if layer_alpha <= 0.01:
+		return
 	for label_profile in get_region_label_profiles():
 		var tile_position: Vector2i = label_profile.get("position", Vector2i(-1, -1))
 		if tile_position.x < 0:
@@ -2878,8 +2891,8 @@ func _draw_region_labels() -> void:
 		var backing_color: Color = plate.get("backing_color", Color("#05111a"))
 		var text_color: Color = plate.get("plate_color", Color("#f4ead2"))
 		_draw_region_plate(backing, anchor, plate)
-		draw_string(font, backing.position + Vector2(12.0, 13.0), text, HORIZONTAL_ALIGNMENT_LEFT, backing.size.x - 24.0, font_size, Color(text_color.r, text_color.g, text_color.b, 0.94))
-		draw_string(font, backing.position + Vector2(12.0, 23.0), code, HORIZONTAL_ALIGNMENT_LEFT, backing.size.x - 24.0, int(plate.get("code_font_size", 7)), Color(backing_color.r + 0.45, backing_color.g + 0.45, backing_color.b + 0.45, 0.72))
+		draw_string(font, backing.position + Vector2(12.0, 13.0), text, HORIZONTAL_ALIGNMENT_LEFT, backing.size.x - 24.0, font_size, Color(text_color.r, text_color.g, text_color.b, 0.94 * layer_alpha))
+		draw_string(font, backing.position + Vector2(12.0, 23.0), code, HORIZONTAL_ALIGNMENT_LEFT, backing.size.x - 24.0, int(plate.get("code_font_size", 7)), Color(backing_color.r + 0.45, backing_color.g + 0.45, backing_color.b + 0.45, 0.72 * layer_alpha))
 
 func _draw_partition_routes() -> void:
 	var route := get_partition_route_profile("southern_partition")
@@ -3250,6 +3263,8 @@ func _draw_tundra_hazard_readout() -> void:
 func _draw_route_forecast_panel() -> void:
 	if world.is_empty():
 		return
+	if _premium_layer_alpha("route_panel") <= 0.01:
+		return
 	var forecast := get_route_forecast_profile("southern_partition", world)
 	var readiness := {}
 	if system_pressure.has("available_gear"):
@@ -3277,6 +3292,8 @@ func _draw_route_forecast_panel() -> void:
 		draw_string(font, panel.position + Vector2(10.0, 64.0), readiness_text, HORIZONTAL_ALIGNMENT_LEFT, panel.size.x - 20.0, 8, Color("#f9f4df", 0.9))
 
 func _draw_tundra_storyboard_panel() -> void:
+	if _premium_layer_alpha("route_panel") <= 0.01:
+		return
 	var profile := get_tundra_storyboard_panel_profile(world)
 	if not bool(profile.get("visible", false)):
 		return
@@ -3323,6 +3340,8 @@ func _draw_tundra_storyboard_panel() -> void:
 		draw_string(font, panel.position + Vector2(10.0, panel.size.y - 9.0), selected_story.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, panel.size.x - 20.0, 7, Color("#f9f4df", 0.78))
 
 func _draw_selected_sector_title_card() -> void:
+	if _premium_layer_alpha("route_panel") <= 0.01:
+		return
 	var profile := get_selected_sector_title_card_profile(world)
 	if not bool(profile.get("visible", false)):
 		return
@@ -3343,17 +3362,18 @@ func _draw_premium_map_chrome() -> void:
 	var rows: Array = world["tiles"]
 	if rows.is_empty():
 		return
+	var chrome_alpha: float = _premium_layer_alpha("chrome")
 	var map_rect := Rect2(map_origin, Vector2(rows[0].size(), rows.size()) * tile_size)
 	var chrome: Color = profile.get("chrome_color", Color("#7afcff"))
 	var gold: Color = profile.get("gold_accent", Color("#ffd166"))
 	var vignette_alpha := float(profile.get("vignette_alpha", 0.28))
 	var focus_dim := float(profile.get("focus_dim_alpha", 0.0))
-	draw_rect(Rect2(Vector2.ZERO, size), Color("#000000", vignette_alpha * 0.34), false, maxf(18.0, tile_size * 0.9))
+	draw_rect(Rect2(Vector2.ZERO, size), Color("#000000", vignette_alpha * 0.34 * chrome_alpha), false, maxf(18.0, tile_size * 0.9))
 	if focus_dim > 0.0:
 		draw_rect(map_rect, Color("#000000", focus_dim * 0.36))
 		var focus_rect := _tile_rect(selected_tile_position).grow(tile_size * 1.8)
-		draw_rect(focus_rect, Color(chrome.r, chrome.g, chrome.b, 0.06))
-		draw_rect(focus_rect, Color(chrome.r, chrome.g, chrome.b, 0.28), false, 1.0)
+		draw_rect(focus_rect, Color(chrome.r, chrome.g, chrome.b, 0.06 * chrome_alpha))
+		draw_rect(focus_rect, Color(chrome.r, chrome.g, chrome.b, 0.28 * chrome_alpha), false, 1.0)
 	var corner_length := 32.0
 	for corner in [
 		map_rect.position,
@@ -3363,27 +3383,28 @@ func _draw_premium_map_chrome() -> void:
 	]:
 		var x_dir := 1.0 if corner.x == map_rect.position.x else -1.0
 		var y_dir := 1.0 if corner.y == map_rect.position.y else -1.0
-		draw_line(corner, corner + Vector2(corner_length * x_dir, 0.0), Color(chrome.r, chrome.g, chrome.b, 0.78), 2.0)
-		draw_line(corner, corner + Vector2(0.0, corner_length * y_dir), Color(chrome.r, chrome.g, chrome.b, 0.78), 2.0)
-		draw_circle(corner + Vector2(5.0 * x_dir, 5.0 * y_dir), 2.4, Color(gold.r, gold.g, gold.b, 0.86))
-	var scanline_alpha := float(profile.get("scanline_alpha", 0.06))
+		draw_line(corner, corner + Vector2(corner_length * x_dir, 0.0), Color(chrome.r, chrome.g, chrome.b, 0.78 * chrome_alpha), 2.0)
+		draw_line(corner, corner + Vector2(0.0, corner_length * y_dir), Color(chrome.r, chrome.g, chrome.b, 0.78 * chrome_alpha), 2.0)
+		draw_circle(corner + Vector2(5.0 * x_dir, 5.0 * y_dir), 2.4, Color(gold.r, gold.g, gold.b, 0.86 * chrome_alpha))
+	var scanline_alpha := float(profile.get("scanline_alpha", 0.06)) * chrome_alpha
 	for y in range(int(map_rect.position.y), int(map_rect.end.y), max(6, int(tile_size * 0.42))):
 		draw_line(Vector2(map_rect.position.x, y), Vector2(map_rect.end.x, y), Color(chrome.r, chrome.g, chrome.b, scanline_alpha), 1.0)
 
 func _draw_cinematic_color_grade() -> void:
 	var profile := get_premium_map_presentation_profile(system_pressure)
+	var grade_alpha: float = _premium_layer_alpha("grade")
 	var grade: Dictionary = profile.get("palette_grade", {})
 	var shadow: Color = grade.get("shadow_tint", Color("#02070b"))
 	var highlight: Color = grade.get("highlight_tint", Color("#d7fbff"))
 	var bloom_alpha := float(grade.get("bloom_alpha", 0.035))
 	var contrast := float(grade.get("contrast_lift", 0.08))
-	draw_rect(Rect2(Vector2.ZERO, size), Color(shadow.r, shadow.g, shadow.b, contrast * 0.55))
+	draw_rect(Rect2(Vector2.ZERO, size), Color(shadow.r, shadow.g, shadow.b, contrast * 0.55 * grade_alpha))
 	var rows: Array = world["tiles"]
 	if rows.is_empty():
 		return
 	var map_rect := Rect2(map_origin, Vector2(rows[0].size(), rows.size()) * tile_size)
-	draw_rect(map_rect.grow(14.0), Color(highlight.r, highlight.g, highlight.b, bloom_alpha), false, 3.0)
-	draw_rect(map_rect.grow(-4.0), Color(highlight.r, highlight.g, highlight.b, bloom_alpha * 0.45), false, 1.0)
+	draw_rect(map_rect.grow(14.0), Color(highlight.r, highlight.g, highlight.b, bloom_alpha * grade_alpha), false, 3.0)
+	draw_rect(map_rect.grow(-4.0), Color(highlight.r, highlight.g, highlight.b, bloom_alpha * 0.45 * grade_alpha), false, 1.0)
 
 func _draw_premium_panel(panel: Rect2, style: Dictionary, base_color: Color = Color("#05111a")) -> void:
 	var accent: Color = style.get("accent", Color("#7afcff"))
