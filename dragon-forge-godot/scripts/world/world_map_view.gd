@@ -633,17 +633,28 @@ func get_premium_map_presentation_profile(pressure: Dictionary = {}) -> Dictiona
 		overlay_budget.append("safe_beacon")
 	var exploration_mode := not purge_active and highest_thread <= 0.2 and not has_selection and diagnostic_fade <= 0.01
 	var layer_mix := {
-		"weather": 0.14 if exploration_mode else clampf(0.42 - drama * 0.14, 0.22, 0.42),
-		"boundary": 0.18 if exploration_mode else clampf(0.38 - drama * 0.12, 0.24, 0.38),
+		"tile_detail": 0.42 if exploration_mode else 1.0,
+		"tile_style": 0.0 if exploration_mode else 1.0,
+		"access_roads": 0.18 if exploration_mode else 1.0,
+		"integrity": 0.0 if exploration_mode else 1.0,
+		"weather": 0.0 if exploration_mode else clampf(0.42 - drama * 0.14, 0.22, 0.42),
+		"boundary": 0.0 if exploration_mode else clampf(0.38 - drama * 0.12, 0.24, 0.38),
 		"mission_pressure": 0.0 if exploration_mode else clampf(0.58 - drama * 0.12, 0.38, 0.58),
 		"altitude": 0.0 if exploration_mode else clampf(0.42 - drama * 0.08, 0.28, 0.42),
-		"diagnostic_sweep": clampf(0.48 + drama * 0.52, 0.48, 1.0),
+		"diagnostic_sweep": 0.0 if exploration_mode else clampf(0.48 + drama * 0.52, 0.48, 1.0),
+		"diagnostic_chrome": 0.0 if exploration_mode else 1.0,
+		"poi_alerts": 0.0 if exploration_mode else 1.0,
+		"partition_routes": 0.16 if exploration_mode else 1.0,
+		"tundra_rail": 0.0 if exploration_mode else 1.0,
+		"loadout_warnings": 0.0 if exploration_mode else 1.0,
 		"route_preview": 1.0,
 		"selected_action": 1.0,
 		"labels": 0.0 if exploration_mode else 0.8,
 		"route_panel": 0.0 if exploration_mode else 1.0,
-		"chrome": 0.38 if exploration_mode else 0.72,
-		"grade": 0.42 if exploration_mode else 1.0,
+		"legend": 0.0 if exploration_mode else 1.0,
+		"status_panel": 0.0 if exploration_mode else 1.0,
+		"chrome": 0.14 if exploration_mode else 0.72,
+		"grade": 0.18 if exploration_mode else 1.0,
 	}
 	var palette_grade := {
 		"shadow_tint": Color("#02070b"),
@@ -663,7 +674,7 @@ func get_premium_map_presentation_profile(pressure: Dictionary = {}) -> Dictiona
 		"chrome_color": Color("#7afcff"),
 		"gold_accent": Color("#ffd166"),
 		"glass_alpha": 0.06 + drama * 0.06,
-		"scanline_alpha": 0.015 + drama * 0.04,
+		"scanline_alpha": 0.0 if exploration_mode else 0.015 + drama * 0.04,
 		"overlay_budget": overlay_budget,
 		"layer_mix": layer_mix,
 		"palette_grade": palette_grade,
@@ -2092,6 +2103,9 @@ func _draw_biome_mass_underlay() -> void:
 func _draw_tiles() -> void:
 	var rows: Array = world["tiles"]
 	var integrity_vfx := get_map_integrity_vfx_profile()
+	var tile_detail_alpha: float = _premium_layer_alpha("tile_detail")
+	var tile_style_alpha: float = _premium_layer_alpha("tile_style")
+	var integrity_alpha: float = _premium_layer_alpha("integrity")
 	for y in rows.size():
 		var row: Array = rows[y]
 		for x in row.size():
@@ -2113,11 +2127,14 @@ func _draw_tiles() -> void:
 				base_color = Color(color.r, color.g, color.b, maxf(base_color.a, 0.76))
 			var inset := tile_size * float(render_profile.get("soft_inset", 0.08))
 			draw_rect(tile_rect.grow(-inset), base_color)
-			_draw_terrain_detail(kind, tile_rect.grow(-inset * 1.8), Vector2i(x, y))
-			_draw_tile_style_overlay(get_tile_style_profile(kind), tile_rect.grow(-inset), Vector2i(x, y))
-			_draw_tile_visual_overlay(visual_profile, tile_rect.grow(-inset), Vector2i(x, y))
-			_draw_danger_detail(tile, tile_rect, Vector2i(x, y))
-			_draw_integrity_detail(integrity_vfx, tile_rect, Vector2i(x, y))
+			if tile_detail_alpha >= 0.99 or (tile_detail_alpha > 0.01 and (x + y) % 4 == 0):
+				_draw_terrain_detail(kind, tile_rect.grow(-inset * 1.8), Vector2i(x, y), tile_detail_alpha)
+			if tile_style_alpha > 0.01:
+				_draw_tile_style_overlay(get_tile_style_profile(kind), tile_rect.grow(-inset), Vector2i(x, y), tile_style_alpha)
+				_draw_tile_visual_overlay(visual_profile, tile_rect.grow(-inset), Vector2i(x, y), tile_style_alpha)
+				_draw_danger_detail(tile, tile_rect, Vector2i(x, y), tile_style_alpha)
+			if integrity_alpha > 0.01:
+				_draw_integrity_detail(integrity_vfx, tile_rect, Vector2i(x, y), integrity_alpha)
 			_draw_terrain_transition_edges(rows, Vector2i(x, y), tile_rect, render_profile)
 
 func _draw_terrain_transition_edges(rows: Array, position: Vector2i, tile_rect: Rect2, render_profile: Dictionary) -> void:
@@ -2134,6 +2151,9 @@ func _draw_terrain_transition_edges(rows: Array, position: Vector2i, tile_rect: 
 		draw_line(Vector2(tile_rect.position.x + tile_size * 0.12, tile_rect.end.y), Vector2(tile_rect.end.x - tile_size * 0.12, tile_rect.end.y), Color(edge_color.r, edge_color.g, edge_color.b, alpha), 1.0)
 
 func _draw_access_road_layer() -> void:
+	var layer_alpha: float = _premium_layer_alpha("access_roads")
+	if layer_alpha <= 0.01:
+		return
 	var rows: Array = world["tiles"]
 	var road_color := Color("#f2e0ad")
 	var shadow_color := Color("#321f12")
@@ -2148,22 +2168,22 @@ func _draw_access_road_layer() -> void:
 			if not rect.intersects(Rect2(Vector2.ZERO, size).grow(tile_size)):
 				continue
 			var center := rect.get_center()
-			draw_circle(center, tile_size * 0.27, Color(shadow_color.r, shadow_color.g, shadow_color.b, 0.34))
-			draw_circle(center, tile_size * 0.2, Color(road_color.r, road_color.g, road_color.b, 0.76))
+			draw_circle(center, tile_size * 0.27, Color(shadow_color.r, shadow_color.g, shadow_color.b, 0.34 * layer_alpha))
+			draw_circle(center, tile_size * 0.2, Color(road_color.r, road_color.g, road_color.b, 0.76 * layer_alpha))
 			for delta in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
 				var neighbor: Vector2i = position + delta
 				var neighbor_tile := _tile_from_world_state(world, neighbor)
 				if str(neighbor_tile.get("source_symbol", "")) != "=":
 					continue
 				var end := center + Vector2(delta.x, delta.y) * tile_size * 0.5
-				draw_line(center, end, Color(shadow_color.r, shadow_color.g, shadow_color.b, 0.38), maxf(2.0, tile_size * 0.24))
-				draw_line(center, end, Color(road_color.r, road_color.g, road_color.b, 0.86), maxf(1.2, tile_size * 0.14))
+				draw_line(center, end, Color(shadow_color.r, shadow_color.g, shadow_color.b, 0.38 * layer_alpha), maxf(2.0, tile_size * 0.24))
+				draw_line(center, end, Color(road_color.r, road_color.g, road_color.b, 0.86 * layer_alpha), maxf(1.2, tile_size * 0.14))
 
-func _draw_integrity_detail(profile: Dictionary, tile_rect: Rect2, position: Vector2i) -> void:
-	var dither_alpha := float(profile.get("dither_alpha", 0.0))
+func _draw_integrity_detail(profile: Dictionary, tile_rect: Rect2, position: Vector2i, layer_alpha: float = 1.0) -> void:
+	var dither_alpha := float(profile.get("dither_alpha", 0.0)) * layer_alpha
 	if dither_alpha > 0.0 and (position.x + position.y) % 2 == 0:
 		draw_rect(tile_rect.grow(-tile_size * 0.18), Color("#000000", dither_alpha))
-	var wireframe_alpha := float(profile.get("wireframe_alpha", 0.0))
+	var wireframe_alpha := float(profile.get("wireframe_alpha", 0.0)) * layer_alpha
 	if wireframe_alpha <= 0.0:
 		return
 	var warning: Color = profile.get("warning_color", Color("#ff453a"))
@@ -2172,6 +2192,9 @@ func _draw_integrity_detail(profile: Dictionary, tile_rect: Rect2, position: Vec
 	draw_line(Vector2(tile_rect.end.x, tile_rect.position.y), Vector2(tile_rect.position.x, tile_rect.end.y), Color(warning.r, warning.g, warning.b, wireframe_alpha * 0.45), 1.0)
 
 func _draw_integrity_zones() -> void:
+	var layer_alpha: float = _premium_layer_alpha("integrity")
+	if layer_alpha <= 0.01:
+		return
 	var zones := get_integrity_zone_profiles(system_pressure.get("integrity_zones", []))
 	if zones.is_empty():
 		return
@@ -2187,8 +2210,8 @@ func _draw_integrity_zones() -> void:
 		var color: Color = zone.get("zone_color", Color("#70ff8f"))
 		var filter := str(zone.get("render_filter", "pastoral_clear"))
 		var alpha := float(zone.get("ring_alpha", 0.22))
-		draw_circle(center, tile_size * (0.58 + pulse * 0.14), Color(color.r, color.g, color.b, 0.1 + alpha * 0.12))
-		draw_arc(center, tile_size * (0.72 + pulse * 0.18), 0.0, TAU, 28, Color(color.r, color.g, color.b, alpha), 2.0)
+		draw_circle(center, tile_size * (0.58 + pulse * 0.14), Color(color.r, color.g, color.b, (0.1 + alpha * 0.12) * layer_alpha))
+		draw_arc(center, tile_size * (0.72 + pulse * 0.18), 0.0, TAU, 28, Color(color.r, color.g, color.b, alpha * layer_alpha), 2.0)
 		if filter == "pixel_dither":
 			for offset in range(0, 4):
 				var y := tile_rect.position.y + tile_size * (0.2 + float(offset) * 0.16)
@@ -2199,11 +2222,13 @@ func _draw_integrity_zones() -> void:
 			draw_line(Vector2(tile_rect.end.x - tile_size * 0.14, tile_rect.position.y + tile_size * 0.14), Vector2(tile_rect.position.x + tile_size * 0.14, tile_rect.end.y - tile_size * 0.14), Color(color.r, color.g, color.b, 0.36), 1.0)
 
 func _draw_cartographic_weather() -> void:
+	var layer_alpha: float = _premium_layer_alpha("weather")
+	if layer_alpha <= 0.01:
+		return
 	var profile := get_cartographic_weather_profile(system_pressure)
 	var particles := get_cartographic_weather_particles(profile)
 	if particles.is_empty():
 		return
-	var layer_alpha := _premium_layer_alpha("weather")
 	var rows: Array = world["tiles"]
 	if rows.is_empty():
 		return
@@ -2240,7 +2265,9 @@ func _draw_cartographic_weather() -> void:
 
 func _draw_partition_boundaries() -> void:
 	var pulse := (sin(Time.get_ticks_msec() / 190.0) + 1.0) * 0.5
-	var layer_alpha := _premium_layer_alpha("boundary")
+	var layer_alpha: float = _premium_layer_alpha("boundary")
+	if layer_alpha <= 0.01:
+		return
 	for boundary in get_partition_boundary_profiles(world):
 		var start: Vector2i = boundary.get("start", Vector2i(-1, -1))
 		var end: Vector2i = boundary.get("end", Vector2i(-1, -1))
@@ -2327,7 +2354,7 @@ func _draw_altitude_contours() -> void:
 		draw_rect(label_rect, Color(color.r, color.g, color.b, 0.36 * layer_alpha), false, 1.0)
 		draw_string(font, label_rect.position + Vector2(4.0, 8.2), label, HORIZONTAL_ALIGNMENT_LEFT, label_size.x, 7, Color("#f9f4df", 0.86 * layer_alpha))
 
-func _draw_terrain_detail(kind: String, tile_rect: Rect2, position: Vector2i) -> void:
+func _draw_terrain_detail(kind: String, tile_rect: Rect2, position: Vector2i, layer_alpha: float = 1.0) -> void:
 	var center := tile_rect.get_center()
 	var s := tile_rect.size.x
 	if kind == "water":
@@ -2393,7 +2420,7 @@ func _draw_terrain_detail(kind: String, tile_rect: Rect2, position: Vector2i) ->
 		draw_line(center + Vector2(-s * 0.22, -s * 0.22), center + Vector2(s * 0.22, s * 0.22), Color("#f0b66c"), 1.0)
 		draw_line(center + Vector2(s * 0.22, -s * 0.22), center + Vector2(-s * 0.22, s * 0.22), Color("#f0b66c"), 1.0)
 
-func _draw_tile_style_overlay(profile: Dictionary, tile_rect: Rect2, position: Vector2i) -> void:
+func _draw_tile_style_overlay(profile: Dictionary, tile_rect: Rect2, position: Vector2i, layer_alpha: float = 1.0) -> void:
 	var motif := str(profile.get("terrain_motif", "flat_sector"))
 	var accent: Color = profile.get("accent_color", Color("#f4ead2"))
 	var count := int(profile.get("detail_count", 2))
@@ -2440,7 +2467,7 @@ func _draw_tile_style_overlay(profile: Dictionary, tile_rect: Rect2, position: V
 			if (position.x + position.y) % 2 == 0:
 				draw_rect(tile_rect.grow(-s * 0.24), Color(accent.r, accent.g, accent.b, 0.16))
 
-func _draw_tile_visual_overlay(profile: Dictionary, tile_rect: Rect2, position: Vector2i) -> void:
+func _draw_tile_visual_overlay(profile: Dictionary, tile_rect: Rect2, position: Vector2i, layer_alpha: float = 1.0) -> void:
 	var aesthetic := str(profile.get("aesthetic", ""))
 	if aesthetic == "":
 		return
@@ -2478,7 +2505,7 @@ func _draw_tile_visual_overlay(profile: Dictionary, tile_rect: Rect2, position: 
 				draw_rect(bit_rect, Color(color.r, color.g, color.b, 0.55 if active else 0.22))
 				draw_rect(bit_rect.grow(1.0), Color(color.r, color.g, color.b, 0.38), false, 1.0)
 
-func _draw_danger_detail(tile: Dictionary, tile_rect: Rect2, position: Vector2i) -> void:
+func _draw_danger_detail(tile: Dictionary, tile_rect: Rect2, position: Vector2i, layer_alpha: float = 1.0) -> void:
 	if not tile.has("wild_encounter"):
 		return
 	var s := tile_rect.size.x
@@ -2659,6 +2686,8 @@ func _draw_marker_corners(rect: Rect2, color: Color) -> void:
 	draw_line(rect.end, rect.end - Vector2(0, length), color, 1.0)
 
 func _draw_admin_overlay() -> void:
+	if _premium_layer_alpha("diagnostic_chrome") <= 0.01:
+		return
 	if diagnostic_fade <= 0.01:
 		return
 	var rows: Array = world["tiles"]
@@ -2677,6 +2706,8 @@ func _draw_admin_overlay() -> void:
 			draw_line(Vector2(tile_rect.end.x, tile_rect.position.y), Vector2(tile_rect.position.x, tile_rect.end.y), Color("#7afcff", 0.2 * diagnostic_fade), 1.0)
 
 func _draw_admin_search_index() -> void:
+	if _premium_layer_alpha("diagnostic_chrome") <= 0.01:
+		return
 	var profile := get_admin_search_index_profile(world)
 	if not bool(profile.get("visible", false)):
 		return
@@ -2713,6 +2744,8 @@ func _draw_admin_search_index() -> void:
 		draw_string(font, pill.position + Vector2(5.0, 8.8), label, HORIZONTAL_ALIGNMENT_LEFT, label_size.x, 7, Color("#f9f4df", 0.9 * fade))
 
 func _draw_diagnostic_schematic() -> void:
+	if _premium_layer_alpha("diagnostic_chrome") <= 0.01:
+		return
 	if diagnostic_fade <= 0.01:
 		return
 	var rows: Array = world["tiles"]
@@ -2741,6 +2774,8 @@ func _draw_diagnostic_schematic() -> void:
 			draw_line(husk_center, center, Color("#00ffff", 0.035 * diagnostic_fade), 1.0)
 
 func _draw_system_pressure() -> void:
+	if _premium_layer_alpha("diagnostic_chrome") <= 0.01:
+		return
 	if diagnostic_fade <= 0.01:
 		return
 	var route_vfx := get_route_vfx_profile(system_pressure)
@@ -2795,6 +2830,8 @@ func _draw_purge_overlay() -> void:
 		draw_rect(_tile_rect(safe_position).grow(-tile_size * 0.08), Color(safe_color.r, safe_color.g, safe_color.b, 0.22), false, 1.0)
 
 func _draw_tundra_whiteout_front() -> void:
+	if _premium_layer_alpha("diagnostic_chrome") <= 0.01:
+		return
 	var profile := get_tundra_whiteout_front_profile(system_pressure)
 	if not bool(profile.get("visible", false)):
 		return
@@ -2831,6 +2868,8 @@ func _draw_tundra_whiteout_front() -> void:
 		draw_arc(safe_center, tile_size * (0.5 + pulse * 0.1), 0.0, TAU, 24, Color(safe_color.r, safe_color.g, safe_color.b, 0.74), 1.4)
 
 func _draw_diagnostic_sweep() -> void:
+	if _premium_layer_alpha("diagnostic_sweep") <= 0.01:
+		return
 	var profile := get_diagnostic_sweep_profile(system_pressure)
 	if not profile.get("active", false):
 		return
@@ -2895,6 +2934,9 @@ func _draw_region_labels() -> void:
 		draw_string(font, backing.position + Vector2(12.0, 23.0), code, HORIZONTAL_ALIGNMENT_LEFT, backing.size.x - 24.0, int(plate.get("code_font_size", 7)), Color(backing_color.r + 0.45, backing_color.g + 0.45, backing_color.b + 0.45, 0.72 * layer_alpha))
 
 func _draw_partition_routes() -> void:
+	var layer_alpha: float = _premium_layer_alpha("partition_routes")
+	if layer_alpha <= 0.01:
+		return
 	var route := get_partition_route_profile("southern_partition")
 	if route.is_empty():
 		return
@@ -2913,11 +2955,14 @@ func _draw_partition_routes() -> void:
 		if start.x < 0 or target.x < 0:
 			continue
 		var line_color: Color = segment.get("line_color", Color("#70ff8f"))
-		draw_line(_tile_rect(start).get_center(), _tile_rect(target).get_center(), Color(line_color.r, line_color.g, line_color.b, line_alpha + pulse * 0.12), 2.0)
+		draw_line(_tile_rect(start).get_center(), _tile_rect(target).get_center(), Color(line_color.r, line_color.g, line_color.b, (line_alpha + pulse * 0.12) * layer_alpha), 2.0)
 	for point in points:
-		draw_circle(point, tile_size * (0.06 + pulse * 0.025), Color(node_color.r, node_color.g, node_color.b, 0.74))
+		draw_circle(point, tile_size * (0.06 + pulse * 0.025), Color(node_color.r, node_color.g, node_color.b, 0.74 * layer_alpha))
 
 func _draw_tundra_route_rail() -> void:
+	var layer_alpha: float = _premium_layer_alpha("tundra_rail")
+	if layer_alpha <= 0.01:
+		return
 	var rail := get_tundra_route_rail_profile(world)
 	if not bool(rail.get("visible", false)):
 		return
@@ -2937,9 +2982,9 @@ func _draw_tundra_route_rail() -> void:
 		var weight := float(segment.get("pulse_weight", 0.42))
 		var start_point := _tile_rect(start).get_center()
 		var target_point := _tile_rect(target).get_center()
-		draw_line(start_point, target_point, Color("#031019", 0.72), rail_width + 3.0)
-		draw_line(start_point, target_point, Color(color.r, color.g, color.b, 0.28 + pulse * weight * 0.22), rail_width)
-		draw_line(start_point, target_point, Color("#ffffff", 0.12 + pulse * weight * 0.08), 1.0)
+		draw_line(start_point, target_point, Color("#031019", 0.72 * layer_alpha), rail_width + 3.0)
+		draw_line(start_point, target_point, Color(color.r, color.g, color.b, (0.28 + pulse * weight * 0.22) * layer_alpha), rail_width)
+		draw_line(start_point, target_point, Color("#ffffff", (0.12 + pulse * weight * 0.08) * layer_alpha), 1.0)
 		if str(segment.get("segment_kind", "")) == "boss_gate":
 			var midpoint := start_point.lerp(target_point, 0.5)
 			draw_arc(midpoint, tile_size * (0.22 + pulse * 0.05), 0.0, TAU, 20, Color(color.r, color.g, color.b, 0.78), 1.8)
@@ -2973,6 +3018,9 @@ func _draw_tundra_route_rail() -> void:
 			draw_string(font, pill.position + Vector2(6.0, 10.0), label, HORIZONTAL_ALIGNMENT_LEFT, label_size.x, 8, Color("#f9f4df", 0.94))
 
 func _draw_route_loadout_warnings() -> void:
+	var layer_alpha: float = _premium_layer_alpha("loadout_warnings")
+	if layer_alpha <= 0.01:
+		return
 	if not system_pressure.has("available_gear"):
 		return
 	var warnings := get_route_loadout_warning_profiles("southern_partition", world, system_pressure.get("available_gear", []))
@@ -3185,6 +3233,8 @@ func _draw_objective_route() -> void:
 			draw_circle(point, tile_size * (0.045 + pulse * 0.02), Color(route_color.r, route_color.g, route_color.b, 0.9))
 
 func _draw_poi_alerts() -> void:
+	if _premium_layer_alpha("poi_alerts") <= 0.01:
+		return
 	var alerts: Array = system_pressure.get("poi_alerts", [])
 	if alerts.is_empty():
 		return
@@ -3215,6 +3265,8 @@ func _draw_poi_alerts() -> void:
 		draw_arc(target, tile_size * (0.9 + pulse * 0.25), 0.0, TAU, 28, Color("#fff05a", 0.85), 3.0)
 
 func _draw_map_legend() -> void:
+	if _premium_layer_alpha("legend") <= 0.01:
+		return
 	var entries := get_map_legend_entries()
 	var font := get_theme_default_font()
 	var width := 126.0
@@ -3235,6 +3287,8 @@ func _draw_map_legend() -> void:
 		draw_string(font, Vector2(panel.position.x + 25.0, y + 10.0), str(entry.get("label", "")), HORIZONTAL_ALIGNMENT_LEFT, width - 34.0, 9, Color("#dce8e2", 0.9))
 
 func _draw_status_panel() -> void:
+	if _premium_layer_alpha("status_panel") <= 0.01:
+		return
 	var profile := get_map_status_panel_profile(system_pressure)
 	var font := get_theme_default_font()
 	var panel := Rect2(Vector2(12.0, size.y - 56.0), Vector2(176.0, 42.0))
@@ -3245,6 +3299,8 @@ func _draw_status_panel() -> void:
 	draw_string(font, panel.position + Vector2(18.0, 34.0), str(profile.get("detail_label", "")), HORIZONTAL_ALIGNMENT_LEFT, panel.size.x - 28.0, 9, Color(accent.r, accent.g, accent.b, 0.9))
 
 func _draw_tundra_hazard_readout() -> void:
+	if _premium_layer_alpha("status_panel") <= 0.01:
+		return
 	var profile := get_tundra_hazard_readout_profile(system_pressure)
 	if not bool(profile.get("visible", false)):
 		return

@@ -394,11 +394,13 @@ func _init() -> void:
 	var calm_map: Dictionary = map_view.get_premium_map_presentation_profile({})
 	_assert(calm_map["grade"] == "EXPLORATION_READABLE" and calm_map["exploration_mode"], "premium map presentation defaults to a calm exploration layer budget")
 	_assert(calm_map["layer_mix"]["mission_pressure"] == 0.0 and calm_map["layer_mix"]["altitude"] == 0.0 and calm_map["layer_mix"]["labels"] == 0.0 and calm_map["layer_mix"]["route_panel"] == 0.0, "premium map presentation suppresses background panels and diagnostic clutter during normal exploration")
+	_assert(calm_map["layer_mix"]["weather"] == 0.0 and calm_map["layer_mix"]["boundary"] == 0.0 and calm_map["layer_mix"]["diagnostic_sweep"] == 0.0 and calm_map["layer_mix"]["legend"] == 0.0, "premium map presentation removes always-on atmospheric and UI noise during normal exploration")
+	_assert(calm_map["layer_mix"]["tile_style"] == 0.0 and calm_map["layer_mix"]["tile_detail"] < 0.5 and calm_map["layer_mix"]["partition_routes"] < 0.2, "premium map presentation leaves only sparse terrain and route hints in normal exploration")
 	var purge_map: Dictionary = map_view.get_premium_map_presentation_profile({
 		"purge_active": true,
 		"safe_zones": [Vector2i(13, 10)],
 	})
-	_assert(not purge_map["exploration_mode"] and purge_map["grade"] == "CINEMATIC" and purge_map["layer_mix"]["route_panel"] > 0.0, "premium map presentation restores cinematic overlays during purge pressure")
+	_assert(not purge_map["exploration_mode"] and purge_map["grade"] == "CINEMATIC" and purge_map["layer_mix"]["route_panel"] > 0.0 and purge_map["layer_mix"]["diagnostic_chrome"] > 0.0, "premium map presentation restores cinematic overlays during purge pressure")
 	var boundary_profiles: Array = map_view.get_partition_boundary_profiles(marker_world)
 	_assert(boundary_profiles.size() > 20 and boundary_profiles[0].has("start") and boundary_profiles[0].has("end"), "world map exposes drawable partition boundary profiles between terrain systems")
 	_assert(_has_boundary_kind(boundary_profiles, "jungle_hardware") and _has_boundary_kind(boundary_profiles, "water_land"), "world map classifies jungle-hardware and water-land boundary glow types")
