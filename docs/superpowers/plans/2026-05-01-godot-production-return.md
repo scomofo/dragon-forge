@@ -31,7 +31,7 @@
 - Create: `dragon-forge-godot/scripts/sim/lore_canon.gd`
 - Test: `dragon-forge-godot/scripts/tests/sim_smoke.gd`
 
-- [ ] **Step 1: Create the canon module**
+- [x] **Step 1: Create the canon module**
 
 ```gdscript
 extends RefCounted
@@ -79,7 +79,7 @@ static func captain_log_fragments() -> Array[Dictionary]:
 	]
 ```
 
-- [ ] **Step 2: Run the smoke test to confirm current baseline**
+- [x] **Step 2: Run the smoke test to confirm current baseline**
 
 Run:
 
@@ -89,7 +89,7 @@ Run:
 
 Expected: exit code `0`.
 
-- [ ] **Step 3: Add smoke assertions for canon**
+- [x] **Step 3: Add smoke assertions for canon**
 
 Append to `dragon-forge-godot/scripts/tests/sim_smoke.gd` in the existing assertion section:
 
@@ -107,11 +107,11 @@ func _assert_lore_canon() -> void:
 
 Call `_assert_lore_canon()` from the smoke test entrypoint after other sim-data assertions.
 
-- [ ] **Step 4: Run the smoke test**
+- [x] **Step 4: Run the smoke test**
 
 Expected: PASS, exit code `0`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add dragon-forge-godot/scripts/sim/lore_canon.gd dragon-forge-godot/scripts/tests/sim_smoke.gd

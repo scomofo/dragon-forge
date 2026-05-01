@@ -24,6 +24,7 @@ const HardwareDungeonData := preload("res://scripts/sim/hardware_dungeon_data.gd
 const WeaverData := preload("res://scripts/sim/weaver_data.gd")
 const BattleVfxData := preload("res://scripts/sim/battle_vfx_data.gd")
 const SfxData := preload("res://scripts/sim/sfx_data.gd")
+const LoreCanon := preload("res://scripts/sim/lore_canon.gd")
 const ProceduralVfxOverlay := preload("res://scripts/vfx/procedural_vfx_overlay.gd")
 const BattleBackdrop := preload("res://scripts/battle/battle_backdrop.gd")
 const ThreadfallOverlay := preload("res://scripts/world/threadfall_overlay.gd")
@@ -35,6 +36,7 @@ const ActTwoProgressionData := preload("res://scripts/sim/act_two_progression_da
 const CreditsRunDisplay := preload("res://scripts/world/credits_run_display.gd")
 
 func _init() -> void:
+	_assert_lore_canon()
 	var world := WorldData.create_world_state()
 	_assert(WorldData.get_current_tile(world)["id"] == "new_landing", "starts in New Landing")
 	world = WorldData.move_player(world, "east")
@@ -1324,6 +1326,14 @@ func _assert(condition: bool, message: String) -> void:
 	if not condition:
 		push_error("Smoke test failed: %s" % message)
 		quit(1)
+
+func _assert_lore_canon() -> void:
+	_assert(LoreCanon.PLAYER["name"] == "Skye", "lore canon names Skye")
+	_assert(str(LoreCanon.WORLD["astraeus"]).contains("Astraeus"), "lore canon exposes Astraeus")
+	_assert(str(LoreCanon.WORLD["mirror_admin"]).contains("Mirror Admin"), "lore canon exposes Mirror Admin")
+	_assert(str(LoreCanon.WORLD["great_reset"]).contains("Great Reset"), "lore canon exposes Great Reset")
+	_assert(str(LoreCanon.DRAGON_PROTOCOL["summary"]).contains("protocols"), "lore canon frames dragons as protocols")
+	_assert(LoreCanon.captain_log_fragments().size() >= 5, "lore canon exposes captain log fragments")
 
 func _has_command(commands: Array, id: String) -> bool:
 	for command in commands:
