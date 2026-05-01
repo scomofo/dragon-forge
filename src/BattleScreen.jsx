@@ -17,6 +17,7 @@ import {
   screenShake, hitFlash, criticalHit, shatterKO,
   shieldUp, shieldDeflect, shieldDismiss,
   statusAuraApply, npcLunge, playerLunge, hitSquash,
+  pixelShake, hitStop, targetKnockback, hitFlicker,
 } from './animationEngine';
 
 const PHASES = {
@@ -294,25 +295,41 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         : (event.reflected ? npcSpriteContainerRef.current : playerSpriteContainerRef.current);
       const targetSide = isPlayer ? (event.reflected ? 'right' : 'left') : (event.reflected ? 'left' : 'right');
 
+      // Pull the target sprite element (not container) for crunchy NES-style flicker
+      const targetSpriteEl = targetContainer === playerSpriteContainerRef.current
+        ? (playerSpriteRef.current?.getCanvas?.() || playerSpriteContainerRef.current)
+        : npcSpriteImgRef.current;
+
       const targetDefending = isPlayer ? state.npcDefending : state.playerDefending;
       if (targetDefending && shieldRef.current) {
         shieldDeflect(shieldRef.current.element, targetContainer, isPlayer ? 'right' : 'left');
-        if (container) screenShake(container, 3, 0.15);
+        if (container) pixelShake(container, 3, 0.12);
       } else if (event.isCritical && container) {
+        // Hit-stop before the crit cinematic for that NES "moment of impact" pause
+        await hitStop(0.11);
         await new Promise(resolve => {
           const tl = criticalHit(container, targetContainer, targetSide);
           tl.eventCallback('onComplete', resolve);
           setTimeout(resolve, 800);
         });
+        if (targetSpriteEl) hitFlicker(targetSpriteEl, 5);
+        if (targetContainer) targetKnockback(targetContainer, isPlayer ? 'left' : 'right', 18);
       } else if (container) {
         const hpRatio = event.damage / (isPlayer ? state.npcMaxHp : state.playerMaxHp);
-        const intensity = 4 + hpRatio * 8;
-        screenShake(container, Math.min(intensity, 8), 0.2);
+        const isHeavy = event.effectiveness > 1.0 || hpRatio > 0.25;
+        // Universal hit-stop: short on normal, longer on super-effective
+        await hitStop(isHeavy ? 0.09 : 0.05);
+        const intensity = Math.min(8, Math.round(4 + hpRatio * 8));
+        pixelShake(container, intensity, 0.18);
         if (targetContainer) {
           const flashColor = event.effectiveness > 1.0
             ? (elementColors[move.element]?.primary || '#ffffff')
             : '#ffffff';
           hitFlash(targetContainer, flashColor);
+        }
+        if (targetSpriteEl) hitFlicker(targetSpriteEl, isHeavy ? 4 : 3);
+        if (targetContainer) {
+          targetKnockback(targetContainer, isPlayer ? 'left' : 'right', isHeavy ? 14 : 9);
         }
       }
 

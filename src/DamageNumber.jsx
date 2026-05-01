@@ -1,17 +1,36 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import gsap from 'gsap';
 
 export default function DamageNumber({ damage, effectiveness, hit, position, onComplete, isCritical = false, isStatusTick = false, statusElement = null, staggerIndex = 0 }) {
   const [visible, setVisible] = useState(true);
+  const ref = useRef(null);
 
   const duration = isCritical ? 1000 : isStatusTick ? 600 : hit ? 800 : 600;
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setVisible(false);
-      onComplete?.();
-    }, duration);
-    return () => clearTimeout(timer);
-  }, [onComplete, duration]);
+    const el = ref.current;
+    if (!el) return;
+    // NES-style pop: snap big, settle, hold, then arc up + fade
+    const popScale = isCritical ? 1.8 : isStatusTick ? 1.0 : effectiveness > 1.0 ? 1.5 : hit ? 1.3 : 1.1;
+    const arcY = isCritical ? -54 : isStatusTick ? -28 : hit ? -42 : -32;
+    const tl = gsap.timeline({
+      onComplete: () => {
+        setVisible(false);
+        onComplete?.();
+      },
+    });
+    tl.fromTo(el,
+      { scale: 0.3, opacity: 0, y: 6 },
+      { scale: popScale, opacity: 1, y: 0, duration: 0.09, ease: 'back.out(3)' }
+    );
+    tl.to(el, { scale: 1, duration: 0.08, ease: 'power2.out' });
+    if (isCritical) {
+      tl.to(el, { x: '+=4', duration: 0.04, repeat: 5, yoyo: true, ease: 'none' }, '<');
+    }
+    tl.to(el, { duration: 0.12 });
+    tl.to(el, { y: arcY, opacity: 0, duration: (duration / 1000) - 0.29, ease: 'power1.out' });
+    return () => tl.kill();
+  }, [onComplete, duration, isCritical, isStatusTick, effectiveness, hit]);
 
   if (!visible) return null;
 
@@ -43,10 +62,13 @@ export default function DamageNumber({ damage, effectiveness, hit, position, onC
 
   return (
     <div
+      ref={ref}
       className={className}
       style={{
         left: `${position.x + xOffset}px`,
         top: `${position.y}px`,
+        animation: 'none',
+        opacity: 0,
         ...(statusColor ? { color: statusColor } : {}),
       }}
     >

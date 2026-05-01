@@ -1,7 +1,7 @@
 import gsap from 'gsap';
 import { elementColors, STATUS_EFFECTS } from './gameData';
 
-// === SCREEN SHAKE ===
+// === SCREEN SHAKE (smooth, ambient) ===
 export function screenShake(container, intensity = 6, duration = 0.2) {
   const cycles = Math.round(duration / 0.05);
   return gsap.to(container, {
@@ -15,6 +15,57 @@ export function screenShake(container, intensity = 6, duration = 0.2) {
       gsap.set(container, { x: 0, y: 0 });
     },
   });
+}
+
+// === PIXEL SHAKE (NES square-wave snap) ===
+// Hard left/right integer-pixel snaps with no easing — crunchier impact feel
+// than smooth screenShake. Use on every hit; reserve screenShake for ambient.
+export function pixelShake(container, intensity = 5, duration = 0.18) {
+  const step = 0.04;
+  const cycles = Math.max(2, Math.round(duration / step));
+  const tl = gsap.timeline({
+    onComplete() { gsap.set(container, { x: 0, y: 0 }); },
+  });
+  for (let i = 0; i < cycles; i++) {
+    const decay = 1 - i / cycles;
+    const amp = Math.max(1, Math.round(intensity * decay));
+    const dx = (i % 2 === 0 ? -amp : amp);
+    const dy = ((i % 4 < 2) ? 0 : (i % 2 === 0 ? -1 : 1));
+    tl.set(container, { x: dx, y: dy }).to(container, { duration: step });
+  }
+  return tl;
+}
+
+// === HIT STOP (universal hitlag) ===
+// Awaitable freeze. NES games hold attacker + target poses for 3-6 frames on
+// every contact — caller awaits this between contact and damage burst.
+export function hitStop(duration = 0.08) {
+  return new Promise(resolve => gsap.delayedCall(duration, resolve));
+}
+
+// === TARGET KNOCKBACK ===
+// Slides target away from attacker, then settles. Layers cleanly with hitSquash.
+export function targetKnockback(el, attackerSide = 'left', intensity = 12) {
+  const dir = attackerSide === 'left' ? 1 : -1;
+  const tl = gsap.timeline();
+  tl.to(el, { x: dir * intensity, duration: 0.06, ease: 'power3.out' });
+  tl.to(el, { x: 0, duration: 0.22, ease: 'back.out(2.2)' });
+  return tl;
+}
+
+// === HIT FLICKER (NES palette-swap crunch) ===
+// Fast 4-cycle brightness toggle. Use on the sprite element, not the container.
+export function hitFlicker(spriteEl, cycles = 4) {
+  const tl = gsap.timeline({
+    onComplete() { gsap.set(spriteEl, { filter: '' }); },
+  });
+  for (let i = 0; i < cycles; i++) {
+    tl.set(spriteEl, { filter: 'brightness(3) saturate(0)' });
+    tl.to(spriteEl, { duration: 0.03 });
+    tl.set(spriteEl, { filter: '' });
+    tl.to(spriteEl, { duration: 0.03 });
+  }
+  return tl;
 }
 
 // === HIT FLASH ===
@@ -491,21 +542,26 @@ function createParticleLoop(particle, behavior, container, index) {
 }
 
 // === NPC LUNGE ===
+// Anticipation pull-back, then forward strike, hold contact, return.
 export function npcLunge(npcEl, direction = 'right') {
   const dx = direction === 'right' ? 30 : -30;
+  const pullback = -dx * 0.25;
   const tl = gsap.timeline();
-  tl.to(npcEl, { x: dx, duration: 0.15, ease: 'power2.in' });
-  tl.to(npcEl, { duration: 0.2 });
-  tl.to(npcEl, { x: 0, duration: 0.15, ease: 'power2.out' });
+  tl.to(npcEl, { x: pullback, duration: 0.09, ease: 'power2.out' });
+  tl.to(npcEl, { x: dx, duration: 0.11, ease: 'power3.in' });
+  tl.to(npcEl, { duration: 0.18 });
+  tl.to(npcEl, { x: 0, duration: 0.18, ease: 'power2.out' });
   return tl;
 }
 
 // === PLAYER LUNGE ===
 export function playerLunge(spriteEl, direction = 'left') {
   const dx = direction === 'left' ? -20 : 20;
+  const pullback = -dx * 0.3;
   const tl = gsap.timeline();
-  tl.to(spriteEl, { x: dx, duration: 0.15, ease: 'power2.in' });
-  tl.to(spriteEl, { x: 0, duration: 0.15, ease: 'power2.out' });
+  tl.to(spriteEl, { x: pullback, duration: 0.08, ease: 'power2.out' });
+  tl.to(spriteEl, { x: dx, duration: 0.11, ease: 'power3.in' });
+  tl.to(spriteEl, { x: 0, duration: 0.16, ease: 'power2.out' });
   return tl;
 }
 
