@@ -265,6 +265,39 @@ const SFX = {
     }, 60);
   },
 
+  criticalHit: (opts) => {
+    const p = ELEMENT_PITCH[opts?.element] || 0;
+    // Heavier impact body
+    noise(140, 600 + p, 'lowpass', 0.7);
+    osc(150 + p, 90, 'triangle', 0.6);
+    // Piercing bell sweep on top — the NES "this matters" cue
+    sweep(900, 2400, 240, 'sine', 0.45);
+    osc(1800, 180, 'square', 0.25);
+    setTimeout(() => {
+      osc(2400, 120, 'sine', 0.2);
+      noise(60, 6000, 'highpass', 0.25);
+    }, 80);
+  },
+
+  lungeContact: () => {
+    // Short whip/swoosh at the contact frame
+    sweep(1400, 600, 70, 'sine', 0.25);
+    noise(50, 3500, 'highpass', 0.18);
+  },
+
+  shieldDeflectSting: () => {
+    // Metallic ping
+    osc(1600, 60, 'square', 0.35);
+    osc(2400, 50, 'sine', 0.25);
+    noise(40, 5000, 'highpass', 0.2);
+    setTimeout(() => osc(1200, 80, 'triangle', 0.15), 30);
+  },
+
+  heartbeatThump: () => {
+    osc(80, 90, 'sine', 0.35);
+    osc(60, 120, 'triangle', 0.2);
+  },
+
   resisted: () => {
     noise(120, 500, 'lowpass', 0.3);
     osc(200, 80, 'sine', 0.2);
@@ -383,7 +416,7 @@ const MUSIC_TRACKS = {
   battleIntense: '/assets/music/music_battle_intense.mp3',
 };
 
-function fadeOut(audio, duration = 1000) {
+function fadeOut(audio, duration = 350) {
   return new Promise((resolve) => {
     if (!audio || audio.paused) { resolve(); return; }
     const startVol = audio.volume;
@@ -404,7 +437,7 @@ function fadeOut(audio, duration = 1000) {
   });
 }
 
-function fadeIn(audio, targetVol, duration = 1000) {
+function fadeIn(audio, targetVol, duration = 350) {
   audio.volume = 0;
   audio.play().catch(() => {});
   const steps = 20;
@@ -464,4 +497,25 @@ export function stopMusic() {
 
 export function getCurrentTrack() {
   return currentTrackName;
+}
+
+// === HEARTBEAT (low-HP urgency pulse) ===
+let heartbeatInterval = null;
+
+export function startHeartbeat(intervalMs = 600) {
+  if (heartbeatInterval) return;
+  const tick = () => {
+    if (prefs.muted) return;
+    SFX.heartbeatThump();
+    setTimeout(() => { if (!prefs.muted) SFX.heartbeatThump(); }, 180);
+  };
+  tick();
+  heartbeatInterval = setInterval(tick, intervalMs);
+}
+
+export function stopHeartbeat() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
 }

@@ -1,6 +1,6 @@
 import { useState, useReducer, useCallback, useEffect, useRef } from 'react';
 import { wait } from './utils';
-import { playSound, playMusic, stopMusic } from './soundEngine';
+import { playSound, playMusic, stopMusic, startHeartbeat, stopHeartbeat } from './soundEngine';
 import { dragons, npcs, moves, elementColors, STATUS_EFFECTS } from './gameData';
 import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
@@ -269,6 +269,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       const npcEl = npcSpriteImgRef.current;
       if (npcEl) npcLunge(npcEl, state.npc.flipSprite ? 'left' : 'right');
     }
+    // Whip/swoosh at the contact frame (matches lunge anticipation -> strike timing)
+    setTimeout(() => playSound('lungeContact'), 110);
 
     if (event.hit) {
       if (event.reflected) {
@@ -277,17 +279,23 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         } else {
           dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: event.damage });
         }
-        playSound('superEffective');
       } else {
         if (isPlayer) {
           dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: event.damage });
         } else {
           dispatch({ type: 'APPLY_DAMAGE_TO_PLAYER', damage: event.damage });
         }
-        if (event.effectiveness > 1.0) playSound('superEffective');
-        else if (event.effectiveness < 1.0) playSound('resisted');
-        else playSound('attackHit');
       }
+      // Hit-sound chosen now, played after hit-stop so it lands at the freeze peak
+      const hitSoundName = event.reflected
+        ? 'superEffective'
+        : event.isCritical
+          ? 'criticalHit'
+          : event.effectiveness > 1.0
+            ? 'superEffective'
+            : event.effectiveness < 1.0
+              ? 'resisted'
+              : 'attackHit';
 
       const container = battleContainerRef.current;
       const targetContainer = isPlayer
@@ -303,10 +311,12 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       const targetDefending = isPlayer ? state.npcDefending : state.playerDefending;
       if (targetDefending && shieldRef.current) {
         shieldDeflect(shieldRef.current.element, targetContainer, isPlayer ? 'right' : 'left');
+        playSound('shieldDeflectSting');
         if (container) pixelShake(container, 3, 0.12);
       } else if (event.isCritical && container) {
         // Hit-stop before the crit cinematic for that NES "moment of impact" pause
         await hitStop(0.11);
+        playSound(hitSoundName, { element: move.element });
         await new Promise(resolve => {
           const tl = criticalHit(container, targetContainer, targetSide);
           tl.eventCallback('onComplete', resolve);
@@ -319,6 +329,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         const isHeavy = event.effectiveness > 1.0 || hpRatio > 0.25;
         // Universal hit-stop: short on normal, longer on super-effective
         await hitStop(isHeavy ? 0.09 : 0.05);
+        playSound(hitSoundName, { element: move.element });
         const intensity = Math.min(8, Math.round(4 + hpRatio * 8));
         pixelShake(container, intensity, 0.18);
         if (targetContainer) {
@@ -408,6 +419,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     return () => {
       if (playerAuraRef.current) playerAuraRef.current.kill();
       if (npcAuraRef.current) npcAuraRef.current.kill();
+      stopHeartbeat();
     };
   }, []);
 
@@ -600,6 +612,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
           dispatch({ type: 'SET_EPILOGUE', xpGained, scrapsGained });
           stopMusic();
+          stopHeartbeat();
           playSound('victoryFanfare');
         } else {
           trackStat('battlesWon');
@@ -607,6 +620,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: true });
           dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped });
           stopMusic();
+          stopHeartbeat();
           playSound('victoryFanfare');
           playSound('xpGain');
           if (scrapsGained > 0) setTimeout(() => playSound('scrapsEarned'), 200);
@@ -630,6 +644,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
       dispatch({ type: 'SET_DEFEAT' });
       stopMusic();
+      stopHeartbeat();
       playSound('defeatDrone');
     } else {
       const playerHpPct = result.player.hp / (result.player.maxHp || state.playerMaxHp);
@@ -638,6 +653,12 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         playMusic('battleIntense');
       } else {
         playMusic('battle');
+      }
+      // Heartbeat urgency pulse only when the PLAYER is in danger
+      if (playerHpPct < 0.25) {
+        startHeartbeat(650);
+      } else {
+        stopHeartbeat();
       }
       dispatch({ type: 'RESET_TURN' });
     }
