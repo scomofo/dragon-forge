@@ -57,6 +57,7 @@ var title_label: Label
 var status_label: Label
 var detail_label: Label
 var objective_box: VBoxContainer
+var loop_bar: HBoxContainer
 var nav_box: VBoxContainer
 var bios_box: VBoxContainer
 var action_box: VBoxContainer
@@ -173,6 +174,19 @@ func get_world_layout_profile() -> Dictionary:
 		"layout_contract": "bounded_map_with_scrollable_sidebar",
 	}
 
+func get_core_loop_surface_profile() -> Dictionary:
+	var hatchery_ui := DragonProgression.get_hatchery_ring_ui_profile(profile)
+	var anvil_ui := DragonProgression.get_anvil_relic_ui_profile(profile)
+	return {
+		"presentation": "always_visible_core_loop_bar",
+		"buttons": ["Story / Skye", "Battle", "Forge / Anvil", "Hatchery"],
+		"battle_target": "firewall_sentinel",
+		"forge_position": Vector2i(13, 10),
+		"hatchery_status": hatchery_ui.get("status_label", "SEALED"),
+		"anvil_slots": anvil_ui.get("slots_used_label", "0/2"),
+		"lore_lead": StoryData.felix_first_contact_lines()[0],
+	}
+
 func import_state(state: Dictionary) -> void:
 	var saved_position: Dictionary = state.get("world_position", {})
 	if not saved_position.is_empty():
@@ -279,6 +293,14 @@ func _build_ui() -> void:
 	status_label.add_theme_font_size_override("font_size", 16)
 	root.add_child(status_label)
 
+	loop_bar = HBoxContainer.new()
+	loop_bar.add_theme_constant_override("separation", 8)
+	root.add_child(loop_bar)
+	_add_loop_button("Story / Skye", "Read the Skye, Felix, Astraeus, and Mirror Admin premise.", _open_story_recap)
+	_add_loop_button("Battle", "Start a live guardian battle immediately.", _start_training_battle)
+	_add_loop_button("Forge / Anvil", "Jump to Felix Workshop and expose the Anvil relic loadout.", _open_forge_console)
+	_add_loop_button("Hatchery", "Open the Hatchery Ring registry from the Digital Forge flow.", _open_hatchery_shortcut)
+
 	var content := HBoxContainer.new()
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_theme_constant_override("separation", 22)
@@ -356,6 +378,43 @@ func _build_ui() -> void:
 	technique_box = VBoxContainer.new()
 	technique_box.add_theme_constant_override("separation", 8)
 	side.add_child(technique_box)
+
+func _add_loop_button(label: String, tooltip: String, callback: Callable) -> void:
+	var button := Button.new()
+	button.text = label
+	button.tooltip_text = tooltip
+	button.custom_minimum_size = Vector2(132, 34)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.pressed.connect(callback)
+	loop_bar.add_child(button)
+
+func _open_story_recap() -> void:
+	var opening := StoryData.opening_sequence_profile()
+	var lines := StoryData.felix_first_contact_lines()
+	status_message = "%s: %s %s" % [
+		opening.get("subtitle", "Operator signal recovered"),
+		lines[0],
+		opening.get("first_objective", ""),
+	]
+	_refresh()
+
+func _start_training_battle() -> void:
+	var current := WorldData.get_current_tile(world)
+	var encounter := {
+		"title": "Guardian Protocol Drill",
+		"enemy_id": "firewall_sentinel",
+	}
+	status_message = "Battle link opened: Skye and the Root Dragon engage a Firewall Sentinel."
+	encounter_requested.emit("firewall_sentinel", _encounter_context(current, encounter))
+
+func _open_forge_console() -> void:
+	world = WorldData.move_player_to(world, Vector2i(13, 10))
+	status_message = "Felix Workshop foregrounded. Forge, Anvil sockets, Captain's Log, and dragon loadout are active in the right console."
+	_refresh()
+
+func _open_hatchery_shortcut() -> void:
+	var hatchery_tile := WorldData.get_tile_at(world, Vector2i(6, 4))
+	_open_hatchery_ring(hatchery_tile)
 
 func _move(direction: String) -> void:
 	var before := WorldData.get_current_tile(world)
