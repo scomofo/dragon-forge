@@ -125,7 +125,7 @@ git commit -m "Add Godot lore canon module"
 - Modify: `dragon-forge-godot/scripts/sim/world_data.gd`
 - Test: `dragon-forge-godot/scripts/tests/sim_smoke.gd`
 
-- [ ] **Step 1: Import the canon into story data**
+- [x] **Step 1: Import the canon into story data**
 
 At the top of `story_data.gd`, add:
 
@@ -151,7 +151,7 @@ static func felix_first_contact_lines() -> Array[String]:
 	]
 ```
 
-- [ ] **Step 2: Add world-data lore signals**
+- [x] **Step 2: Add world-data lore signals**
 
 In `world_data.gd`, for the existing New Landing, Felix Workshop, Southern Partition, Tundra, Mainframe, and Crown location dictionaries, add these keys:
 
@@ -162,15 +162,15 @@ In `world_data.gd`, for the existing New Landing, Felix Workshop, Southern Parti
 
 Use location-specific copy where the file already has matching mission/act context.
 
-- [ ] **Step 3: Add smoke assertions**
+- [x] **Step 3: Add smoke assertions**
 
 In `sim_smoke.gd`, add assertions that `StoryData.opening_boot_lines()` contains `SKYE`, `ASTRAEUS`, `MIRROR ADMIN`, and that at least one world location has `lore_signal` containing `Astraeus`.
 
-- [ ] **Step 4: Run smoke test**
+- [x] **Step 4: Run smoke test**
 
 Expected: PASS, exit code `0`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add dragon-forge-godot/scripts/sim/story_data.gd dragon-forge-godot/scripts/sim/world_data.gd dragon-forge-godot/scripts/tests/sim_smoke.gd

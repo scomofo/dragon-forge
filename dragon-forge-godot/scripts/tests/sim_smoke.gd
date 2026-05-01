@@ -25,6 +25,7 @@ const WeaverData := preload("res://scripts/sim/weaver_data.gd")
 const BattleVfxData := preload("res://scripts/sim/battle_vfx_data.gd")
 const SfxData := preload("res://scripts/sim/sfx_data.gd")
 const LoreCanon := preload("res://scripts/sim/lore_canon.gd")
+const StoryData := preload("res://scripts/sim/story_data.gd")
 const ProceduralVfxOverlay := preload("res://scripts/vfx/procedural_vfx_overlay.gd")
 const BattleBackdrop := preload("res://scripts/battle/battle_backdrop.gd")
 const ThreadfallOverlay := preload("res://scripts/world/threadfall_overlay.gd")
@@ -38,6 +39,7 @@ const CreditsRunDisplay := preload("res://scripts/world/credits_run_display.gd")
 func _init() -> void:
 	_assert_lore_canon()
 	var world := WorldData.create_world_state()
+	_assert_story_world_lore(world)
 	_assert(WorldData.get_current_tile(world)["id"] == "new_landing", "starts in New Landing")
 	world = WorldData.move_player(world, "east")
 	_assert(WorldData.get_current_tile(world)["id"] == "testing_fields", "moves one overworld tile east into testing fields")
@@ -1334,6 +1336,17 @@ func _assert_lore_canon() -> void:
 	_assert(str(LoreCanon.WORLD["great_reset"]).contains("Great Reset"), "lore canon exposes Great Reset")
 	_assert(str(LoreCanon.DRAGON_PROTOCOL["summary"]).contains("protocols"), "lore canon frames dragons as protocols")
 	_assert(LoreCanon.captain_log_fragments().size() >= 5, "lore canon exposes captain log fragments")
+
+func _assert_story_world_lore(world: Dictionary) -> void:
+	var boot_text := " ".join(StoryData.opening_boot_lines())
+	_assert(boot_text.contains("SKYE"), "story opening names Skye")
+	_assert(boot_text.contains("ASTRAEUS"), "story opening names Astraeus")
+	_assert(boot_text.contains("MIRROR ADMIN"), "story opening names Mirror Admin")
+	var felix_text := " ".join(StoryData.felix_first_contact_lines())
+	_assert(felix_text.contains("Skye") and felix_text.contains("Astraeus"), "Felix first contact carries Skye and Astraeus")
+	var forge_tile := WorldData.get_tile_at(world, Vector2i(13, 10))
+	_assert(str(forge_tile.get("lore_signal", "")).contains("Astraeus"), "world lore signal exposes Astraeus at Felix lab")
+	_assert(str(forge_tile.get("skye_objective", "")).contains("Skye"), "world lore objective frames Skye's route")
 
 func _has_command(commands: Array, id: String) -> bool:
 	for command in commands:

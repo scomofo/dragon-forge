@@ -1,6 +1,8 @@
 extends RefCounted
 class_name StoryData
 
+const LoreCanon := preload("res://scripts/sim/lore_canon.gd")
+
 const BIOS_DIALOGUE := {
 	"vault_first_rack": [
 		"B.I.O.S. ONLINE: Binary Integrated Overlord System.",
@@ -13,6 +15,20 @@ const BIOS_DIALOGUE := {
 		"SOURCE CODE BUFFS LOCKED: recover Root Password and stabilize boot channel.",
 	],
 }
+
+static func opening_boot_lines() -> Array[String]:
+	var lines: Array[String] = []
+	for line in LoreCanon.OPENING_BOOT_LINES:
+		lines.append(str(line))
+	return lines
+
+static func felix_first_contact_lines() -> Array[String]:
+	return [
+		"Skye. Good. You can hear me.",
+		"The world you know is rendered over the old Astraeus hardware.",
+		"Mirror Admin is trying to preserve us by erasing us.",
+		"The dragons are living guardian protocols. If they bond to you, they can hold the Matrix together.",
+	]
 
 static func bios_lines(tile_id: String) -> Array[String]:
 	var source: Array = BIOS_DIALOGUE.get(tile_id, ["B.I.O.S. STANDBY: Awaiting stable connection."])
