@@ -131,7 +131,10 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
         color: '#f0e6d2',
       }}
     >
+      <ForgeAtmosphere />
       <BulkheadView view={view} />
+      <ForgeFloorZones />
+      <CablePaths />
       <FloorGrid />
 
       {FORGE_STATIONS.map((st) => (
@@ -154,6 +157,41 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
 
       <ControlsHint />
     </div>
+  );
+}
+
+function ForgeAtmosphere() {
+  return (
+    <>
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: [
+            'radial-gradient(ellipse at 30% 62%, rgba(255, 90, 31, 0.24) 0 12%, transparent 36%)',
+            'radial-gradient(ellipse at 30% 30%, rgba(94, 220, 255, 0.18) 0 11%, transparent 30%)',
+            'radial-gradient(ellipse at 56% 58%, rgba(92, 255, 138, 0.16) 0 10%, transparent 28%)',
+            'linear-gradient(180deg, rgba(8, 5, 3, 0.48) 0%, transparent 28%, rgba(4, 3, 2, 0.38) 100%)',
+          ].join(', '),
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          left: '8%',
+          right: '18%',
+          top: '19%',
+          height: '6%',
+          background: 'linear-gradient(90deg, transparent, rgba(255, 205, 107, 0.18), transparent)',
+          clipPath: 'polygon(4% 45%, 100% 0, 96% 35%, 0 100%)',
+          filter: 'blur(1px)',
+          pointerEvents: 'none',
+        }}
+      />
+    </>
   );
 }
 
@@ -183,6 +221,79 @@ function BulkheadView({ view }) {
   );
 }
 
+function ForgeFloorZones() {
+  const zones = [
+    { left: '16%', top: '19%', width: '28%', height: '23%', color: FORGE_PALETTE.hatcheryCyan, label: 'HATCHERY' },
+    { left: '19%', top: '50%', width: '25%', height: '26%', color: FORGE_PALETTE.coalGlow, label: 'ANVIL' },
+    { left: '45%', top: '49%', width: '22%', height: '28%', color: FORGE_PALETTE.consoleGreen, label: 'CONSOLE' },
+    { left: '63%', top: '19%', width: '16%', height: '20%', color: FORGE_PALETTE.lanternWarm, label: 'SAVE' },
+  ];
+  return (
+    <>
+      {zones.map((zone) => (
+        <div
+          key={zone.label}
+          aria-hidden
+          style={{
+            position: 'absolute',
+            ...zone,
+            border: `1px solid ${zone.color}55`,
+            background: `radial-gradient(ellipse at 50% 65%, ${zone.color}22, rgba(0,0,0,0.18) 62%, transparent 72%)`,
+            boxShadow: `0 0 24px ${zone.color}18, inset 0 0 18px rgba(0,0,0,0.38)`,
+            transform: 'skewX(-6deg)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          left: '12%',
+          top: '76%',
+          width: '23%',
+          height: '12%',
+          borderTop: '2px solid rgba(201,165,103,0.45)',
+          background: 'linear-gradient(180deg, rgba(201,165,103,0.12), transparent)',
+          pointerEvents: 'none',
+        }}
+      />
+    </>
+  );
+}
+
+function CablePaths() {
+  const cable = (points, color, width = 3) => (
+    <polyline
+      points={points}
+      fill="none"
+      stroke={color}
+      strokeWidth={width}
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      opacity="0.72"
+    />
+  );
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+    >
+      {cable('30,75 30,60 42,60 55,60', '#5cff8a', 0.45)}
+      {cable('30,75 30,60 30,30', '#5edcff', 0.5)}
+      {cable('55,60 70,60 70,28', '#ffcd6b', 0.42)}
+      {cable('55,60 76,56 88,50', '#8fcf6c', 0.5)}
+      {cable('22,78 30,75', '#c9a567', 0.38)}
+      {cable('30,75 30,60 42,60 55,60', 'rgba(0,0,0,0.55)', 1.25)}
+      {cable('30,75 30,60 30,30', 'rgba(0,0,0,0.55)', 1.25)}
+      {cable('55,60 70,60 70,28', 'rgba(0,0,0,0.55)', 1.1)}
+      {cable('55,60 76,56 88,50', 'rgba(0,0,0,0.55)', 1.1)}
+    </svg>
+  );
+}
+
 function FloorGrid() {
   return (
     <div
@@ -190,9 +301,9 @@ function FloorGrid() {
       style={{
         position: 'absolute',
         inset: 0,
-        backgroundImage: `repeating-linear-gradient(0deg, transparent 0 31px, rgba(0,0,0,0.12) 31px 32px), repeating-linear-gradient(90deg, transparent 0 31px, rgba(0,0,0,0.12) 31px 32px)`,
+        backgroundImage: `repeating-linear-gradient(0deg, transparent 0 47px, rgba(0,0,0,0.18) 47px 49px), repeating-linear-gradient(90deg, transparent 0 47px, rgba(255,255,255,0.035) 47px 49px)`,
         pointerEvents: 'none',
-        opacity: 0.6,
+        opacity: 0.45,
       }}
     />
   );
@@ -200,6 +311,7 @@ function FloorGrid() {
 
 function Station({ station, highlighted }) {
   const { pos, size, glow, label, pulseMs } = station;
+  const stationType = station.id;
   return (
     <div
       style={{
@@ -208,29 +320,38 @@ function Station({ station, highlighted }) {
         top: `${pos.y - size.h / 2}%`,
         width: `${size.w}%`,
         height: `${size.h}%`,
-        border: `2px solid ${glow || '#888'}`,
-        borderRadius: 4,
-        background: glow ? `${glow}22` : 'rgba(0,0,0,0.25)',
+        border: highlighted ? `2px solid ${glow || '#d7ad4b'}` : '1px solid rgba(240,230,210,0.22)',
+        borderRadius: stationType === STATION_IDS.HATCHERY_RING ? '50%' : 4,
+        background: 'rgba(8, 5, 3, 0.28)',
         boxShadow: highlighted
-          ? `0 0 12px ${glow || '#fff'}, inset 0 0 8px ${glow || '#fff'}`
-          : (glow ? `0 0 6px ${glow}66` : 'none'),
+          ? `0 0 22px ${glow || '#d7ad4b'}, inset 0 0 18px ${glow || '#d7ad4b'}55`
+          : `0 10px 16px rgba(0,0,0,0.34), ${glow ? `0 0 14px ${glow}44` : 'none'}`,
         animation: pulseMs ? `forgePulse ${pulseMs}ms ease-in-out infinite` : 'none',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'flex-end',
-        justifyContent: 'center',
-        padding: 4,
+        justifyContent: 'flex-end',
+        padding: 3,
         boxSizing: 'border-box',
-        transition: 'box-shadow 120ms',
+        transition: 'box-shadow 120ms, transform 120ms',
+        transform: highlighted ? 'translateY(-2px)' : 'none',
       }}
     >
+      <StationSilhouette type={stationType} glow={glow} highlighted={highlighted} />
       <span
         style={{
-          fontSize: 11,
+          position: 'absolute',
+          left: '50%',
+          bottom: -18,
+          transform: 'translateX(-50%)',
+          whiteSpace: 'nowrap',
+          fontSize: 10,
           letterSpacing: 1,
           color: highlighted ? '#fff' : '#bbb',
           textShadow: '1px 1px 0 #000',
-          background: 'rgba(0,0,0,0.55)',
-          padding: '1px 4px',
+          background: highlighted ? 'rgba(0,0,0,0.82)' : 'rgba(0,0,0,0.62)',
+          border: `1px solid ${highlighted ? glow || '#d7ad4b' : 'rgba(255,255,255,0.18)'}`,
+          padding: '2px 5px',
           textTransform: 'uppercase',
         }}
       >
@@ -242,6 +363,66 @@ function Station({ station, highlighted }) {
           50% { filter: brightness(1.35); }
         }
       `}</style>
+    </div>
+  );
+}
+
+function StationSilhouette({ type, glow, highlighted }) {
+  const color = glow || '#c9a567';
+  const common = {
+    position: 'absolute',
+    inset: '10%',
+    filter: highlighted ? `drop-shadow(0 0 6px ${color})` : 'none',
+  };
+  if (type === STATION_IDS.HATCHERY_RING) {
+    return (
+      <div style={common}>
+        <div style={{ position: 'absolute', inset: '6%', border: `4px solid ${color}`, borderRadius: '50%', boxShadow: `inset 0 0 18px ${color}55` }} />
+        <div style={{ position: 'absolute', left: '38%', top: '32%', width: '24%', height: '36%', borderRadius: '50%', background: '#f0e6d2', boxShadow: `0 0 14px ${color}` }} />
+        <div style={{ position: 'absolute', left: '8%', right: '8%', top: '48%', height: 2, background: color }} />
+        <div style={{ position: 'absolute', left: '48%', top: '8%', bottom: '8%', width: 2, background: color }} />
+      </div>
+    );
+  }
+  if (type === STATION_IDS.ANVIL) {
+    return (
+      <div style={common}>
+        <div style={{ position: 'absolute', left: '12%', top: '26%', width: '64%', height: '24%', background: color, clipPath: 'polygon(0 35%, 62% 35%, 78% 0, 100% 0, 100% 70%, 72% 70%, 58% 100%, 0 100%)' }} />
+        <div style={{ position: 'absolute', left: '34%', top: '50%', width: '24%', height: '28%', background: '#1a1310', border: `2px solid ${color}` }} />
+        <div style={{ position: 'absolute', left: '20%', right: '20%', bottom: '8%', height: '12%', background: '#0f0a07', borderTop: `2px solid ${color}` }} />
+      </div>
+    );
+  }
+  if (type === STATION_IDS.CONSOLE) {
+    return (
+      <div style={common}>
+        <div style={{ position: 'absolute', left: '12%', top: '10%', width: '66%', height: '46%', background: '#0b1711', border: `3px solid ${color}`, boxShadow: `inset 0 0 14px ${color}66` }} />
+        <div style={{ position: 'absolute', left: '22%', top: '22%', width: '44%', height: '12%', background: color }} />
+        <div style={{ position: 'absolute', left: '18%', top: '66%', width: '58%', height: '18%', background: '#1a1310', border: `2px solid ${color}` }} />
+      </div>
+    );
+  }
+  if (type === STATION_IDS.SAVE_LANTERN) {
+    return (
+      <div style={common}>
+        <div style={{ position: 'absolute', left: '42%', top: '4%', width: '16%', height: '88%', background: '#120c08', borderLeft: `2px solid ${color}`, borderRight: `2px solid ${color}` }} />
+        <div style={{ position: 'absolute', left: '18%', top: '18%', width: '64%', height: '38%', background: color, clipPath: 'polygon(20% 0, 80% 0, 100% 100%, 0 100%)', boxShadow: `0 0 18px ${color}` }} />
+      </div>
+    );
+  }
+  if (type === STATION_IDS.BULKHEAD) {
+    return (
+      <div style={common}>
+        <div style={{ position: 'absolute', inset: '4%', background: `linear-gradient(90deg, #102514, ${color}44)`, border: `3px solid ${color}`, clipPath: 'polygon(22% 0, 100% 6%, 100% 94%, 12% 100%, 0 62%, 10% 28%)' }} />
+        <div style={{ position: 'absolute', left: '30%', top: '14%', bottom: '14%', width: 3, background: color }} />
+        <div style={{ position: 'absolute', left: '54%', top: '12%', bottom: '12%', width: 3, background: color }} />
+      </div>
+    );
+  }
+  return (
+    <div style={common}>
+      <div style={{ position: 'absolute', left: '36%', top: '18%', width: '28%', height: '28%', borderRadius: '50%', background: '#c9a567' }} />
+      <div style={{ position: 'absolute', left: '28%', top: '46%', width: '44%', height: '38%', background: '#5b3c24', border: '2px solid #c9a567' }} />
     </div>
   );
 }
