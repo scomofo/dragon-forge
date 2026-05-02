@@ -8,7 +8,7 @@
 | # | Decision |
 |---|---|
 | 1 | **Scope:** Port + native upgrade. All 12 Vite screens, but use Godot strengths where they're a clear win. |
-| 2 | **Existing project:** Archive `dragon-forge-godot/` → `dragon-forge-godot-archive/`, build a fresh project alongside. Salvage at most: nothing committed up front; lift snippets only when clearly useful and on-direction. |
+| 2 | **Existing project:** Lore audit FIRST (the archive holds canonical proper nouns and Skye/Thread/Weaver/Mainframe content the Vite version never surfaced). Then archive `dragon-forge-godot/` → `dragon-forge-godot-archive/`, build a fresh project alongside. Code salvage stays opportunistic. |
 | 3 | **Target:** Desktop / Windows only. Free to use particles, shaders, controller rumble, larger sprite sheets. No web export concerns. |
 | 4 | **Art:** Reuse existing `assets/` from the Vite build. Generate gaps (24 dragon evolution sheets, 10 NPC sheets, new battle VFX, Singularity corruption overlays) via inference.sh and app.1minai.com. |
 | 5 | **Sim port:** Auto-translate content tables (`gameData`, `shopItems`, `singularityBosses`, `loreCanon`, `felixDialogue`, `journalMilestones`, etc.) to JSON loaded by Godot. Hand-port engines (`battleEngine`, `fusionEngine`, `hatcheryEngine`, `animationEngine`, `singularityProgress`). vitest cases become GUT acceptance tests. `DEFAULT_SAVE` → `SaveData` Resource. |
@@ -151,14 +151,15 @@ Areas where Godot earns its keep:
 
 ## Build sequence (preview — full plan in writing-plans)
 
-1. Archive existing project, scaffold fresh Godot 4.6 project, copy assets, set up autoloads.
-2. Write `tools/translate_content.mjs`, run it, commit `data/*.json`.
-3. Port `save_data.gd` + `save_io.gd`, with round-trip test.
-4. Port engines (`battle`, `fusion`, `hatchery`, `animation`, `singularity_progress`) with GUT tests mirroring vitest.
-5. Build the **vertical slice screens first** in this order: Title → Hatchery → Battle Select → Battle → Fusion. This is the core loop that proves the rebuild works.
-6. Build the supporting screens: Campaign Map (with TileMap upgrade), Shop, Forge, Journal, Stats, Settings, Singularity (with shader upgrade).
-7. Asset gap generation pass (in parallel with screen work once the manifest is stable).
-8. Polish: controller rumble, screen transitions, audio mixing, particle tuning.
+1. **Lore audit pass** — scan both `src/` (Vite) and `dragon-forge-godot/` (archive) for narrative strings, proper nouns, dialogue, and inscribed text. Produce `docs/lore-inventory.md` as a consolidated source of truth. Where they disagree, archive wins for Skye/Thread/Southern Continent/Weaver/Mainframe topics; Vite wins for moves, NPCs, dragons, and gameplay-facing content.
+2. Archive existing project (`dragon-forge-godot/` → `dragon-forge-godot-archive/`), scaffold fresh Godot 4.6 project, copy assets, set up autoloads.
+3. Write content translators (`tools/translate_vite_content.mjs` + `tools/translate_archive_lore.mjs`), run them, commit `data/*.json`.
+4. Port `save_data.gd` + `save_io.gd`, with round-trip test.
+5. Port engines (`battle`, `fusion`, `hatchery`, `animation`, `singularity_progress`) with GUT tests mirroring vitest.
+6. Build the **vertical slice screens first** in this order: Title → Hatchery → Battle Select → Battle → Fusion. This is the core loop that proves the rebuild works.
+7. Build the supporting screens: Campaign Map (with TileMap upgrade), Shop, Forge, Journal, Stats, Settings, Singularity (with shader upgrade).
+8. Asset gap generation pass (in parallel with screen work once the manifest is stable).
+9. Polish: controller rumble, screen transitions, audio mixing, particle tuning.
 
 ## Out of scope
 
