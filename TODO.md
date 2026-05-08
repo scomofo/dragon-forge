@@ -1,5 +1,11 @@
 # Dragon Forge — To Do
 
+## Recent Browser QA
+- [x] Forge hub refactor: scene/overlays/movement split, CSS extracted, truthful station copy
+- [x] Browser Playwright smoke: desktop/tablet/mobile screenshots and overflow checks
+- [x] Asset manifest test: runtime dragon, NPC, egg, arena, and boss references checked under public/
+- [ ] Bespoke Void Dragon evolution sprites: currently documented as intentional shadow placeholder
+
 ## Completed
 - [x] Intro page text repeats — fixed
 - [x] Egg animations janky — fixed

@@ -1,3 +1,5 @@
+import { canEquipRelic } from './forgeData';
+
 const STORAGE_KEY = 'dragonforge_save';
 
 const DEFAULT_SAVE = {
@@ -329,9 +331,12 @@ export function grantRelic(relicId) {
 
 export function equipRelic(relicId) {
   const save = loadSave();
-  if (!save.skye.relicsOwned.includes(relicId)) return false;
-  if (save.skye.relicsEquipped.includes(relicId)) return false;
-  if (save.skye.relicsEquipped.length >= save.skye.relicSlots) return false;
+  if (!canEquipRelic({
+    relicId,
+    owned: save.skye.relicsOwned,
+    equipped: save.skye.relicsEquipped,
+    slots: save.skye.relicSlots,
+  })) return false;
   save.skye.relicsEquipped.push(relicId);
   writeSave(save);
   return true;

@@ -220,6 +220,17 @@ export const RELICS = {
 
 export function getRelic(id) { return RELICS[id] || null; }
 export function listRelics() { return Object.values(RELICS); }
+export function getUsedRelicSlots(relicIds = []) {
+  return relicIds.reduce((sum, id) => sum + (getRelic(id)?.slotCost || 1), 0);
+}
+
+export function canEquipRelic({ relicId, owned = [], equipped = [], slots = 1 }) {
+  const relic = getRelic(relicId);
+  if (!relic) return false;
+  if (!owned.includes(relicId)) return false;
+  if (equipped.includes(relicId)) return false;
+  return getUsedRelicSlots(equipped) + (relic.slotCost || 1) <= slots;
+}
 
 // Map fragment IDs to a save-flag-derivable trigger condition. Used by the
 // auto-unlock pass on relevant game events. Everything is opt-in: the engine

@@ -4,7 +4,7 @@ import { playSound, playMusic, stopMusic, startHeartbeat, stopHeartbeat } from '
 import { dragons, npcs, moves, elementColors, STATUS_EFFECTS } from './gameData';
 import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
-  getStageForLevel, calculateXpGain,
+  getStageForLevel, calculateXpGain, getTypeEffectivenessLabel,
 } from './battleEngine';
 import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, addCore, decrementXpBoost, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
 import { FRAGMENT_TRIGGERS } from './forgeData';
@@ -14,7 +14,7 @@ import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
 import VfxOverlay from './VfxOverlay';
-import { getBattlePresentationProfile, getBattleResultCallout, shouldAnimateBattleEvent } from './battlePresentation';
+import { getBattlePresentationProfile, getBattleResultCallout, getStatusMoveSummary, shouldAnimateBattleEvent } from './battlePresentation';
 import useGamepadController from './useGamepadController';
 import {
   screenShake, hitFlash, criticalHit, shatterKO,
@@ -48,21 +48,6 @@ function getHpState(current, max) {
   if (ratio <= 0.25) return 'danger';
   if (ratio <= 0.5) return 'warning';
   return 'stable';
-}
-
-function getMoveEffectivenessLabel(moveElement, defenderElement) {
-  if (!moveElement || moveElement === 'neutral') return 'NORMAL';
-  const chart = {
-    fire: { strong: ['ice'], weak: ['stone', 'fire'] },
-    ice: { strong: ['storm'], weak: ['fire', 'ice'] },
-    storm: { strong: ['stone'], weak: ['ice', 'storm'] },
-    stone: { strong: ['fire'], weak: ['storm', 'stone'] },
-    venom: { strong: ['stone'], weak: ['shadow', 'venom'] },
-    shadow: { strong: ['venom'], weak: ['fire', 'shadow'] },
-  };
-  if (chart[moveElement]?.strong.includes(defenderElement)) return 'ADVANTAGE';
-  if (chart[moveElement]?.weak.includes(defenderElement)) return 'RESISTED';
-  return 'NORMAL';
 }
 
 function getMoveProfileText(moveKeys) {
@@ -1080,6 +1065,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             const isResolving = isResolvingTurn;
             const isSelected = selectedMoveKey === move.key;
             const matchup = getMoveEffectivenessLabel(move.element, npc.element);
+            const statusSummary = getStatusMoveSummary(move);
             return (
               <button
                 key={move.key}
@@ -1088,12 +1074,15 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                 disabled={isResolving}
                 onClick={() => handleMoveSelect(move.key)}
               >
-                <span className="tooltip">PWR:{move.power} ACC:{move.accuracy}%</span>
+                <span className="tooltip">
+                  PWR:{move.power} ACC:{move.accuracy}%{statusSummary ? ` | ${statusSummary.title}: ${statusSummary.summary}, ${statusSummary.duration}` : ''}
+                </span>
                 <strong>{move.name.toUpperCase()}</strong>
                 <span className="move-meta">
                   <i>{moveColor.icon} {move.element.toUpperCase()}</i>
                   <i>PWR {move.power}</i>
                   <i>{matchup}</i>
+                  {statusSummary && <i>{statusSummary.label}</i>}
                 </span>
               </button>
             );

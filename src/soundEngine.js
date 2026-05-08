@@ -1,3 +1,5 @@
+import { assetUrl } from './utils';
+
 let audioCtx = null;
 
 function getCtx() {
@@ -636,6 +638,12 @@ const MUSIC_TRACKS = {
   battleIntense: '/assets/music/music_battle_intense.mp3',
 };
 
+export function getMusicTrackUrl(trackName) {
+  const resolvedTrackName = resolveMusicName(trackName);
+  const src = MUSIC_TRACKS[resolvedTrackName];
+  return src ? assetUrl(src) : null;
+}
+
 export function getMusicSchema() {
   return MUSIC_SCHEMA;
 }
@@ -684,7 +692,7 @@ export function playMusic(trackName, immediate = false) {
   const resolvedTrackName = resolveMusicName(trackName);
   if (currentTrackName === resolvedTrackName && currentMusic && !currentMusic.paused) return;
 
-  const src = MUSIC_TRACKS[resolvedTrackName];
+  const src = getMusicTrackUrl(resolvedTrackName);
   if (!src) return;
 
   const vol = getMusicVolume();

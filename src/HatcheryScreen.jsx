@@ -4,6 +4,7 @@ import { playSound } from './soundEngine';
 import { dragons, elementColors, eggSheets, PULL_COST } from './gameData';
 import { executePull, applyPullResult } from './hatcheryEngine';
 import { loadSave, writeSave, trackStat } from './persistence';
+import { assetUrl } from './utils';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
 import EggSprite from './EggSprite';
@@ -156,7 +157,10 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   };
 
   return (
-    <div className="hatchery-screen">
+    <div
+      className="hatchery-screen"
+      style={{ '--hatchery-decoration': `url(${assetUrl('/assets/decoration/dragon_bounties.png')})` }}
+    >
       <NavBar activeScreen="hatchery" onNavigate={onNavigate} save={save} />
 
       <div className="hatchery-content" onClick={handleContentClick}>

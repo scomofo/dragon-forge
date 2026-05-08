@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import {
   getMusicDefinition,
   getMusicSchema,
+  getMusicTrackUrl,
   getSoundDefinition,
   getSoundSchema,
   listSoundNames,
@@ -44,5 +45,10 @@ describe('sound effect schema', () => {
       mood: 'tense',
     });
     expect(getMusicSchema().battleIntense.mood).toBe('danger');
+  });
+
+  test('resolves music tracks through the Vite base path', () => {
+    expect(getMusicTrackUrl('title')).toBe('/dragon-forge/assets/music/theme.mp3');
+    expect(getMusicTrackUrl('wandering')).toBe('/dragon-forge/assets/music/music_select.mp3');
   });
 });

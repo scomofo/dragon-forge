@@ -15,6 +15,7 @@ import './styles/singularity.css';
 import './styles/shop.css';
 import './styles/stats.css';
 import './styles/settings.css';
+import './styles/forge.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

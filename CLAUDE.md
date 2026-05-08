@@ -20,6 +20,7 @@ Run from the repo root:
 - `npm run build` — production build to `dist/`
 - `npm run preview` — preview built bundle
 - `npm test` — run vitest once
+- `npm run playtest:smoke` — Playwright smoke pass across desktop/tablet/mobile, writing screenshots to `.playtest-artifacts/`
 - `npm run test:watch` — vitest watch mode
 - Single test file: `npx vitest run src/battleEngine.test.js`
 - Single test by name: `npx vitest run -t "name pattern"`

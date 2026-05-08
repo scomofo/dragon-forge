@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
@@ -6,5 +6,12 @@ export default defineConfig({
   base: '/dragon-forge/',
   test: {
     environment: 'node',
+    exclude: [
+      ...configDefaults.exclude,
+      '.claude/**',
+      'dist/**',
+      'dragon-forge-reborn/**',
+      'dragon-forge-godot/**',
+    ],
   },
 });

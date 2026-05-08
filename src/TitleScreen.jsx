@@ -37,7 +37,6 @@ export default function TitleScreen({ onStart, save }) {
   }, []);
 
   const runBootSequence = useCallback(async () => {
-    playMusic('opening');
     const currentDialogue = getTerminalDialogue(getSingularityStage(save));
 
     for (const line of OPENING_BOOT_LINES) {
@@ -83,7 +82,16 @@ export default function TitleScreen({ onStart, save }) {
     setFelixVisible(true);
     scrollToBottom();
 
-    skippedRef.current = false;
+    if (skippedRef.current) {
+      setFelixLines([...currentDialogue]);
+      setTypingText('');
+      setPhase('ready');
+      setShowButton(true);
+      setShowCursor(false);
+      scrollToBottom();
+      return;
+    }
+
     for (const line of currentDialogue) {
       if (skippedRef.current) break;
       if (line === '') {

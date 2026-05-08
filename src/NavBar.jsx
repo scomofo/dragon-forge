@@ -1,6 +1,7 @@
 import { getStageForLevel } from './battleEngine';
 import { getSingularityStage, isSingularityUnlocked } from './singularityProgress';
 import { getTickerMessage } from './felixDialogue';
+import { getPlayerGuidance } from './playerGuidance';
 import SoundToggle from './SoundToggle';
 
 export default function NavBar({ activeScreen, onNavigate, save }) {
@@ -10,6 +11,7 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
 
   const stage = getSingularityStage(save);
   const ticker = getTickerMessage(stage);
+  const guidance = getPlayerGuidance(save);
 
   return (
     <div className="nav-bar">
@@ -80,6 +82,16 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
         </button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {guidance && (
+          <button
+            className={`guidance-chip ${activeScreen === guidance.target ? 'active' : ''}`}
+            onClick={() => onNavigate(guidance.target)}
+            title={guidance.title}
+          >
+            <span>NEXT</span>
+            <strong>{guidance.action}</strong>
+          </button>
+        )}
         <div className={`nav-ticker stage-${stage}`}>{ticker}</div>
         <div className="nav-scraps">◆ {save.dataScraps}</div>
         <SoundToggle />

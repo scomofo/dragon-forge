@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   getTypeEffectiveness, calculateDamage, calculateXpGain,
   calculateStatsForLevel, getStageForLevel, pickNpcMove, resolveTurn,
-  applyStatus, processStatusTick
+  applyStatus, processStatusTick, getTypeEffectivenessLabel
 } from './battleEngine';
-import { moves } from './gameData';
+import { moves, typeChart } from './gameData';
 
 describe('getTypeEffectiveness', () => {
   it('returns 2.0 for fire attacking ice', () => {
@@ -21,6 +21,26 @@ describe('getTypeEffectiveness', () => {
 
   it('returns 1.0 for unknown elements', () => {
     expect(getTypeEffectiveness('fire', 'neutral')).toBe(1.0);
+  });
+});
+
+describe('getTypeEffectivenessLabel', () => {
+  it('derives labels from the same type chart as combat damage', () => {
+    expect(getTypeEffectivenessLabel('venom', 'stone')).toBe('RESISTED');
+    expect(getTypeEffectivenessLabel('stone', 'fire')).toBe('ADVANTAGE');
+    expect(getTypeEffectivenessLabel('void', 'shadow')).toBe('NORMAL');
+  });
+
+  it('labels every non-neutral strong and resisted matchup from the type chart', () => {
+    for (const [attacker, defenders] of Object.entries(typeChart)) {
+      for (const [defender, multiplier] of Object.entries(defenders)) {
+        if (multiplier === 2.0) {
+          expect(getTypeEffectivenessLabel(attacker, defender)).toBe('ADVANTAGE');
+        } else if (multiplier === 0.5) {
+          expect(getTypeEffectivenessLabel(attacker, defender)).toBe('RESISTED');
+        }
+      }
+    }
   });
 });
 

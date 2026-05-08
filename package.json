@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "playtest:smoke": "node scripts/playtest-smoke.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -18,6 +19,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "playwright": "^1.59.1",
     "vite": "^6.0.0",
     "vitest": "^3.0.0"
   }

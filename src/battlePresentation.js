@@ -1,3 +1,5 @@
+import { STATUS_APPLY_CHANCE, STATUS_EFFECTS } from './gameData';
+
 const BASE_PROFILES = {
   defend: {
     kind: 'defend',
@@ -170,4 +172,25 @@ export function shouldAnimateBattleEvent(event) {
   if (event.attacker === 'status') return false;
   if (event.action === 'statusSkip') return false;
   return ['attack', 'defend', 'reflect'].includes(event.action);
+}
+
+export function getStatusMoveSummary(move) {
+  if (!move?.canApplyStatus) return null;
+  const effect = STATUS_EFFECTS[move.element];
+  if (!effect) return null;
+
+  const summaryByType = {
+    dot: 'Damage over time',
+    skip: 'Stops the next action',
+    maySkip: 'Chance to lose an action',
+    debuff: effect.name === 'Blind' ? 'Lowers accuracy' : 'Weakens defenses',
+    randomize: 'Scrambles the next action',
+  };
+
+  return {
+    label: `${effect.name.toUpperCase()} ${Math.round(STATUS_APPLY_CHANCE * 100)}%`,
+    title: effect.name,
+    duration: `${effect.duration} ${effect.duration === 1 ? 'turn' : 'turns'}`,
+    summary: summaryByType[effect.type] || 'Applies a status effect',
+  };
 }

@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { classifyBattleEvent, getBattlePresentationProfile, getBattleResultCallout, shouldAnimateBattleEvent } from './battlePresentation';
+import {
+  classifyBattleEvent,
+  getBattlePresentationProfile,
+  getBattleResultCallout,
+  getStatusMoveSummary,
+  shouldAnimateBattleEvent,
+} from './battlePresentation';
 
 describe('battle presentation profiles', () => {
   test('classifies a missed attack as a miss profile', () => {
@@ -57,5 +63,20 @@ describe('battle presentation profiles', () => {
     expect(shouldAnimateBattleEvent({ attacker: 'status', damage: 2, target: 'npc' })).toBe(false);
     expect(shouldAnimateBattleEvent({ attacker: 'npc', action: 'statusSkip', statusName: 'Freeze' })).toBe(false);
     expect(shouldAnimateBattleEvent({ attacker: 'player', action: 'attack', hit: true })).toBe(true);
+  });
+});
+
+describe('getStatusMoveSummary', () => {
+  test('summarizes status moves with chance, name, duration, and effect', () => {
+    expect(getStatusMoveSummary({ element: 'fire', canApplyStatus: true })).toEqual({
+      label: 'BURN 30%',
+      title: 'Burn',
+      duration: '2 turns',
+      summary: 'Damage over time',
+    });
+  });
+
+  test('returns null for moves without a status rider', () => {
+    expect(getStatusMoveSummary({ element: 'neutral', canApplyStatus: false })).toBeNull();
   });
 });

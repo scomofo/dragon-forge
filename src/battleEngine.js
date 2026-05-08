@@ -8,6 +8,13 @@ export function getTypeEffectiveness(attackerElement, defenderElement) {
   return typeChart[attackerElement][defenderElement] ?? 1.0;
 }
 
+export function getTypeEffectivenessLabel(attackerElement, defenderElement) {
+  const effectiveness = getTypeEffectiveness(attackerElement, defenderElement);
+  if (effectiveness > 1.0) return 'ADVANTAGE';
+  if (effectiveness < 1.0) return 'RESISTED';
+  return 'NORMAL';
+}
+
 export function calculateDamage(attacker, defender, move) {
   // Accuracy check
   const accuracyRoll = Math.random() * 100;
