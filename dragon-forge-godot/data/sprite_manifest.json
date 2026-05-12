@@ -1,0 +1,9 @@
+{
+  "fire_stage1":   "res://assets/sprites/fire_stage1.png",
+  "ice_stage1":    "res://assets/sprites/ice_stage1.png",
+  "storm_stage1":  "res://assets/sprites/storm_stage1.png",
+  "stone_stage1":  "res://assets/sprites/stone_stage1.png",
+  "venom_stage1":  "res://assets/sprites/venom_stage1.png",
+  "shadow_stage1": "res://assets/sprites/shadow_stage1.png",
+  "void_stage1":   "res://assets/sprites/void_stage1.png"
+}
