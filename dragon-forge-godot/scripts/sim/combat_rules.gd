@@ -13,7 +13,9 @@ static func resolve_attack(attacker: Dictionary, defender: Dictionary, move: Dic
 			"effectiveness": 1.0,
 		}
 
-	var dmg_result: Dictionary = BattleEngine.calculate_damage(attacker, defender, move)
+	var safe_move: Dictionary = move.duplicate()
+	safe_move["accuracy"] = 100
+	var dmg_result: Dictionary = BattleEngine.calculate_damage(attacker, defender, safe_move)
 	var damage: int = int(dmg_result.get("damage", 0))
 	var remaining_hp: int = maxi(0, int(defender.get("hp", 0)) - damage)
 	return {
