@@ -21,7 +21,9 @@
 - The Astraeus identifies her immediately on emergency wake sequence ("OPERATOR SIGNAL FOUND: SKYE")
 
 **Dialogue Samples:**
-- (No direct Skye lines; she speaks through action and the system's response to her signal)
+> _[System response to Skye's signal — the closest to her direct voice in source]_
+> `> OPERATOR SIGNAL FOUND: SKYE` (boot line, status: OK)
+> *"Find Felix Workshop, bond with the Root Dragon, and keep the rendered world from being classified as dead memory."* (first_objective, `opening_sequence_profile()`, archive — framed as Skye's mission statement)
 
 ---
 
@@ -139,7 +141,9 @@
 - Cloth is "memory under tension" (Glitch Weaver NPC awakened line echoes this theme)
 
 **Dialogue Samples:**
-- (No direct Weaver lines in source; she speaks through the Glitch Weaver NPC echo): "Harmony restored the weave. Cloth is memory under tension."
+> _[The Weaver has no direct lines in any source file. She speaks through her craft.]_
+> Mirror Admin (naming her for deletion): *"Restoration will delete unintentional data: Felix, The Weaver, Unit 01, and your dragon."* (`restoration_data.gd`)
+> _Note: This is the only textual reference to The Weaver by name in all source files. Her presence is expressed entirely through the WeaverData armor system._
 
 ---
 
@@ -543,13 +547,15 @@ Triggered by "choice_regret" during the restoration sequence (from `create_mirro
 
 | # | Text | Status | Delay (ms) |
 |---|------|--------|------------|
-| 1 | > ASTRAEUS EMERGENCY WAKE SEQUENCE | — | 600 |
+| 1 | > ASTRAEUS EMERGENCY WAKE SEQUENCE | null | 600 |
 | 2 | > OPERATOR SIGNAL FOUND: SKYE | OK | 800 |
 | 3 | > RENDERED WORLD LAYER: UNSTABLE | WARNING | 950 |
 | 4 | > ELEMENTAL GUARDIAN PROTOCOLS: DORMANT | WARNING | 950 |
 | 5 | > MIRROR ADMIN OVERRIDE: ACTIVE | FAIL | 900 |
 | 6 | > DRAGON FORGE SAFEHOUSE LINK: PARTIAL | OK | 800 |
 | 7 | > GREAT RESET COUNTDOWN: SIGNAL LOST | FAIL | 900 |
+
+_* Row 1 status is `null` in source (`loreCanon.js`) — this is the header boot line with no status display. All subsequent 6 lines carry OK/WARNING/FAIL codes._
 
 Note: Archive `lore_canon.gd` has 6 boot lines (omits "DRAGON FORGE SAFEHOUSE LINK: PARTIAL"). Vite 7-line version with status codes is canonical.
 
