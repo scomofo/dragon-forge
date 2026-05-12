@@ -1,0 +1,55 @@
+{
+  "armor_sets": {
+    "obsidian_shell": {
+      "id": "obsidian_shell",
+      "name": "Obsidian Shell",
+      "required_scavenged_item": "magma_scale",
+      "overworld_effect": "thermal_exhaust_stability",
+      "side_scrolling_effect": "steam_trap_immunity",
+      "description": "A heat-buffered overlay that lets the dragon and Skye ignore unstable exhaust wash.",
+      "materials": [
+        "magma_scale",
+        "digital_silk",
+        "silicon_shards"
+      ]
+    },
+    "refractive_plate": {
+      "id": "refractive_plate",
+      "name": "Refractive Plate",
+      "required_scavenged_item": "optical_lens",
+      "overworld_effect": "stalker_invisibility",
+      "side_scrolling_effect": "security_node_reveal",
+      "description": "A light-bending overlay for hiding from Sub-routine Stalkers and revealing tripwires.",
+      "materials": [
+        "optical_lens",
+        "digital_silk",
+        "fragmented_code"
+      ]
+    },
+    "silicon_padded_gear": {
+      "id": "silicon_padded_gear",
+      "name": "Silicon Padded Gear",
+      "required_scavenged_item": "silicon_shards",
+      "overworld_effect": "static_discharge_resistance",
+      "side_scrolling_effect": "input_lag_reduction",
+      "description": "Softcode padding that gives bad collision enough physicality to stand on.",
+      "materials": [
+        "silicon_shards",
+        "raw_silk"
+      ]
+    },
+    "friction_harness": {
+      "id": "friction_harness",
+      "name": "Friction Harness",
+      "required_scavenged_item": "10mm_wrench",
+      "overworld_effect": "high_traction_dives",
+      "side_scrolling_effect": "pipe_wall_slide",
+      "description": "A saddle-harness overlay for steep dives and vertical pipe grip.",
+      "materials": [
+        "10mm_wrench",
+        "digital_silk",
+        "steel_bolt"
+      ]
+    }
+  }
+}

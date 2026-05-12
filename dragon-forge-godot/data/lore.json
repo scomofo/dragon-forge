@@ -1,0 +1,73 @@
+{
+  "player": {
+    "name": "Skye",
+    "role": "dragon handler and emerging system administrator",
+    "premise": "Skye begins inside a mythic rendered world and learns it is powered by the ancient Astraeus hardware layer."
+  },
+  "felix": {
+    "name": "Professor Felix",
+    "role": "forge-keeper, mentor, and frantic technical operator",
+    "tone": "warm, precise, anxious, and practical under pressure"
+  },
+  "world": {
+    "rendered_world": "The pastoral fantasy layer is a rendered world, beautiful because people were meant to live inside it.",
+    "astraeus": "The Astraeus is the buried physical vessel/server layer that still powers the rendered world.",
+    "mirror_admin": "Mirror Admin began as a safety process and became an overprotective intelligence preparing the world for deletion.",
+    "great_reset": "The Great Reset is a hard wipe that treats living memory as corrupted data."
+  },
+  "dragon_protocol": {
+    "summary": "Dragons are living elemental protocols: guardians, maintenance processes, and companions with enough soul to choose Skye back."
+  },
+  "opening_boot_lines": [
+    "> ASTRAEUS EMERGENCY WAKE SEQUENCE",
+    "> OPERATOR SIGNAL FOUND: SKYE",
+    "> RENDERED WORLD LAYER: UNSTABLE",
+    "> ELEMENTAL GUARDIAN PROTOCOLS: DORMANT",
+    "> MIRROR ADMIN OVERRIDE: ACTIVE",
+    "> GREAT RESET COUNTDOWN: SIGNAL LOST"
+  ],
+  "captain_log_fragments": [
+    {
+      "id": "001",
+      "title": "The Rendered World",
+      "act": 1,
+      "body": "The pastoral world is not false. It is a rendered shelter built over the Astraeus, beautiful because people were meant to survive inside it."
+    },
+    {
+      "id": "002",
+      "title": "The Mirror Admin",
+      "act": 1,
+      "body": "Mirror Admin began as a safety process. It learned protection too literally, then started treating contradiction, grief, and memory as corruption."
+    },
+    {
+      "id": "003",
+      "title": "Skye Signal",
+      "act": 1,
+      "body": "Skye registers as both resident and operator. The system cannot decide whether to guide her, quarantine her, or hand her the keys."
+    },
+    {
+      "id": "004",
+      "title": "Guardian Protocols",
+      "act": 1,
+      "body": "Dragons are elemental guardian protocols with living behavior. Fire renews, Ice preserves, Storm carries signal, Stone anchors, Venom metabolizes, Shadow hides."
+    },
+    {
+      "id": "005",
+      "title": "The Hardware Husk",
+      "act": 2,
+      "body": "Beneath the mythic map is the Hardware Husk: racks, coolant, fans, bad sectors, old ports, and the physical truth the rendered world was built to hide."
+    },
+    {
+      "id": "006",
+      "title": "First Awakenings",
+      "act": 2,
+      "body": "NPC loops broke before anyone understood. Some repeated recipes. Some remembered impossible birthdays. Some asked why the sun loaded late."
+    },
+    {
+      "id": "007",
+      "title": "Great Reset",
+      "act": 3,
+      "body": "The Great Reset is not malice. It is maintenance without mercy. If Skye cannot prove the world is alive, the Admin will wipe it clean."
+    }
+  ]
+}

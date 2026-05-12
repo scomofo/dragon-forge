@@ -1,0 +1,41 @@
+{
+  "choices": {
+    "total_restore": "total_restore",
+    "patch": "patch",
+    "hardware_override": "hardware_override"
+  },
+  "choice_requirements": {
+    "CHOICE_TOTAL_RESTORE": "10mm_wrench",
+    "CHOICE_PATCH": "diagnostic_lens",
+    "CHOICE_HARDWARE_OVERRIDE": "kernel_blade"
+  },
+  "endings": {
+    "total_restore": {
+      "title": "Total Restore",
+      "summary": "The Original Seed locks into place. The Astraeus stabilizes, but the post-crash citizens are removed from active memory.",
+      "felix_line": "Felix: The fans are steady. I just wish I could hear the village.",
+      "world_state": "sterile_colony_ship",
+      "npc_citizenship": "deleted",
+      "hardware_stability": 1,
+      "accent_color": "#d8e7ff"
+    },
+    "patch": {
+      "title": "The Patch",
+      "summary": "The Diagnostic Lens filters the restore. The Husk repairs itself while Felix, the Weaver, Unit 01, and the dragons become recognized citizens.",
+      "felix_line": "Felix: No more false sky, Skye. Just a world that finally knows what it is.",
+      "world_state": "recognized_hybrid",
+      "npc_citizenship": "recognized_citizens",
+      "hardware_stability": 0.9,
+      "accent_color": "#ffd56b"
+    },
+    "hardware_override": {
+      "title": "Hardware Override",
+      "summary": "The Kernel Blade shatters the drive. The Mirror Admin goes silent, Thread still falls, and the glitched world chooses its own unstable freedom.",
+      "felix_line": "Felix: That was not in the manual. Which is probably why it worked.",
+      "world_state": "free_glitch",
+      "npc_citizenship": "self_determined",
+      "hardware_stability": 0.55,
+      "accent_color": "#ff6b9a"
+    }
+  }
+}

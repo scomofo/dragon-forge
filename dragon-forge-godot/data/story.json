@@ -1,0 +1,26 @@
+{
+  "bios_dialogue": {
+    "vault_first_rack": [
+      "B.I.O.S. ONLINE: Binary Integrated Overlord System.",
+      "USER PERMISSION DETECTED: Felix. Classification: not god, administrator.",
+      "MISSION 04: Establish Stable Connection. Protect Root Hardware from Scrap-Wraith maintenance drift."
+    ],
+    "cpu_heatsink": [
+      "THERMAL WARNING: CPU core sustaining myth-load.",
+      "Magma protocol compatible with Overclocked evolution. Cooling cycles required.",
+      "SOURCE CODE BUFFS LOCKED: recover Root Password and stabilize boot channel."
+    ]
+  },
+  "opening_sequence_profile": {
+    "id": "opening_sequence_seen",
+    "title": "ASTRAEUS EMERGENCY WAKE",
+    "subtitle": "Operator signal recovered: SKYE",
+    "stakes": "Mirror Admin override active. Great Reset countdown hidden behind corrupted telemetry.",
+    "first_objective": "Find Felix Workshop, bond with the Root Dragon, and keep the rendered world from being classified as dead memory.",
+    "presentation": "tense_boot_first_contact"
+  },
+  "artifact_messages": {
+    "root_password": "Root Password recovered from the technical manual margin. Permission Gates can now be bypassed.",
+    "overclocked_state": "Overclocked State discovered: Magma-class speed surges, but future Cooling Cycles must manage heat damage."
+  }
+}
