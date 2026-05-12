@@ -63,19 +63,30 @@ const SCREEN_MUSIC := {
 	"campaignMap":  "select",
 }
 
+@onready var fade_overlay: ColorRect = $FadeOverlay
+
 var save: Dictionary = {}
 var battle_config: Dictionary = {}
 var _current_screen: Control = null
 var _current_screen_id: String = ""
+var _transitioning: bool = false
 
 func _ready() -> void:
 	save = _load_save()
 	_switch_screen("title")
 
 func _switch_screen(target: String, payload: Variant = null) -> void:
+	if _transitioning:
+		return
 	if not SCREENS.has(target):
 		push_error("Unknown screen target: %s" % target)
 		return
+
+	_transitioning = true
+
+	var tween_out := create_tween()
+	tween_out.tween_property(fade_overlay, "modulate:a", 1.0, 0.2)
+	await tween_out.finished
 
 	if _current_screen != null:
 		_current_screen.queue_free()
@@ -91,6 +102,7 @@ func _switch_screen(target: String, payload: Variant = null) -> void:
 	var screen: Control = packed.instantiate()
 	screen.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(screen)
+	move_child(fade_overlay, get_child_count() - 1)
 	_current_screen = screen
 	_current_screen_id = target
 
@@ -102,6 +114,12 @@ func _switch_screen(target: String, payload: Variant = null) -> void:
 			screen.setup(save, battle_config)
 		else:
 			screen.setup(save)
+
+	var tween_in := create_tween()
+	tween_in.tween_property(fade_overlay, "modulate:a", 0.0, 0.2)
+	await tween_in.finished
+
+	_transitioning = false
 
 func _on_screen_navigate(target: String, payload: Variant = null) -> void:
 	save = _load_save()

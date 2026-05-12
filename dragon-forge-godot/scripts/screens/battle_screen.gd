@@ -21,6 +21,15 @@ const ELEMENT_COLORS := {
 	"lunar":  Color("#e8d5ff"),
 }
 
+const PARTICLE_CONFIG := {
+	"fire":   { "amount": 40, "lifetime": 0.6, "speed_scale": 1.4, "spread": 45.0 },
+	"ice":    { "amount": 30, "lifetime": 0.8, "speed_scale": 0.8, "spread": 30.0 },
+	"storm":  { "amount": 50, "lifetime": 0.4, "speed_scale": 1.8, "spread": 60.0 },
+	"stone":  { "amount": 25, "lifetime": 1.0, "speed_scale": 0.6, "spread": 20.0 },
+	"venom":  { "amount": 35, "lifetime": 0.7, "speed_scale": 1.0, "spread": 40.0 },
+	"shadow": { "amount": 45, "lifetime": 0.9, "speed_scale": 1.2, "spread": 50.0 },
+}
+
 const CORRUPTION_TINT := Color("#2a0020")
 
 @onready var camera: Camera2D = $Camera2D
@@ -186,6 +195,12 @@ func _on_player_move(move: Dictionary) -> void:
 		_spawn_damage_number(npc_sprite.global_position, dmg, effective, resisted)
 		_add_trauma(0.18 if effective else 0.1)
 		_trigger_hit_particles(npc_sprite.global_position, _npc_element)
+		if _npc_hp <= 0:
+			_rumble(0.6, 1.0, 0.5)
+		elif effective:
+			_rumble(0.4, 0.8, 0.25)
+		else:
+			_rumble(0.2, 0.3, 0.1)
 		if effective:
 			_append_log("[color=#ffcc00]%s hits for %d! Super effective![/color]" % [str(move.get("label", "?")), dmg])
 		elif resisted:
@@ -261,9 +276,19 @@ func _trigger_hit_particles(world_pos: Vector2, element: String) -> void:
 		return
 	hit_particles.global_position = world_pos
 	var color: Color = ELEMENT_COLORS.get(element, Color.WHITE)
+	var cfg: Dictionary = PARTICLE_CONFIG.get(element, PARTICLE_CONFIG.get("fire", {}))
+	if not cfg.is_empty():
+		hit_particles.amount = int(cfg.get("amount", 24))
+		hit_particles.lifetime = float(cfg.get("lifetime", 0.6))
+		hit_particles.speed_scale = float(cfg.get("speed_scale", 1.0))
 	if hit_particles.process_material is ParticleProcessMaterial:
 		hit_particles.process_material.color = color
+		hit_particles.process_material.spread = float(cfg.get("spread", 45.0))
 	hit_particles.restart()
+
+func _rumble(weak: float, strong: float, duration: float) -> void:
+	for device in Input.get_connected_joypads():
+		Input.start_joy_vibration(device, weak, strong, duration)
 
 func _spawn_damage_number(world_pos: Vector2, value: int, effective: bool, resisted: bool) -> void:
 	var inst: Node2D = DamageNumberScene.instantiate()

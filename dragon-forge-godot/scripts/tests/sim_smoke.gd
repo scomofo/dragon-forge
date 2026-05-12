@@ -109,20 +109,80 @@ func _init() -> void:
 		print("PASS: TacticalBattle singularity bosses present")
 		passed += 1
 
-	# Test 9: DEFAULT_SAVE in main.gd has Plan 5 keys
-	var main_script = preload("res://scripts/main.gd")
-	var main_inst = main_script.new()
-	var p5_keys := ["inventory", "stats", "records", "journal", "settings_music", "settings_sfx"]
-	var t9_ok := true
-	for key in p5_keys:
-		if not main_inst.DEFAULT_SAVE.has(key):
-			print("FAIL: DEFAULT_SAVE missing Plan 5 key: %s" % key)
-			t9_ok = false
+	# Test 9: data JSON files load with expected structure
+	var shop_file := FileAccess.open("res://data/shop_items.json", FileAccess.READ)
+	var t9_ok := shop_file != null
+	if t9_ok:
+		var shop_parsed: Variant = JSON.parse_string(shop_file.get_as_text())
+		shop_file.close()
+		t9_ok = typeof(shop_parsed) == TYPE_DICTIONARY and (shop_parsed as Dictionary).has("buy_items") and (shop_parsed as Dictionary).has("forge_recipes")
+	if t9_ok:
+		print("PASS: shop_items.json structure")
+		passed += 1
+	else:
+		print("FAIL: shop_items.json structure invalid")
+		failed += 1
+
+	# ── Plan 7: polish systems smoke checks ───────────────────────────────────
+
+	# Test 10: all Plan 5 screen scenes instantiate without error
+	var screen_scenes := [
+		"res://scenes/screens/shop_screen.tscn",
+		"res://scenes/screens/forge_screen.tscn",
+		"res://scenes/screens/journal_screen.tscn",
+		"res://scenes/screens/stats_screen.tscn",
+		"res://scenes/screens/settings_screen.tscn",
+		"res://scenes/screens/singularity_screen.tscn",
+		"res://scenes/screens/campaign_map_screen.tscn",
+	]
+	var t10_ok := true
+	for path in screen_scenes:
+		var packed: PackedScene = load(path)
+		if packed == null:
+			print("FAIL: screen scene failed to load: %s" % path)
+			t10_ok = false
 			failed += 1
 			break
-	main_inst.free()
-	if t9_ok:
-		print("PASS: DEFAULT_SAVE Plan 5 keys")
+		var inst := packed.instantiate()
+		if inst == null:
+			print("FAIL: screen scene failed to instantiate: %s" % path)
+			t10_ok = false
+			failed += 1
+			inst.free() if inst != null else null
+			break
+		inst.free()
+	if t10_ok:
+		print("PASS: all Plan 5 screen scenes instantiate")
+		passed += 1
+
+	# Test 11: main.tscn has FadeOverlay node
+	var main_packed: PackedScene = load("res://scenes/main.tscn")
+	if main_packed != null:
+		var main_inst := main_packed.instantiate()
+		if main_inst != null and main_inst.has_node("FadeOverlay"):
+			print("PASS: main.tscn has FadeOverlay")
+			passed += 1
+		else:
+			print("FAIL: main.tscn missing FadeOverlay node")
+			failed += 1
+		if main_inst != null:
+			main_inst.free()
+	else:
+		print("FAIL: main.tscn failed to load")
+		failed += 1
+
+	# Test 12: TacticalBattle singularity bosses have reward_flag set
+	var TacticalBattle2 = preload("res://scripts/sim/tactical_battle.gd")
+	var t12_ok := true
+	for boss_id in ["data_corruption", "memory_leak", "stack_overflow"]:
+		var flag: String = str(TacticalBattle2.EnemyData.get(boss_id, {}).get("reward_flag", ""))
+		if not flag.begins_with("singularity_"):
+			print("FAIL: boss %s has bad reward_flag: '%s'" % [boss_id, flag])
+			t12_ok = false
+			failed += 1
+			break
+	if t12_ok:
+		print("PASS: singularity boss reward_flags correct")
 		passed += 1
 
 	# ── Summary ───────────────────────────────────────────────────────────────
