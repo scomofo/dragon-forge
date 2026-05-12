@@ -64,10 +64,5 @@ static func calculate_stats(dragon_def: Dictionary, level: int) -> Dictionary:
 	}
 
 static func get_stage_for_level(level: int) -> int:
-	if level >= 50:
-		return 4
-	if level >= 25:
-		return 3
-	if level >= 10:
-		return 2
-	return 1
+	const BattleEngine = preload("res://scripts/sim/battle_engine.gd")
+	return BattleEngine.get_stage_for_level(level)

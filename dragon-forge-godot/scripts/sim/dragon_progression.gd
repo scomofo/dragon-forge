@@ -75,6 +75,8 @@ static func award_dragon_xp(save: Dictionary, xp_amount: int) -> Dictionary:
 		else:
 			break
 
+	if current_level >= 100:
+		current_xp = 0
 	xp_map[dragon_id] = current_xp
 	level_map[dragon_id] = current_level
 	result["dragon_xp"] = xp_map
