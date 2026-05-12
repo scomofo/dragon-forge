@@ -92,7 +92,8 @@
       "Bash(git mv *)",
       "PowerShell(robocopy \"C:\\\\Users\\\\Scott Morley\\\\Dev\\\\df\\\\assets\" \"C:\\\\Users\\\\Scott Morley\\\\Dev\\\\df\\\\dragon-forge-godot\\\\assets\" /MIR /NJH /NJS /NFL /NDL; $exit = $LASTEXITCODE; if \\($exit -le 7\\) { Write-Host \"robocopy OK \\(exit $exit\\)\" } else { Write-Host \"robocopy FAILED \\(exit $exit\\)\" })",
       "Bash(Test-Path C:\\\\Users\\\\Scott Morley\\\\Dev\\\\df\\\\dragon-forge-godot-archive\\\\addons\\\\gut *)",
-      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Scott Morley\\\\Dev\\\\df\\\\dragon-forge-godot-archive\" -Recurse -Directory | Where-Object { $_.Name -eq \"gut\" } | Select-Object FullName)"
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Scott Morley\\\\Dev\\\\df\\\\dragon-forge-godot-archive\" -Recurse -Directory | Where-Object { $_.Name -eq \"gut\" } | Select-Object FullName)",
+      "PowerShell(cd \"C:\\\\Users\\\\Scott Morley\\\\Dev\\\\df\"; git status --short 2>&1 | Where-Object { $_ -notmatch \"^\\\\?\\\\? .gut_tmp\" } | Measure-Object | Select-Object Count; git status --short 2>&1 | Where-Object { $_ -match \"\\\\.godot\" } | Measure-Object | Select-Object Count)"
     ]
   },
   "enableAllProjectMcpServers": true,
