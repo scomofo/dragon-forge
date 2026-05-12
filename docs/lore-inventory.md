@@ -151,7 +151,7 @@
 
 **Rendered World**
 Definition: The pastoral fantasy surface layer of Dragon Forge's setting.
-Extended notes: Beautiful because it was designed to be lived in (Vite wording) / people were meant to live inside it (Archive wording). Not false — a genuine shelter built over the Astraeus. Its pastoral character is intentional design, not deception. It is currently fraying: sky tears, wireframe wheat fields, floating geometry. The Mirror Admin is trying to "preserve" it by erasing it.
+Extended notes: "The pastoral fantasy layer is a rendered world, beautiful because people were meant to live inside it." *(Archive — canonical. Vite alt: "designed to be lived in.")* Not false — a genuine shelter built over the Astraeus. Its pastoral character is intentional design, not deception. It is currently fraying: sky tears, wireframe wheat fields, floating geometry. The Mirror Admin is trying to "preserve" it by erasing it.
 Visual aesthetic: Pastoral fantasy with progressive hardware intrusions — green directory forests, checksum peak mountains, overgrown buffer jungles, render tears revealing server void beyond.
 
 **Astraeus**
@@ -178,6 +178,12 @@ Visual aesthetic: White binary glyph rain with scanline bands; streak speed scal
 Definition: The apex of the Astraeus server stack where the restoration choice is made.
 Extended notes: Located at map position (26, 2). Above Legacy Peak. The sky is raw system logs; a gold-plated drive waits for the Original Seed Backup. The Great Reset is no longer a warning here — it is a pending system choice. Skye must choose whether to restore, patch, or override the world the Astraeus still remembers.
 Visual aesthetic: Raw green system logs as sky, gold-plated hardware, scrolling system event feeds.
+
+**Kernel Core**
+Definition: Final overworld zone. The innermost layer of the Astraeus hardware. Source: `world_data.gd` LANDMARKS. No extended lore definition found in archive source files; name only.
+
+**Root Directory**
+Definition: Terminal overworld zone beyond the Kernel Core. Source: `world_data.gd` LANDMARKS. No extended lore definition found in archive source files; name only.
 
 **Mainframe Spine (3 tiers)**
 Definition: A vertical server rack that serves as the game's tower-climb dungeon sequence.
@@ -213,7 +219,7 @@ Full list from `world_data.gd` LANDMARKS keys (map coordinates → id → label)
 | overflow_pipe | Overflow Pipe | hardware |
 | vault_first_rack | Vault of the First Rack | hardware |
 | scrap_pit_arena | Scrap Pit Arena | arena |
-| mint_menagerie | Archive Paddock | archive |
+| mint_menagerie | Archive Paddock *(ID: `mint_menagerie` — sourced from `world_data.gd` LANDMARKS. The ID "mint" refers to a dragon egg mint/paddock facility. No further lore text in source files.)* | archive |
 | great_salt_flats | Great Salt Flats | salt |
 | manual_override | Manual Override | hardware |
 | cpu_heatsink | CPU Heat Sink | hardware |
@@ -316,6 +322,11 @@ From `world_data.gd` LANDMARKS artifact fields:
 - floppy_disk_backup — dropped by Root Sentinel at Legacy Peak; key to restoration
 - floppy_disk_backup_drive — artifact at Mainframe Crown (the drive to insert the backup)
 
+**Restoration Key Items** (from `restoration_data.gd` `CHOICE_REQUIREMENTS` — distinct from Analog Relics above):
+- `10mm_wrench` — required for Ending A (Total Restore); also a Weaver Friction Harness armor material (`weaver_data.gd`)
+- `diagnostic_lens` — required for Ending B (The Patch); also a Weaver Refractive Plate armor material (`weaver_data.gd`)
+- `kernel_blade` — required for Ending C (Hardware Override); unique to the restoration sequence, not found elsewhere in source files
+
 ### Analog Relic Names (Vite wins — from `forgeData.js` RELICS)
 
 | ID | Name | Source | Effect | Slot Cost | Mythic |
@@ -398,6 +409,8 @@ From `world_data.gd` LANDMARKS artifact fields:
 ## 6. Endings
 
 > All ending data is canonical from Archive `restoration_data.gd`. Three choices are available at the Mainframe Crown. Each requires the matching Analog Relic.
+
+*Note: The three ending relics (`10mm_wrench`, `diagnostic_lens`, `kernel_blade`) are defined in `restoration_data.gd` `CHOICE_REQUIREMENTS`. These are distinct from the seven gameplay Analog Relics in §3 (sourced from `forgeData.js`). The `10mm_wrench` is also a Weaver armor material; `diagnostic_lens` is an armor material; `kernel_blade` is unique to the restoration sequence.*
 
 ### Ending A: Total Restore
 
