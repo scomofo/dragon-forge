@@ -1,0 +1,92 @@
+[gd_scene load_steps=3 format=3 uid="uid://hatchery_screen_1"]
+
+[ext_resource type="Script" path="res://scripts/screens/hatchery_screen.gd" id="1_hs"]
+[ext_resource type="PackedScene" path="res://scenes/components/nav_bar.tscn" id="2_nb"]
+
+[node name="HatcheryScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_hs")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.051, 0.059, 0.11, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+theme_override_constants/separation = 8
+
+[node name="HeaderLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "HATCHERY"
+theme_override_font_sizes/font_size = 28
+
+[node name="ScrapsLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "DATA SCRAPS: 0"
+
+[node name="DragonGrid" type="GridContainer" parent="VBoxContainer"]
+layout_mode = 2
+columns = 4
+size_flags_vertical = 3
+
+[node name="ButtonRow" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="PullButton" type="Button" parent="VBoxContainer/ButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "PULL (50 SCRAPS)"
+
+[node name="SingularityButton" type="Button" parent="VBoxContainer/ButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SINGULARITY"
+visible = false
+
+[node name="NavBar" parent="VBoxContainer" instance=ExtResource("2_nb")]
+layout_mode = 2
+
+[node name="EggOverlay" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false
+
+[node name="OverlayBg" type="ColorRect" parent="EggOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.85)
+
+[node name="OverlayVBox" type="VBoxContainer" parent="EggOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = -40.0
+offset_right = 120.0
+offset_bottom = 40.0
+
+[node name="EggLabel" type="Label" parent="EggOverlay/OverlayVBox"]
+layout_mode = 2
+text = "HATCHING..."
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
