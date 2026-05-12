@@ -1,0 +1,140 @@
+[gd_scene load_steps=3 format=3 uid="uid://fusion_screen_1"]
+
+[ext_resource type="Script" path="res://scripts/screens/fusion_screen.gd" id="1_fs"]
+[ext_resource type="PackedScene" path="res://scenes/components/nav_bar.tscn" id="2_nb"]
+
+[node name="FusionScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_fs")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.051, 0.059, 0.11, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+theme_override_constants/separation = 8
+
+[node name="HeaderLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "FUSION LAB"
+theme_override_font_sizes/font_size = 28
+
+[node name="ScrapsLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "DATA SCRAPS: 0"
+
+[node name="PickRow" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="PickA" type="VBoxContainer" parent="VBoxContainer/PickRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LabelA" type="Label" parent="VBoxContainer/PickRow/PickA"]
+layout_mode = 2
+text = "DRAGON A"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/PickRow/PickA"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ListA" type="VBoxContainer" parent="VBoxContainer/PickRow/PickA/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PickB" type="VBoxContainer" parent="VBoxContainer/PickRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LabelB" type="Label" parent="VBoxContainer/PickRow/PickB"]
+layout_mode = 2
+text = "DRAGON B"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/PickRow/PickB"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ListB" type="VBoxContainer" parent="VBoxContainer/PickRow/PickB/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Preview" type="VBoxContainer" parent="VBoxContainer/PickRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PreviewHeader" type="Label" parent="VBoxContainer/PickRow/Preview"]
+layout_mode = 2
+text = "PREVIEW"
+
+[node name="PreviewElement" type="Label" parent="VBoxContainer/PickRow/Preview"]
+layout_mode = 2
+text = "Element: —"
+autowrap_mode = 3
+
+[node name="PreviewStability" type="Label" parent="VBoxContainer/PickRow/Preview"]
+layout_mode = 2
+text = "Stability: —"
+autowrap_mode = 3
+
+[node name="PreviewStats" type="Label" parent="VBoxContainer/PickRow/Preview"]
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="FuseButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "FUSE (100 SCRAPS)"
+visible = false
+
+[node name="NavBar" parent="VBoxContainer" instance=ExtResource("2_nb")]
+layout_mode = 2
+
+[node name="FusionOverlay" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false
+
+[node name="OverlayBg" type="ColorRect" parent="FusionOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.9)
+
+[node name="OverlayVBox" type="VBoxContainer" parent="FusionOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -140.0
+offset_top = -50.0
+offset_right = 140.0
+offset_bottom = 50.0
+
+[node name="FusionLabel" type="Label" parent="FusionOverlay/OverlayVBox"]
+layout_mode = 2
+text = "FUSING..."
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 22
+autowrap_mode = 3
