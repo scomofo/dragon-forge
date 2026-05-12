@@ -81,7 +81,18 @@
       "Bash(P=\"Dev/df/public/assets/npc\")",
       "Bash(cp \"$DL/2026_03_29_04_01_58_454_831810.jpeg\" \"$D/logic_bomb_sprites.jpeg\")",
       "Bash(cp \"$DL/2026_03_29_04_03_32_140_981244.jpeg\" \"$D/logic_bomb_attack.jpeg\")",
-      "Bash(cp \"$DL/2026_03_29_04_06_31_281_288635.jpeg\" \"$D/phishing_siren_sprites.jpeg\")"
+      "Bash(cp \"$DL/2026_03_29_04_06_31_281_288635.jpeg\" \"$D/phishing_siren_sprites.jpeg\")",
+      "Bash(git -C \"C:/Users/Scott Morley/Dev/df\" add docs/superpowers/plans/)",
+      "Bash(git -C 'C:/Users/Scott Morley/Dev/df' commit -m ' *)",
+      "Bash(git -C \"C:/Users/Scott Morley/Dev/df\" log --oneline -5)",
+      "Bash(git -C \"C:/Users/Scott Morley/Dev/df\" add docs/superpowers/plans/2026-05-01-plan1-lore-audit.md docs/superpowers/plans/2026-05-01-plan2-foundation.md docs/superpowers/plans/2026-05-01-plan3-engines.md docs/superpowers/plans/2026-05-01-plan4-slice-screens.md docs/superpowers/plans/2026-05-01-plan5-supporting-screens.md docs/superpowers/plans/2026-05-01-plan6-asset-generation.md docs/superpowers/plans/2026-05-01-plan7-polish.md)",
+      "Bash(git -C \"C:/Users/Scott Morley/Dev/df\" status)",
+      "Bash(git -C \"C:/Users/Scott Morley/Dev/df\" status --short)",
+      "Bash(git -C \"C:/Users/Scott Morley/Dev/df\" ls-files --others --exclude-standard docs/superpowers/plans/)",
+      "Bash(git mv *)",
+      "PowerShell(robocopy \"C:\\\\Users\\\\Scott Morley\\\\Dev\\\\df\\\\assets\" \"C:\\\\Users\\\\Scott Morley\\\\Dev\\\\df\\\\dragon-forge-godot\\\\assets\" /MIR /NJH /NJS /NFL /NDL; $exit = $LASTEXITCODE; if \\($exit -le 7\\) { Write-Host \"robocopy OK \\(exit $exit\\)\" } else { Write-Host \"robocopy FAILED \\(exit $exit\\)\" })",
+      "Bash(Test-Path C:\\\\Users\\\\Scott Morley\\\\Dev\\\\df\\\\dragon-forge-godot-archive\\\\addons\\\\gut *)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Scott Morley\\\\Dev\\\\df\\\\dragon-forge-godot-archive\" -Recurse -Directory | Where-Object { $_.Name -eq \"gut\" } | Select-Object FullName)"
     ]
   },
   "enableAllProjectMcpServers": true,

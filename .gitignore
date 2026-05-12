@@ -3,3 +3,7 @@ node_modules/
 dist/
 .claude/worktrees/
 .playtest-artifacts/
+# Godot generated cache (rebuild on first open)
+dragon-forge-godot/.godot/
+# Temporary GUT clone used during setup
+.gut_tmp/
