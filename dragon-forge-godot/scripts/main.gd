@@ -25,6 +25,12 @@ const DEFAULT_SAVE := {
 	"bestiary_seen": {},
 	"bestiary_defeated": {},
 	"singularity_defeated": [],
+	"inventory": {},
+	"stats": {},
+	"records": {},
+	"journal": { "claimedMilestones": [] },
+	"settings_music": true,
+	"settings_sfx": true,
 }
 
 const SCREENS := {
@@ -33,6 +39,13 @@ const SCREENS := {
 	"battleSelect": "res://scenes/screens/battle_select_screen.tscn",
 	"battle":       "res://scenes/screens/battle_screen.tscn",
 	"fusion":       "res://scenes/screens/fusion_screen.tscn",
+	"shop":         "res://scenes/screens/shop_screen.tscn",
+	"forge":        "res://scenes/screens/forge_screen.tscn",
+	"journal":      "res://scenes/screens/journal_screen.tscn",
+	"stats":        "res://scenes/screens/stats_screen.tscn",
+	"settings":     "res://scenes/screens/settings_screen.tscn",
+	"singularity":  "res://scenes/screens/singularity_screen.tscn",
+	"campaignMap":  "res://scenes/screens/campaign_map_screen.tscn",
 }
 
 const SCREEN_MUSIC := {
@@ -41,6 +54,13 @@ const SCREEN_MUSIC := {
 	"battleSelect": "select",
 	"battle":       "battle_tense",
 	"fusion":       "hatchery",
+	"shop":         "hatchery",
+	"forge":        "hatchery",
+	"journal":      "hatchery",
+	"stats":        "hatchery",
+	"settings":     "hatchery",
+	"singularity":  "battle_tense",
+	"campaignMap":  "select",
 }
 
 var save: Dictionary = {}

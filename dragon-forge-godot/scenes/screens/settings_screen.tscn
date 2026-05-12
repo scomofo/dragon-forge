@@ -1,0 +1,96 @@
+[gd_scene load_steps=3 format=3 uid="uid://settings_screen_1"]
+
+[ext_resource type="Script" path="res://scripts/screens/settings_screen.gd" id="1_ss"]
+[ext_resource type="PackedScene" path="res://scenes/components/nav_bar.tscn" id="2_nb"]
+
+[node name="SettingsScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_ss")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.051, 0.059, 0.11, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+theme_override_constants/separation = 12
+
+[node name="HeaderLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "SETTINGS"
+theme_override_font_sizes/font_size = 28
+
+[node name="SettingsBox" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="MusicRow" type="HBoxContainer" parent="VBoxContainer/SettingsBox"]
+layout_mode = 2
+
+[node name="MusicLabel" type="Label" parent="VBoxContainer/SettingsBox/MusicRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Music"
+theme_override_font_sizes/font_size = 16
+
+[node name="MusicToggle" type="CheckButton" parent="VBoxContainer/SettingsBox/MusicRow"]
+layout_mode = 2
+button_pressed = true
+text = ""
+
+[node name="SfxRow" type="HBoxContainer" parent="VBoxContainer/SettingsBox"]
+layout_mode = 2
+
+[node name="SfxLabel" type="Label" parent="VBoxContainer/SettingsBox/SfxRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sound Effects"
+theme_override_font_sizes/font_size = 16
+
+[node name="SfxToggle" type="CheckButton" parent="VBoxContainer/SettingsBox/SfxRow"]
+layout_mode = 2
+button_pressed = true
+text = ""
+
+[node name="WipeButton" type="Button" parent="VBoxContainer/SettingsBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "WIPE SAVE DATA"
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+
+[node name="ConfirmRow" type="HBoxContainer" parent="VBoxContainer/SettingsBox"]
+layout_mode = 2
+visible = false
+theme_override_constants/separation = 8
+
+[node name="ConfirmLabel" type="Label" parent="VBoxContainer/SettingsBox/ConfirmRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Wipe all save data? This cannot be undone."
+autowrap_mode = 3
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+
+[node name="ConfirmYes" type="Button" parent="VBoxContainer/SettingsBox/ConfirmRow"]
+layout_mode = 2
+text = "YES"
+
+[node name="ConfirmNo" type="Button" parent="VBoxContainer/SettingsBox/ConfirmRow"]
+layout_mode = 2
+text = "NO"
+
+[node name="NavBar" parent="VBoxContainer" instance=ExtResource("2_nb")]
+layout_mode = 2

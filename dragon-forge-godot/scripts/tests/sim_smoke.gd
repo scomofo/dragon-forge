@@ -59,6 +59,72 @@ func _init() -> void:
 		print("FAIL: hatchery state init — owned_dragons is empty")
 		failed += 1
 
+	# ── Plan 5: supporting systems smoke checks ───────────────────────────────
+
+	# Test 5: SaveHelper count_battles_won returns int for empty save
+	var empty_save: Dictionary = {}
+	var SaveHelper = preload("res://scripts/sim/save_helper.gd")
+	var battles_won: int = SaveHelper.count_battles_won(empty_save)
+	if typeof(battles_won) == TYPE_INT and battles_won == 0:
+		print("PASS: SaveHelper.count_battles_won empty")
+		passed += 1
+	else:
+		print("FAIL: SaveHelper.count_battles_won — got: %s" % str(battles_won))
+		failed += 1
+
+	# Test 6: SaveHelper milestone claim/check round-trip
+	var ms_save: Dictionary = { "data_scraps": 100 }
+	SaveHelper.claim_milestone(ms_save, "test_ms")
+	if SaveHelper.is_milestone_claimed(ms_save, "test_ms") and not SaveHelper.is_milestone_claimed(ms_save, "other_ms"):
+		print("PASS: SaveHelper milestone claim round-trip")
+		passed += 1
+	else:
+		print("FAIL: SaveHelper milestone claim round-trip")
+		failed += 1
+
+	# Test 7: SaveHelper inventory add/get/remove
+	var inv_save: Dictionary = {}
+	SaveHelper.add_inventory_item(inv_save, "xp_boost_charges", 3)
+	var count_before: int = SaveHelper.get_inventory_count(inv_save, "xp_boost_charges")
+	SaveHelper.remove_inventory_item(inv_save, "xp_boost_charges", 1)
+	var count_after: int = SaveHelper.get_inventory_count(inv_save, "xp_boost_charges")
+	if count_before == 3 and count_after == 2:
+		print("PASS: SaveHelper inventory add/get/remove")
+		passed += 1
+	else:
+		print("FAIL: SaveHelper inventory — before=%d after=%d" % [count_before, count_after])
+		failed += 1
+
+	# Test 8: TacticalBattle includes singularity bosses
+	var TacticalBattle = preload("res://scripts/sim/tactical_battle.gd")
+	var sb_ids := ["data_corruption", "memory_leak", "stack_overflow", "the_singularity"]
+	var t8_ok := true
+	for sb_id in sb_ids:
+		if not TacticalBattle.EnemyData.has(sb_id):
+			print("FAIL: TacticalBattle missing singularity boss: %s" % sb_id)
+			t8_ok = false
+			failed += 1
+			break
+	if t8_ok:
+		print("PASS: TacticalBattle singularity bosses present")
+		passed += 1
+
+	# Test 9: DEFAULT_SAVE in main.gd has Plan 5 keys
+	var main_script = preload("res://scripts/main.gd")
+	var main_inst = main_script.new()
+	var p5_keys := ["inventory", "stats", "records", "journal", "settings_music", "settings_sfx"]
+	var t9_ok := true
+	for key in p5_keys:
+		if not main_inst.DEFAULT_SAVE.has(key):
+			print("FAIL: DEFAULT_SAVE missing Plan 5 key: %s" % key)
+			t9_ok = false
+			failed += 1
+			break
+	main_inst.free()
+	if t9_ok:
+		print("PASS: DEFAULT_SAVE Plan 5 keys")
+		passed += 1
+
 	# ── Summary ───────────────────────────────────────────────────────────────
 	print("")
 	print("Smoke test complete: %d passed, %d failed" % [passed, failed])

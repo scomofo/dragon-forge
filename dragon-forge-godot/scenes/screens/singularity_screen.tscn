@@ -1,0 +1,92 @@
+[gd_scene load_steps=3 format=3 uid="uid://singularity_screen_1"]
+
+[ext_resource type="Script" path="res://scripts/screens/singularity_screen.gd" id="1_sg"]
+[ext_resource type="PackedScene" path="res://scenes/components/nav_bar.tscn" id="2_nb"]
+
+[node name="SingularityScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_sg")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.04, 0.02, 0.08, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+theme_override_constants/separation = 8
+
+[node name="HeaderLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "THE SINGULARITY"
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.85, 0.5, 1.0, 1)
+
+[node name="ContentRow" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="DragonPick" type="VBoxContainer" parent="VBoxContainer/ContentRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 0)
+
+[node name="DragonLabel" type="Label" parent="VBoxContainer/ContentRow/DragonPick"]
+layout_mode = 2
+text = "YOUR DRAGON"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.75, 0.8, 1.0, 1)
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/ContentRow/DragonPick"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DragonList" type="VBoxContainer" parent="VBoxContainer/ContentRow/DragonPick/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="BossList" type="VBoxContainer" parent="VBoxContainer/ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BossLabel" type="Label" parent="VBoxContainer/ContentRow/BossList"]
+layout_mode = 2
+text = "SINGULARITY BOSSES"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.75, 0.8, 1.0, 1)
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/ContentRow/BossList"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Bosses" type="VBoxContainer" parent="VBoxContainer/ContentRow/BossList/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="StatusLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = ""
+
+[node name="ChallengeButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "CHALLENGE"
+visible = false
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+
+[node name="NavBar" parent="VBoxContainer" instance=ExtResource("2_nb")]
+layout_mode = 2

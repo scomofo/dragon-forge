@@ -1,0 +1,32 @@
+{
+  "bosses": [
+    {
+      "id": "data_corruption", "name": "Data Corruption", "element": "fire", "level": 15,
+      "stats": { "hp": 140, "atk": 30, "def": 18, "spd": 16 },
+      "felix_quote": "It's eating through our data layers. Fire with fire — you'll need a dragon that can take the heat.",
+      "unlock_requires": null
+    },
+    {
+      "id": "memory_leak", "name": "Memory Leak", "element": "ice", "level": 20,
+      "stats": { "hp": 120, "atk": 26, "def": 24, "spd": 22 },
+      "felix_quote": "This thing absorbs and never releases. It'll freeze you solid if you let it accumulate.",
+      "unlock_requires": "data_corruption"
+    },
+    {
+      "id": "stack_overflow", "name": "Stack Overflow", "element": "storm", "level": 25,
+      "stats": { "hp": 100, "atk": 34, "def": 14, "spd": 30 },
+      "felix_quote": "Infinite recursion manifested as pure electricity. It's fast. Faster than anything we've faced.",
+      "unlock_requires": "memory_leak"
+    }
+  ],
+  "final_boss": {
+    "id": "the_singularity", "name": "The Singularity",
+    "felix_quote": "This is it. The source of everything. It will adapt. It will learn. Do not let it win.",
+    "unlock_requires": "stack_overflow",
+    "phases": [
+      { "name": "The Singularity — Ignition",      "element": "fire",  "level": 30, "stats": { "hp": 150, "atk": 32, "def": 20, "spd": 18 } },
+      { "name": "The Singularity — Surge",          "element": "storm", "level": 30, "stats": { "hp": 130, "atk": 36, "def": 16, "spd": 26 } },
+      { "name": "The Singularity — Void Collapse",  "element": "void",  "level": 30, "stats": { "hp": 100, "atk": 40, "def": 12, "spd": 32 } }
+    ]
+  }
+}

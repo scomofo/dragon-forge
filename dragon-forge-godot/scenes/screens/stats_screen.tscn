@@ -1,0 +1,43 @@
+[gd_scene load_steps=3 format=3 uid="uid://stats_screen_1"]
+
+[ext_resource type="Script" path="res://scripts/screens/stats_screen.gd" id="1_ss"]
+[ext_resource type="PackedScene" path="res://scenes/components/nav_bar.tscn" id="2_nb"]
+
+[node name="StatsScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_ss")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.051, 0.059, 0.11, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+theme_override_constants/separation = 8
+
+[node name="HeaderLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "FIELD STATS"
+theme_override_font_sizes/font_size = 28
+
+[node name="StatsText" type="RichTextLabel" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = false
+
+[node name="NavBar" parent="VBoxContainer" instance=ExtResource("2_nb")]
+layout_mode = 2

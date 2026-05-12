@@ -1,0 +1,9 @@
+[
+  { "id": "first_battle",      "title": "First Steps",         "description": "Win your first battle.",                     "reward": 50,  "condition": { "type": "battles_won",          "value": 1  } },
+  { "id": "ten_battles",       "title": "Veteran",             "description": "Win 10 battles.",                            "reward": 100, "condition": { "type": "battles_won",          "value": 10 } },
+  { "id": "first_evolution",   "title": "Growing Up",          "description": "Evolve a dragon to stage 2.",                "reward": 75,  "condition": { "type": "max_stage",            "value": 2  } },
+  { "id": "adult_dragon",      "title": "Full Grown",          "description": "Reach stage 3.",                             "reward": 150, "condition": { "type": "max_stage",            "value": 3  } },
+  { "id": "elder_dragon",      "title": "Elder Protocol",      "description": "Reach stage 4.",                             "reward": 300, "condition": { "type": "max_stage",            "value": 4  } },
+  { "id": "hatch_first_egg",   "title": "Dragon Keeper",       "description": "Hatch your first egg.",                      "reward": 50,  "condition": { "type": "eggs_hatched",         "value": 1  } },
+  { "id": "first_singularity", "title": "Singularity Contact", "description": "Defeat your first Singularity boss.",        "reward": 200, "condition": { "type": "singularity_defeated", "value": 1  } }
+]
