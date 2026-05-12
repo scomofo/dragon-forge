@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://nav_bar_comp_1"]
+
+[ext_resource type="Script" path="res://scripts/components/nav_bar.gd" id="1_nav"]
+
+[node name="NavBar" type="PanelContainer"]
+script = ExtResource("1_nav")
+custom_minimum_size = Vector2(0, 52)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0

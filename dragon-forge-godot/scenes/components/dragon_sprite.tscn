@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://dragon_sprite_comp_1"]
+
+[ext_resource type="Script" path="res://scripts/components/dragon_sprite.gd" id="1_ds"]
+
+[node name="DragonSprite" type="Control"]
+script = ExtResource("1_ds")
+custom_minimum_size = Vector2(80, 80)
+
+[node name="SpriteRect" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FallbackLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+horizontal_alignment = 1
+vertical_alignment = 1
