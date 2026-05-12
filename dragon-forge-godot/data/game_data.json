@@ -1,0 +1,763 @@
+{
+  "elements": [
+    "fire",
+    "ice",
+    "storm",
+    "stone",
+    "venom",
+    "shadow",
+    "void"
+  ],
+  "type_chart": {
+    "fire": {
+      "fire": 0.5,
+      "ice": 2,
+      "storm": 1,
+      "stone": 0.5,
+      "venom": 2,
+      "shadow": 1,
+      "void": 1
+    },
+    "ice": {
+      "fire": 0.5,
+      "ice": 0.5,
+      "storm": 2,
+      "stone": 1,
+      "venom": 1,
+      "shadow": 2,
+      "void": 1
+    },
+    "storm": {
+      "fire": 1,
+      "ice": 0.5,
+      "storm": 0.5,
+      "stone": 2,
+      "venom": 1,
+      "shadow": 2,
+      "void": 1
+    },
+    "stone": {
+      "fire": 2,
+      "ice": 1,
+      "storm": 0.5,
+      "stone": 0.5,
+      "venom": 2,
+      "shadow": 1,
+      "void": 1
+    },
+    "venom": {
+      "fire": 0.5,
+      "ice": 1,
+      "storm": 1,
+      "stone": 0.5,
+      "venom": 0.5,
+      "shadow": 2,
+      "void": 1
+    },
+    "shadow": {
+      "fire": 1,
+      "ice": 0.5,
+      "storm": 0.5,
+      "stone": 1,
+      "venom": 0.5,
+      "shadow": 0.5,
+      "void": 1
+    },
+    "void": {
+      "fire": 1,
+      "ice": 1,
+      "storm": 1,
+      "stone": 1,
+      "venom": 1,
+      "shadow": 1,
+      "void": 1
+    }
+  },
+  "stage_multipliers": {
+    "1": 0.5,
+    "2": 0.75,
+    "3": 1,
+    "4": 1.4
+  },
+  "stage_thresholds": {
+    "2": 10,
+    "3": 25,
+    "4": 50
+  },
+  "moves": {
+    "magma_breath": {
+      "id": "magma_breath",
+      "name": "Magma Breath",
+      "element": "fire",
+      "power": 65,
+      "accuracy": 95,
+      "vfx_key": "MAGMA_BREATH",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "flame_wall": {
+      "id": "flame_wall",
+      "name": "Flame Wall",
+      "element": "fire",
+      "power": 55,
+      "accuracy": 100,
+      "vfx_key": "FLAME_WALL",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "frost_bite": {
+      "id": "frost_bite",
+      "name": "Frost Bite",
+      "element": "ice",
+      "power": 60,
+      "accuracy": 100,
+      "vfx_key": "FROST_BITE",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "blizzard": {
+      "id": "blizzard",
+      "name": "Blizzard",
+      "element": "ice",
+      "power": 70,
+      "accuracy": 85,
+      "vfx_key": "BLIZZARD",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "lightning_strike": {
+      "id": "lightning_strike",
+      "name": "Lightning Strike",
+      "element": "storm",
+      "power": 70,
+      "accuracy": 90,
+      "vfx_key": "LIGHTNING_STRIKE",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "thunder_clap": {
+      "id": "thunder_clap",
+      "name": "Thunder Clap",
+      "element": "storm",
+      "power": 55,
+      "accuracy": 100,
+      "vfx_key": "THUNDER_CLAP",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "rock_slide": {
+      "id": "rock_slide",
+      "name": "Rock Slide",
+      "element": "stone",
+      "power": 60,
+      "accuracy": 95,
+      "vfx_key": "ROCK_SLIDE",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "earthquake": {
+      "id": "earthquake",
+      "name": "Earthquake",
+      "element": "stone",
+      "power": 75,
+      "accuracy": 85,
+      "vfx_key": "EARTHQUAKE",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "acid_spit": {
+      "id": "acid_spit",
+      "name": "Acid Spit",
+      "element": "venom",
+      "power": 60,
+      "accuracy": 100,
+      "vfx_key": "ACID_SPIT",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "toxic_cloud": {
+      "id": "toxic_cloud",
+      "name": "Toxic Cloud",
+      "element": "venom",
+      "power": 70,
+      "accuracy": 85,
+      "vfx_key": "TOXIC_CLOUD",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "shadow_strike": {
+      "id": "shadow_strike",
+      "name": "Shadow Strike",
+      "element": "shadow",
+      "power": 65,
+      "accuracy": 95,
+      "vfx_key": "SHADOW_STRIKE",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "void_pulse": {
+      "id": "void_pulse",
+      "name": "Void Pulse",
+      "element": "shadow",
+      "power": 75,
+      "accuracy": 85,
+      "vfx_key": "VOID_PULSE",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "void_rift": {
+      "id": "void_rift",
+      "name": "Void Rift",
+      "element": "void",
+      "power": 80,
+      "accuracy": 80,
+      "vfx_key": "VOID_RIFT",
+      "can_apply_status": true,
+      "is_reflect": false
+    },
+    "null_reflect": {
+      "id": "null_reflect",
+      "name": "Null Reflect",
+      "element": "void",
+      "power": 0,
+      "accuracy": 100,
+      "vfx_key": "NULL_REFLECT",
+      "can_apply_status": false,
+      "is_reflect": true
+    },
+    "basic_attack": {
+      "id": "basic_attack",
+      "name": "Basic Attack",
+      "element": "neutral",
+      "power": 40,
+      "accuracy": 100,
+      "vfx_key": "BASIC_ATTACK",
+      "can_apply_status": false,
+      "is_reflect": false
+    }
+  },
+  "dragons": {
+    "fire": {
+      "id": "fire",
+      "name": "Magma Dragon",
+      "element": "fire",
+      "base_stats": {
+        "hp": 110,
+        "atk": 28,
+        "def": 20,
+        "spd": 18
+      },
+      "move_keys": [
+        "magma_breath",
+        "flame_wall"
+      ],
+      "sprite_sheet": "/assets/dragons/magma.png",
+      "stage_sprites": {
+        "1": "/assets/dragons/fire_stage1.png",
+        "2": "/assets/dragons/fire_stage2.png",
+        "3": "/assets/dragons/fire_stage3.png",
+        "4": "/assets/dragons/fire_stage4.png"
+      },
+      "faces_left": true
+    },
+    "ice": {
+      "id": "ice",
+      "name": "Ice Dragon",
+      "element": "ice",
+      "base_stats": {
+        "hp": 100,
+        "atk": 24,
+        "def": 26,
+        "spd": 20
+      },
+      "move_keys": [
+        "frost_bite",
+        "blizzard"
+      ],
+      "sprite_sheet": "/assets/dragons/ice.png",
+      "stage_sprites": {
+        "1": "/assets/dragons/ice_stage1.png",
+        "2": "/assets/dragons/ice_stage2.png",
+        "3": "/assets/dragons/ice_stage3.png",
+        "4": "/assets/dragons/ice_stage4.png"
+      },
+      "faces_left": true
+    },
+    "storm": {
+      "id": "storm",
+      "name": "Storm Dragon",
+      "element": "storm",
+      "base_stats": {
+        "hp": 90,
+        "atk": 30,
+        "def": 16,
+        "spd": 28
+      },
+      "move_keys": [
+        "lightning_strike",
+        "thunder_clap"
+      ],
+      "sprite_sheet": "/assets/dragons/lightning.png",
+      "stage_sprites": {
+        "1": "/assets/dragons/storm_stage1.png",
+        "2": "/assets/dragons/storm_stage2.png",
+        "3": "/assets/dragons/storm_stage3.png",
+        "4": "/assets/dragons/storm_stage4.png"
+      },
+      "faces_left": true
+    },
+    "stone": {
+      "id": "stone",
+      "name": "Stone Dragon",
+      "element": "stone",
+      "base_stats": {
+        "hp": 120,
+        "atk": 22,
+        "def": 30,
+        "spd": 12
+      },
+      "move_keys": [
+        "rock_slide",
+        "earthquake"
+      ],
+      "sprite_sheet": "/assets/dragons/stone.png",
+      "stage_sprites": {
+        "1": "/assets/dragons/stone_stage1.png",
+        "2": "/assets/dragons/stone_stage2.png",
+        "3": "/assets/dragons/stone_stage3.png",
+        "4": "/assets/dragons/stone_stage4.png"
+      },
+      "faces_left": true
+    },
+    "venom": {
+      "id": "venom",
+      "name": "Venom Dragon",
+      "element": "venom",
+      "base_stats": {
+        "hp": 95,
+        "atk": 26,
+        "def": 18,
+        "spd": 24
+      },
+      "move_keys": [
+        "acid_spit",
+        "toxic_cloud"
+      ],
+      "sprite_sheet": "/assets/dragons/venom.png",
+      "stage_sprites": {
+        "1": "/assets/dragons/venom_stage1.png",
+        "2": "/assets/dragons/venom_stage2.png",
+        "3": "/assets/dragons/venom_stage3.png",
+        "4": "/assets/dragons/venom_stage4.png"
+      },
+      "faces_left": true
+    },
+    "shadow": {
+      "id": "shadow",
+      "name": "Shadow Dragon",
+      "element": "shadow",
+      "base_stats": {
+        "hp": 85,
+        "atk": 32,
+        "def": 14,
+        "spd": 26
+      },
+      "move_keys": [
+        "shadow_strike",
+        "void_pulse"
+      ],
+      "sprite_sheet": "/assets/dragons/shadow.png",
+      "stage_sprites": {
+        "1": "/assets/dragons/shadow_stage1.png",
+        "2": "/assets/dragons/shadow_stage2.png",
+        "3": "/assets/dragons/shadow_stage3.png",
+        "4": "/assets/dragons/shadow_stage4.png"
+      },
+      "faces_left": false
+    },
+    "void": {
+      "id": "void",
+      "name": "Void Dragon",
+      "element": "void",
+      "base_stats": {
+        "hp": 75,
+        "atk": 34,
+        "def": 12,
+        "spd": 30
+      },
+      "move_keys": [
+        "void_rift",
+        "null_reflect"
+      ],
+      "sprite_sheet": "/assets/dragons/shadow.png",
+      "stage_sprites": {
+        "1": "/assets/dragons/shadow.png",
+        "2": "/assets/dragons/shadow.png",
+        "3": "/assets/dragons/shadow.png",
+        "4": "/assets/dragons/shadow.png"
+      },
+      "faces_left": true
+    }
+  },
+  "npcs": {
+    "firewall_sentinel": {
+      "id": "firewall_sentinel",
+      "name": "Firewall Sentinel",
+      "element": "stone",
+      "level": 2,
+      "stats": {
+        "hp": 80,
+        "atk": 14,
+        "def": 22,
+        "spd": 8
+      },
+      "move_keys": [
+        "rock_slide"
+      ],
+      "difficulty": "Easy",
+      "base_xp": 25,
+      "scraps_reward": 30,
+      "idle_sprite": "/assets/npc/firewall_sentinel_sprites.png",
+      "attack_sprite": "/assets/npc/firewall_sentinel_attack.png",
+      "arena": "/assets/arenas/npc_firewall_sentinel.png",
+      "flip_sprite": false
+    },
+    "bit_wraith": {
+      "id": "bit_wraith",
+      "name": "Bit Wraith",
+      "element": "shadow",
+      "level": 4,
+      "stats": {
+        "hp": 55,
+        "atk": 22,
+        "def": 10,
+        "spd": 20
+      },
+      "move_keys": [
+        "shadow_strike",
+        "void_pulse"
+      ],
+      "difficulty": "Medium",
+      "base_xp": 40,
+      "scraps_reward": 50,
+      "idle_sprite": "/assets/npc/bit_wraith_sprites.png",
+      "attack_sprite": "/assets/npc/bit_wraith_attack.png",
+      "arena": "/assets/arenas/npc_bit_wraith.png",
+      "flip_sprite": false
+    },
+    "glitch_hydra": {
+      "id": "glitch_hydra",
+      "name": "Glitch Hydra",
+      "element": "storm",
+      "level": 7,
+      "stats": {
+        "hp": 75,
+        "atk": 24,
+        "def": 16,
+        "spd": 18
+      },
+      "move_keys": [
+        "lightning_strike",
+        "thunder_clap"
+      ],
+      "difficulty": "Hard",
+      "base_xp": 60,
+      "scraps_reward": 80,
+      "idle_sprite": "/assets/npc/glitch_hydra_sprites.png",
+      "attack_sprite": "/assets/npc/glitch_hydra_attack.png",
+      "arena": "/assets/arenas/npc_glitch_hydra.png",
+      "flip_sprite": true
+    },
+    "recursive_golem": {
+      "id": "recursive_golem",
+      "name": "Recursive Golem",
+      "element": "stone",
+      "level": 10,
+      "stats": {
+        "hp": 120,
+        "atk": 20,
+        "def": 28,
+        "spd": 6
+      },
+      "move_keys": [
+        "rock_slide",
+        "earthquake"
+      ],
+      "difficulty": "Boss",
+      "base_xp": 80,
+      "scraps_reward": 120,
+      "idle_sprite": "/assets/npc/recursive_golem_sprites.png",
+      "attack_sprite": "/assets/npc/recursive_golem_attack.png",
+      "arena": "/assets/arenas/npc_recursive_golem.png",
+      "flip_sprite": false
+    },
+    "buffer_overflow": {
+      "id": "buffer_overflow",
+      "name": "Buffer Overflow",
+      "element": "fire",
+      "level": 3,
+      "stats": {
+        "hp": 90,
+        "atk": 18,
+        "def": 16,
+        "spd": 14
+      },
+      "move_keys": [
+        "magma_breath"
+      ],
+      "difficulty": "Easy",
+      "base_xp": 30,
+      "scraps_reward": 40,
+      "idle_sprite": "/assets/npc/buffer_overflow_sprites.png",
+      "attack_sprite": "/assets/npc/buffer_overflow_attack.png",
+      "arena": "/assets/arenas/npc_buffer_overflow.png",
+      "flip_sprite": true
+    },
+    "crypto_crab": {
+      "id": "crypto_crab",
+      "name": "Crypto Crab",
+      "element": "ice",
+      "level": 5,
+      "stats": {
+        "hp": 85,
+        "atk": 20,
+        "def": 22,
+        "spd": 12
+      },
+      "move_keys": [
+        "frost_bite",
+        "blizzard"
+      ],
+      "difficulty": "Medium",
+      "base_xp": 45,
+      "scraps_reward": 60,
+      "idle_sprite": "/assets/npc/crypto_crab_sprites.png",
+      "attack_sprite": "/assets/npc/crypto_crab_attack.png",
+      "arena": "/assets/arenas/npc_crypto_crab.png",
+      "flip_sprite": true
+    },
+    "logic_bomb": {
+      "id": "logic_bomb",
+      "name": "Logic Bomb",
+      "element": "fire",
+      "level": 8,
+      "stats": {
+        "hp": 70,
+        "atk": 30,
+        "def": 12,
+        "spd": 24
+      },
+      "move_keys": [
+        "magma_breath",
+        "flame_wall"
+      ],
+      "difficulty": "Hard",
+      "base_xp": 65,
+      "scraps_reward": 90,
+      "idle_sprite": "/assets/npc/logic_bomb_sprites.png",
+      "attack_sprite": "/assets/npc/logic_bomb_attack.png",
+      "arena": "/assets/arenas/npc_logic_bomb.png",
+      "flip_sprite": false
+    },
+    "phishing_siren": {
+      "id": "phishing_siren",
+      "name": "Phishing Siren",
+      "element": "venom",
+      "level": 6,
+      "stats": {
+        "hp": 80,
+        "atk": 24,
+        "def": 16,
+        "spd": 20
+      },
+      "move_keys": [
+        "acid_spit",
+        "toxic_cloud"
+      ],
+      "difficulty": "Medium",
+      "base_xp": 50,
+      "scraps_reward": 70,
+      "idle_sprite": "/assets/npc/phishing_siren_sprites.png",
+      "attack_sprite": "/assets/npc/phishing_siren_attack.png",
+      "arena": "/assets/arenas/npc_phishing_siren.png",
+      "flip_sprite": true
+    },
+    "protocol_vulture": {
+      "id": "protocol_vulture",
+      "name": "Protocol Vulture",
+      "element": "shadow",
+      "level": 12,
+      "stats": {
+        "hp": 100,
+        "atk": 28,
+        "def": 22,
+        "spd": 16
+      },
+      "move_keys": [
+        "shadow_strike",
+        "void_pulse"
+      ],
+      "difficulty": "Boss",
+      "base_xp": 90,
+      "scraps_reward": 130,
+      "idle_sprite": "/assets/npc/protocol_vulture_sprites.png",
+      "attack_sprite": "/assets/npc/protocol_vulture_attack.png",
+      "arena": "/assets/arenas/npc_protocol_vulture.png",
+      "flip_sprite": true
+    }
+  },
+  "element_colors": {
+    "fire": {
+      "primary": "#ff6622",
+      "glow": "#ff8844",
+      "icon": "🔥"
+    },
+    "ice": {
+      "primary": "#44aaff",
+      "glow": "#66ccff",
+      "icon": "❄️"
+    },
+    "storm": {
+      "primary": "#aa66ff",
+      "glow": "#cc88ff",
+      "icon": "⚡"
+    },
+    "stone": {
+      "primary": "#aa8844",
+      "glow": "#ccaa66",
+      "icon": "🪨"
+    },
+    "venom": {
+      "primary": "#44cc44",
+      "glow": "#66ee66",
+      "icon": "☠️"
+    },
+    "shadow": {
+      "primary": "#8844aa",
+      "glow": "#aa66cc",
+      "icon": "👁️"
+    },
+    "neutral": {
+      "primary": "#888888",
+      "glow": "#aaaaaa",
+      "icon": "⚔️"
+    },
+    "void": {
+      "primary": "#00cccc",
+      "glow": "#44eeee",
+      "icon": "🌀"
+    }
+  },
+  "dragon_lore": {
+    "fire": "Forged from the planet's molten core. Its breath can melt through starship bulkheads — handle with extreme caution.",
+    "ice": "Crystallized from subzero atmospheric anomalies. The temperature drops 30 degrees in its presence alone.",
+    "storm": "Born from a feedback loop in the planet's electromagnetic field. Faster than anything I've ever recorded.",
+    "stone": "Its hide is denser than compressed titanium. I once watched it walk through a collapsing mine without flinching.",
+    "venom": "Secretes a neurotoxin that can dissolve organic matter in seconds. Keep it away from the lab samples.",
+    "shadow": "This one... shouldn't exist. It reads as a gap in the data — a hole where reality should be. Fascinating.",
+    "void": "It came from beyond the Elemental Matrix — a tear in the simulation itself. I don't think it belongs to any element. I don't think it belongs to this reality at all."
+  },
+  "egg_sheets": {
+    "generic": "/assets/eggs/egg_generic_sheet.png",
+    "fire": "/assets/eggs/egg_fire_sheet.png",
+    "ice": "/assets/eggs/egg_ice_sheet.png",
+    "storm": "/assets/eggs/egg_storm_sheet.png",
+    "stone": "/assets/eggs/egg_stone_sheet.png",
+    "venom": "/assets/eggs/egg_venom_sheet.png",
+    "shadow": "/assets/eggs/egg_shadow_sheet.png",
+    "void": "/assets/eggs/egg_shadow_sheet.png"
+  },
+  "rarity_tiers": [
+    {
+      "name": "Common",
+      "chance": 0.5,
+      "elements": [
+        "fire",
+        "ice"
+      ],
+      "multiplier": 1
+    },
+    {
+      "name": "Uncommon",
+      "chance": 0.3,
+      "elements": [
+        "storm",
+        "venom",
+        "stone"
+      ],
+      "multiplier": 2
+    },
+    {
+      "name": "Rare",
+      "chance": 0.15,
+      "elements": [
+        "shadow"
+      ],
+      "multiplier": 3
+    },
+    {
+      "name": "Exotic",
+      "chance": 0.05,
+      "elements": [
+        "void"
+      ],
+      "multiplier": 5,
+      "guaranteedShiny": true
+    }
+  ],
+  "pull_cost": 50,
+  "shiny_chance": 0.02,
+  "pity_threshold": 10,
+  "status_effects": {
+    "fire": {
+      "name": "Burn",
+      "icon": "🔥",
+      "duration": 2,
+      "type": "dot",
+      "value": 0.08
+    },
+    "ice": {
+      "name": "Freeze",
+      "icon": "❄️",
+      "duration": 1,
+      "type": "skip",
+      "value": 1
+    },
+    "storm": {
+      "name": "Paralyze",
+      "icon": "⚡",
+      "duration": 2,
+      "type": "maySkip",
+      "value": 0.5
+    },
+    "stone": {
+      "name": "Guard Break",
+      "icon": "🛡️",
+      "duration": 2,
+      "type": "debuff",
+      "value": 0.4
+    },
+    "venom": {
+      "name": "Poison",
+      "icon": "☠️",
+      "duration": 2,
+      "type": "dot",
+      "value": 0.06
+    },
+    "shadow": {
+      "name": "Blind",
+      "icon": "👁️",
+      "duration": 2,
+      "type": "debuff",
+      "value": 0.3
+    },
+    "void": {
+      "name": "Glitch",
+      "icon": "🌀",
+      "duration": 1,
+      "type": "randomize",
+      "value": 1
+    }
+  },
+  "status_apply_chance": 0.3
+}

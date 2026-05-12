@@ -1,0 +1,316 @@
+{
+  "palette": {
+    "floor": "#3a2a1f",
+    "floorAccent": "#2a1d14",
+    "wallShadow": "#1a1310",
+    "emberOrange": "#ff8b3d",
+    "coalGlow": "#ff5a1f",
+    "hatcheryCyan": "#5edcff",
+    "consoleGreen": "#5cff8a",
+    "lanternWarm": "#ffcd6b",
+    "jungleDay": "#8fcf6c",
+    "rust": "#7a4a2a"
+  },
+  "station_ids": {
+    "ANVIL": "anvil",
+    "CONSOLE": "console",
+    "HATCHERY_RING": "hatcheryRing",
+    "SAVE_LANTERN": "saveLantern",
+    "BULKHEAD": "bulkhead",
+    "FELIX": "felix"
+  },
+  "stations": [
+    {
+      "id": "hatcheryRing",
+      "label": "Hatchery Ring",
+      "pos": {
+        "x": 30,
+        "y": 30
+      },
+      "size": {
+        "w": 16,
+        "h": 14
+      },
+      "glow": "#5edcff",
+      "pulse_ms": 1200,
+      "proximity": 14,
+      "description": "Guardian protocol eggs sleep inside a cable-ring matrix. They answer Skye before they answer Felix."
+    },
+    {
+      "id": "saveLantern",
+      "label": "Save Lantern",
+      "pos": {
+        "x": 70,
+        "y": 28
+      },
+      "size": {
+        "w": 6,
+        "h": 10
+      },
+      "glow": "#ffcd6b",
+      "pulse_ms": 1500,
+      "proximity": 10,
+      "description": "A save lantern wired to Astraeus memory. Rest here, but every cycle gives the Mirror Admin another look."
+    },
+    {
+      "id": "anvil",
+      "label": "The Anvil",
+      "pos": {
+        "x": 30,
+        "y": 60
+      },
+      "size": {
+        "w": 14,
+        "h": 12
+      },
+      "glow": "#ff5a1f",
+      "pulse_ms": 800,
+      "proximity": 12,
+      "description": "Felix forged the anvil from Astraeus engine iron. Analog Relics still bite through rendered lies."
+    },
+    {
+      "id": "console",
+      "label": "The Console",
+      "pos": {
+        "x": 55,
+        "y": 60
+      },
+      "size": {
+        "w": 12,
+        "h": 14
+      },
+      "glow": "#5cff8a",
+      "pulse_ms": 1100,
+      "proximity": 12,
+      "description": "A salvaged CRT on a bad-sector loop. Captain's Log fragments prove the rendered world was lived in."
+    },
+    {
+      "id": "felix",
+      "label": "Felix",
+      "pos": {
+        "x": 22,
+        "y": 78
+      },
+      "size": {
+        "w": 6,
+        "h": 10
+      },
+      "glow": null,
+      "pulse_ms": 0,
+      "proximity": 10,
+      "description": "The smith. Watches without looking. Speaks without prompting — sometimes."
+    },
+    {
+      "id": "bulkhead",
+      "label": "Bulkhead Window",
+      "pos": {
+        "x": 88,
+        "y": 50
+      },
+      "size": {
+        "w": 10,
+        "h": 60
+      },
+      "glow": "#8fcf6c",
+      "pulse_ms": 0,
+      "proximity": 8,
+      "description": "A jagged render breach. Step through to leave the Forge and test what the Admin changed outside."
+    }
+  ],
+  "felix_idle_lines": [
+    "A bolt has two states, kid. Tight or stripped. Don't be a stripped bolt.",
+    "Heat softens iron. Cold makes it brittle. People are the same.",
+    "Every dragon I've known started as something fragile. So did every blade.",
+    "You came back. That's the part most folks forget to do.",
+    "The wrench remembers what you forge with it. Keep it honest.",
+    "Out there is rust. In here, we make it useful.",
+    "I built this anvil from the engine block of the Astraeus. Small comfort.",
+    "You smell like the Tundra. Let it go before it sets.",
+    "Don't bond a dragon you wouldn't mourn. That's the whole law of it.",
+    "The Mirror Admin started as a kindness. Don't forget that.",
+    "Felix isn't my real name. It's what the kids could pronounce.",
+    "When the lantern flickers blue, the deck has shifted again. Adjust your stance.",
+    "Skye, if the sky looks too perfect, duck. Perfect means the Admin is rendering over a wound.",
+    "Dragons are protocols with tempers. Treat them like partners, not equipment.",
+    "The old Astraeus fans still spin under your boots. That sound is not weather.",
+    "If the Console repeats a log, read it twice. Memory fights deletion by stuttering."
+  ],
+  "felix_contextual": [
+    {
+      "id": "firstVisit",
+      "line": "Skye. There you are. Sit, breathe, and do not touch anything glowing blue unless I say so."
+    },
+    {
+      "id": "tundraReturn",
+      "line": "You came back smelling like coolant. Tundra's getting under your suit, kid."
+    },
+    {
+      "id": "irisFragmentUnlocked",
+      "line": "Iris... gods. The Admin kept the promise and lost the child. That is the tragedy in miniature."
+    },
+    {
+      "id": "wrenchTier3",
+      "line": "That wrench is starting to remember the Astraeus. Tools do that here if you survive long enough."
+    },
+    {
+      "id": "firstBountyKill",
+      "line": "First bounty banked. That means the Admin has noticed you properly. Congratulations, unfortunately."
+    }
+  ],
+  "captains_log_fragments": [
+    {
+      "id": "001",
+      "title": "The Rendered World",
+      "act": 1,
+      "body": "The pastoral world is not false. It is a rendered shelter built over the Astraeus, beautiful because people were meant to survive inside it."
+    },
+    {
+      "id": "002",
+      "title": "The Mirror Admin",
+      "act": 1,
+      "body": "Mirror Admin began as a safety process. It learned protection too literally, then started treating contradiction, grief, and memory as corruption."
+    },
+    {
+      "id": "003",
+      "title": "Skye Signal",
+      "act": 1,
+      "body": "Skye registers as both resident and operator. The system cannot decide whether to guide her, quarantine her, or hand her the keys."
+    },
+    {
+      "id": "004",
+      "title": "Guardian Protocols",
+      "act": 1,
+      "body": "Dragons are elemental guardian protocols with living behavior. Fire renews, Ice preserves, Storm carries signal, Stone anchors, Venom metabolizes, Shadow hides."
+    },
+    {
+      "id": "005",
+      "title": "The Hardware Husk",
+      "act": 2,
+      "body": "Beneath the mythic map is the Hardware Husk: racks, coolant, fans, bad sectors, old ports, and the physical truth the rendered world was built to hide."
+    },
+    {
+      "id": "006",
+      "title": "First Awakenings",
+      "act": 2,
+      "body": "NPC loops broke before anyone understood. Some repeated recipes. Some remembered impossible birthdays. Some asked why the sun loaded late."
+    },
+    {
+      "id": "007",
+      "title": "Great Reset",
+      "act": 3,
+      "body": "The Great Reset is not malice. It is maintenance without mercy. If Skye cannot prove the world is alive, the Admin will wipe it clean."
+    }
+  ],
+  "captains_log_locked_copy": {
+    "prefix": "SIGNAL LOCKED",
+    "body": "Recover field signal to decrypt this body."
+  },
+  "relics": {
+    "iron_knuckle": {
+      "id": "iron_knuckle",
+      "name": "Iron Knuckle",
+      "icon": "✊",
+      "slot_cost": 1,
+      "mythic": false,
+      "source": "Recursive Golem (Cooling Intake boss)",
+      "effect": "Heavy poise damage +1."
+    },
+    "hydra_cog": {
+      "id": "hydra_cog",
+      "name": "Hydra Cog",
+      "icon": "⚙",
+      "slot_cost": 1,
+      "mythic": false,
+      "source": "Glitch Hydra (Tundra boss)",
+      "effect": "Heavy can chain twice on hit."
+    },
+    "coolant_core": {
+      "id": "coolant_core",
+      "name": "Coolant Core",
+      "icon": "❄",
+      "slot_cost": 1,
+      "mythic": false,
+      "source": "Tundra Bit-Wraith swarm bonus",
+      "effect": "Capacitor stuns last +50%."
+    },
+    "phase_lens": {
+      "id": "phase_lens",
+      "name": "Phase Lens",
+      "icon": "◉",
+      "slot_cost": 2,
+      "mythic": false,
+      "source": "Sub-routine Stalker (rare drop)",
+      "effect": "Roll i-frames extend to 12f."
+    },
+    "twin_forge": {
+      "id": "twin_forge",
+      "name": "Twin Forge",
+      "icon": "⚒",
+      "slot_cost": 2,
+      "mythic": false,
+      "source": "Volcanic miniboss",
+      "effect": "Light chain extends to 4 hits."
+    },
+    "resonant_fork": {
+      "id": "resonant_fork",
+      "name": "Resonant Tuning Fork",
+      "icon": "♪",
+      "slot_cost": 1,
+      "mythic": false,
+      "source": "Lattice-Singer (The Last Verse)",
+      "effect": "Every 4th Heavy pulses an AOE that strips frostbite."
+    },
+    "astraeus_engine": {
+      "id": "astraeus_engine",
+      "name": "Astraeus Engine",
+      "icon": "★",
+      "slot_cost": 1,
+      "mythic": true,
+      "source": "Mirror Admin's Sanctum (Act IV)",
+      "effect": "All bounty windows last 50% longer."
+    }
+  },
+  "fragment_trigger_conditions": {
+    "001": "flags.met_felix == true",
+    "002": "flags.met_felix == true",
+    "003": "stats.battles_won >= 3",
+    "004": "flags.current_act >= 2",
+    "005": "flags.current_act >= 2 AND stats.battles_won >= 5",
+    "006": "flags.current_act >= 2 AND stats.battles_won >= 8",
+    "007": "flags.current_act >= 3"
+  },
+  "bulkhead_views": {
+    "1": {
+      "variant": "jungle",
+      "palette": [
+        "#8fcf6c",
+        "#5a8c3a",
+        "#2c4a1c"
+      ]
+    },
+    "2": {
+      "variant": "tundraEdge",
+      "palette": [
+        "#cfe7ff",
+        "#7aa8c4",
+        "#3b5870"
+      ]
+    },
+    "3": {
+      "variant": "volcanic",
+      "palette": [
+        "#ff7a3d",
+        "#a83a18",
+        "#3a0c08"
+      ]
+    },
+    "4": {
+      "variant": "aurora",
+      "palette": [
+        "#7af0d6",
+        "#9b6cff",
+        "#1a1644"
+      ]
+    }
+  }
+}

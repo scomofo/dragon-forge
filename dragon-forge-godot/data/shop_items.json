@@ -1,0 +1,124 @@
+{
+  "elements_for_cores": [
+    "fire",
+    "ice",
+    "storm",
+    "stone",
+    "venom",
+    "shadow"
+  ],
+  "core_drop_chance": 0.6,
+  "core_double_chance": 0.2,
+  "buy_items": [
+    {
+      "id": "xp_booster",
+      "name": "XP Booster",
+      "description": "Next 3 battles give 2x XP",
+      "cost": 150,
+      "icon": "⚡",
+      "effect": "xpBoost",
+      "stackable": true,
+      "requires_target": false,
+      "requires_fused": false,
+      "xp_amount": 0
+    },
+    {
+      "id": "shiny_charm",
+      "name": "Shiny Charm",
+      "description": "Upgrade one owned dragon to shiny",
+      "cost": 500,
+      "icon": "✨",
+      "effect": "shinyUpgrade",
+      "stackable": false,
+      "requires_target": true,
+      "requires_fused": false,
+      "xp_amount": 0
+    },
+    {
+      "id": "pity_reset",
+      "name": "Pity Reset",
+      "description": "Next hatchery pull guaranteed Rare+",
+      "cost": 100,
+      "icon": "🎯",
+      "effect": "pityReset",
+      "stackable": false,
+      "requires_target": false,
+      "requires_fused": false,
+      "xp_amount": 0
+    },
+    {
+      "id": "element_reroll",
+      "name": "Element Reroll",
+      "description": "Re-roll a dragon's fused base stats",
+      "cost": 200,
+      "icon": "🔄",
+      "effect": "reroll",
+      "stackable": false,
+      "requires_target": true,
+      "requires_fused": true,
+      "xp_amount": 0
+    },
+    {
+      "id": "data_fragment",
+      "name": "Data Fragment",
+      "description": "Grants 50 XP to a chosen dragon",
+      "cost": 50,
+      "icon": "💎",
+      "effect": "grantXp",
+      "stackable": false,
+      "requires_target": true,
+      "requires_fused": false,
+      "xp_amount": 50
+    }
+  ],
+  "forge_recipes": [
+    {
+      "id": "dragon_essence",
+      "name": "Dragon Essence",
+      "description": "Grants 200 XP to a dragon of the core's element",
+      "cores": {
+        "same": 3
+      },
+      "scraps_cost": 0,
+      "icon": "🧬",
+      "effect": "grantXpElement",
+      "xp_amount": 200
+    },
+    {
+      "id": "stability_matrix",
+      "name": "Stability Matrix",
+      "description": "Next fusion has +1 stability tier",
+      "cores": {
+        "different": 3
+      },
+      "scraps_cost": 100,
+      "icon": "🔮",
+      "effect": "stabilityBoost",
+      "xp_amount": 0
+    },
+    {
+      "id": "elder_shard",
+      "name": "Elder Shard",
+      "description": "Grants 500 XP to any dragon",
+      "cores": {
+        "any": 5
+      },
+      "scraps_cost": 300,
+      "icon": "💠",
+      "effect": "grantXp",
+      "xp_amount": 500
+    },
+    {
+      "id": "void_fragment",
+      "name": "Void Fragment",
+      "description": "Free Exotic hatchery pull",
+      "cores": {
+        "allSix": true
+      },
+      "scraps_cost": 500,
+      "icon": "🌀",
+      "effect": "exoticPull",
+      "xp_amount": 0
+    }
+  ]
+}

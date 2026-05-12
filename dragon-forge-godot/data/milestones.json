@@ -1,0 +1,86 @@
+[
+  {
+    "id": "first_discovery",
+    "name": "First Discovery",
+    "description": "Discover any dragon",
+    "reward": 100
+  },
+  {
+    "id": "elemental_trio",
+    "name": "Elemental Trio",
+    "description": "Own 3 different dragons",
+    "reward": 200
+  },
+  {
+    "id": "full_roster",
+    "name": "Full Roster",
+    "description": "Own all 6 dragons",
+    "reward": 500
+  },
+  {
+    "id": "shiny_hunter",
+    "name": "Shiny Hunter",
+    "description": "Own a shiny dragon",
+    "reward": 300
+  },
+  {
+    "id": "shiny_collector",
+    "name": "Shiny Collector",
+    "description": "Own 3 shiny dragons",
+    "reward": 1000
+  },
+  {
+    "id": "elder_forged",
+    "name": "Elder Forged",
+    "description": "Reach Stage IV (Lv.50+)",
+    "reward": 250
+  },
+  {
+    "id": "fusion_master",
+    "name": "Fusion Master",
+    "description": "Complete a fusion",
+    "reward": 200
+  },
+  {
+    "id": "battle_veteran",
+    "name": "Battle Veteran",
+    "description": "Win 10 battles",
+    "reward": 150
+  },
+  {
+    "id": "battle_champion",
+    "name": "Battle Champion",
+    "description": "Win 50 battles",
+    "reward": 500
+  },
+  {
+    "id": "core_collector",
+    "name": "Core Collector",
+    "description": "Collect 50 element cores",
+    "reward": 200
+  },
+  {
+    "id": "scraps_hoarder",
+    "name": "DataScraps Hoarder",
+    "description": "Earn 5000 total DataScraps",
+    "reward": 300
+  },
+  {
+    "id": "pull_addict",
+    "name": "Pull Addict",
+    "description": "Complete 50 hatchery pulls",
+    "reward": 200
+  },
+  {
+    "id": "void_hunter",
+    "name": "Void Hunter",
+    "description": "Obtain the Void Dragon",
+    "reward": 500
+  },
+  {
+    "id": "win_streak_5",
+    "name": "Hot Streak",
+    "description": "Win 5 battles in a row",
+    "reward": 250
+  }
+]

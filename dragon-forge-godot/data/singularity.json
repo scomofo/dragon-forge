@@ -1,0 +1,157 @@
+{
+  "bosses": [
+    {
+      "id": "data_corruption",
+      "name": "Data Corruption",
+      "element": "fire",
+      "level": 15,
+      "stats": {
+        "hp": 140,
+        "atk": 30,
+        "def": 18,
+        "spd": 16
+      },
+      "move_keys": [
+        "magma_breath",
+        "flame_wall"
+      ],
+      "difficulty": "Singularity",
+      "base_xp": 100,
+      "scraps_reward": 200,
+      "idle_sprite": "/assets/npc/firewall_sentinel_sprites.png",
+      "attack_sprite": "/assets/npc/firewall_sentinel_attack.png",
+      "arena": "/assets/arenas/shadow.png",
+      "arena_filter": "grayscale(0.5) hue-rotate(330deg) contrast(1.3)",
+      "sprite_filter": "saturate(1.5) hue-rotate(15deg) contrast(1.2)",
+      "felix_quote": "It's eating through our data layers. Fire with fire — you'll need a dragon that can take the heat.",
+      "unlock_requires": null
+    },
+    {
+      "id": "memory_leak",
+      "name": "Memory Leak",
+      "element": "ice",
+      "level": 20,
+      "stats": {
+        "hp": 120,
+        "atk": 26,
+        "def": 24,
+        "spd": 22
+      },
+      "move_keys": [
+        "frost_bite",
+        "blizzard"
+      ],
+      "difficulty": "Singularity",
+      "base_xp": 150,
+      "scraps_reward": 300,
+      "idle_sprite": "/assets/npc/bit_wraith_sprites.png",
+      "attack_sprite": "/assets/npc/bit_wraith_attack.png",
+      "arena": "/assets/arenas/shadow.png",
+      "arena_filter": "grayscale(0.5) hue-rotate(330deg) contrast(1.3)",
+      "sprite_filter": "saturate(1.5) hue-rotate(-30deg) contrast(1.2)",
+      "felix_quote": "This thing absorbs and never releases. It'll freeze you solid if you let it accumulate.",
+      "unlock_requires": "data_corruption"
+    },
+    {
+      "id": "stack_overflow",
+      "name": "Stack Overflow",
+      "element": "storm",
+      "level": 25,
+      "stats": {
+        "hp": 100,
+        "atk": 34,
+        "def": 14,
+        "spd": 30
+      },
+      "move_keys": [
+        "lightning_strike",
+        "thunder_clap"
+      ],
+      "difficulty": "Singularity",
+      "base_xp": 200,
+      "scraps_reward": 400,
+      "idle_sprite": "/assets/npc/glitch_hydra_sprites.png",
+      "attack_sprite": "/assets/npc/glitch_hydra_attack.png",
+      "arena": "/assets/arenas/shadow.png",
+      "arena_filter": "grayscale(0.5) hue-rotate(330deg) contrast(1.3)",
+      "sprite_filter": "saturate(1.5) hue-rotate(30deg) contrast(1.2)",
+      "felix_quote": "Infinite recursion manifested as pure electricity. It's fast. Faster than anything we've faced.",
+      "unlock_requires": "memory_leak"
+    }
+  ],
+  "final_boss": {
+    "id": "the_singularity",
+    "name": "The Singularity",
+    "element": null,
+    "level": null,
+    "stats": null,
+    "move_keys": [],
+    "difficulty": "FINAL",
+    "base_xp": 500,
+    "scraps_reward": 1000,
+    "idle_sprite": "/assets/npc/recursive_golem_sprites.png",
+    "attack_sprite": "/assets/npc/recursive_golem_attack.png",
+    "arena": "/assets/arenas/gravity_chamber.png",
+    "arena_filter": "saturate(1.5) contrast(1.2)",
+    "sprite_filter": null,
+    "felix_quote": "This is it. The source of everything. It will adapt. It will learn. Do not let it win.",
+    "unlock_requires": "stack_overflow",
+    "phases": [
+      {
+        "name": "The Singularity — Ignition",
+        "element": "fire",
+        "level": 30,
+        "stats": {
+          "hp": 150,
+          "atk": 32,
+          "def": 20,
+          "spd": 18
+        },
+        "move_keys": [
+          "magma_breath",
+          "flame_wall"
+        ],
+        "sprite_filter": "saturate(2) hue-rotate(15deg) contrast(1.3)"
+      },
+      {
+        "name": "The Singularity — Surge",
+        "element": "storm",
+        "level": 30,
+        "stats": {
+          "hp": 130,
+          "atk": 36,
+          "def": 16,
+          "spd": 26
+        },
+        "move_keys": [
+          "lightning_strike",
+          "thunder_clap"
+        ],
+        "sprite_filter": "saturate(2) hue-rotate(60deg) contrast(1.3)"
+      },
+      {
+        "name": "The Singularity — Void Collapse",
+        "element": "void",
+        "level": 30,
+        "stats": {
+          "hp": 100,
+          "atk": 40,
+          "def": 12,
+          "spd": 32
+        },
+        "move_keys": [
+          "void_rift",
+          "null_reflect"
+        ],
+        "sprite_filter": "saturate(2) hue-rotate(180deg) contrast(1.5)"
+      }
+    ]
+  },
+  "epilogue_lines": [
+    "You did it. The Singularity is contained.",
+    "The Matrix is stabilizing. I can feel it.",
+    "You've saved every dragon in the Forge.",
+    "But between you and me... I don't think it's gone forever.",
+    "Stay sharp, Dragon Forger."
+  ]
+}
