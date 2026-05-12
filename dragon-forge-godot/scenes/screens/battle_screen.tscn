@@ -1,0 +1,125 @@
+[gd_scene load_steps=4 format=3 uid="uid://battle_screen_1"]
+
+[ext_resource type="Script" path="res://scripts/screens/battle_screen.gd" id="1_battle"]
+[ext_resource type="PackedScene" path="res://scenes/components/dragon_sprite.tscn" id="2_ds"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_1"]
+direction = Vector3(0, -1, 0)
+spread = 45.0
+initial_velocity_min = 80.0
+initial_velocity_max = 180.0
+gravity = Vector3(0, 300, 0)
+scale_min = 4.0
+scale_max = 8.0
+
+[node name="BattleScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_battle")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position_smoothing_enabled = false
+
+[node name="CorruptionModulate" type="CanvasModulate" parent="."]
+color = Color(1, 1, 1, 1)
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.051, 0.059, 0.11, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+theme_override_constants/separation = 8
+
+[node name="HeaderLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "BATTLE"
+theme_override_font_sizes/font_size = 16
+
+[node name="CombatRow" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="PlayerSide" type="VBoxContainer" parent="VBoxContainer/CombatRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PlayerSprite" parent="VBoxContainer/CombatRow/PlayerSide" instance=ExtResource("2_ds")]
+layout_mode = 2
+
+[node name="PlayerName" type="Label" parent="VBoxContainer/CombatRow/PlayerSide"]
+layout_mode = 2
+text = "Dragon"
+horizontal_alignment = 1
+
+[node name="PlayerHP" type="ProgressBar" parent="VBoxContainer/CombatRow/PlayerSide"]
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+
+[node name="PlayerHPLabel" type="Label" parent="VBoxContainer/CombatRow/PlayerSide"]
+layout_mode = 2
+text = "100 / 100"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 11
+
+[node name="StatusIcons" type="HBoxContainer" parent="VBoxContainer/CombatRow/PlayerSide"]
+layout_mode = 2
+
+[node name="NpcSide" type="VBoxContainer" parent="VBoxContainer/CombatRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NpcSprite" parent="VBoxContainer/CombatRow/NpcSide" instance=ExtResource("2_ds")]
+layout_mode = 2
+
+[node name="NpcName" type="Label" parent="VBoxContainer/CombatRow/NpcSide"]
+layout_mode = 2
+text = "Enemy"
+horizontal_alignment = 1
+
+[node name="NpcHP" type="ProgressBar" parent="VBoxContainer/CombatRow/NpcSide"]
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+
+[node name="NpcHPLabel" type="Label" parent="VBoxContainer/CombatRow/NpcSide"]
+layout_mode = 2
+text = "100 / 100"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 11
+
+[node name="NpcStatusIcons" type="HBoxContainer" parent="VBoxContainer/CombatRow/NpcSide"]
+layout_mode = 2
+
+[node name="BattleLog" type="RichTextLabel" parent="VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 80)
+bbcode_enabled = true
+scroll_following = true
+
+[node name="MoveButtons" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HitParticles" type="GPUParticles2D" parent="."]
+emitting = false
+amount = 24
+process_material = SubResource("ParticleProcessMaterial_1")
+explosiveness = 0.8
+one_shot = true
+
+[node name="DamageNumberLayer" type="Node2D" parent="."]
