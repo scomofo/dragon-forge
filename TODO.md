@@ -4,7 +4,7 @@
 - [x] Forge hub refactor: scene/overlays/movement split, CSS extracted, truthful station copy
 - [x] Browser Playwright smoke: desktop/tablet/mobile screenshots and overflow checks
 - [x] Asset manifest test: runtime dragon, NPC, egg, arena, and boss references checked under public/
-- [ ] Bespoke Void Dragon evolution sprites: currently documented as intentional shadow placeholder
+- [x] Bespoke Void Dragon evolution sprites: generated void_stage1–4.png (near-transparent crystalline form, white-gold fractures)
 
 ## Completed
 - [x] Intro page text repeats — fixed

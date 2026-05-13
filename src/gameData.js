@@ -111,9 +111,8 @@ export const dragons = {
     element: 'void',
     baseStats: { hp: 75, atk: 34, def: 12, spd: 30 },
     moveKeys: ['void_rift', 'null_reflect'],
-    spriteSheet: assetUrl('/assets/dragons/shadow.png'),
-    // Intentional placeholder until bespoke Void Dragon stage art exists.
-    stageSprites: { 1: assetUrl('/assets/dragons/shadow.png'), 2: assetUrl('/assets/dragons/shadow.png'), 3: assetUrl('/assets/dragons/shadow.png'), 4: assetUrl('/assets/dragons/shadow.png') },
+    spriteSheet: assetUrl('/assets/dragons/void_stage1.png'),
+    stageSprites: { 1: assetUrl('/assets/dragons/void_stage1.png'), 2: assetUrl('/assets/dragons/void_stage2.png'), 3: assetUrl('/assets/dragons/void_stage3.png'), 4: assetUrl('/assets/dragons/void_stage4.png') },
     facesLeft: true,
   },
 };

@@ -29,6 +29,11 @@
   "shadow_stage3": "res://assets/dragons/shadow_stage3.png",
   "shadow_stage4": "res://assets/dragons/shadow_stage4.png",
 
+  "void_stage1":   "res://assets/dragons/void_stage1.png",
+  "void_stage2":   "res://assets/dragons/void_stage2.png",
+  "void_stage3":   "res://assets/dragons/void_stage3.png",
+  "void_stage4":   "res://assets/dragons/void_stage4.png",
+
   "npc_buffer_overflow_sprites":  "res://assets/npc/buffer_overflow_sprites.png",
   "npc_buffer_overflow_attack":   "res://assets/npc/buffer_overflow_attack.png",
   "npc_crypto_crab_sprites":      "res://assets/npc/crypto_crab_sprites.png",
