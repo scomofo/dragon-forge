@@ -19,8 +19,9 @@ func _ready() -> void:
 
 func set_dragon(dragon_id: String, stage: int = 1) -> void:
 	var path: String = _resolve_path(dragon_id, stage)
-	if path != "" and ResourceLoader.exists(path):
-		sprite_rect.texture = load(path)
+	var tex: Texture2D = _load_texture(path)
+	if tex != null:
+		sprite_rect.texture = tex
 		sprite_rect.visible = true
 		fallback_label.visible = false
 	else:
@@ -29,6 +30,18 @@ func set_dragon(dragon_id: String, stage: int = 1) -> void:
 		fallback_label.add_theme_color_override("font_color",
 			ELEMENT_COLORS.get(dragon_id, Color.WHITE))
 		fallback_label.visible = true
+
+func _load_texture(path: String) -> Texture2D:
+	if path == "":
+		return null
+	if ResourceLoader.exists(path):
+		return load(path)
+	# Fallback: load raw image file (works before Godot imports the asset)
+	var abs_path: String = ProjectSettings.globalize_path(path)
+	var img := Image.new()
+	if img.load(abs_path) == OK:
+		return ImageTexture.create_from_image(img)
+	return null
 
 func _load_manifest() -> void:
 	const MANIFEST_PATH := "res://data/sprite_manifest.json"
