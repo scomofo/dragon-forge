@@ -61,7 +61,7 @@ func _rebuild_dragon_list() -> void:
 		var btn := Button.new()
 		btn.text = "%s LV%d" % [str(dragon_def.get("name", dragon_id)), level]
 		btn.toggle_mode = true
-		var did := dragon_id
+		var did: String = dragon_id
 		btn.pressed.connect(func():
 			_selected_dragon = did
 			_deselect_siblings(dragon_list, btn)

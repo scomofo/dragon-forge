@@ -78,7 +78,7 @@ func _rebuild_list() -> void:
 		btn.text = ("CRAFT\n%d scraps" % cost) if cost > 0 else "CRAFT\nFree"
 		btn.custom_minimum_size = Vector2(80, 0)
 		btn.disabled = not can_afford
-		var recipe_copy := recipe.duplicate()
+		var recipe_copy: Dictionary = recipe.duplicate()
 		btn.pressed.connect(func(): _on_craft(recipe_copy))
 		row.add_child(btn)
 

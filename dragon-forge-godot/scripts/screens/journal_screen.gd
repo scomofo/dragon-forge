@@ -80,7 +80,7 @@ func _rebuild_list() -> void:
 			btn.disabled = true
 		elif unlocked:
 			btn.text = "CLAIM\n+%d" % reward
-			var mid_copy := milestone.duplicate()
+			var mid_copy: Dictionary = milestone.duplicate()
 			btn.pressed.connect(func(): _on_claim(mid_copy))
 		else:
 			btn.text = "LOCKED"

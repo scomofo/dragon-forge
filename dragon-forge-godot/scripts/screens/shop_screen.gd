@@ -74,7 +74,7 @@ func _rebuild_list() -> void:
 		btn.text = "BUY\n%d" % cost
 		btn.custom_minimum_size = Vector2(64, 0)
 		btn.disabled = not can_afford
-		var item_copy := item.duplicate()
+		var item_copy: Dictionary = item.duplicate()
 		btn.pressed.connect(func(): _on_buy(item_copy))
 		row.add_child(btn)
 
