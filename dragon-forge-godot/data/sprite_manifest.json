@@ -1,9 +1,53 @@
 {
-  "fire_stage1":   "res://assets/sprites/fire_stage1.png",
-  "ice_stage1":    "res://assets/sprites/ice_stage1.png",
-  "storm_stage1":  "res://assets/sprites/storm_stage1.png",
-  "stone_stage1":  "res://assets/sprites/stone_stage1.png",
-  "venom_stage1":  "res://assets/sprites/venom_stage1.png",
-  "shadow_stage1": "res://assets/sprites/shadow_stage1.png",
-  "void_stage1":   "res://assets/sprites/void_stage1.png"
+  "fire_stage1":   "res://assets/dragons/fire_stage1.png",
+  "fire_stage2":   "res://assets/dragons/fire_stage2.png",
+  "fire_stage3":   "res://assets/dragons/fire_stage3.png",
+  "fire_stage4":   "res://assets/dragons/fire_stage4.png",
+
+  "ice_stage1":    "res://assets/dragons/ice_stage1.png",
+  "ice_stage2":    "res://assets/dragons/ice_stage2.png",
+  "ice_stage3":    "res://assets/dragons/ice_stage3.png",
+  "ice_stage4":    "res://assets/dragons/ice_stage4.png",
+
+  "storm_stage1":  "res://assets/dragons/storm_stage1.png",
+  "storm_stage2":  "res://assets/dragons/storm_stage2.png",
+  "storm_stage3":  "res://assets/dragons/storm_stage3.png",
+  "storm_stage4":  "res://assets/dragons/storm_stage4.png",
+
+  "stone_stage1":  "res://assets/dragons/stone_stage1.png",
+  "stone_stage2":  "res://assets/dragons/stone_stage2.png",
+  "stone_stage3":  "res://assets/dragons/stone_stage3.png",
+  "stone_stage4":  "res://assets/dragons/stone_stage4.png",
+
+  "venom_stage1":  "res://assets/dragons/venom_stage1.png",
+  "venom_stage2":  "res://assets/dragons/venom_stage2.png",
+  "venom_stage3":  "res://assets/dragons/venom_stage3.png",
+  "venom_stage4":  "res://assets/dragons/venom_stage4.png",
+
+  "shadow_stage1": "res://assets/dragons/shadow_stage1.png",
+  "shadow_stage2": "res://assets/dragons/shadow_stage2.png",
+  "shadow_stage3": "res://assets/dragons/shadow_stage3.png",
+  "shadow_stage4": "res://assets/dragons/shadow_stage4.png",
+
+  "npc_buffer_overflow_sprites":  "res://assets/npc/buffer_overflow_sprites.png",
+  "npc_buffer_overflow_attack":   "res://assets/npc/buffer_overflow_attack.png",
+  "npc_crypto_crab_sprites":      "res://assets/npc/crypto_crab_sprites.png",
+  "npc_crypto_crab_attack":       "res://assets/npc/crypto_crab_attack.png",
+  "npc_logic_bomb_sprites":       "res://assets/npc/logic_bomb_sprites.png",
+  "npc_logic_bomb_attack":        "res://assets/npc/logic_bomb_attack.png",
+  "npc_phishing_siren_sprites":   "res://assets/npc/phishing_siren_sprites.png",
+  "npc_phishing_siren_attack":    "res://assets/npc/phishing_siren_attack.png",
+  "npc_protocol_vulture_sprites": "res://assets/npc/protocol_vulture_sprites.png",
+  "npc_protocol_vulture_attack":  "res://assets/npc/protocol_vulture_attack.png",
+
+  "particle_fire":   "res://assets/vfx/particle_fire.png",
+  "particle_ice":    "res://assets/vfx/particle_ice.png",
+  "particle_storm":  "res://assets/vfx/particle_storm.png",
+  "particle_stone":  "res://assets/vfx/particle_stone.png",
+  "particle_venom":  "res://assets/vfx/particle_venom.png",
+  "particle_shadow": "res://assets/vfx/particle_shadow.png",
+
+  "corruption_stage_2": "res://assets/vfx/corruption_stage_2.png",
+  "corruption_stage_3": "res://assets/vfx/corruption_stage_3.png",
+  "corruption_stage_4": "res://assets/vfx/corruption_stage_4.png"
 }
