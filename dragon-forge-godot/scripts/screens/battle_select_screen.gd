@@ -23,13 +23,13 @@ var _selected_enemy: String = ""
 
 func setup(save: Dictionary) -> void:
 	_save = save.duplicate(true)
+	_refresh()
 
 func _ready() -> void:
 	fight_button.pressed.connect(_on_fight_pressed)
 	nav_bar.navigate.connect(func(t): navigate.emit(t, null))
 	nav_bar.setup(NAV_ENTRIES)
 	fight_button.visible = false
-	_build_lists()
 
 func _build_lists() -> void:
 	for c in dragon_scroll.get_children(): c.queue_free()

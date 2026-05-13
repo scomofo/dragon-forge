@@ -34,13 +34,13 @@ var _selected_npc_id: String = ""
 
 func setup(save: Dictionary) -> void:
 	_save = save.duplicate(true)
+	_refresh()
 
 func _ready() -> void:
 	nav_bar.navigate.connect(func(t): navigate.emit(t, null))
 	nav_bar.setup(NAV_ENTRIES)
 	challenge_button.visible = false
 	challenge_button.pressed.connect(_on_challenge_pressed)
-	_refresh()
 
 func _refresh() -> void:
 	_rebuild_dragon_list()

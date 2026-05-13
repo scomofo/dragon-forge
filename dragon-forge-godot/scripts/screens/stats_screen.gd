@@ -19,11 +19,11 @@ var _save: Dictionary = {}
 
 func setup(save: Dictionary) -> void:
 	_save = save.duplicate(true)
+	_refresh()
 
 func _ready() -> void:
 	nav_bar.navigate.connect(func(t): navigate.emit(t, null))
 	nav_bar.setup(NAV_ENTRIES)
-	_refresh()
 
 func _refresh() -> void:
 	var lines: PackedStringArray = []

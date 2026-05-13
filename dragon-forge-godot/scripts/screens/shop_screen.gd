@@ -22,13 +22,13 @@ var _shop_items: Array = []
 
 func setup(save: Dictionary) -> void:
 	_save = save.duplicate(true)
+	_refresh()
 
 func _ready() -> void:
 	nav_bar.navigate.connect(func(t): navigate.emit(t, null))
 	nav_bar.setup(NAV_ENTRIES)
 	status_label.text = ""
 	_load_shop_data()
-	_refresh()
 
 func _load_shop_data() -> void:
 	var file := FileAccess.open("res://data/shop_items.json", FileAccess.READ)

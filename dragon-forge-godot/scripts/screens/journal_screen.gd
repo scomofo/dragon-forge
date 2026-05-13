@@ -21,13 +21,13 @@ var _milestones: Array = []
 
 func setup(save: Dictionary) -> void:
 	_save = save.duplicate(true)
+	_refresh()
 
 func _ready() -> void:
 	nav_bar.navigate.connect(func(t): navigate.emit(t, null))
 	nav_bar.setup(NAV_ENTRIES)
 	status_label.text = ""
 	_load_milestones()
-	_refresh()
 
 func _load_milestones() -> void:
 	var file := FileAccess.open("res://data/journal_milestones.json", FileAccess.READ)

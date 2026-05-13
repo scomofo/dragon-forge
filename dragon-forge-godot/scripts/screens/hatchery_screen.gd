@@ -26,6 +26,7 @@ var _save: Dictionary = {}
 
 func setup(save: Dictionary) -> void:
 	_save = save.duplicate(true)
+	_refresh()
 
 func _ready() -> void:
 	pull_button.pressed.connect(_on_pull_pressed)
@@ -33,7 +34,6 @@ func _ready() -> void:
 	nav_bar.navigate.connect(func(t): navigate.emit(t, null))
 	nav_bar.setup(NAV_ENTRIES)
 	egg_overlay.visible = false
-	_refresh()
 
 func _refresh() -> void:
 	var scraps: int = int(_save.get("data_scraps", 0))

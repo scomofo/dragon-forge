@@ -29,7 +29,9 @@ func set_dragon(dragon_id: String, stage: int = 1) -> void:
 
 func _apply(dragon_id: String, stage: int) -> void:
 	var path: String = _resolve_path(dragon_id, stage)
+	print("[DragonSprite] id=%s stage=%d path=%s" % [dragon_id, stage, path])
 	var tex: Texture2D = _load_texture(path)
+	print("[DragonSprite] tex=%s" % str(tex))
 	if tex != null:
 		sprite_rect.texture = tex
 		sprite_rect.visible = true
@@ -43,13 +45,17 @@ func _apply(dragon_id: String, stage: int) -> void:
 
 func _load_texture(path: String) -> Texture2D:
 	if path == "":
+		print("[DragonSprite] _load_texture: empty path")
 		return null
 	if ResourceLoader.exists(path):
+		print("[DragonSprite] loading via ResourceLoader: %s" % path)
 		return load(path)
-	# Fallback: load raw image file (works before Godot imports the asset)
 	var abs_path: String = ProjectSettings.globalize_path(path)
+	print("[DragonSprite] trying Image.load: %s" % abs_path)
 	var img := Image.new()
-	if img.load(abs_path) == OK:
+	var err := img.load(abs_path)
+	print("[DragonSprite] Image.load err=%d" % err)
+	if err == OK:
 		return ImageTexture.create_from_image(img)
 	return null
 

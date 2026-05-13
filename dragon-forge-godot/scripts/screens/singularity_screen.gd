@@ -26,6 +26,7 @@ var _selected_boss_id: String = ""
 
 func setup(save: Dictionary) -> void:
 	_save = save.duplicate(true)
+	_refresh()
 
 func _ready() -> void:
 	nav_bar.navigate.connect(func(t): navigate.emit(t, null))
@@ -33,7 +34,6 @@ func _ready() -> void:
 	challenge_button.visible = false
 	challenge_button.pressed.connect(_on_challenge_pressed)
 	_load_boss_data()
-	_refresh()
 
 func _load_boss_data() -> void:
 	var file := FileAccess.open("res://data/singularity_bosses.json", FileAccess.READ)

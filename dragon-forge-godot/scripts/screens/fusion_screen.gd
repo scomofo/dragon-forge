@@ -55,6 +55,7 @@ var _selected_b: String = ""
 
 func setup(save: Dictionary) -> void:
 	_save = save.duplicate(true)
+	_refresh()
 
 func _ready() -> void:
 	fuse_button.pressed.connect(_on_fuse_pressed)
@@ -62,7 +63,6 @@ func _ready() -> void:
 	nav_bar.setup(NAV_ENTRIES)
 	fusion_overlay.visible = false
 	fuse_button.visible = false
-	_refresh()
 
 func _refresh() -> void:
 	scraps_label.text = "DATA SCRAPS: %d" % int(_save.get("data_scraps", 0))
