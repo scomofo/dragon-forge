@@ -13,11 +13,21 @@ const ELEMENT_COLORS := {
 }
 
 var _manifest: Dictionary = {}
+var _pending_id: String = ""
+var _pending_stage: int = 1
 
 func _ready() -> void:
 	_load_manifest()
+	if _pending_id != "":
+		_apply(_pending_id, _pending_stage)
 
 func set_dragon(dragon_id: String, stage: int = 1) -> void:
+	_pending_id = dragon_id
+	_pending_stage = stage
+	if is_node_ready():
+		_apply(dragon_id, stage)
+
+func _apply(dragon_id: String, stage: int) -> void:
 	var path: String = _resolve_path(dragon_id, stage)
 	var tex: Texture2D = _load_texture(path)
 	if tex != null:
