@@ -1,18 +1,19 @@
 import { assetUrl } from './utils';
 
 // === ELEMENTS ===
-export const ELEMENTS = ['fire', 'ice', 'storm', 'stone', 'venom', 'shadow', 'void'];
+export const ELEMENTS = ['fire', 'ice', 'storm', 'stone', 'venom', 'shadow', 'void', 'light'];
 
 // === TYPE EFFECTIVENESS ===
 // typeChart[attacker][defender] = multiplier
 export const typeChart = {
-  fire:   { fire: 0.5, ice: 2.0, storm: 1.0, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0 },
-  ice:    { fire: 0.5, ice: 0.5, storm: 2.0, stone: 1.0, venom: 1.0, shadow: 2.0, void: 1.0 },
-  storm:  { fire: 1.0, ice: 0.5, storm: 0.5, stone: 2.0, venom: 1.0, shadow: 2.0, void: 1.0 },
-  stone:  { fire: 2.0, ice: 1.0, storm: 0.5, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0 },
-  venom:  { fire: 0.5, ice: 1.0, storm: 1.0, stone: 0.5, venom: 0.5, shadow: 2.0, void: 1.0 },
-  shadow: { fire: 1.0, ice: 0.5, storm: 0.5, stone: 1.0, venom: 0.5, shadow: 0.5, void: 1.0 },
-  void:   { fire: 1.0, ice: 1.0, storm: 1.0, stone: 1.0, venom: 1.0, shadow: 1.0, void: 1.0 },
+  fire:   { fire: 0.5, ice: 2.0, storm: 1.0, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 1.0 },
+  ice:    { fire: 0.5, ice: 0.5, storm: 2.0, stone: 1.0, venom: 1.0, shadow: 2.0, void: 1.0, light: 1.0 },
+  storm:  { fire: 1.0, ice: 0.5, storm: 0.5, stone: 2.0, venom: 1.0, shadow: 2.0, void: 1.0, light: 1.0 },
+  stone:  { fire: 2.0, ice: 1.0, storm: 0.5, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 2.0 },
+  venom:  { fire: 0.5, ice: 1.0, storm: 1.0, stone: 0.5, venom: 0.5, shadow: 2.0, void: 1.0, light: 0.5 },
+  shadow: { fire: 1.0, ice: 0.5, storm: 0.5, stone: 1.0, venom: 0.5, shadow: 0.5, void: 1.0, light: 0.5 },
+  void:   { fire: 1.0, ice: 1.0, storm: 1.0, stone: 1.0, venom: 1.0, shadow: 1.0, void: 1.0, light: 2.0 },
+  light:  { fire: 1.0, ice: 1.0, storm: 1.0, stone: 0.5, venom: 2.0, shadow: 2.0, void: 0.5, light: 1.0 },
 };
 
 // === STAGE MULTIPLIERS ===
@@ -44,6 +45,9 @@ export const moves = {
   // Void
   void_rift:      { name: 'Void Rift',      element: 'void',  power: 80, accuracy: 80, vfxKey: 'VOID_RIFT', canApplyStatus: true },
   null_reflect:   { name: 'Null Reflect',    element: 'void',  power: 0,  accuracy: 100, vfxKey: 'NULL_REFLECT', canApplyStatus: false, isReflect: true },
+  // Light
+  radiant_beam:  { name: 'Radiant Beam',  element: 'light', power: 65, accuracy: 95,  vfxKey: 'RADIANT_BEAM',  canApplyStatus: true },
+  solar_flare:   { name: 'Solar Flare',   element: 'light', power: 70, accuracy: 85,  vfxKey: 'SOLAR_FLARE',   canApplyStatus: true },
   // Neutral
   basic_attack:     { name: 'Basic Attack',      element: 'neutral', power: 40, accuracy: 100, vfxKey: 'BASIC_ATTACK', canApplyStatus: false },
 };
@@ -114,6 +118,15 @@ export const dragons = {
     spriteSheet: assetUrl('/assets/dragons/void_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/void_stage1.png'), 2: assetUrl('/assets/dragons/void_stage2.png'), 3: assetUrl('/assets/dragons/void_stage3.png'), 4: assetUrl('/assets/dragons/void_stage4.png') },
     facesLeft: true,
+  },
+  light: {
+    id: 'light',
+    name: 'Light Dragon',
+    element: 'light',
+    baseStats: { hp: 100, atk: 26, def: 22, spd: 22 },
+    moveKeys: ['radiant_beam', 'solar_flare'],
+    spriteSheet: assetUrl('/assets/dragons/light.png'),
+    stageSprites: { 1: assetUrl('/assets/dragons/light_stage1.png'), 2: assetUrl('/assets/dragons/light_stage2.png'), 3: assetUrl('/assets/dragons/light_stage3.png'), 4: assetUrl('/assets/dragons/light_stage4.png') },
   },
 };
 
@@ -270,6 +283,7 @@ export const elementColors = {
   shadow:  { primary: '#8844aa', glow: '#aa66cc', icon: '👁️' },
   neutral: { primary: '#888888', glow: '#aaaaaa', icon: '⚔️' },
   void:    { primary: '#00cccc', glow: '#44eeee', icon: '🌀' },
+  light:   { primary: '#FFD966', glow: '#FFEEAA', icon: '☀️' },
 };
 
 // === DRAGON LORE ===
@@ -281,6 +295,7 @@ export const dragonLore = {
   venom:  "Secretes a neurotoxin that can dissolve organic matter in seconds. Keep it away from the lab samples.",
   shadow: "This one... shouldn't exist. It reads as a gap in the data — a hole where reality should be. Fascinating.",
   void:   "It came from beyond the Elemental Matrix — a tear in the simulation itself. I don't think it belongs to any element. I don't think it belongs to this reality at all.",
+  light:  "A being of pure radiant energy, born where starlight and data converge. Its glow disrupts shadow-type systems at the hardware level.",
 };
 
 // === EGG SPRITES ===
