@@ -11,6 +11,7 @@ const DEFAULT_SAVE = {
     venom:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
     shadow: { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
     void:   { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
+    light:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
   },
   dataScraps: 0,
   pityCounter: 0,

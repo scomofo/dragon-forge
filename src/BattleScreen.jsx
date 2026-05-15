@@ -1064,7 +1064,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             const moveColor = elementColors[move.element] || elementColors.neutral;
             const isResolving = isResolvingTurn;
             const isSelected = selectedMoveKey === move.key;
-            const matchup = getMoveEffectivenessLabel(move.element, npc.element);
+            const matchup = getTypeEffectivenessLabel(move.element, npc.element);
             const statusSummary = getStatusMoveSummary(move);
             return (
               <button
