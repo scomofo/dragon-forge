@@ -1,5 +1,9 @@
 import { STATUS_APPLY_CHANCE, STATUS_EFFECTS } from './gameData';
 
+// These profiles are the single source of truth for battle pacing.
+// BattleScreen consumes these values for anticipation, hit-stop, shake,
+// recoil, callouts, and damage-number variants. Keep them conservative:
+// the goal is crunchy 16-bit impact without slowing every turn down.
 const BASE_PROFILES = {
   defend: {
     kind: 'defend',
@@ -18,9 +22,9 @@ const BASE_PROFILES = {
     kind: 'reflect',
     anticipationMs: 300,
     launchMs: 260,
-    impactPauseMs: 90,
-    recoveryMs: 240,
-    shake: 5,
+    impactPauseMs: 100,
+    recoveryMs: 250,
+    shake: 6,
     flashColor: '#b388ff',
     attackerClass: 'sprite-telegraph-heavy',
     defenderClass: 'sprite-reflect-hit',
@@ -32,7 +36,7 @@ const BASE_PROFILES = {
     anticipationMs: 220,
     launchMs: 260,
     impactPauseMs: 0,
-    recoveryMs: 170,
+    recoveryMs: 220,
     shake: 0,
     flashColor: '#777777',
     attackerClass: 'sprite-telegraph',
@@ -57,9 +61,9 @@ const BASE_PROFILES = {
     kind: 'normalHit',
     anticipationMs: 260,
     launchMs: 320,
-    impactPauseMs: 60,
-    recoveryMs: 200,
-    shake: 5,
+    impactPauseMs: 70,
+    recoveryMs: 205,
+    shake: 6,
     flashColor: '#ffffff',
     attackerClass: 'sprite-telegraph',
     defenderClass: 'sprite-recoil',
@@ -70,9 +74,9 @@ const BASE_PROFILES = {
     kind: 'effectiveHit',
     anticipationMs: 300,
     launchMs: 330,
-    impactPauseMs: 90,
-    recoveryMs: 220,
-    shake: 8,
+    impactPauseMs: 100,
+    recoveryMs: 230,
+    shake: 9,
     flashColor: '#ff6644',
     attackerClass: 'sprite-telegraph-heavy',
     defenderClass: 'sprite-recoil-heavy',
@@ -83,9 +87,9 @@ const BASE_PROFILES = {
     kind: 'criticalHit',
     anticipationMs: 340,
     launchMs: 340,
-    impactPauseMs: 120,
-    recoveryMs: 260,
-    shake: 11,
+    impactPauseMs: 135,
+    recoveryMs: 280,
+    shake: 12,
     flashColor: '#ffcc00',
     attackerClass: 'sprite-telegraph-heavy',
     defenderClass: 'sprite-critical-hit',
@@ -96,9 +100,9 @@ const BASE_PROFILES = {
     kind: 'ko',
     anticipationMs: 320,
     launchMs: 340,
-    impactPauseMs: 140,
-    recoveryMs: 320,
-    shake: 10,
+    impactPauseMs: 150,
+    recoveryMs: 340,
+    shake: 11,
     flashColor: '#ffffff',
     attackerClass: 'sprite-telegraph-heavy',
     defenderClass: 'sprite-ko-hit',
@@ -146,6 +150,9 @@ export function getBattlePresentationProfile(event, move = null) {
     kind,
     anticipationMs: isHeavyMove ? profile.anticipationMs + 60 : profile.anticipationMs,
     launchMs: isHeavyMove ? profile.launchMs + 40 : profile.launchMs,
+    // Heavy moves should feel weightier, but hit-stop must stay capped so combat remains snappy.
+    impactPauseMs: isHeavyMove ? Math.min(profile.impactPauseMs + 15, 165) : profile.impactPauseMs,
+    recoveryMs: isHeavyMove ? profile.recoveryMs + 20 : profile.recoveryMs,
     flashColor: move?.element && move.element !== 'neutral'
       ? profile.flashColor
       : profile.flashColor,
