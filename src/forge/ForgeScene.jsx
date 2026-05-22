@@ -21,8 +21,8 @@ export default function ForgeScene({ skyePos, nearest, view }) {
 function ForgeAtmosphere() {
   return (
     <>
-      <div className="forge-atmosphere" aria-hidden />
-      <div className="forge-light-slice" aria-hidden />
+      <div className="forge-atmosphere" aria-hidden="true" />
+      <div className="forge-light-slice" aria-hidden="true" />
     </>
   );
 }
@@ -36,7 +36,7 @@ function BulkheadView({ view }) {
         '--bulkhead-mid': view.palette[1],
         '--bulkhead-bottom': view.palette[2],
       }}
-      aria-hidden
+      aria-hidden="true"
     >
       <div className="forge-bulkhead-scanlines" />
     </div>
@@ -57,7 +57,7 @@ function ForgeFloorZones() {
         <div
           key={zone.label}
           className="forge-floor-zone"
-          aria-hidden
+          aria-hidden="true"
           style={{
             left: zone.left,
             top: zone.top,
@@ -67,7 +67,7 @@ function ForgeFloorZones() {
           }}
         />
       ))}
-      <div className="forge-front-platform" aria-hidden />
+      <div className="forge-front-platform" aria-hidden="true" />
     </>
   );
 }
@@ -86,7 +86,7 @@ function CablePaths() {
   );
 
   return (
-    <svg className="forge-cables" aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none">
+    <svg className="forge-cables" aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none">
       {cable('30,75 30,60 42,60 55,60', '#5cff8a', 0.45)}
       {cable('30,75 30,60 30,30', '#5edcff', 0.5)}
       {cable('55,60 70,60 70,28', '#ffcd6b', 0.42)}
@@ -101,7 +101,7 @@ function CablePaths() {
 }
 
 function FloorGrid() {
-  return <div className="forge-floor-grid" aria-hidden />;
+  return <div className="forge-floor-grid" aria-hidden="true" />;
 }
 
 function Station({ station, highlighted }) {
@@ -120,6 +120,8 @@ function Station({ station, highlighted }) {
         '--station-glow': glow || '#d7ad4b',
         '--station-pulse-ms': `${pulseMs || 0}ms`,
       }}
+      role="region"
+      aria-label={label}
     >
       <StationSilhouette type={station.id} highlighted={highlighted} glow={glow} />
       <span className="forge-station-label">{label}</span>
@@ -133,7 +135,7 @@ function StationSilhouette({ type, glow, highlighted }) {
 
   if (type === STATION_IDS.HATCHERY_RING) {
     return (
-      <div className={`forge-silhouette hatchery ${highlighted ? 'is-highlighted' : ''}`} style={style}>
+      <div className={`forge-silhouette hatchery ${highlighted ? 'is-highlighted' : ''}`} style={style} aria-hidden="true">
         <div className="ring" />
         <div className="egg" />
         <div className="h-line" />
@@ -142,7 +144,7 @@ function StationSilhouette({ type, glow, highlighted }) {
     );
   }
 
-  return <div className={`forge-silhouette ${type} ${highlighted ? 'is-highlighted' : ''}`} style={style} />;
+  return <div className={`forge-silhouette ${type} ${highlighted ? 'is-highlighted' : ''}`} style={style} aria-hidden="true" />;
 }
 
 function SkyeSprite({ pos }) {
@@ -159,7 +161,7 @@ function SkyeSprite({ pos }) {
 function ProximityHud({ nearest }) {
   if (!nearest) return null;
   return (
-    <div className="forge-proximity-hud" data-testid="forge-proximity">
+    <div className="forge-proximity-hud" data-testid="forge-proximity" role="status" aria-live="polite">
       <span>[E]</span> <strong>{nearest.label}</strong>{' '}
       <small>{nearest.description}</small>
     </div>
@@ -167,5 +169,5 @@ function ProximityHud({ nearest }) {
 }
 
 function ControlsHint() {
-  return <div className="forge-controls-hint">WASD / arrows to walk | E to interact | Esc to close</div>;
+  return <div className="forge-controls-hint" aria-label="Movement controls">WASD / arrows to walk | E to interact | Esc to close</div>;
 }

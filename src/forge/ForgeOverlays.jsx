@@ -250,7 +250,7 @@ export function LanternOverlay({ onClose, refreshSave }) {
 
   return (
     <OverlayShell title="SAVE LANTERN" accent={FORGE_PALETTE.lanternWarm} onClose={onClose}>
-      <p className="forge-muted">Checkpoint synced. Current systems have no rest-only HP or capacitor state to refill yet.</p>
+      <p className="forge-muted">Analog sync complete. Your progress is anchored to the Forge Matrix.</p>
       <button className="forge-primary-action" type="button" onClick={checkpoint}>SYNC CHECKPOINT</button>
     </OverlayShell>
   );
