@@ -39,11 +39,11 @@ stories:
     name: "Status And Recoil Effects"
     file: "production/epics/battle-engine/story-003-status-and-recoil-effects.md"
     priority: must-have
-    status: ready-for-dev
+    status: done
     owner: ""
     estimate_days: 1.0
     blocker: ""
-    completed: ""
+    completed: "2026-05-27"
   - id: "BATTLE-004"
     name: "Telegraph, Defend, And Defrag Delta"
     file: "production/epics/battle-engine/story-004-telegraph-defend-and-defrag-delta.md"

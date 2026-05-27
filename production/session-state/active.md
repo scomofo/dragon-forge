@@ -1,8 +1,8 @@
 # Session State
 
 **Task**: Sprint 03 Core smoke shell and runtime hardening
-**Current section**: DRAGON-005 complete; BATTLE-003 readiness next
-**File**: production/epics/battle-engine/story-003-status-and-recoil-effects.md
+**Current section**: BATTLE-003 complete; BATTLE-004 readiness next
+**File**: production/epics/battle-engine/story-004-telegraph-defend-and-defrag-delta.md
 
 ## Latest Handoff — 2026-05-27
 
@@ -12,9 +12,9 @@ Fresh handoff for a new chat:
 
 Immediate next action:
 
-1. Run `/story-readiness production/epics/battle-engine/story-003-status-and-recoil-effects.md`
+1. Run `/story-readiness production/epics/battle-engine/story-004-telegraph-defend-and-defrag-delta.md`
 
-Fresh evidence: DRAGON-005 focused suite passes with 4/4 tests and 62 assertions; full Godot/GUT unit + integration suite passes with 26 scripts, 127 tests, and 6,953 assertions. SCENE-003 focused suite passes with 4/4 tests and 37 assertions; adjacent Scene Flow/bootstrap suites pass with 12/12 tests and 117 assertions; headless production launch exits 0. Sprint 03 smoke refresh is PASS WITH WARNINGS at `production/qa/smoke-sprint-03-2026-05-27.md` and records production shell/main-menu smoke as PASS, not DEFERRED. Sprint 02 smoke check is PASS WITH WARNINGS at `production/qa/smoke-sprint-02-2026-05-27.md`; QA sign-off is APPROVED WITH CONDITIONS at `production/qa/qa-signoff-sprint-02-2026-05-27.md`; retrospective is saved at `production/retrospectives/retro-sprint-02-2026-05-27.md`; Sprint 03 plan is saved at `production/sprints/sprint-03.md`; Sprint 03 QA plan is saved at `production/qa/qa-plan-sprint-03-2026-05-27.md`.
+Fresh evidence: BATTLE-003 focused status/recoil suite passes with 5/5 tests and 38 assertions; Battle Engine unit/integration slice passes with 17/17 tests and 921 assertions; full Godot/GUT unit + integration suite passes with 27 scripts, 132 tests, and 7,013 assertions. DRAGON-005 focused suite passes with 4/4 tests and 62 assertions. SCENE-003 focused suite passes with 4/4 tests and 37 assertions; adjacent Scene Flow/bootstrap suites pass with 12/12 tests and 117 assertions; headless production launch exits 0. Sprint 03 smoke refresh is PASS WITH WARNINGS at `production/qa/smoke-sprint-03-2026-05-27.md` and records production shell/main-menu smoke as PASS, not DEFERRED. Sprint 02 smoke check is PASS WITH WARNINGS at `production/qa/smoke-sprint-02-2026-05-27.md`; QA sign-off is APPROVED WITH CONDITIONS at `production/qa/qa-signoff-sprint-02-2026-05-27.md`; retrospective is saved at `production/retrospectives/retro-sprint-02-2026-05-27.md`; Sprint 03 plan is saved at `production/sprints/sprint-03.md`; Sprint 03 QA plan is saved at `production/qa/qa-plan-sprint-03-2026-05-27.md`.
 
 <!-- QA RUN: 2026-05-27 | Sprint: sprint-02 | Verdict: APPROVED WITH CONDITIONS | Report: production/qa/qa-signoff-sprint-02-2026-05-27.md -->
 <!-- RETRO: 2026-05-27 | Sprint: sprint-02 | Report: production/retrospectives/retro-sprint-02-2026-05-27.md -->
@@ -60,6 +60,26 @@ Fresh evidence: DRAGON-005 focused suite passes with 4/4 tests and 62 assertions
 - Lead programmer gate: APPROVED WITH SUGGESTIONS via `/code-review`; full-mode lead-programmer sidecar retry unavailable due thread limit.
 - Tech debt logged: None.
 - Next recommended: `/story-readiness production/epics/battle-engine/story-003-status-and-recoil-effects.md`.
+
+## Session Extract — /dev-story 2026-05-27
+- Story: production/epics/battle-engine/story-003-status-and-recoil-effects.md — Status And Recoil Effects
+- Status: In Progress; implementation and review fix evidence are complete, code review/story closure pending.
+- Implementation: added runtime-only `CombatantBattleState` and `StatusRuntimeState`, named status apply/recoil result payloads, and BattleSession helpers for deterministic status application, single-slot overwrite, Burn/Poison RECOIL DoT, Freeze/Paralysis TELEGRAPH skips, Guard Break effective defense, and player-then-enemy RECOIL ordering. Review fix clears stale Freeze `pending_skip` when a non-Freeze status overwrites it.
+- Test written: `tests/unit/battle_engine/test_status_and_recoil_effects.gd` with 5 test functions covering every story acceptance criterion.
+- Test evidence: focused BATTLE-003 unit suite passed with 5/5 tests and 38 assertions; Battle Engine unit/integration slice passed with 17/17 tests and 921 assertions; full unit/integration suite passed with 132/132 tests and 7,013 assertions.
+- Scope notes: no status UI/icons, Defrag Patch clearing, presentation profile signals, animation binding, SaveData mutation, or durable settlement added.
+- Blockers: None.
+- Next recommended: `/code-review src/battle/runtime/battle_session.gd src/battle/runtime/combatant_battle_state.gd src/battle/runtime/status_runtime_state.gd src/battle/runtime/battle_status_apply_result.gd src/battle/runtime/battle_recoil_result.gd tests/unit/battle_engine/test_status_and_recoil_effects.gd production/epics/battle-engine/story-003-status-and-recoil-effects.md`, then `/story-done production/epics/battle-engine/story-003-status-and-recoil-effects.md`.
+
+## Session Extract — /story-done 2026-05-27
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/battle-engine/story-003-status-and-recoil-effects.md — Status And Recoil Effects
+- Acceptance criteria: 6/6 passing.
+- Test evidence: focused BATTLE-003 unit suite passed with 5/5 tests and 38 assertions; Battle Engine unit/integration slice passed with 17/17 tests and 921 assertions; full unit/integration suite passed with 132/132 tests and 7,013 assertions.
+- QA coverage gate: ADEQUATE locally; full-mode qa-lead sidecar unavailable due thread limit.
+- Lead programmer gate: APPROVED via `/code-review`; full-mode lead-programmer sidecar unavailable due thread limit.
+- Tech debt logged: None.
+- Next recommended: `/story-readiness production/epics/battle-engine/story-004-telegraph-defend-and-defrag-delta.md`.
 
 CodeGraph is now usable for GDScript in this project: 74 files, 2,022 nodes, 4,530 edges, 63 GDScript files, index up to date. The old note below saying CodeGraph was unusable is superseded.
 
