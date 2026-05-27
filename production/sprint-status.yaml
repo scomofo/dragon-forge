@@ -57,20 +57,20 @@ stories:
     name: "Scrap Spend Transaction Boundary"
     file: "production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md"
     priority: must-have
-    status: ready-for-dev
+    status: done
     owner: ""
     estimate_days: 1.0
     blocker: ""
-    completed: ""
+    completed: "2026-05-27"
   - id: "BATTLE-001"
     name: "Runtime Session And Payload Contracts"
     file: "production/epics/battle-engine/story-001-runtime-session-and-payload-contracts.md"
     priority: must-have
-    status: ready-for-dev
+    status: done
     owner: ""
     estimate_days: 1.5
     blocker: ""
-    completed: ""
+    completed: "2026-05-27"
   - id: "DRAGON-004"
     name: "Dragon Creation And Source Helpers"
     file: "production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md"

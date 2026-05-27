@@ -1,8 +1,8 @@
 # Session State
 
 **Task**: Sprint 02 Core gameplay services
-**Current section**: Economy Ledger Story 001 complete; Economy Ledger Story 002 readiness is next
-**File**: production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md
+**Current section**: Battle Engine Story 001 complete; choose sprint close-out or pull a Should Have story
+**File**: production/sprint-status.yaml
 
 ## Latest Handoff — 2026-05-27
 
@@ -12,10 +12,11 @@ Fresh handoff for a new chat:
 
 Immediate next action:
 
-1. `/story-readiness production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md`
-2. If ready, `/dev-story production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md`
+1. Choose whether to close Sprint 02 Must Have scope or pull a Should Have story.
+2. Sprint close-out path: `/smoke-check sprint`, then `/team-qa sprint`, then `/retrospective`.
+3. Pull-more-work path: `/story-readiness production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md` or another Should Have story.
 
-Fresh evidence: full Godot/GUT unit + integration suite passes with 19 scripts, 94 tests, and 5,802 assertions.
+Fresh evidence: full Godot/GUT unit + integration suite passes with 21 scripts, 106 tests, and 6,618 assertions.
 
 CodeGraph is now usable for GDScript in this project: 74 files, 2,022 nodes, 4,530 edges, 63 GDScript files, index up to date. The old note below saying CodeGraph was unusable is superseded.
 
@@ -542,3 +543,50 @@ Advisory also resolved:
 - Code review: APPROVED; no required changes.
 - Tech debt logged: None
 - Next recommended: `/story-readiness production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md`.
+
+## Session Extract - /dev-story 2026-05-27
+
+- Story: `production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md` - Scrap Spend Transaction Boundary
+- Status: In Progress; implementation and test evidence are complete, code review/story closure pending.
+- Readiness verdict: READY with QA lead ADEQUATE. ADR-0001 and ADR-0009 are accepted; ECO-001 and Save Transaction Commit And Rollback dependencies are complete; required integration evidence path is declared.
+- TDD evidence: focused ECO-002 suite first failed because `EconomyLedger.spend_scraps()` did not exist, then passed after implementation.
+- Implementation: `EconomyLedger.spend_scraps(tx, amount, sink_id)` stages Scrap spends only on active `SaveTransaction.staged_save.player_scraps`; invalid transactions, negative amounts, and insufficient balances fail without mutation; successful results include balance-before/balance-after plus `sink_id` audit data.
+- Test evidence: focused Economy spend integration suite passed with 5/5 tests and 45 assertions; full import plus unit/integration suite passed with 99/99 tests and 5,847 assertions.
+- Blockers: None.
+- Next recommended: `/code-review src/economy/economy_ledger.gd src/economy/economy_result.gd tests/integration/economy/test_scrap_spend_transaction_boundary.gd production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md`, then `/story-done production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md`.
+
+## Session Extract - /story-done 2026-05-27
+
+- Verdict: COMPLETE
+- Story: `production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md` - Scrap Spend Transaction Boundary
+- Acceptance criteria: 5/5 passing, covered by `tests/integration/economy/test_scrap_spend_transaction_boundary.gd`.
+- Implementation: `src/economy/economy_ledger.gd`, `src/economy/economy_result.gd`, and `tests/integration/economy/test_scrap_spend_transaction_boundary.gd`.
+- Test evidence: focused Economy spend integration suite passed with 5/5 tests and 45 assertions; full import plus unit/integration suite passed with 99/99 tests and 5,847 assertions.
+- Code review: APPROVED; no required changes.
+- Tech debt logged: None.
+- Review notes: Full review mode is configured, but delegated sidecar review was not spawned in this closure pass because sub-agent spawning requires an explicit delegation request in the current tool policy.
+- Next recommended: `/story-readiness production/epics/battle-engine/story-001-runtime-session-and-payload-contracts.md`.
+
+## Session Extract - /dev-story 2026-05-27
+
+- Story: `production/epics/battle-engine/story-001-runtime-session-and-payload-contracts.md` - Runtime Session And Payload Contracts
+- Status: In Progress; implementation and test evidence are complete, code review/story closure pending.
+- Readiness verdict: READY. QA lead and game-design sidecars both returned READY after readiness repair; ADR-0007 is accepted; `TR-battle-001` and `TR-battle-003` are active.
+- TDD evidence: focused BATTLE-001 suite first failed because `src/battle/runtime/*` did not exist, then passed after implementation.
+- Implementation: added a scene-owned `BattleRuntimeController` Node, one RefCounted `BattleSession`, typed setup/action/result/payload/delta contracts, scalar setup snapshotting on configure, explicit phase transitions, TELEGRAPH-only action acceptance, exactly-once `battle_completed(payload, delta)` emission, typed checkpoint/presentation payload shells, and no SaveService/SaveTransaction/SaveData dependency in runtime code.
+- Test evidence: focused Battle Engine runtime integration suite passed with 7/7 tests and 771 assertions; full unit/integration suite passed with 106/106 tests and 6,618 assertions.
+- GDScript sidecar: flagged the need for typed setup payloads instead of Dictionary setup and no debug Save fields in runtime; implementation was adjusted accordingly.
+- Code review follow-up: tightened `BattleDurableDelta.phase_checkpoint` to `BattlePhaseCheckpointDelta`, `TurnResolvedPayload.presentation_events` to `Array[PresentationEventPayload]`, replaced loose completion tuple handoff with a boolean consume method plus typed accessors, snapshotted setup scalar values to preserve ADR-0007 read-only setup semantics, gated manual `RESOLUTION -> COMPLETE` transitions on the completion snapshot, asserted KO phase order, and strengthened save-boundary tests with an immutable `SaveData` fixture plus public API checks.
+- Blockers: None.
+- Next recommended: `/code-review src/battle/runtime/battle_runtime_controller.gd src/battle/runtime/battle_session.gd src/battle/runtime/battle_runtime_state.gd src/battle/runtime/battle_setup_payload.gd src/battle/runtime/battle_action.gd src/battle/runtime/battle_action_result.gd src/battle/runtime/battle_advance_result.gd src/battle/runtime/battle_start_result.gd src/battle/runtime/battle_ended_payload.gd src/battle/runtime/battle_durable_delta.gd src/battle/runtime/battle_phase_checkpoint_delta.gd src/battle/runtime/presentation_event_payload.gd src/battle/runtime/turn_resolved_payload.gd tests/integration/battle_engine/test_runtime_session_and_payload_contracts.gd production/epics/battle-engine/story-001-runtime-session-and-payload-contracts.md`, then `/story-done production/epics/battle-engine/story-001-runtime-session-and-payload-contracts.md`.
+
+## Session Extract - /story-done 2026-05-27
+
+- Verdict: COMPLETE
+- Story: `production/epics/battle-engine/story-001-runtime-session-and-payload-contracts.md` - Runtime Session And Payload Contracts
+- Acceptance criteria: 6/6 passing, covered by `tests/integration/battle_engine/test_runtime_session_and_payload_contracts.gd`.
+- Test evidence: focused Battle Engine runtime integration suite passed with 7/7 tests and 771 assertions; full unit/integration suite passed with 106/106 tests and 6,618 assertions.
+- QA coverage gate: ADEQUATE.
+- Lead programmer gate: APPROVED.
+- Tech debt logged: None.
+- Next recommended: All Must Have Sprint 02 stories are complete. Either run `/smoke-check sprint` to start sprint close-out, or pull a Should Have story starting with `/story-readiness production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md`.
