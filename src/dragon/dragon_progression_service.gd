@@ -10,6 +10,7 @@ const DragonRecordResource = preload("res://src/dragon/dragon_record.gd")
 const XPApplyResultResource = preload("res://src/dragon/xp_apply_result.gd")
 const DragonCreationResultResource = preload("res://src/dragon/dragon_creation_result.gd")
 const DragonProgressionEventResource = preload("res://src/dragon/dragon_progression_event.gd")
+const DragonValidationResult = preload("res://src/dragon/dragon_validation_result.gd")
 
 const MIN_LEVEL: int = 1
 const MAX_LEVEL: int = 60
@@ -20,6 +21,8 @@ const SHINY_MULTIPLIER: float = 1.2
 const STANDARD_MULTIPLIER: float = 1.0
 const VOID_DRAGON_ID: StringName = &"void_dragon"
 const VOID_GRANT_LEVEL: int = 30
+const SOURCE_LOCAL: StringName = &"local"
+const SOURCE_CLOUD: StringName = &"cloud"
 
 const STAGE_I: int = 1
 const STAGE_II: int = 2
@@ -223,6 +226,67 @@ func apply_hatchery_duplicate_xp(tx: SaveTransaction, element: StringName, xp_am
 	return apply_xp(tx, dragon.dragon_id, xp_requested, source_id)
 
 
+## Validates and repairs dragon records in a loaded SaveData copy.
+## Invalid records are discarded; valid records are repaired before runtime access.
+func validate_and_repair_save_data(save_data: SaveData) -> DragonValidationResult:
+	var result: DragonValidationResult = _make_validation_result()
+	if save_data == null:
+		return _fail_validation_result(result, &"missing_save_data", "validate_and_repair_save_data requires SaveData.")
+
+	var repaired_dragons: Array[DragonRecord] = []
+	var seen_dragon_ids: Dictionary[StringName, bool] = {}
+	for dragon: DragonRecord in save_data.dragons:
+		if _repair_loaded_dragon(dragon, result, save_data):
+			if seen_dragon_ids.has(dragon.dragon_id):
+				_record_validation_error(
+					result,
+					dragon.dragon_id,
+					"Save integrity violation: duplicate dragon_id '%s'. Dragon record discarded." % dragon.dragon_id
+				)
+				continue
+			seen_dragon_ids[dragon.dragon_id] = true
+			repaired_dragons.append(dragon)
+
+	save_data.dragons = repaired_dragons
+	return result
+
+
+## Validates one loaded dragon record and returns a detached snapshot for readers.
+func validate_record(record: DragonRecord) -> DragonValidationResult:
+	var result: DragonValidationResult = _make_validation_result()
+	if record == null:
+		return _fail_validation_result(result, &"missing_dragon", "validate_record requires DragonRecord.")
+
+	var save_data: SaveData = SaveData.new()
+	var copy: DragonRecord = _snapshot_dragon(record)
+	save_data.dragons.append(copy)
+	if not _repair_loaded_dragon(copy, result, save_data):
+		return _fail_validation_result(result, &"invalid_dragon", "DragonRecord failed load validation.")
+
+	result.dragon = _snapshot_dragon(copy)
+	result.stats = calculate_stats(copy)
+	return result
+
+
+## Selects the authoritative loaded record for a local/cloud conflict.
+func select_conflict_winner(local_record: DragonRecord, cloud_record: DragonRecord) -> DragonValidationResult:
+	var result: DragonValidationResult = _make_validation_result()
+	if local_record == null and cloud_record == null:
+		return _fail_validation_result(result, &"missing_conflict_records", "At least one conflict record is required.")
+	if local_record == null:
+		return _select_conflict_source(result, SOURCE_CLOUD, cloud_record)
+	if cloud_record == null:
+		return _select_conflict_source(result, SOURCE_LOCAL, local_record)
+
+	if cloud_record.level > local_record.level:
+		return _select_conflict_source(result, SOURCE_CLOUD, cloud_record)
+	if local_record.level > cloud_record.level:
+		return _select_conflict_source(result, SOURCE_LOCAL, local_record)
+	if cloud_record.xp > local_record.xp:
+		return _select_conflict_source(result, SOURCE_CLOUD, cloud_record)
+	return _select_conflict_source(result, SOURCE_LOCAL, local_record)
+
+
 ## Subscribes this service to SaveService commit success for pending progression events.
 func bind_save_service(save_service: SaveService) -> void:
 	if save_service == null:
@@ -243,6 +307,121 @@ func publish_committed_events(commit_result: SaveCommitResult) -> void:
 
 func _on_save_committed(commit_result: SaveCommitResult) -> void:
 	publish_committed_events(commit_result)
+
+
+func _repair_loaded_dragon(dragon: DragonRecord, result: DragonValidationResult, save_data: SaveData) -> bool:
+	if dragon == null:
+		_record_validation_error(result, &"", "Save integrity violation: missing dragon record. Dragon record discarded.")
+		return false
+
+	if dragon.level < MIN_LEVEL or dragon.level > MAX_LEVEL:
+		_record_validation_error(
+			result,
+			dragon.dragon_id,
+			"Save integrity violation: dragon.level out of range %d for element %s. Dragon record discarded." % [dragon.level, dragon.element]
+		)
+		return false
+
+	if dragon.xp < 0:
+		_record_validation_error(
+			result,
+			dragon.dragon_id,
+			"Save integrity violation: dragon.xp negative %d for element %s. Dragon record discarded." % [dragon.xp, dragon.element]
+		)
+		return false
+
+	if not BASE_STATS_BY_ELEMENT.has(dragon.element):
+		_record_validation_error(
+			result,
+			dragon.dragon_id,
+			"Save integrity violation: unknown element '%s'. Dragon record discarded." % dragon.element
+		)
+		return false
+
+	if dragon.element == &"Void" and dragon.dragon_id != VOID_DRAGON_ID:
+		_record_validation_error(
+			result,
+			dragon.dragon_id,
+			"Save integrity violation: Void dragon must use reserved dragon_id 'void_dragon'. Dragon record discarded."
+		)
+		return false
+
+	if dragon.dragon_id == VOID_DRAGON_ID and dragon.element != &"Void":
+		_record_validation_error(
+			result,
+			dragon.dragon_id,
+			"Save integrity violation: reserved dragon_id 'void_dragon' requires element Void. Dragon record discarded."
+		)
+		return false
+
+	if dragon.dragon_id == VOID_DRAGON_ID and dragon.element == &"Void":
+		_normalize_void_record(dragon)
+		_ensure_story_roster_entry_for_save_data(save_data, VOID_DRAGON_ID)
+		save_data.void_dragon_granted = true
+
+	if dragon.level == MAX_LEVEL:
+		if dragon.xp != 0:
+			_record_repair_warning(
+				result,
+				dragon.dragon_id,
+				"Save correction: dragon.xp %d cleared for MAX_LEVEL dragon %s." % [dragon.xp, dragon.element]
+			)
+		if dragon.battle_charges != 0:
+			_record_repair_warning(
+				result,
+				dragon.dragon_id,
+				"Save correction: battle_charges %d cleared for MAX_LEVEL dragon %s." % [dragon.battle_charges, dragon.element]
+			)
+		dragon.xp = 0
+		dragon.battle_charges = 0
+		return true
+
+	var threshold: int = xp_threshold_for(dragon.level)
+	if dragon.xp >= threshold:
+		_record_repair_warning(
+			result,
+			dragon.dragon_id,
+			"Save correction: dragon.xp %d at level %d — running XP loop to resolve." % [dragon.xp, dragon.level]
+		)
+		dragon.battle_charges = 0
+		_apply_loaded_xp_repair_loop(dragon)
+
+	return true
+
+
+func _apply_loaded_xp_repair_loop(dragon: DragonRecord) -> void:
+	while dragon.level < MAX_LEVEL and dragon.xp >= xp_threshold_for(dragon.level):
+		dragon.xp -= xp_threshold_for(dragon.level)
+		dragon.level += 1
+	if dragon.level == MAX_LEVEL:
+		dragon.xp = 0
+		dragon.battle_charges = 0
+
+
+func _record_validation_error(result: DragonValidationResult, dragon_id: StringName, message: String) -> void:
+	push_error(message)
+	result.warnings.append(message)
+	if dragon_id != &"" and not result.discarded_dragon_ids.has(dragon_id):
+		result.discarded_dragon_ids.append(dragon_id)
+
+
+func _record_repair_warning(result: DragonValidationResult, dragon_id: StringName, message: String) -> void:
+	push_warning(message)
+	result.warnings.append(message)
+	if dragon_id != &"" and not result.repaired_dragon_ids.has(dragon_id):
+		result.repaired_dragon_ids.append(dragon_id)
+
+
+func _ensure_story_roster_entry_for_save_data(save_data: SaveData, dragon_id: StringName) -> void:
+	if save_data != null and not save_data.story_roster.has(dragon_id):
+		save_data.story_roster.append(dragon_id)
+
+
+func _select_conflict_source(result: DragonValidationResult, source: StringName, dragon: DragonRecord) -> DragonValidationResult:
+	result.selected_source = source
+	result.dragon = _snapshot_dragon(dragon)
+	result.stats = calculate_stats(dragon)
+	return result
 
 
 func _validated_xp_target(result: XPApplyResult, tx: SaveTransaction, dragon_id: StringName) -> DragonRecord:
@@ -463,6 +642,17 @@ func _make_xp_result(dragon_id: StringName, source_id: StringName) -> XPApplyRes
 
 
 func _fail_xp_result(result: XPApplyResult, reason: StringName, error_message: String) -> XPApplyResult:
+	result.success = false
+	result.reason = reason
+	result.error_message = error_message
+	return result
+
+
+func _make_validation_result() -> DragonValidationResult:
+	return DragonValidationResult.new()
+
+
+func _fail_validation_result(result: DragonValidationResult, reason: StringName, error_message: String) -> DragonValidationResult:
 	result.success = false
 	result.reason = reason
 	result.error_message = error_message

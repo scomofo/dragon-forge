@@ -9,109 +9,46 @@
 #   done           -> Complete
 #   blocked        -> Blocked
 
-sprint: 2
-goal: "Establish first Core gameplay services on top of the completed Foundation layer."
-start: "2026-05-28"
-end: "2026-06-10"
+sprint: 3
+goal: "Turn the Core service layer into a smokeable production shell path while hardening Dragon save/load integrity and the next Battle runtime interaction contracts."
+start: "2026-06-11"
+end: "2026-06-24"
 generated: "2026-05-27"
 updated: "2026-05-27"
 
 stories:
-  - id: "DRAGON-001"
-    name: "Stats, Stage, And Record Contract"
-    file: "production/epics/dragon-progression/story-001-stats-stage-and-record-contract.md"
+  - id: "SCENE-003"
+    name: "Production Shell Main Scene Smoke Path"
+    file: "production/epics/scene-flow/story-003-production-shell-main-scene-smoke-path.md"
     priority: must-have
     status: done
     owner: ""
     estimate_days: 1.0
-    blocker: ""
-    completed: "2026-05-27"
-  - id: "DRAGON-002"
-    name: "XP Loop And Resonance"
-    file: "production/epics/dragon-progression/story-002-xp-loop-and-resonance.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 1.5
-    blocker: ""
-    completed: "2026-05-27"
-  - id: "DRAGON-003"
-    name: "Post-Commit Progression Events"
-    file: "production/epics/dragon-progression/story-003-post-commit-progression-events.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 1.0
-    blocker: ""
-    completed: "2026-05-27"
-  - id: "ECO-001"
-    name: "Scrap Read, Affordability, And Results"
-    file: "production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 0.5
-    blocker: ""
-    completed: "2026-05-27"
-  - id: "ECO-002"
-    name: "Scrap Spend Transaction Boundary"
-    file: "production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 1.0
-    blocker: ""
-    completed: "2026-05-27"
-  - id: "BATTLE-001"
-    name: "Runtime Session And Payload Contracts"
-    file: "production/epics/battle-engine/story-001-runtime-session-and-payload-contracts.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 1.5
-    blocker: ""
-    completed: "2026-05-27"
-  - id: "DRAGON-004"
-    name: "Dragon Creation And Source Helpers"
-    file: "production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md"
-    priority: should-have
-    status: done
-    owner: ""
-    estimate_days: 1.0
-    blocker: ""
-    completed: "2026-05-27"
-  - id: "ECO-003"
-    name: "Scrap Reward Addition Boundary"
-    file: "production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md"
-    priority: should-have
-    status: done
-    owner: ""
-    estimate_days: 0.75
-    blocker: ""
-    completed: "2026-05-27"
-  - id: "BATTLE-002"
-    name: "Damage, Type, Crit, And Stage Formulas"
-    file: "production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md"
-    priority: should-have
-    status: done
-    owner: ""
-    estimate_days: 1.5
     blocker: ""
     completed: "2026-05-27"
   - id: "DRAGON-005"
     name: "Save Load Integrity And Repair"
     file: "production/epics/dragon-progression/story-005-save-load-integrity-and-repair.md"
-    priority: nice-to-have
-    status: backlog
+    priority: must-have
+    status: done
+    owner: ""
+    estimate_days: 1.0
+    blocker: ""
+    completed: "2026-05-27"
+  - id: "BATTLE-003"
+    name: "Status And Recoil Effects"
+    file: "production/epics/battle-engine/story-003-status-and-recoil-effects.md"
+    priority: must-have
+    status: ready-for-dev
     owner: ""
     estimate_days: 1.0
     blocker: ""
     completed: ""
-  - id: "BATTLE-003"
-    name: "Status And Recoil Effects"
-    file: "production/epics/battle-engine/story-003-status-and-recoil-effects.md"
-    priority: nice-to-have
-    status: backlog
+  - id: "BATTLE-004"
+    name: "Telegraph, Defend, And Defrag Delta"
+    file: "production/epics/battle-engine/story-004-telegraph-defend-and-defrag-delta.md"
+    priority: must-have
+    status: ready-for-dev
     owner: ""
     estimate_days: 1.0
     blocker: ""
@@ -119,6 +56,24 @@ stories:
   - id: "BATTLE-007"
     name: "Animation Manifest Runtime Lookup"
     file: "production/epics/battle-engine/story-007-animation-manifest-runtime-lookup.md"
+    priority: should-have
+    status: backlog
+    owner: ""
+    estimate_days: 0.75
+    blocker: ""
+    completed: ""
+  - id: "BATTLE-005"
+    name: "Turn Resolution And Presentation Events"
+    file: "production/epics/battle-engine/story-005-turn-resolution-and-presentation-events.md"
+    priority: nice-to-have
+    status: backlog
+    owner: ""
+    estimate_days: 1.0
+    blocker: ""
+    completed: ""
+  - id: "BATTLE-006"
+    name: "NPC Action Selection Heuristics"
+    file: "production/epics/battle-engine/story-006-npc-action-selection-heuristics.md"
     priority: nice-to-have
     status: backlog
     owner: ""

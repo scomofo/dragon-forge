@@ -1,8 +1,8 @@
 # Session State
 
-**Task**: Sprint 02 Core gameplay services
-**Current section**: Dragon Progression Story 004 complete; Sprint 02 close-out is next
-**File**: production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md
+**Task**: Sprint 03 Core smoke shell and runtime hardening
+**Current section**: DRAGON-005 complete; BATTLE-003 readiness next
+**File**: production/epics/battle-engine/story-003-status-and-recoil-effects.md
 
 ## Latest Handoff — 2026-05-27
 
@@ -12,10 +12,54 @@ Fresh handoff for a new chat:
 
 Immediate next action:
 
-1. Begin Sprint 02 close-out with `/smoke-check sprint`
-2. Then run `/team-qa sprint` for QA sign-off before sprint closure
+1. Run `/story-readiness production/epics/battle-engine/story-003-status-and-recoil-effects.md`
 
-Fresh evidence: full Godot/GUT unit + integration suite passes with 24 scripts, 119 tests, and 6,854 assertions.
+Fresh evidence: DRAGON-005 focused suite passes with 4/4 tests and 62 assertions; full Godot/GUT unit + integration suite passes with 26 scripts, 127 tests, and 6,953 assertions. SCENE-003 focused suite passes with 4/4 tests and 37 assertions; adjacent Scene Flow/bootstrap suites pass with 12/12 tests and 117 assertions; headless production launch exits 0. Sprint 03 smoke refresh is PASS WITH WARNINGS at `production/qa/smoke-sprint-03-2026-05-27.md` and records production shell/main-menu smoke as PASS, not DEFERRED. Sprint 02 smoke check is PASS WITH WARNINGS at `production/qa/smoke-sprint-02-2026-05-27.md`; QA sign-off is APPROVED WITH CONDITIONS at `production/qa/qa-signoff-sprint-02-2026-05-27.md`; retrospective is saved at `production/retrospectives/retro-sprint-02-2026-05-27.md`; Sprint 03 plan is saved at `production/sprints/sprint-03.md`; Sprint 03 QA plan is saved at `production/qa/qa-plan-sprint-03-2026-05-27.md`.
+
+<!-- QA RUN: 2026-05-27 | Sprint: sprint-02 | Verdict: APPROVED WITH CONDITIONS | Report: production/qa/qa-signoff-sprint-02-2026-05-27.md -->
+<!-- RETRO: 2026-05-27 | Sprint: sprint-02 | Report: production/retrospectives/retro-sprint-02-2026-05-27.md -->
+<!-- SPRINT PLAN: 2026-05-27 | Sprint: sprint-03 | Report: production/sprints/sprint-03.md | Producer: CONCERNS addressed -->
+<!-- QA-PLAN: 2026-05-27 | System: sprint-03 | Plan written: production/qa/qa-plan-sprint-03-2026-05-27.md -->
+
+## Session Extract — /dev-story 2026-05-27
+- Story: production/epics/scene-flow/story-003-production-shell-main-scene-smoke-path.md — Production Shell Main Scene Smoke Path
+- Files changed: project.godot, scenes/bootstrap/BootstrapRoot.tscn, scenes/hub/HubShell.tscn, src/scene_flow/bootstrap_root.gd, src/scene_flow/hub_shell_screen.gd, tests/integration/scene_flow/test_production_shell_main_scene_smoke_path.gd, production/epics/scene-flow/story-003-production-shell-main-scene-smoke-path.md, production/sprint-status.yaml
+- Test written: tests/integration/scene_flow/test_production_shell_main_scene_smoke_path.gd
+- Review fixes: direct `boot()` calls now update `get_last_boot_result()`; malformed screen registration config returns a named `scene_registration_failed` / `invalid_registration` result; focus-target assertions no longer dereference before checking type; focus restoration is asserted through `InputRouter.focus_restored`; Sprint 03 smoke evidence records production shell/main-menu as PASS.
+- Blockers: None
+- Next: /code-review src/scene_flow/bootstrap_root.gd src/scene_flow/hub_shell_screen.gd scenes/bootstrap/BootstrapRoot.tscn scenes/hub/HubShell.tscn project.godot tests/integration/scene_flow/test_production_shell_main_scene_smoke_path.gd production/epics/scene-flow/story-003-production-shell-main-scene-smoke-path.md then /story-done production/epics/scene-flow/story-003-production-shell-main-scene-smoke-path.md
+
+## Session Extract — /story-done 2026-05-27
+- Verdict: COMPLETE
+- Story: production/epics/scene-flow/story-003-production-shell-main-scene-smoke-path.md — Production Shell Main Scene Smoke Path
+- Acceptance criteria: 6/6 passing.
+- Test evidence: focused SCENE-003 suite passed with 4/4 tests and 37 assertions; adjacent Scene Flow/bootstrap suites passed with 12/12 tests and 117 assertions; full unit/integration suite passed with 123/123 tests and 6,891 assertions.
+- Smoke evidence: `production/qa/smoke-sprint-03-2026-05-27.md` records production shell/main-menu launch as PASS, not DEFERRED.
+- QA coverage gate: ADEQUATE.
+- Lead programmer gate: APPROVED via `/code-review`.
+- Tech debt logged: None.
+- Next recommended: `/story-readiness production/epics/dragon-progression/story-005-save-load-integrity-and-repair.md`.
+
+## Session Extract — /dev-story 2026-05-27
+
+- Story: production/epics/dragon-progression/story-005-save-load-integrity-and-repair.md — Save Load Integrity And Repair
+- Status: Complete as of 2026-05-27.
+- Implementation: added `DragonValidationResult` and Dragon Progression load validation helpers for discarding invalid level/XP/element records, rejecting duplicate dragon IDs, enforcing the reserved Void dragon ID both directions, repairing MAX_LEVEL XP/charges, repairing overflow XP with charges reset before the loop, selecting local/cloud conflict winners, preserving reserved Void story records, and deriving post-load stage/stage multiplier snapshots.
+- Test written: `tests/integration/dragon/test_save_load_integrity_and_repair.gd` with 4 test functions covering invalid record discard logs, XP repair final states, conflict selection, Void preservation, and derived stage snapshots.
+- Test evidence: focused Dragon save/load integrity suite passed with 4/4 tests and 62 assertions; full unit/integration suite passed with 127/127 tests and 6,953 assertions.
+- Scope notes: no cloud sync UI prompt, no stage badge presentation, and no battle runtime damage verification implemented.
+- Blockers: None.
+- Next recommended: `/story-readiness production/epics/battle-engine/story-003-status-and-recoil-effects.md`.
+
+## Session Extract — /story-done 2026-05-27
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/dragon-progression/story-005-save-load-integrity-and-repair.md — Save Load Integrity And Repair
+- Acceptance criteria: 8/8 passing.
+- Test evidence: focused Dragon save/load integrity suite passed with 4/4 tests and 62 assertions; full unit/integration suite passed with 127/127 tests and 6,953 assertions.
+- QA coverage gate: ADEQUATE.
+- Lead programmer gate: APPROVED WITH SUGGESTIONS via `/code-review`; full-mode lead-programmer sidecar retry unavailable due thread limit.
+- Tech debt logged: None.
+- Next recommended: `/story-readiness production/epics/battle-engine/story-003-status-and-recoil-effects.md`.
 
 CodeGraph is now usable for GDScript in this project: 74 files, 2,022 nodes, 4,530 edges, 63 GDScript files, index up to date. The old note below saying CodeGraph was unusable is superseded.
 
