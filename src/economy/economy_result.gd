@@ -8,8 +8,8 @@ var success: bool = false
 var reason: StringName = &""
 var error_message: String = ""
 var source_id: StringName = &""
+var sink_id: StringName = &""
 var amount: int = 0
 var balance_before: int = 0
 var balance_after: int = 0
 var affordable: bool = false
-

@@ -84,11 +84,11 @@ stories:
     name: "Scrap Reward Addition Boundary"
     file: "production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md"
     priority: should-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 0.75
     blocker: ""
-    completed: ""
+    completed: "2026-05-27"
   - id: "BATTLE-002"
     name: "Damage, Type, Crit, And Stage Formulas"
     file: "production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md"

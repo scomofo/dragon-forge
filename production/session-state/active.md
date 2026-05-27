@@ -1,8 +1,8 @@
 # Session State
 
 **Task**: Sprint 02 Core gameplay services
-**Current section**: Battle Engine Story 002 complete; next ready sprint options are Dragon Creation, Scrap Reward Addition, or sprint close-out
-**File**: production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md
+**Current section**: Economy Ledger Story 003 complete; next ready option is Dragon Creation or Sprint 02 close-out
+**File**: production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md
 
 ## Latest Handoff — 2026-05-27
 
@@ -12,10 +12,10 @@ Fresh handoff for a new chat:
 
 Immediate next action:
 
-1. To keep pulling Should Have scope: `/story-readiness production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md` or `/story-readiness production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md`
-2. To close Sprint 02 instead: `/smoke-check sprint`
+1. To pull one more Should Have story: `/dev-story production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md`
+2. To begin Sprint 02 close-out: `/smoke-check sprint`
 
-Fresh evidence: full Godot/GUT unit + integration suite passes with 22 scripts, 111 tests, and 6,708 assertions.
+Fresh evidence: full Godot/GUT unit + integration suite passes with 23 scripts, 115 tests, and 6,772 assertions.
 
 CodeGraph is now usable for GDScript in this project: 74 files, 2,022 nodes, 4,530 edges, 63 GDScript files, index up to date. The old note below saying CodeGraph was unusable is superseded.
 
@@ -613,3 +613,28 @@ Advisory also resolved:
 - Code review: APPROVED WITH SUGGESTIONS; only non-blocking notes for stronger typed dictionary/test annotations, helper doc comments, and direct roll-bound assertions.
 - Tech debt logged: None.
 - Next recommended: Continue Should Have scope with `/story-readiness production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md` or `/story-readiness production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md`; alternatively run `/smoke-check sprint` to begin Sprint 02 close-out.
+
+## Session Extract - /dev-story 2026-05-27
+
+- Story: `production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md` - Scrap Reward Addition Boundary
+- Status: In Progress; implementation and test evidence are complete, code review/story closure pending.
+- Readiness verdict: READY after traceability repair; QA lead gate returned ADEQUATE/READY. `TR-map-001`, `TR-shop-002`, and `TR-shop-004` are active; ADR-0008 and ADR-0009 are accepted.
+- TDD evidence: focused Economy integration suite first failed because `EconomyLedger.add_scraps()` did not exist, then passed after implementation.
+- Implementation: added `EconomyLedger.add_scraps(tx, amount, source_id)` for staged, transaction-bound Scrap reward additions; reused `EconomyResult` named fields; test harness verifies authored rewards, Battle echo mismatch rejection, defeat no-op behavior, exact balances above 999, negative reward rejection, and OQ-SH01 provisional tuning boundaries.
+- Test evidence: focused Economy integration suite passed with 9/9 tests and 109 assertions; full unit/integration suite passed with 115/115 tests and 6,772 assertions.
+- Code review follow-up: expanded invalid transaction coverage for null, inactive, and missing-staged reward transactions; widened OQ-SH01 boundary checks to the reward helper, settlement harness source, and absence of the economy content lock artifact; typed result-producing EconomyLedger methods as `EconomyResult`.
+- Scope notes: no Campaign Map node graph authoring, boss/hazard bonus calibration, HUD display, `BOSS_SCRAP_BONUS`/`HAZARD_SCRAP_BONUS` finalization, or economy content-lock artifact implemented.
+- Blockers: None.
+- Next recommended: `/code-review src/economy/economy_ledger.gd src/economy/economy_result.gd tests/integration/economy/test_scrap_reward_addition_boundary.gd production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md`, then `/story-done production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md`.
+
+## Session Extract - /story-done 2026-05-27
+
+- Verdict: COMPLETE
+- Story: `production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md` - Scrap Reward Addition Boundary
+- Acceptance criteria: 4/4 passing, covered by `tests/integration/economy/test_scrap_reward_addition_boundary.gd`.
+- Test evidence: focused Economy integration suite passed with 9/9 tests and 109 assertions; full unit/integration suite passed with 115/115 tests and 6,772 assertions.
+- QA coverage gate: ADEQUATE.
+- Lead programmer gate: APPROVED.
+- Code review: APPROVED; required test coverage and API typing changes resolved before closure.
+- Tech debt logged: None.
+- Next recommended: Pull remaining Should Have scope with `/dev-story production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md`, or begin Sprint 02 close-out with `/smoke-check sprint`.
