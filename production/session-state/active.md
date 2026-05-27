@@ -1,8 +1,8 @@
 # Session State
 
 **Task**: Sprint 02 Core gameplay services
-**Current section**: Dragon Progression Story 003 complete; Economy Ledger Story 001 readiness is next
-**File**: production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md
+**Current section**: Economy Ledger Story 001 complete; Economy Ledger Story 002 readiness is next
+**File**: production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md
 
 ## Latest Handoff — 2026-05-27
 
@@ -12,10 +12,10 @@ Fresh handoff for a new chat:
 
 Immediate next action:
 
-1. `/story-readiness production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md`
-2. If ready, `/dev-story production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md`
+1. `/story-readiness production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md`
+2. If ready, `/dev-story production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md`
 
-Fresh evidence: full Godot/GUT unit + integration suite passes with 18 scripts, 88 tests, and 5,737 assertions.
+Fresh evidence: full Godot/GUT unit + integration suite passes with 19 scripts, 94 tests, and 5,802 assertions.
 
 CodeGraph is now usable for GDScript in this project: 74 files, 2,022 nodes, 4,530 edges, 63 GDScript files, index up to date. The old note below saying CodeGraph was unusable is superseded.
 
@@ -520,3 +520,25 @@ Advisory also resolved:
 - Code review: APPROVED; no required changes.
 - Tech debt logged: None
 - Next recommended: `/story-readiness production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md`.
+
+## Session Extract - /dev-story 2026-05-27
+
+- Story: `production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md` - Scrap Read, Affordability, And Results
+- Status: In Progress; implementation and test evidence are complete, code review/story closure pending.
+- Readiness verdict: READY after scope-precision gaps were addressed; ADR-0009 is accepted; `TR-shop-002` is active; SaveData dependency is complete.
+- TDD evidence: focused ECO-001 suite first failed because `EconomyLedger` and `EconomyResult` did not exist, then passed after implementation.
+- Implementation: added `src/economy/economy_ledger.gd` and `src/economy/economy_result.gd`; `EconomyLedger` reads exact `player_scraps`, checks affordability without mutation, returns named `EconomyResult` data for validation failures, preserves exact balances above 999, and keeps staged Scrap mutation out of scope.
+- Test evidence: focused Economy Ledger unit suite passed with 6/6 tests and 65 assertions; full import plus unit/integration suite passed with 94/94 tests and 5,802 assertions.
+- Blockers: None.
+- Next recommended: `/code-review src/economy/economy_ledger.gd src/economy/economy_result.gd tests/unit/economy/test_scrap_read_affordability_and_results.gd production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md`, then `/story-done production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md`.
+
+## Session Extract - /story-done 2026-05-27
+
+- Verdict: COMPLETE
+- Story: `production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md` - Scrap Read, Affordability, And Results
+- Acceptance criteria: 4/4 passing, covered by `tests/unit/economy/test_scrap_read_affordability_and_results.gd`.
+- Implementation: `src/economy/economy_ledger.gd`, `src/economy/economy_result.gd`, and `tests/unit/economy/test_scrap_read_affordability_and_results.gd`.
+- Test evidence: focused Economy Ledger unit suite passed with 6/6 tests and 65 assertions; full import plus unit/integration suite passed with 94/94 tests and 5,802 assertions.
+- Code review: APPROVED; no required changes.
+- Tech debt logged: None
+- Next recommended: `/story-readiness production/epics/economy-ledger/story-002-scrap-spend-transaction-boundary.md`.
