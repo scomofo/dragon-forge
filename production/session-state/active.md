@@ -1,8 +1,8 @@
 # Session State
 
 **Task**: Sprint 02 Core gameplay services
-**Current section**: Economy Ledger Story 003 complete; next ready option is Dragon Creation or Sprint 02 close-out
-**File**: production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md
+**Current section**: Dragon Progression Story 004 complete; Sprint 02 close-out is next
+**File**: production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md
 
 ## Latest Handoff — 2026-05-27
 
@@ -12,10 +12,10 @@ Fresh handoff for a new chat:
 
 Immediate next action:
 
-1. To pull one more Should Have story: `/dev-story production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md`
-2. To begin Sprint 02 close-out: `/smoke-check sprint`
+1. Begin Sprint 02 close-out with `/smoke-check sprint`
+2. Then run `/team-qa sprint` for QA sign-off before sprint closure
 
-Fresh evidence: full Godot/GUT unit + integration suite passes with 23 scripts, 115 tests, and 6,772 assertions.
+Fresh evidence: full Godot/GUT unit + integration suite passes with 24 scripts, 119 tests, and 6,854 assertions.
 
 CodeGraph is now usable for GDScript in this project: 74 files, 2,022 nodes, 4,530 edges, 63 GDScript files, index up to date. The old note below saying CodeGraph was unusable is superseded.
 
@@ -638,3 +638,27 @@ Advisory also resolved:
 - Code review: APPROVED; required test coverage and API typing changes resolved before closure.
 - Tech debt logged: None.
 - Next recommended: Pull remaining Should Have scope with `/dev-story production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md`, or begin Sprint 02 close-out with `/smoke-check sprint`.
+
+## Session Extract - /dev-story 2026-05-27
+
+- Story: `production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md` - Dragon Creation And Source Helpers
+- Status: In Progress; implementation and test evidence are complete, code review/story closure pending.
+- TDD evidence: focused Dragon integration suite first failed because `FusionChildData` and `DragonCreationResult` were missing, then passed after implementation.
+- Implementation: added `DragonCreationResult`, `FusionChildData`, Hatchery core creation, Fusion child creation, Singularity Void grant, and Hatchery duplicate XP routing through `DragonProgressionService` staged transactions.
+- Test written: `tests/integration/dragon/test_dragon_creation_and_source_helpers.gd` with 4 test functions covering Hatchery creation/rejection, Fusion child creation/rejection, Singularity Void reserved story-roster grant, shiny immutability surface, and missing duplicate XP discard logging.
+- Test evidence: focused Dragon integration suite passed with 8/8 tests and 118 assertions; full unit/integration suite passed with 119/119 tests and 6,854 assertions.
+- Scope notes: no Hatchery RNG, Fusion formulas, Singularity boss settlement, UI, or roster-capacity enforcement beyond the reserved story roster entry.
+- Blockers: None.
+- Next recommended: `/code-review src/dragon/dragon_progression_service.gd src/dragon/dragon_creation_result.gd src/dragon/fusion_child_data.gd tests/integration/dragon/test_dragon_creation_and_source_helpers.gd production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md`, then `/story-done production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md`; after closure run `/smoke-check sprint`.
+
+## Session Extract - /story-done 2026-05-27
+
+- Verdict: COMPLETE
+- Story: `production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md` - Dragon Creation And Source Helpers
+- Acceptance criteria: 4/4 passing, covered by `tests/integration/dragon/test_dragon_creation_and_source_helpers.gd`.
+- Test evidence: focused Dragon integration suite passed with 8/8 tests and 118 assertions; full unit/integration suite passed with 119/119 tests and 6,854 assertions.
+- QA coverage gate: ADEQUATE.
+- Lead programmer gate: APPROVE.
+- Code review: APPROVED after required detached snapshot and AC-DP76 coverage fixes.
+- Tech debt logged: None.
+- Next recommended: Begin Sprint 02 close-out with `/smoke-check sprint`, then `/team-qa sprint`.

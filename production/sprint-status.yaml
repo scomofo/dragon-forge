@@ -75,11 +75,11 @@ stories:
     name: "Dragon Creation And Source Helpers"
     file: "production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md"
     priority: should-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 1.0
     blocker: ""
-    completed: ""
+    completed: "2026-05-27"
   - id: "ECO-003"
     name: "Scrap Reward Addition Boundary"
     file: "production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md"
