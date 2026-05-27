@@ -1,8 +1,8 @@
 # Session State
 
 **Task**: Sprint 02 Core gameplay services
-**Current section**: Battle Engine Story 001 complete; choose sprint close-out or pull a Should Have story
-**File**: production/sprint-status.yaml
+**Current section**: Battle Engine Story 002 complete; next ready sprint options are Dragon Creation, Scrap Reward Addition, or sprint close-out
+**File**: production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md
 
 ## Latest Handoff — 2026-05-27
 
@@ -12,11 +12,10 @@ Fresh handoff for a new chat:
 
 Immediate next action:
 
-1. Choose whether to close Sprint 02 Must Have scope or pull a Should Have story.
-2. Sprint close-out path: `/smoke-check sprint`, then `/team-qa sprint`, then `/retrospective`.
-3. Pull-more-work path: `/story-readiness production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md` or another Should Have story.
+1. To keep pulling Should Have scope: `/story-readiness production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md` or `/story-readiness production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md`
+2. To close Sprint 02 instead: `/smoke-check sprint`
 
-Fresh evidence: full Godot/GUT unit + integration suite passes with 21 scripts, 106 tests, and 6,618 assertions.
+Fresh evidence: full Godot/GUT unit + integration suite passes with 22 scripts, 111 tests, and 6,708 assertions.
 
 CodeGraph is now usable for GDScript in this project: 74 files, 2,022 nodes, 4,530 edges, 63 GDScript files, index up to date. The old note below saying CodeGraph was unusable is superseded.
 
@@ -590,3 +589,27 @@ Advisory also resolved:
 - Lead programmer gate: APPROVED.
 - Tech debt logged: None.
 - Next recommended: All Must Have Sprint 02 stories are complete. Either run `/smoke-check sprint` to start sprint close-out, or pull a Should Have story starting with `/story-readiness production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md`.
+
+## Session Extract - /dev-story 2026-05-27
+
+- Story: `production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md` - Damage, Type, Crit, And Stage Formulas
+- Status: In Progress; implementation and test evidence are complete, code review/story closure pending.
+- Readiness verdict: READY after formula-contract repair; `TR-battle-002` is active; ADR-0006 and ADR-0007 are accepted.
+- TDD evidence: focused BATTLE-002 unit suite first failed because `src/battle/formulas/battle_formula_service.gd` did not exist, then passed after implementation.
+- Implementation: added `BattleFormulaService` and `BattleDamageResult` under `src/battle/formulas/`; covered deterministic damage order, negative damage floor, crit/Defend ordering and constants, full 7x7 type matrix, stage/Elder multipliers, accuracy/Blind, stat scaling, and raw Battle XP.
+- Test evidence: focused Battle Engine formula unit suite passed with 5/5 tests and 90 assertions; full unit/integration suite passed with 111/111 tests and 6,708 assertions.
+- Scope notes: no runtime turn loop, status lifecycle, Defend cooldown legality, simultaneous KO resolution, reward settlement, XP application, Scrap application, or Resonance mutation implemented.
+- Blockers: None.
+- Next recommended: `/code-review src/battle/formulas/battle_formula_service.gd src/battle/formulas/battle_damage_result.gd tests/unit/battle_engine/test_damage_type_crit_and_stage_formulas.gd production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md`, then `/story-done production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md`.
+
+## Session Extract - /story-done 2026-05-27
+
+- Verdict: COMPLETE WITH NOTES
+- Story: `production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md` - Damage, Type, Crit, And Stage Formulas
+- Acceptance criteria: 6/6 passing, covered by `tests/unit/battle_engine/test_damage_type_crit_and_stage_formulas.gd`.
+- Test evidence: focused Battle Engine formula unit suite passed with 5/5 tests and 90 assertions; full unit/integration suite passed with 111/111 tests and 6,708 assertions.
+- QA coverage gate: ADEQUATE.
+- Lead programmer gate: APPROVE.
+- Code review: APPROVED WITH SUGGESTIONS; only non-blocking notes for stronger typed dictionary/test annotations, helper doc comments, and direct roll-bound assertions.
+- Tech debt logged: None.
+- Next recommended: Continue Should Have scope with `/story-readiness production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md` or `/story-readiness production/epics/economy-ledger/story-003-scrap-reward-addition-boundary.md`; alternatively run `/smoke-check sprint` to begin Sprint 02 close-out.

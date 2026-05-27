@@ -44,7 +44,7 @@ This epic is complete when:
 | # | Story | Type | Status | ADR |
 |---|-------|------|--------|-----|
 | 001 | [Runtime Session And Payload Contracts](story-001-runtime-session-and-payload-contracts.md) | Integration | Complete | ADR-0007 |
-| 002 | [Damage, Type, Crit, And Stage Formulas](story-002-damage-type-crit-and-stage-formulas.md) | Logic | Ready | ADR-0006, ADR-0007 |
+| 002 | [Damage, Type, Crit, And Stage Formulas](story-002-damage-type-crit-and-stage-formulas.md) | Logic | Complete | ADR-0006, ADR-0007 |
 | 003 | [Status And Recoil Effects](story-003-status-and-recoil-effects.md) | Logic | Ready | ADR-0007 |
 | 004 | [Telegraph, Defend, And Defrag Delta](story-004-telegraph-defend-and-defrag-delta.md) | Integration | Ready | ADR-0007, ADR-0009 |
 | 005 | [Turn Resolution And Presentation Events](story-005-turn-resolution-and-presentation-events.md) | Integration | Ready | ADR-0002, ADR-0007 |

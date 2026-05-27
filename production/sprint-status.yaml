@@ -93,11 +93,11 @@ stories:
     name: "Damage, Type, Crit, And Stage Formulas"
     file: "production/epics/battle-engine/story-002-damage-type-crit-and-stage-formulas.md"
     priority: should-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 1.5
     blocker: ""
-    completed: ""
+    completed: "2026-05-27"
   - id: "DRAGON-005"
     name: "Save Load Integrity And Repair"
     file: "production/epics/dragon-progression/story-005-save-load-integrity-and-repair.md"
