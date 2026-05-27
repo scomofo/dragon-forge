@@ -30,20 +30,20 @@ stories:
     name: "XP Loop And Resonance"
     file: "production/epics/dragon-progression/story-002-xp-loop-and-resonance.md"
     priority: must-have
-    status: ready-for-dev
+    status: done
     owner: ""
     estimate_days: 1.5
     blocker: ""
-    completed: ""
+    completed: "2026-05-27"
   - id: "DRAGON-003"
     name: "Post-Commit Progression Events"
     file: "production/epics/dragon-progression/story-003-post-commit-progression-events.md"
     priority: must-have
-    status: ready-for-dev
+    status: done
     owner: ""
     estimate_days: 1.0
     blocker: ""
-    completed: ""
+    completed: "2026-05-27"
   - id: "ECO-001"
     name: "Scrap Read, Affordability, And Results"
     file: "production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md"

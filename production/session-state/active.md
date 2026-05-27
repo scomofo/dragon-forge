@@ -1,8 +1,23 @@
 # Session State
 
-**Task**: Clearing Singularity architecture blockers
-**Current section**: Master architecture drafted; ADR completion and architecture review are next
-**File**: design/gdd/singularity.md plus supporting GDDs
+**Task**: Sprint 02 Core gameplay services
+**Current section**: Dragon Progression Story 003 complete; Economy Ledger Story 001 readiness is next
+**File**: production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md
+
+## Latest Handoff — 2026-05-27
+
+Fresh handoff for a new chat:
+
+`production/session-state/handoff-2026-05-27.md`
+
+Immediate next action:
+
+1. `/story-readiness production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md`
+2. If ready, `/dev-story production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md`
+
+Fresh evidence: full Godot/GUT unit + integration suite passes with 18 scripts, 88 tests, and 5,737 assertions.
+
+CodeGraph is now usable for GDScript in this project: 74 files, 2,022 nodes, 4,530 edges, 63 GDScript files, index up to date. The old note below saying CodeGraph was unusable is superseded.
 
 ## Singularity Blocker Pass — 2026-05-26
 
@@ -216,7 +231,7 @@ Advisory also resolved:
 - Battle animation manifest implementation: initial Godot Resource classes now live under `src/battle/animation/` and `src/battle/data/`, with validator coverage at `tests/unit/battle/test_battle_animation_manifest_validator.gd`. The validator ties `BattleDefinition.animation_manifest_id`, resolved actor animation set IDs, and `MoveDefinition` move/action/class IDs to `BattleAnimationManifest` bindings; it fails missing base reaction clips, missing move bindings, wrong action classes, placeholder production bindings, manifest-ID mismatches, missing clip assets, missing preview evidence, and missing runtime capture evidence.
 - First authored battle content fixture: `assets/battle/animation_manifests/root_wyrmling_vs_admin_protocol.tres`, `assets/battle/battles/village_edge_admin_protocol.tres`, and move Resources for Root Spark, Thorn Surge, Guarded Spark, and Data Leak now validate against real promoted frame-sequence sprites, dedicated generated reaction strips, preview sheets, VFX, and runtime captures. Test: `tests/integration/battle/test_root_admin_animation_content.gd`.
 - Vertical-slice manifest runtime pass: `prototypes/dragon-forge-vertical-slice/assets/battle/` mirrors the Root/Admin fixture with prototype-local Resource scripts under `prototypes/dragon-forge-vertical-slice/src/battle_content/` to avoid duplicate root-project class registrations. `VerticalSliceController.gd` now resolves battle clip/VFX keys through the manifest for Root Spark, Thorn Surge, Guarded Spark, Data Leak, idle, telegraph, hurt, defend-hit, and KO presentation. The smoke test verifies manifest key resolution before completing the hatch -> map -> battle -> reward loop.
-- CodeGraph status: configured but not usable for this Godot codebase yet. `.codegraph/config.json` now includes `*.gd`, but `codegraph index /Users/Scott_1/df` reports all project GDScript files as unsupported language, leaving the index at 0 files / 0 nodes. Use direct file inspection for GDScript until CodeGraph adds GDScript support or a custom extractor is installed.
+- CodeGraph status: usable for this Godot codebase after the 2026-05-27 repair. CodeGraph 0.9.6 now has a local lightweight GDScript extractor patch, `.gd` / `.gdshader` indexing works, `addons/gut` is filtered out, and `codegraph status /Users/Scott_1/df` reports 74 files, 2,022 nodes, 4,530 edges, and 63 GDScript files indexed. Caveat: the extractor is patched into the global CodeGraph install and may need reapplying after a future global npm update.
 - Follow-up ADRs accepted before stories:
   - ADR-0012 Hatchery Pull Transaction And RNG Boundaries
   - ADR-0013 Fusion Anvil Transaction Boundaries
@@ -463,3 +478,45 @@ Advisory also resolved:
 - Code review: APPROVED; no required changes.
 - Tech debt logged: None
 - Next recommended: `/story-readiness production/epics/dragon-progression/story-002-xp-loop-and-resonance.md`.
+
+## Session Extract - /dev-story 2026-05-27
+
+- Story: `production/epics/dragon-progression/story-002-xp-loop-and-resonance.md` - XP Loop And Resonance
+- Status: In Progress; implementation and test evidence are complete, code review/story closure pending.
+- Implementation: `DragonProgressionService.apply_xp()` now applies XP only inside active staged `SaveTransaction` data, clamps awards to `XP_MAX_AWARD`, truncates float XP, rejects negative XP without mutation, preserves XP remainders, clears XP/charges at `MAX_LEVEL`, consumes Resonance charges one per level gained, and returns typed `XPApplyResult` data with pending `DragonProgressionEvent` values.
+- New typed result/event shells: `src/dragon/xp_apply_result.gd` and `src/dragon/dragon_progression_event.gd`.
+- Test evidence: focused XP/resonance suite passed with 7/7 tests and 305 assertions; full import-plus-unit/integration suite passed with 84/84 tests and 5,701 assertions.
+- CodeGraph note: CodeGraph remains unusable for GDScript in this repo; direct inspection was used after checking index status.
+- Next recommended: `/code-review src/dragon/dragon_progression_service.gd src/dragon/xp_apply_result.gd src/dragon/dragon_progression_event.gd tests/unit/dragon/test_xp_loop_and_resonance.gd production/epics/dragon-progression/story-002-xp-loop-and-resonance.md`, then `/story-done production/epics/dragon-progression/story-002-xp-loop-and-resonance.md`.
+
+## Session Extract - /story-done 2026-05-27
+
+- Verdict: COMPLETE
+- Story: `production/epics/dragon-progression/story-002-xp-loop-and-resonance.md` - XP Loop And Resonance
+- Acceptance criteria: 5/5 passing, covered by `tests/unit/dragon/test_xp_loop_and_resonance.gd`.
+- Implementation: `src/dragon/dragon_progression_service.gd`, `src/dragon/xp_apply_result.gd`, `src/dragon/dragon_progression_event.gd`, and `tests/unit/dragon/test_xp_loop_and_resonance.gd`.
+- Test evidence: focused XP/resonance suite passed with 7/7 tests and 305 assertions; full import plus unit/integration suite passed with 84/84 tests and 5,701 assertions.
+- Code review: APPROVED; no required changes. Method-size guideline cleanup was applied before closure.
+- Tech debt logged: None
+- Next recommended: `/story-readiness production/epics/dragon-progression/story-003-post-commit-progression-events.md`, then `/dev-story production/epics/dragon-progression/story-003-post-commit-progression-events.md`.
+
+## Session Extract - /dev-story 2026-05-27
+
+- Story: `production/epics/dragon-progression/story-003-post-commit-progression-events.md` - Post-Commit Progression Events
+- Status: In Progress; implementation and test evidence are complete, code review/story closure pending.
+- Readiness verdict: READY. ADR-0001, ADR-0002, and ADR-0006 are accepted; dependencies DRAGON-002 and Save/Persistence Story 003 are complete; required integration evidence path is declared.
+- Implementation: SaveTransaction and SaveCommitResult now carry generic `post_commit_events`; SaveService copies those payloads into the success result after reload validation; DragonProgressionService queues XP result events onto the transaction and publishes typed `stats_updated`, `stage_advanced`, and `stage_iv_reached` signals only from successful `save_committed` callbacks.
+- Test evidence: focused post-commit progression event suite passed with 4/4 tests and 36 assertions; dragon-focused unit/integration suite passed with 18/18 tests and 4,968 assertions; full import-plus-unit/integration suite passed with 88/88 tests and 5,737 assertions.
+- CodeGraph note: CodeGraph remains unusable for GDScript in this repo; direct inspection was used after checking index status.
+- Next recommended: `/code-review src/dragon/dragon_progression_service.gd src/save/save_transaction.gd src/save/save_commit_result.gd src/save/save_service.gd tests/integration/dragon/test_post_commit_progression_events.gd production/epics/dragon-progression/story-003-post-commit-progression-events.md`, then `/story-done production/epics/dragon-progression/story-003-post-commit-progression-events.md`.
+
+## Session Extract - /story-done 2026-05-27
+
+- Verdict: COMPLETE
+- Story: `production/epics/dragon-progression/story-003-post-commit-progression-events.md` - Post-Commit Progression Events
+- Acceptance criteria: 3/3 passing, covered by `tests/integration/dragon/test_post_commit_progression_events.gd` plus existing XP loop unit coverage for the single `stats_updated` criterion.
+- Implementation: `src/dragon/dragon_progression_service.gd`, `src/dragon/dragon_progression_event.gd`, `src/dragon/xp_apply_result.gd`, `tests/integration/dragon/test_post_commit_progression_events.gd`, and the Save / Persistence post-commit event plumbing.
+- Test evidence: focused post-commit progression event suite passed with 4/4 tests and 36 assertions; full import plus unit/integration suite passed with 88/88 tests and 5,737 assertions.
+- Code review: APPROVED; no required changes.
+- Tech debt logged: None
+- Next recommended: `/story-readiness production/epics/economy-ledger/story-001-scrap-read-affordability-and-results.md`.
