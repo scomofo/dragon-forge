@@ -43,8 +43,8 @@ Before you start, make sure you have:
 ### Step 1: Clone and Open
 
 ```bash
-git clone <repo-url> my-game
-cd my-game
+git clone <repo-url> dragon-forge
+cd dragon-forge
 ```
 
 ### Step 2: Run /start
@@ -1222,12 +1222,7 @@ Tier 3 (Specialists):  gameplay-programmer, engine-programmer,
                        live-ops-designer, prototyper, security-engineer,
                        community-manager, godot-specialist,
                        godot-gdscript-specialist, godot-shader-specialist,
-                       godot-csharp-specialist, godot-gdextension-specialist,
-                       unity-specialist, unity-dots-specialist,
-                       unity-shader-specialist, unity-addressables-specialist,
-                       unity-ui-specialist, unreal-specialist,
-                       ue-blueprint-specialist, ue-gas-specialist,
-                       ue-replication-specialist, ue-umg-specialist
+                       godot-csharp-specialist, godot-gdextension-specialist
 ```
 
 **Coordination rules:**
@@ -1387,16 +1382,6 @@ Reads existing code and generates GDD-format design documentation from it.
 | GDScript-specific help | `godot-gdscript-specialist` | 3 |
 | Godot shader help | `godot-shader-specialist` | 3 |
 | GDExtension modules | `godot-gdextension-specialist` | 3 |
-| Unity-specific help | `unity-specialist` | 3 |
-| Unity DOTS/ECS | `unity-dots-specialist` | 3 |
-| Unity shaders/VFX | `unity-shader-specialist` | 3 |
-| Unity Addressables | `unity-addressables-specialist` | 3 |
-| Unity UI Toolkit | `unity-ui-specialist` | 3 |
-| Unreal-specific help | `unreal-specialist` | 3 |
-| Unreal GAS | `ue-gas-specialist` | 3 |
-| Unreal Blueprints | `ue-blueprint-specialist` | 3 |
-| Unreal replication | `ue-replication-specialist` | 3 |
-| Unreal UMG/CommonUI | `ue-umg-specialist` | 3 |
 
 ### Agent Hierarchy
 

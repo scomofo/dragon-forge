@@ -1,27 +1,27 @@
 ## Summary
 
-Brief description of what this PR does.
+Briefly describe what this PR changes in Dragon Forge.
 
 ## Type of Change
 
-- [ ] New agent
-- [ ] New skill
-- [ ] New hook or rule
-- [ ] Bug fix
-- [ ] Documentation improvement
-- [ ] Other:
+- [ ] Gameplay/system behavior
+- [ ] UI/scene flow
+- [ ] Content/assets
+- [ ] Tests/QA evidence
+- [ ] Production/design docs
+- [ ] Tooling
+- [ ] Cleanup
 
-## Changes
+## Evidence
 
--
--
--
+- Focused test command/result:
+- Broader regression command/result:
+- Manual evidence, if applicable:
 
 ## Checklist
 
-- [ ] I've tested this in a Claude Code session
-- [ ] New agents include the Collaboration Protocol section
-- [ ] New skills use the subdirectory format (`.claude/skills/<name>/SKILL.md`)
-- [ ] Reference docs are updated (agent-roster, skills-reference, hooks-reference, rules-reference)
-- [ ] Hooks use `grep -E` (POSIX) and fail gracefully without jq/python
-- [ ] No hardcoded paths or platform-specific assumptions
+- [ ] Change is tied to a story, bug, or documented production need.
+- [ ] Acceptance criteria or expected behavior are covered by tests/evidence.
+- [ ] Save, transaction, and runtime boundary changes follow the relevant ADRs.
+- [ ] Public-facing docs and metadata still identify this repo as Dragon Forge.
+- [ ] Known limitations or deferred scope are listed.

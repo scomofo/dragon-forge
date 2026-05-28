@@ -1,8 +1,8 @@
 # Dragon Forge -- Claude Project Notes
 
-Dragon Forge development uses coordinated Claude Code agents for production,
-implementation, review, and QA workflows. Each agent owns a specific domain,
-enforcing separation of concerns and quality.
+Dragon Forge development uses Claude Code agents for production,
+implementation, review, and QA workflows. The repo-local workflow is scoped to
+the Godot 4.6 / GDScript project in this repository.
 
 ## Technology Stack
 
@@ -12,8 +12,8 @@ enforcing separation of concerns and quality.
 - **Build System**: SCons (engine), Godot Export Templates
 - **Asset Pipeline**: Godot Import System + custom resource pipeline
 
-> **Note**: Engine-specialist agents exist for Godot, Unity, and Unreal with
-> dedicated sub-specialists. Use the set matching your engine.
+> **Note**: Dragon Forge is pinned to Godot 4.6 and GDScript. Do not add
+> Unity or Unreal workflow assets to this repository.
 
 ## Project Structure
 

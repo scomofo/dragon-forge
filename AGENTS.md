@@ -1,8 +1,8 @@
 # Dragon Forge -- Codex Project Notes
 
-Dragon Forge development uses coordinated Codex agents for production,
-implementation, review, and QA workflows. Each agent owns a specific domain,
-enforcing separation of concerns and quality.
+Dragon Forge development uses Codex agents for production, implementation,
+review, and QA workflows. The repo-local workflow is scoped to the Godot 4.6 /
+GDScript project in this repository.
 
 ## Technology Stack
 
@@ -12,12 +12,12 @@ enforcing separation of concerns and quality.
 - **Build System**: SCons (engine), Godot Export Templates
 - **Asset Pipeline**: Godot Import System + custom resource pipeline
 
-> **Note**: Engine-specialist agents exist for Godot, Unity, and Unreal with
-> dedicated sub-specialists. Use the set matching your engine.
+> **Note**: Dragon Forge is pinned to Godot 4.6 and GDScript. Do not add
+> Unity or Unreal workflow assets to this repository.
 
 ## Project Structure
 
-@.Codex/docs/directory-structure.md
+@.codex/docs/directory-structure.md
 
 ## Engine Version Reference
 
@@ -25,11 +25,11 @@ enforcing separation of concerns and quality.
 
 ## Technical Preferences
 
-@.Codex/docs/technical-preferences.md
+@.codex/docs/technical-preferences.md
 
 ## Coordination Rules
 
-@.Codex/docs/coordination-rules.md
+@.codex/docs/coordination-rules.md
 
 ## Collaboration Protocol
 
@@ -48,8 +48,8 @@ See `docs/COLLABORATIVE-DESIGN-PRINCIPLE.md` for full protocol and examples.
 
 ## Coding Standards
 
-@.Codex/docs/coding-standards.md
+@.codex/docs/coding-standards.md
 
 ## Context Management
 
-@.Codex/docs/context-management.md
+@.codex/docs/context-management.md

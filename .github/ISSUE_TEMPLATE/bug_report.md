@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Something isn't working as expected
+about: Something in Dragon Forge is not working as expected
 title: "[Bug] "
 labels: bug
 assignees: ''
@@ -8,42 +8,42 @@ assignees: ''
 
 ## Description
 
-A clear description of what the bug is.
+A clear description of the problem.
 
 ## Steps to Reproduce
 
-1. Open Claude Code in a project using this template
-2. Run `/<skill>` or trigger `<agent>`
-3. ...
-4. See error
+1. Open Dragon Forge.
+2. Navigate to the affected screen, system, or test.
+3. Perform the action that triggers the issue.
+4. Note the result.
 
 ## Expected Behavior
 
-What you expected to happen.
+What should have happened?
 
 ## Actual Behavior
 
-What actually happened. Include any error messages or unexpected output.
+What happened instead? Include errors, logs, screenshots, or test output when
+available.
+
+## Affected Area
+
+- [ ] Battle
+- [ ] Dragon progression
+- [ ] Economy
+- [ ] Hatchery
+- [ ] Save/load
+- [ ] Scene flow / UI
+- [ ] Tests / tooling
+- [ ] Design / production docs
+- [ ] Other:
 
 ## Environment
 
-- **OS**: (e.g., Windows 10, macOS 14, Ubuntu 24.04)
-- **Shell**: (e.g., Git Bash, zsh, bash)
-- **Claude Code version**: (run `claude --version`)
-- **Node.js version**: (run `node --version`)
-- **jq installed?**: Yes / No
-- **Python installed?**: Yes / No
-
-## Affected Component
-
-- [ ] Agent (which one?):
-- [ ] Skill (which one?):
-- [ ] Hook (which one?):
-- [ ] Rule (which one?):
-- [ ] Template
-- [ ] Documentation
-- [ ] Other:
+- **OS**:
+- **Godot version**:
+- **Branch / commit**:
 
 ## Additional Context
 
-Any other context — screenshots, terminal output, or the session log if relevant.
+Anything else that helps reproduce or understand the issue.

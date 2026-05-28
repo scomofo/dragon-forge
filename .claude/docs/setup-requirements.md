@@ -1,6 +1,6 @@
 # Setup Requirements
 
-This template requires a few tools to be installed for full functionality.
+Dragon Forge's local workflow requires a few tools for full functionality.
 All hooks fail gracefully if tools are missing — nothing will break, but
 you'll lose validation features.
 
@@ -74,7 +74,7 @@ python3 --version      # Should show python version (optional)
 
 ## Recommended IDE
 
-Claude Code works with any editor, but the template is optimized for:
+Claude Code works with any editor, but this repository is optimized for:
 - **VS Code** with the Claude Code extension
 - **Cursor** (Claude Code compatible)
 - Terminal-based Claude Code CLI
