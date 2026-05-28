@@ -44,3 +44,12 @@ stories:
     estimate_days: 1.0
     blocker: ""
     completed: "2026-05-28"
+  - id: "HATCHERY-005"
+    name: "Dragon Unlock Duplicate XP And Shiny Upgrade"
+    file: "production/epics/hatchery/story-005-dragon-unlock-duplicate-xp-and-shiny-upgrade.md"
+    priority: should-have
+    status: done
+    owner: ""
+    estimate_days: 1.0
+    blocker: ""
+    completed: "2026-05-28"

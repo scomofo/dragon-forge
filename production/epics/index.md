@@ -1,6 +1,6 @@
 # Epics Index
 
-Last Updated: 2026-05-27
+Last Updated: 2026-05-28
 Engine: Godot 4.6
 
 | Epic | Layer | System | GDD | Stories | Status |
@@ -15,6 +15,10 @@ Engine: Godot 4.6
 | [Battle Engine](battle-engine/EPIC.md) | Core | Battle Engine | `design/gdd/battle-engine.md` | 7 | Ready |
 | [Hatchery](hatchery/EPIC.md) | Core | Hatchery | `design/gdd/hatchery.md` | 7 | Ready |
 | [Fusion Engine](fusion-engine/EPIC.md) | Core | Fusion Engine | `design/gdd/fusion-engine.md` | Not yet created | Ready |
+
+## Roadmap
+
+- Current production roadmap: [`production/roadmap.md`](../roadmap.md).
 
 ## Notes
 
