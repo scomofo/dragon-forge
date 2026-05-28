@@ -1,0 +1,78 @@
+[gd_resource type="Resource" script_class="HatcheryPullTable" format=3]
+
+[ext_resource type="Script" path="res://src/hatchery/hatchery_pull_table.gd" id="1_table"]
+[ext_resource type="Script" path="res://src/hatchery/hatchery_rarity_weight.gd" id="2_rarity"]
+[ext_resource type="Script" path="res://src/hatchery/hatchery_element_weight.gd" id="3_element"]
+[ext_resource type="Script" path="res://src/hatchery/hatchery_pity_rules.gd" id="4_pity"]
+
+[sub_resource type="Resource" id="Resource_rarity_common"]
+script = ExtResource("2_rarity")
+rarity_id = &"Common"
+weight_basis_points = 5000
+xp_multiplier = 1
+
+[sub_resource type="Resource" id="Resource_rarity_uncommon"]
+script = ExtResource("2_rarity")
+rarity_id = &"Uncommon"
+weight_basis_points = 4000
+xp_multiplier = 2
+
+[sub_resource type="Resource" id="Resource_rarity_rare"]
+script = ExtResource("2_rarity")
+rarity_id = &"Rare"
+weight_basis_points = 1000
+xp_multiplier = 3
+
+[sub_resource type="Resource" id="Resource_element_fire"]
+script = ExtResource("3_element")
+element_id = &"Fire"
+rarity_id = &"Common"
+weight_basis_points = 2500
+
+[sub_resource type="Resource" id="Resource_element_ice"]
+script = ExtResource("3_element")
+element_id = &"Ice"
+rarity_id = &"Common"
+weight_basis_points = 2500
+
+[sub_resource type="Resource" id="Resource_element_storm"]
+script = ExtResource("3_element")
+element_id = &"Storm"
+rarity_id = &"Uncommon"
+weight_basis_points = 1333
+
+[sub_resource type="Resource" id="Resource_element_venom"]
+script = ExtResource("3_element")
+element_id = &"Venom"
+rarity_id = &"Uncommon"
+weight_basis_points = 1333
+
+[sub_resource type="Resource" id="Resource_element_stone"]
+script = ExtResource("3_element")
+element_id = &"Stone"
+rarity_id = &"Uncommon"
+weight_basis_points = 1334
+
+[sub_resource type="Resource" id="Resource_element_shadow"]
+script = ExtResource("3_element")
+element_id = &"Shadow"
+rarity_id = &"Rare"
+weight_basis_points = 1000
+
+[sub_resource type="Resource" id="Resource_pity_rules"]
+script = ExtResource("4_pity")
+rare_element_id = &"Shadow"
+rare_pity_threshold = 10
+element_soft_pity_onset = 20
+element_soft_pity_guaranteed = 40
+tie_break_priority = Array[StringName]([&"Fire", &"Ice", &"Shadow", &"Stone", &"Storm", &"Venom"])
+
+[resource]
+script = ExtResource("1_table")
+pull_id = &"standard_hatchery"
+scrap_cost = 50
+rarity_weights = Array[ExtResource("2_rarity")]([SubResource("Resource_rarity_common"), SubResource("Resource_rarity_uncommon"), SubResource("Resource_rarity_rare")])
+element_weights = Array[ExtResource("3_element")]([SubResource("Resource_element_fire"), SubResource("Resource_element_ice"), SubResource("Resource_element_storm"), SubResource("Resource_element_venom"), SubResource("Resource_element_stone"), SubResource("Resource_element_shadow")])
+pity_rules = SubResource("Resource_pity_rules")
+shiny_rate_basis_points = 200
+required_element_ids = Array[StringName]([&"Fire", &"Ice", &"Storm", &"Venom", &"Stone", &"Shadow"])

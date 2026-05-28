@@ -1,25 +1,52 @@
 # Session State
 
-**Task**: Sprint 03 Core smoke shell and runtime hardening
-**Current section**: BATTLE-003 complete; BATTLE-004 readiness next
-**File**: production/epics/battle-engine/story-004-telegraph-defend-and-defrag-delta.md
+**Task**: Hatchery Story 001 implementation
+**Current section**: HATCHERY-001 implemented; code review next
+**File**: production/epics/hatchery/story-001-pull-table-and-result-contracts.md
 
-## Latest Handoff — 2026-05-27
+## Latest Handoff — 2026-05-28
 
 Fresh handoff for a new chat:
 
-`production/session-state/handoff-2026-05-27.md`
+`production/session-state/active.md`
 
 Immediate next action:
 
-1. Run `/story-readiness production/epics/battle-engine/story-004-telegraph-defend-and-defrag-delta.md`
+1. Run `/code-review src/hatchery/hatchery_pull_table.gd src/hatchery/hatchery_pity_rules.gd src/hatchery/hatchery_rarity_weight.gd src/hatchery/hatchery_element_weight.gd src/hatchery/hatchery_pull_table_validation_result.gd src/hatchery/hatchery_pull_table_snapshot.gd src/hatchery/hatchery_preview_result.gd src/hatchery/hatchery_pull_result.gd src/hatchery/hatchery_rng_provider.gd assets/hatchery/pull_tables/standard_hatchery.tres tests/unit/hatchery/test_pull_table_and_result_contracts.gd production/epics/hatchery/story-001-pull-table-and-result-contracts.md`.
 
-Fresh evidence: BATTLE-003 focused status/recoil suite passes with 5/5 tests and 38 assertions; Battle Engine unit/integration slice passes with 17/17 tests and 921 assertions; full Godot/GUT unit + integration suite passes with 27 scripts, 132 tests, and 7,013 assertions. DRAGON-005 focused suite passes with 4/4 tests and 62 assertions. SCENE-003 focused suite passes with 4/4 tests and 37 assertions; adjacent Scene Flow/bootstrap suites pass with 12/12 tests and 117 assertions; headless production launch exits 0. Sprint 03 smoke refresh is PASS WITH WARNINGS at `production/qa/smoke-sprint-03-2026-05-27.md` and records production shell/main-menu smoke as PASS, not DEFERRED. Sprint 02 smoke check is PASS WITH WARNINGS at `production/qa/smoke-sprint-02-2026-05-27.md`; QA sign-off is APPROVED WITH CONDITIONS at `production/qa/qa-signoff-sprint-02-2026-05-27.md`; retrospective is saved at `production/retrospectives/retro-sprint-02-2026-05-27.md`; Sprint 03 plan is saved at `production/sprints/sprint-03.md`; Sprint 03 QA plan is saved at `production/qa/qa-plan-sprint-03-2026-05-27.md`.
+Fresh evidence: HATCHERY-001 implemented typed pull-table/result contracts, an authored `standard_hatchery.tres` table, validation results, detached runtime snapshots, and deterministic RNG seams. Review fix added per-rarity element total validation. Focused Hatchery unit suite passes with 8/8 tests and 94 assertions; full Godot/GUT unit + integration suite passes with 165/165 tests and 7,776 assertions. Sprint 04 still needs HATCHERY-001 code review/story-done, SCENE-003 manual launch evidence, BATTLE-007 source/content evidence, smoke check, and QA sign-off before close-out.
 
 <!-- QA RUN: 2026-05-27 | Sprint: sprint-02 | Verdict: APPROVED WITH CONDITIONS | Report: production/qa/qa-signoff-sprint-02-2026-05-27.md -->
 <!-- RETRO: 2026-05-27 | Sprint: sprint-02 | Report: production/retrospectives/retro-sprint-02-2026-05-27.md -->
 <!-- SPRINT PLAN: 2026-05-27 | Sprint: sprint-03 | Report: production/sprints/sprint-03.md | Producer: CONCERNS addressed -->
 <!-- QA-PLAN: 2026-05-27 | System: sprint-03 | Plan written: production/qa/qa-plan-sprint-03-2026-05-27.md -->
+<!-- SMOKE: 2026-05-27 | Sprint: sprint-03 | Verdict: PASS WITH WARNINGS | Report: production/qa/smoke-sprint-03-2026-05-27.md -->
+<!-- QA RUN: 2026-05-27 | Sprint: sprint-03 | Verdict: APPROVED WITH CONDITIONS | Report: production/qa/qa-signoff-sprint-03-2026-05-27.md -->
+<!-- RETRO: 2026-05-27 | Sprint: sprint-03 | Report: production/retrospectives/retro-sprint-03-2026-05-27.md -->
+<!-- QA-PLAN: 2026-05-28 | System: sprint-04 | Plan written: production/qa/qa-plan-sprint-04-2026-05-28.md -->
+<!-- QA-EVIDENCE: 2026-05-28 | System: sprint-04-battle-delta | Evidence: production/qa/evidence/battle-sprint-04-delta-evidence.md -->
+<!-- CREATE-STORIES: 2026-05-28 | Epic: hatchery | Stories: 7 | Path: production/epics/hatchery/ -->
+<!-- DEV-STORY: 2026-05-28 | Story: production/epics/hatchery/story-001-pull-table-and-result-contracts.md | Focused: 8/8 tests, 94 assertions | Full: 165/165 tests, 7776 assertions -->
+
+## Session Extract — /story-done 2026-05-27
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/battle-engine/story-007-animation-manifest-runtime-lookup.md — Animation Manifest Runtime Lookup
+- Acceptance criteria: 4/4 passing.
+- Test evidence: focused BATTLE-007 integration suite passed with 7/7 tests and 80 assertions; adjacent Battle animation/content suite passed with 11/11 tests and 65 assertions; Battle Engine integration slice passed with 14/14 tests and 909 assertions; full unit/integration suite passed with 139/139 tests and 7,129 assertions.
+- QA coverage gate: ADEQUATE locally; full-mode qa-lead sidecar unavailable due agent thread limit.
+- Lead programmer gate: APPROVED via `/code-review`; full-mode lead-programmer sidecar unavailable due agent thread limit.
+- Tech debt logged: None.
+- Next recommended: `/story-readiness production/epics/battle-engine/story-004-telegraph-defend-and-defrag-delta.md`, then address any remaining BATTLE-004 readiness gaps.
+
+## Session Extract — /dev-story 2026-05-27
+- Story: production/epics/battle-engine/story-007-animation-manifest-runtime-lookup.md — Animation Manifest Runtime Lookup
+- Status: In Progress; implementation and automated evidence are complete, code review/story closure pending.
+- Implementation: added `BattleAnimationLookupResult`, extended `BattleSetupPayload` with typed battle definition / manifest / move-definition inputs, and added BattleSession lookup helpers for action, VFX, receive, hurt, defend-hit, KO, and defend clips through configure-time ID maps. Runtime code contains no authored move/VFX ID branches, snapshots the configured battle definition plus move dictionary against post-start setup mutation, and can disambiguate receive clips by source actor set when move IDs are shared.
+- Test written: `tests/integration/battle_engine/test_animation_manifest_runtime_lookup.gd` with 7 test functions covering manifest ID lookup, actor/move binding resolution, base reaction clips, receive clips, missing binding errors, setup mutation safety, source-actor disambiguation, and no hardcoded runtime move/VFX IDs.
+- Test evidence: focused BATTLE-007 integration suite passed with 7/7 tests and 80 assertions; adjacent Battle animation/content suite passed with 11/11 tests and 65 assertions; Battle Engine integration slice passed with 14/14 tests and 909 assertions; full unit/integration suite passed with 139/139 tests and 7,129 assertions.
+- Scope notes: no new art assets, no animation player implementation, and no production content lock expansion beyond existing fixture validation.
+- Blockers: None.
+- Next recommended: `/code-review src/battle/runtime/battle_session.gd src/battle/runtime/battle_setup_payload.gd src/battle/runtime/battle_animation_lookup_result.gd tests/integration/battle_engine/test_animation_manifest_runtime_lookup.gd production/epics/battle-engine/story-007-animation-manifest-runtime-lookup.md`, then `/story-done production/epics/battle-engine/story-007-animation-manifest-runtime-lookup.md`.
 
 ## Session Extract — /dev-story 2026-05-27
 - Story: production/epics/scene-flow/story-003-production-shell-main-scene-smoke-path.md — Production Shell Main Scene Smoke Path
@@ -508,7 +535,7 @@ Advisory also resolved:
   - `production/epics/dragon-progression/EPIC.md`
   - `production/epics/economy-ledger/EPIC.md`
   - `production/epics/battle-engine/EPIC.md`
-- Updated `production/epics/index.md` story counts. Hatchery and Fusion Engine still have no story files.
+- Updated `production/epics/index.md` story counts. At the time, Hatchery and Fusion Engine still had no story files; Hatchery stories were later generated on 2026-05-28.
 - Sprint 02 planned at `production/sprints/sprint-02.md`; machine-readable current sprint state updated in `production/sprint-status.yaml`.
 - Sprint 02 Must Have path:
   - `DRAGON-001` Stats, Stage, And Record Contract
@@ -726,3 +753,119 @@ Advisory also resolved:
 - Code review: APPROVED after required detached snapshot and AC-DP76 coverage fixes.
 - Tech debt logged: None.
 - Next recommended: Begin Sprint 02 close-out with `/smoke-check sprint`, then `/team-qa sprint`.
+
+## Session Extract - /story-done 2026-05-27
+
+- Verdict: COMPLETE
+- Story: `production/epics/battle-engine/story-004-telegraph-defend-and-defrag-delta.md` - Telegraph, Defend, And Defrag Delta
+- Acceptance criteria: 5/5 passing, covered by `tests/integration/battle_engine/test_telegraph_defend_and_defrag_delta.gd`.
+- Test evidence: focused BATTLE-004 integration suite passed with 7/7 tests and 86 assertions; adjacent Battle runtime/status/formula suite passed with 24/24 tests and 1,071 assertions; full unit/integration suite passed with 146/146 tests and 7,243 assertions.
+- QA coverage gate: ADEQUATE.
+- Lead programmer gate: APPROVED.
+- Code review: APPROVED after required changes and doc-comment follow-up.
+- Tech debt logged: None.
+- Next recommended: Sprint 03 Must Have and Should Have stories are complete. Run `/smoke-check sprint`, then `/team-qa sprint`; optional Nice-to-have candidates are `production/epics/battle-engine/story-005-turn-resolution-and-presentation-events.md` and `production/epics/battle-engine/story-006-npc-action-selection-heuristics.md`.
+
+## Session Extract - /smoke-check + /team-qa 2026-05-27
+
+- Sprint: Sprint 03
+- Smoke verdict: PASS WITH WARNINGS; report written to `production/qa/smoke-sprint-03-2026-05-27.md`.
+- QA sign-off verdict: APPROVED WITH CONDITIONS; report written to `production/qa/qa-signoff-sprint-03-2026-05-27.md`.
+- Automated evidence: full Godot/GUT unit + integration suite passed with 29 scripts, 146/146 tests, and 7,243 assertions; production shell launch exits 0.
+- Delivered scope: SCENE-003, DRAGON-005, BATTLE-003, BATTLE-004, and BATTLE-007 all complete with automated evidence.
+- Conditions: add explicit manual launch sign-off evidence for SCENE-003, add standalone source/content review evidence for BATTLE-007 before animation content lock or art-production expansion, and run manual frame-rate/performance smoke once a meaningful playable runtime path exists.
+- Bugs: no S1/S2 bugs filed.
+- Next recommended: `/retrospective sprint-03`, then decide whether to pull optional BATTLE-005/BATTLE-006 or plan the next sprint.
+
+## Session Extract - /retrospective 2026-05-27
+
+- Sprint: Sprint 03
+- Report: `production/retrospectives/retro-sprint-03-2026-05-27.md`
+- Completion: 5/7 planned stories overall; 5/5 Must/Should stories complete; BATTLE-005 and BATTLE-006 remained deferred Nice-to-haves.
+- Quality outcome: QA sign-off APPROVED WITH CONDITIONS; no S1/S2 bugs filed.
+- Key lesson: Sprint 03 succeeded by keeping Nice-to-haves as real buffer and by separating committed Must/Should completion from total planned scope.
+- Action items: create explicit SCENE-003 manual launch sign-off, create BATTLE-007 source/content review evidence before content lock, add a playable runtime/performance-smoke story, keep handoff refresh in close-out, and choose BATTLE-005 vs BATTLE-006 based on next combat bottleneck.
+- Next recommended: decide whether to pull optional BATTLE-005/BATTLE-006 or run next sprint planning.
+
+## Session Extract - /dev-story BATTLE-005 + BATTLE-006 2026-05-27
+
+- Stories: `production/epics/battle-engine/story-005-turn-resolution-and-presentation-events.md` and `production/epics/battle-engine/story-006-npc-action-selection-heuristics.md`.
+- Status: In Progress; implementation and automated evidence are complete, code review/story closure pending.
+- BATTLE-005 implementation: added typed `BattleSession` presentation, turn-resolved, and `battle_completed(payload, delta)` signals; IMPACT heal-before-damage resolution; KO completion at RESOLUTION; first-KO actor tracking for RECOIL declaration order; turn payload emission; and session-local completion emission without requiring listeners.
+- BATTLE-006 implementation: added authored `MoveDefinition.power` / `is_reflect` fields and deterministic NPC action selection that prioritizes super-effective attacks, status moves, high-power fallback, random themed fallback, and Defend cooldown legality without mutating authored move Resources.
+- Test evidence after required review fixes: focused BATTLE-005 suite passed with 5/5 tests and 357 assertions; focused BATTLE-006 suite passed with 6/6 tests and 30 assertions; combined focused suite passed with 11/11 tests and 387 assertions; adjacent Battle Engine slice passed with 42/42 tests and 1,590 assertions; full unit/integration suite passed with 157/157 tests and 7,682 assertions.
+- Required review fixes addressed: replaced session `battle_ended(payload)` with `battle_completed(payload, delta)`, tightened runtime combatant/status/result typing, rejected enemy consumable actions, added BATTLE-005 coverage for turn-carried presentation events, legal Defrag Patch IMPACT timing, full completion payload/delta fields, and defeat payload behavior.
+- Next recommended: rerun `/code-review src/battle/runtime/battle_session.gd src/battle/runtime/battle_advance_result.gd src/battle/runtime/battle_recoil_result.gd src/battle/data/move_definition.gd tests/integration/battle_engine/test_turn_resolution_and_presentation_events.gd tests/unit/battle_engine/test_npc_action_selection_heuristics.gd production/epics/battle-engine/story-005-turn-resolution-and-presentation-events.md production/epics/battle-engine/story-006-npc-action-selection-heuristics.md`, then `/story-done` for BATTLE-005 and BATTLE-006 before formal next-sprint commitment.
+
+## Session Extract - Sprint 04 planning start 2026-05-28
+
+- User request: pull BATTLE-005/BATTLE-006, then start next sprint planning.
+- Planning artifact: `production/sprints/sprint-04.md` created as a Core transition sprint draft.
+- Sprint status: `production/sprint-status.yaml` now tracks Sprint 04 with BATTLE-005 and BATTLE-006 as Must Have carryover stories, both still `in-progress`.
+- Producer gate: PR-SPRINT returned CONCERNS. BATTLE-005/BATTLE-006 must be treated as Sprint 04 carryover closeout because Sprint 03 QA sign-off and retrospective explicitly excluded them.
+- QA lead gate: Sprint 04 needs a narrow QA refresh for BATTLE-005/BATTLE-006, plus SCENE-003 manual launch evidence and BATTLE-007 source/content review evidence before phase-advancement claims.
+- Planning posture: do not schedule DRAGON-006, DRAGON-007, or ECO-004 while blocked. Use Sprint 04 to close Battle formally, run `/qa-plan sprint`, generate Hatchery stories, readiness-gate the first Hatchery slice, and only then pull new implementation if the generated story is small and dependency-clean.
+- Next recommended: rerun `/code-review src/battle/runtime/battle_session.gd src/battle/runtime/battle_advance_result.gd src/battle/runtime/battle_recoil_result.gd src/battle/data/move_definition.gd tests/integration/battle_engine/test_turn_resolution_and_presentation_events.gd tests/unit/battle_engine/test_npc_action_selection_heuristics.gd production/epics/battle-engine/story-005-turn-resolution-and-presentation-events.md production/epics/battle-engine/story-006-npc-action-selection-heuristics.md`, then `/story-done` for both Battle stories, then `/qa-plan sprint`.
+
+## Session Extract - /story-done BATTLE-005 2026-05-28
+
+- Verdict: COMPLETE
+- Story: `production/epics/battle-engine/story-005-turn-resolution-and-presentation-events.md` - Turn Resolution And Presentation Events
+- Acceptance criteria: 5/5 passing, covered by `tests/integration/battle_engine/test_turn_resolution_and_presentation_events.gd`.
+- Test evidence: focused BATTLE-005 suite passed with 5/5 tests and 357 assertions; combined BATTLE-005/BATTLE-006 focused suite passed with 11/11 tests and 387 assertions; adjacent Battle Engine slice passed with 42/42 tests and 1,590 assertions; full unit/integration suite passed with 157/157 tests and 7,682 assertions.
+- QA coverage gate: ADEQUATE via focused/adjacent automated coverage and prior approved `/code-review`.
+- Lead programmer gate: APPROVED via `/code-review`.
+- Tech debt logged: None.
+- Next recommended: `/story-done production/epics/battle-engine/story-006-npc-action-selection-heuristics.md`, then `/qa-plan sprint`.
+
+## Session Extract - /story-done BATTLE-006 2026-05-28
+
+- Verdict: COMPLETE WITH NOTES
+- Story: `production/epics/battle-engine/story-006-npc-action-selection-heuristics.md` - NPC Action Selection Heuristics
+- Acceptance criteria: 6/6 covered by deterministic tests; optional manual majority-playtest evidence remains a Sprint 04 QA-delta advisory.
+- Test evidence: focused BATTLE-006 suite passed with 6/6 tests and 30 assertions; combined BATTLE-005/BATTLE-006 focused suite passed with 11/11 tests and 387 assertions; adjacent Battle Engine slice passed with 42/42 tests and 1,590 assertions; full unit/integration suite passed with 157/157 tests and 7,682 assertions.
+- QA coverage gate: ADEQUATE for logic coverage; manual playtest evidence remains optional QA delta.
+- Lead programmer gate: APPROVED via `/code-review`.
+- Tech debt logged: None.
+- Next recommended: run `/qa-plan sprint` so Sprint 04 QA delta covers BATTLE-005/BATTLE-006 before Hatchery story work starts.
+
+## Session Extract - /qa-plan sprint 2026-05-28
+
+- Scope: Sprint 04, covering BATTLE-005/BATTLE-006 plus QA delta/evidence work.
+- Plan written: `production/qa/qa-plan-sprint-04-2026-05-28.md`.
+- Classification: BATTLE-005 is Integration; BATTLE-006 is Logic; QA-DELTA-BATTLE, EVIDENCE-03, and Hatchery story generation/readiness are evidence/planning work items.
+- QA priorities: create Battle Sprint 04 delta evidence, close or explicitly carry SCENE-003 and BATTLE-007 evidence conditions, and add a Hatchery QA-plan addendum after story generation/readiness.
+- Sprint status: Sprint 04 DoD checkbox for QA plan is complete.
+- Next recommended: create `production/qa/evidence/battle-sprint-04-delta-evidence.md`, then `/create-stories hatchery`.
+
+## Session Extract - Sprint 04 Battle QA Delta Evidence 2026-05-28
+
+- Evidence written: `production/qa/evidence/battle-sprint-04-delta-evidence.md`.
+- Focused BATTLE-005/BATTLE-006 regression: 2 scripts, 11/11 tests, 387 assertions.
+- Adjacent Battle Engine slice: 7 scripts, 42/42 tests, 1,590 assertions.
+- Full unit/integration suite: 31 scripts, 157/157 tests, 7,682 assertions. Expected Dragon defensive error/warning output is reported by GUT as ExpectedError.
+- Sprint status: Sprint 04 DoD checkbox for Battle QA delta is complete.
+- Remaining Sprint 04 evidence: SCENE-003 manual launch evidence and BATTLE-007 source/content evidence.
+- Next recommended: `/create-stories hatchery`, then `/story-readiness` for the first Hatchery story.
+
+## Session Extract - /create-stories hatchery 2026-05-28
+
+- Epic: `production/epics/hatchery/EPIC.md`.
+- Stories written: 7 under `production/epics/hatchery/`.
+- Story split: 3 Logic, 3 Integration, 1 blocked UI/presentation evidence story.
+- First implementation candidate: `production/epics/hatchery/story-001-pull-table-and-result-contracts.md`.
+- QA gate note: review mode is `full`, but QL-STORY-READY sidecar could not spawn because the agent thread limit is currently reached; local decomposition kept criteria concrete and test evidence paths explicit.
+- Sprint status: Hatchery story generation is complete; readiness gate for the first Hatchery story remains pending.
+- Next recommended: `/story-readiness production/epics/hatchery/story-001-pull-table-and-result-contracts.md`.
+
+## Session Extract - /story-done HATCHERY-001 2026-05-28
+
+- Verdict: COMPLETE
+- Story: `production/epics/hatchery/story-001-pull-table-and-result-contracts.md` - Pull Table And Result Contracts
+- Acceptance criteria: 6/6 passing, covered by `tests/unit/hatchery/test_pull_table_and_result_contracts.gd`.
+- Test evidence: focused Hatchery unit suite passed with 8/8 tests and 109 assertions; full unit/integration suite passed with 165/165 tests and 7,791 assertions.
+- QA coverage gate: APPROVED WITH NOTES; authored `.tres` exact-value drift note was addressed with focused assertions before close-out.
+- Lead programmer gate: APPROVED WITH NOTES; no blocking findings.
+- Code review: APPROVED after required per-rarity element-total validation fix.
+- Tech debt logged: None.
+- Next recommended: `/story-readiness production/epics/hatchery/story-002-rarity-pity-and-shiny-roll-resolution.md`.
