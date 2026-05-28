@@ -1,7 +1,8 @@
-# Codex Game Studios -- Game Studio Agent Architecture
+# Dragon Forge -- Codex Project Notes
 
-Indie game development managed through 49 coordinated Codex subagents.
-Each agent owns a specific domain, enforcing separation of concerns and quality.
+Dragon Forge development uses coordinated Codex agents for production,
+implementation, review, and QA workflows. Each agent owns a specific domain,
+enforcing separation of concerns and quality.
 
 ## Technology Stack
 

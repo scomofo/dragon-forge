@@ -1,7 +1,8 @@
-# Claude Code Game Studios -- Game Studio Agent Architecture
+# Dragon Forge -- Claude Project Notes
 
-Indie game development managed through 49 coordinated Claude Code subagents.
-Each agent owns a specific domain, enforcing separation of concerns and quality.
+Dragon Forge development uses coordinated Claude Code agents for production,
+implementation, review, and QA workflows. Each agent owns a specific domain,
+enforcing separation of concerns and quality.
 
 ## Technology Stack
 
