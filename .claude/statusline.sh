@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Claude Code Game Studios — Status Line
+# Dragon Forge -- Claude status line
 # Receives JSON on stdin, outputs a single-line status.
 #
 # Segments: ctx% | model | production stage [| Epic > Feature > Task]

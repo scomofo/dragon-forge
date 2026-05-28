@@ -1,2 +1,0 @@
-- [User Profile](user-profile.md) — Dragon Forge designer; wants technical pre-analysis before drafting GDD sections
-- [Dragon Forge Project](project-dragon-forge.md) — 16-bit cyber-retro dragon RPG, Godot 4.6, GDScript, controller-first; Singularity is endgame arc

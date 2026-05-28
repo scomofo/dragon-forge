@@ -1,1 +1,0 @@
-- [Dragon Forge project overview](project_dragon_forge.md) — economy anchors, missing GDDs, XP formula, stage thresholds
