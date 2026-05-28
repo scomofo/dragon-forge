@@ -1,0 +1,22 @@
+# Dragon Forge — Systems Index
+
+> Master registry of all game systems. Status drives /gate-check, /create-stories, and /architecture-review.
+> Source of truth: browser build (React) is feature-complete; Godot port is the active rebuild target.
+> Valid status values: Not Started | In Progress | In Review | Designed | Approved | Needs Revision
+
+| System | Layer | Priority | Status | GDD | Notes |
+|--------|-------|----------|--------|-----|-------|
+| Battle Engine | Simulation | MVP | Approved | design/gdd/battle-engine.md | Turn-based combat, 5-phase flow, damage formula, elemental matchups. Implemented in browser + partial Godot port. |
+| Hatchery | Simulation | MVP | Approved | design/gdd/hatchery.md | Egg gacha, Rare+ pity (guarantee at 10), element soft-pity (ramp 20→40/element), shiny protocol, rarity rates. Implemented in browser + Godot port. Updated 2026-05-24: element soft-pity added (Rule 4b, Formula 9, AC-H30–H38). |
+| Fusion Engine | Simulation | MVP | Approved | design/gdd/fusion-engine.md | Stat inheritance (50/50 avg + level bonus up to 10%, same-element +25%, cross-element −15% HP), Elder (Stage IV parents, 1.75× mult), shiny never inherited, atomic save. Approved 2026-05-22. |
+| Dragon Progression | Simulation | MVP | Approved | design/gdd/dragon-progression.md | Stats by level (+3/level), stage thresholds, shiny multiplier (1.2×), elemental lore roles. Approved 2026-05-22 after 5 review passes. |
+| Dragon Forge Hub | Presentation | MVP | Approved | design/gdd/dragon-forge-hub.md | 7 stations (linear d-pad row), Felix ambient (act-aware posture, non-verbal sounds), ambient save, sort/filter Roster, single-step Bulkhead exit, 62 ACs. OQ-HUB-01 blocks loadout rules until Campaign Map GDD authored. Approved 2026-05-22. |
+| Campaign Map | Progression | MVP | Approved | design/gdd/campaign-map.md | Fixed directed graph (40–46 nodes, 4 acts), d-pad navigation, 8 node types (+SCAR overlay), stage gates (Acts 1–3), matrix gate (Act 4), corruption/SCAR hazards, CROWN node handoff to Singularity, 56+ ACs. Approved 2026-05-24 (Revision 5); revised 2026-05-26 for CROWN, Singularity-owned scar_nodes[], and ending_id-only post-game alignment. |
+| Singularity | Progression | MVP | Approved | design/gdd/singularity.md | Endgame arc: 3 gatekeeper bosses, continuous Mirror Admin final boss (3 phases + tritone counter), Void story-dragon grant, hybrid relic ending model at Mainframe Crown. Approved 2026-05-26 after support-system blocker contracts landed. |
+| Armor System | Simulation | Supporting | Not Started | design/gdd/armor-system.md | 5 Weaver-crafted sets, integrity degradation, field repair mechanics, overworld + combat effects. |
+| Mirror Admin | Simulation | MVP | Approved | design/gdd/singularity.md | Folded into Singularity for current architecture: phase state, tritone weakness, restoration sequence, and boss data contracts are owned by Singularity unless later split into a separate approved GDD. Approved via Singularity 2026-05-26. |
+| Shop | Economy | MVP | Approved | design/gdd/shop.md | Data Scrap economy, 4 consumables (Field Kit, Defrag Patch, Cache Shard, Emergency Patch), 3 analog relics (175/200/225 Scraps, post-Act-2 gate), Unit 01 NPC. 55+ ACs, 3 formulas. Approved 2026-05-24 (Revision 3); revised 2026-05-26 (Revision 4) to make Shop the sole normal relic-purchase writer and align post-ending relic availability with Singularity. |
+| Journal / Console | Narrative | Supporting | Approved | design/gdd/journal.md | Captain's Log: 7 lore fragments with flag/stat unlock conditions, Forge Console delivery, Singularity terminal readouts. Lean blocker-clearing draft approved 2026-05-26. |
+| Save / Persistence | Infrastructure | MVP | Approved | design/gdd/save-persistence.md | Godot Resource (SaveData), atomic transactions, save at Save Lantern, load/migration, round-trip integrity, debug failure injection hooks. Lean blocker-clearing draft approved 2026-05-26. |
+| Audio Director | Presentation | Supporting | Approved | design/gdd/audio-director.md | Music cues per screen, SFX events, corruption-stage audio degradation (6 states), Mirror Admin tritone counter-tone. Lean blocker-clearing draft approved 2026-05-26. |
+| Input Router | Infrastructure | MVP | Approved | design/gdd/input-router.md | Gamepad-first, keyboard/mouse fallback, controller rumble, d-pad UI navigation, Godot 4.6 dual-focus handling. Lean blocker-clearing draft approved 2026-05-26. |

@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/scene_flow/bootstrap_root.gd" id="1_bootstrap"]
+[ext_resource type="PackedScene" path="res://scenes/hub/HubShell.tscn" id="2_hub_shell"]
+
+[node name="BootstrapRoot" type="Node"]
+script = ExtResource("1_bootstrap")
+auto_boot = true
+production_hub_scene = ExtResource("2_hub_shell")

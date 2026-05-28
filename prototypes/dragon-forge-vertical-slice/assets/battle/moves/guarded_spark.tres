@@ -1,0 +1,12 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://src/battle_content/slice_move_definition.gd" id="1_ea61u"]
+
+[resource]
+script = ExtResource("1_ea61u")
+move_id = &"guarded_spark"
+element = &"Root"
+move_kind = &"defend"
+animation_action_id = &"guarded_spark"
+required_animation_class = &"defend"
+presentation_profile_id = &"guarded_spark"

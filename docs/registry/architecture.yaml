@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: ""
+last_updated: "2026-05-26"
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -43,7 +43,183 @@ last_updated: ""
 # interface: how other systems access this state (read-only property, method call,
 #   signal, shared resource, etc.) — this is the contract other ADRs depend on.
 
-state_ownership: []
+state_ownership:
+  - state: SaveData
+    status: active
+    owner_system: save-persistence
+    adr: docs/architecture/adr-0001-save-transaction-boundary.md
+    interface: "SaveTransaction staged mutation and Save / Persistence commit APIs"
+    write_access: save-persistence-only
+    referenced_by:
+      - docs/architecture/adr-0001-save-transaction-boundary.md
+      - docs/architecture/adr-0002-semantic-event-contracts.md
+      - docs/architecture/adr-0004-authored-content-resources.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: input_mode
+    status: active
+    owner_system: input-router
+    adr: docs/architecture/adr-0003-input-router-semantic-actions.md
+    interface: "Input Router semantic action API and active input mode"
+    write_access: input-router-only
+    referenced_by:
+      - docs/architecture/adr-0003-input-router-semantic-actions.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: journal_read_state
+    status: active
+    owner_system: journal-console
+    adr: docs/architecture/adr-0014-journal-console-and-lore-delivery-resources.md
+    interface: "journal_unlocked_ids[], journal_read_ids[], terminal_read_ids[] committed through Save / Persistence"
+    write_access: journal-console-via-save-transaction
+    referenced_by:
+      - docs/architecture/adr-0001-save-transaction-boundary.md
+      - docs/architecture/adr-0002-semantic-event-contracts.md
+      - docs/architecture/adr-0004-authored-content-resources.md
+      - docs/architecture/adr-0014-journal-console-and-lore-delivery-resources.md
+    added: 2026-05-26
+    revised: 2026-05-26
+
+  - state: active_top_level_screen
+    status: active
+    owner_system: scene-flow
+    adr: docs/architecture/adr-0005-godot-scene-flow-and-autoload-boundaries.md
+    interface: "SceneFlowService.change_screen(screen_id, payload) and get_active_screen()"
+    write_access: scene-flow-only
+    referenced_by:
+      - docs/architecture/adr-0005-godot-scene-flow-and-autoload-boundaries.md
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: dragon_records
+    status: active
+    owner_system: dragon-progression
+    adr: docs/architecture/adr-0006-dragon-data-model-and-progression-services.md
+    interface: "DragonProgressionService helpers mutate staged DragonRecord copies inside SaveTransaction; readers use SaveSnapshot or DragonStats"
+    write_access: dragon-progression-via-save-transaction
+    referenced_by:
+      - docs/architecture/adr-0006-dragon-data-model-and-progression-services.md
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: battle_session_runtime
+    status: active
+    owner_system: battle-engine
+    adr: docs/architecture/adr-0007-battle-runtime-state-machine.md
+    interface: "BattleRuntimeController owns a scene-local BattleSession and emits typed runtime settlement payloads"
+    write_access: battle-engine-runtime-only
+    referenced_by:
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: campaign_map_progression
+    status: active
+    owner_system: campaign-map
+    adr: docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+    interface: "Campaign Map settlement mutates map-owned fields inside SaveTransaction"
+    write_access: campaign-map-via-save-transaction
+    referenced_by:
+      - docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+      - docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: player_scraps
+    status: active
+    owner_system: economy-ledger
+    adr: docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    interface: "EconomyLedger.add_scraps() and EconomyLedger.spend_scraps() mutate staged SaveTransaction copies"
+    write_access: economy-ledger-via-save-transaction
+    referenced_by:
+      - docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+      - docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: expedition_item_flags
+    status: active
+    owner_system: expedition-inventory-ledger
+    adr: docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    interface: "ExpeditionInventoryLedger source-specific purchase/consume/reset helpers inside SaveTransaction"
+    write_access: source-specific-via-expedition-inventory-ledger
+    referenced_by:
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+      - docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+      - docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: relic_ownership_flags
+    status: active
+    owner_system: shop
+    adr: docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    interface: "Shop purchase transaction sets relic flags true once; Singularity reads flags at Crown"
+    write_access: shop-purchase-only
+    referenced_by:
+      - docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: singularity_progression
+    status: active
+    owner_system: singularity
+    adr: docs/architecture/adr-0010-singularity-boss-and-ending-orchestration.md
+    interface: "SingularityService mutates corruption_class, scar_nodes[], gatekeeper flags, mirror_admin_defeated, void_dragon_granted, ending_id, and Mirror Admin phase checkpoints inside SaveTransaction"
+    write_access: singularity-via-save-transaction
+    referenced_by:
+      - docs/architecture/adr-0010-singularity-boss-and-ending-orchestration.md
+      - docs/architecture/adr-0011-corruption-rendering-pipeline.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: corruption_presentation_profile
+    status: active
+    owner_system: corruption-presentation
+    adr: docs/architecture/adr-0011-corruption-rendering-pipeline.md
+    interface: "CorruptionPresentationService applies authored visual profiles from committed Singularity state and save snapshots"
+    write_access: presentation-only-no-save-write
+    referenced_by:
+      - docs/architecture/adr-0011-corruption-rendering-pipeline.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: hatchery_pull_progression
+    status: active
+    owner_system: hatchery
+    adr: docs/architecture/adr-0012-hatchery-pull-transaction-and-rng-boundaries.md
+    interface: "HatcheryService stages pity counters and pull history inside SaveTransaction; currency and dragon mutation route through EconomyLedger and DragonProgressionService"
+    write_access: hatchery-via-save-transaction
+    referenced_by:
+      - docs/architecture/adr-0012-hatchery-pull-transaction-and-rng-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: fusion_anvil_settlement
+    status: active
+    owner_system: fusion-engine
+    adr: docs/architecture/adr-0013-fusion-anvil-transaction-boundaries.md
+    interface: "FusionService previews from SaveSnapshot and commits child creation plus parent retention/removal through DragonProgressionService inside SaveTransaction"
+    write_access: fusion-via-save-transaction
+    referenced_by:
+      - docs/architecture/adr-0013-fusion-anvil-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - state: audio_presentation_mix
+    status: active
+    owner_system: audio-director
+    adr: docs/architecture/adr-0015-audio-event-routing-and-mix-ownership.md
+    interface: "AudioDirectorService owns buses, cue playback, pools, and corruption mix profiles from semantic events"
+    write_access: presentation-only-no-save-write
+    referenced_by:
+      - docs/architecture/adr-0015-audio-event-routing-and-mix-ownership.md
+    added: 2026-05-26
+    revised: ""
 
 # Example:
 #
@@ -71,7 +247,276 @@ state_ownership: []
 #
 # pattern options: signal | direct_call | event_bus | shared_resource | rpc | none
 
-interfaces: []
+interfaces:
+  - contract: durable_state_commit
+    status: active
+    pattern: direct_call
+    producer: feature-systems
+    consumers:
+      - save-persistence
+    adr: docs/architecture/adr-0001-save-transaction-boundary.md
+    signal_signature: "commit_transaction(tx: SaveTransaction) -> SaveCommitResult"
+    referenced_by:
+      - docs/architecture/adr-0001-save-transaction-boundary.md
+      - docs/architecture/adr-0002-semantic-event-contracts.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: committed_state_notification
+    status: active
+    pattern: signal
+    producer: save-persistence
+    consumers:
+      - campaign-map
+      - shop
+      - hatchery
+      - fusion-engine
+      - singularity
+      - journal-console
+      - audio-director
+    adr: docs/architecture/adr-0002-semantic-event-contracts.md
+    signal_signature: "semantic committed-state signals fire after save commit success"
+    referenced_by:
+      - docs/architecture/adr-0001-save-transaction-boundary.md
+      - docs/architecture/adr-0002-semantic-event-contracts.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: semantic_input_actions
+    status: active
+    pattern: signal
+    producer: input-router
+    consumers:
+      - dragon-forge-hub
+      - campaign-map
+      - battle-engine
+      - shop
+      - hatchery
+      - fusion-engine
+      - singularity
+    adr: docs/architecture/adr-0003-input-router-semantic-actions.md
+    signal_signature: "semantic action IDs such as ui_confirm, ui_cancel, battle_defend"
+    referenced_by:
+      - docs/architecture/adr-0003-input-router-semantic-actions.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: top_level_screen_transition
+    status: active
+    pattern: direct_call
+    producer: feature-systems
+    consumers:
+      - scene-flow
+    adr: docs/architecture/adr-0005-godot-scene-flow-and-autoload-boundaries.md
+    signal_signature: "change_screen(screen_id: StringName, payload: ScreenTransitionPayload) -> SceneChangeResult"
+    referenced_by:
+      - docs/architecture/adr-0005-godot-scene-flow-and-autoload-boundaries.md
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: dragon_progression_mutation
+    status: active
+    pattern: direct_call
+    producer: feature-systems
+    consumers:
+      - dragon-progression
+      - save-persistence
+    adr: docs/architecture/adr-0006-dragon-data-model-and-progression-services.md
+    signal_signature: "DragonProgressionService helpers mutate SaveTransaction and return named result types; commit-time progression events publish only after Save commit success"
+    referenced_by:
+      - docs/architecture/adr-0006-dragon-data-model-and-progression-services.md
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: battle_runtime_settlement
+    status: active
+    pattern: signal
+    producer: battle-engine
+    consumers:
+      - campaign-map
+      - singularity
+    adr: docs/architecture/adr-0007-battle-runtime-state-machine.md
+    signal_signature: "battle_completed(payload: BattleEndedPayload, delta: BattleDurableDelta)"
+    referenced_by:
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+      - docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: battle_animation_manifest_binding
+    status: active
+    pattern: shared_resource
+    producer: authored-content
+    consumers:
+      - battle-engine
+      - battle-ui
+      - audio-director
+      - content-registry
+    adr: docs/architecture/adr-0007-battle-runtime-state-machine.md
+    signal_signature: "BattleDefinition.animation_manifest_id + MoveDefinition IDs resolve through BattleAnimationManifest to BattleActionAnimationBinding"
+    referenced_by:
+      - docs/architecture/adr-0004-authored-content-resources.md
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+      - docs/architecture/adr-0015-audio-event-routing-and-mix-ownership.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: campaign_battle_settlement
+    status: active
+    pattern: direct_call
+    producer: campaign-map
+    consumers:
+      - save-persistence
+      - dragon-progression
+      - economy-ledger
+      - expedition-inventory-ledger
+    adr: docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+    signal_signature: "settle_battle(payload: BattleEndedPayload, delta: BattleDurableDelta, context: CampaignBattleContext) -> CampaignSettlementResult"
+    referenced_by:
+      - docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+      - docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: economy_scrap_mutation
+    status: active
+    pattern: direct_call
+    producer: feature-systems
+    consumers:
+      - economy-ledger
+      - save-persistence
+    adr: docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    signal_signature: "add_scraps(tx, amount, source_id) / spend_scraps(tx, amount, sink_id) -> EconomyResult"
+    referenced_by:
+      - docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+      - docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: expedition_item_mutation
+    status: active
+    pattern: direct_call
+    producer: feature-systems
+    consumers:
+      - expedition-inventory-ledger
+      - save-persistence
+    adr: docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    signal_signature: "purchase_expedition_item(), consume_expedition_item(), reset_expedition_items() -> ExpeditionItemResult"
+    referenced_by:
+      - docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+      - docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: shop_purchase_transaction
+    status: active
+    pattern: direct_call
+    producer: shop
+    consumers:
+      - economy-ledger
+      - expedition-inventory-ledger
+      - save-persistence
+    adr: docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    signal_signature: "purchase(item_id: StringName) -> PurchaseCommitResult"
+    referenced_by:
+      - docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: singularity_boss_and_ending_settlement
+    status: active
+    pattern: direct_call
+    producer: singularity
+    consumers:
+      - save-persistence
+      - battle-engine
+      - dragon-progression
+      - economy-ledger
+      - campaign-map
+    adr: docs/architecture/adr-0010-singularity-boss-and-ending-orchestration.md
+    signal_signature: "SingularityService settlement APIs consume BattleEndedPayload/BattleDurableDelta and commit Singularity-owned milestones through SaveTransaction"
+    referenced_by:
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+      - docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+      - docs/architecture/adr-0010-singularity-boss-and-ending-orchestration.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: corruption_rendering_profiles
+    status: active
+    pattern: signal
+    producer: singularity
+    consumers:
+      - corruption-presentation
+      - campaign-map-ui
+      - battle-ui
+      - roster-ui
+      - hatchery-ui
+      - crown-ui
+    adr: docs/architecture/adr-0011-corruption-rendering-pipeline.md
+    signal_signature: "CorruptionPresentationService consumes committed CorruptionChangedPayload/EndingResolvedPayload and applies screen-scoped visual profiles"
+    referenced_by:
+      - docs/architecture/adr-0010-singularity-boss-and-ending-orchestration.md
+      - docs/architecture/adr-0011-corruption-rendering-pipeline.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: hatchery_pull_settlement
+    status: active
+    pattern: direct_call
+    producer: hatchery
+    consumers:
+      - save-persistence
+      - economy-ledger
+      - dragon-progression
+    adr: docs/architecture/adr-0012-hatchery-pull-transaction-and-rng-boundaries.md
+    signal_signature: "execute_pull(pull_id, source_id) -> HatcheryPullResult"
+    referenced_by:
+      - docs/architecture/adr-0012-hatchery-pull-transaction-and-rng-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: fusion_anvil_settlement
+    status: active
+    pattern: direct_call
+    producer: fusion-engine
+    consumers:
+      - save-persistence
+      - dragon-progression
+    adr: docs/architecture/adr-0013-fusion-anvil-transaction-boundaries.md
+    signal_signature: "execute_fusion(parent_a_id, parent_b_id, source_id) -> FusionCommitResult"
+    referenced_by:
+      - docs/architecture/adr-0013-fusion-anvil-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: journal_lore_delivery
+    status: active
+    pattern: signal
+    producer: semantic-milestones
+    consumers:
+      - journal-console
+    adr: docs/architecture/adr-0014-journal-console-and-lore-delivery-resources.md
+    signal_signature: "handle_milestone(payload: SemanticMilestonePayload) -> JournalUnlockResult"
+    referenced_by:
+      - docs/architecture/adr-0014-journal-console-and-lore-delivery-resources.md
+    added: 2026-05-26
+    revised: ""
+
+  - contract: audio_event_routing
+    status: active
+    pattern: signal
+    producer: semantic-events
+    consumers:
+      - audio-director
+    adr: docs/architecture/adr-0015-audio-event-routing-and-mix-ownership.md
+    signal_signature: "handle_event(payload: PresentationAudioEventPayload) -> AudioEventResult"
+    referenced_by:
+      - docs/architecture/adr-0015-audio-event-routing-and-mix-ownership.md
+    added: 2026-05-26
+    revised: ""
 
 # Example:
 #
@@ -131,7 +576,180 @@ performance_budgets: []
 # Register an API decision when the choice is non-obvious and other ADRs might
 # make a different choice for the same purpose without knowing this was decided.
 
-api_decisions: []
+api_decisions:
+  - purpose: durable_save_schema
+    status: active
+    api: "Godot Resource SaveData"
+    not: "untyped JSON/dictionary as MVP durable state authority"
+    adr: docs/architecture/adr-0001-save-transaction-boundary.md
+    reason: "Typed Resources make ownership, migration, and atomic staging easier to validate."
+    referenced_by:
+      - docs/architecture/adr-0001-save-transaction-boundary.md
+      - docs/architecture/adr-0004-authored-content-resources.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: input_action_keys
+    status: active
+    api: "Godot InputMap actions as StringName values"
+    not: "raw hardware constants in feature systems"
+    adr: docs/architecture/adr-0003-input-router-semantic-actions.md
+    reason: "Semantic actions keep gamepad, keyboard, and mouse/touch fallback behavior consistent."
+    referenced_by:
+      - docs/architecture/adr-0003-input-router-semantic-actions.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: authored_cross_system_content
+    status: active
+    api: "typed Godot Resources with stable IDs"
+    not: "scattered script constants for cross-system content IDs"
+    adr: docs/architecture/adr-0004-authored-content-resources.md
+    reason: "Stable authored data supports save migration, designer review, and runtime validation."
+    referenced_by:
+      - docs/architecture/adr-0004-authored-content-resources.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: scene_flow_and_services
+    status: active
+    api: "BootstrapRoot plus limited foundation services: ContentRegistry, SaveService, InputRouter, SceneFlowService"
+    not: "feature scenes directly instantiating unrelated root scenes or broad gameplay Autoload access"
+    adr: docs/architecture/adr-0005-godot-scene-flow-and-autoload-boundaries.md
+    reason: "A single transition and boot pattern keeps focus restoration, content validation, and save/event ordering testable."
+    referenced_by:
+      - docs/architecture/adr-0005-godot-scene-flow-and-autoload-boundaries.md
+      - docs/architecture/adr-0006-dragon-data-model-and-progression-services.md
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: dragon_identity_and_progression
+    status: active
+    api: "dragon_id: StringName as primary identity; stage is derived from level in DragonStats"
+    not: "element-only identity, numeric id-only identity, or persisted stage as canonical state"
+    adr: docs/architecture/adr-0006-dragon-data-model-and-progression-services.md
+    reason: "Fused dragons and the story-only Void dragon require identity separate from element, while stage must not drift from level."
+    referenced_by:
+      - docs/architecture/adr-0006-dragon-data-model-and-progression-services.md
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: battle_runtime_model
+    status: active
+    api: "scene-local BattleRuntimeController Node with RefCounted BattleSession and typed payload/result classes"
+    not: "Battle as Autoload, persisted battle session, anonymous Dictionary contracts, or direct SaveData mutation"
+    adr: docs/architecture/adr-0007-battle-runtime-state-machine.md
+    reason: "Battle must remain deterministic, UI-testable, and settlement-driven while Campaign Map and Singularity own durable outcomes."
+    referenced_by:
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: battle_animation_manifest_schema
+    status: active
+    api: "BattleAnimationManifest typed Resources selected by BattleDefinition and resolved against MoveDefinition move/action IDs"
+    not: "hardcoded move-name animation branches, sprite paths inside MoveDefinition, or untracked shared placeholder attack strips"
+    adr: docs/architecture/adr-0007-battle-runtime-state-machine.md
+    reason: "Every attack, defense, status, hurt, KO, and boss special needs explicit sprite/VFX coverage without contaminating combat logic."
+    referenced_by:
+      - docs/architecture/adr-0004-authored-content-resources.md
+      - docs/architecture/adr-0007-battle-runtime-state-machine.md
+      - docs/architecture/adr-0015-audio-event-routing-and-mix-ownership.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: campaign_map_content_and_rewards
+    status: active
+    api: "typed CampaignMapDefinition Resource graph plus CampaignMapController settlement APIs"
+    not: "mutable runtime state in map .tres Resources or arbitrary Battle-provided Scrap amounts as authoritative"
+    adr: docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+    reason: "Campaign Map needs validated authored graph data and atomic reward settlement while preserving Battle, Dragon, Economy, and Singularity boundaries."
+    referenced_by:
+      - docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+      - docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: economy_and_shop_boundaries
+    status: active
+    api: "EconomyLedger, ExpeditionInventoryLedger, and dependency-injected ShopService"
+    not: "direct Scrap/flag writes, Crown relic purchases, or hardcoded /root singleton lookups inside ShopService"
+    adr: docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    reason: "Shared currency and item flags need atomic source-specific mutation and rollback-safe purchase flow."
+    referenced_by:
+      - docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+      - docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: singularity_boss_and_ending_orchestration
+    status: active
+    api: "dependency-configured SingularityService with typed SingularityData Resources and SaveTransaction settlement APIs"
+    not: "Campaign Map or Battle Engine writing Singularity flags, Crown relic purchases, or ending state outside Singularity"
+    adr: docs/architecture/adr-0010-singularity-boss-and-ending-orchestration.md
+    reason: "Endgame corruption, boss milestones, Void grant, and endings require one atomic progression authority."
+    referenced_by:
+      - docs/architecture/adr-0010-singularity-boss-and-ending-orchestration.md
+      - docs/architecture/adr-0011-corruption-rendering-pipeline.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: corruption_rendering_pipeline
+    status: active
+    api: "CorruptionPresentationService plus authored CorruptionVisualProfile/PostGameVisualProfile Resources; Compositor/CompositorEffect for screen effects"
+    not: "manual viewport post-process chains, gameplay-owned rendering mutations, or HUD-obscuring global filters"
+    adr: docs/architecture/adr-0011-corruption-rendering-pipeline.md
+    reason: "Corruption and post-game visuals must be consistent, accessible, Godot 4.6-compatible, and presentation-only."
+    referenced_by:
+      - docs/architecture/adr-0011-corruption-rendering-pipeline.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: hatchery_rng_and_pull_boundary
+    status: active
+    api: "HatcheryService with authored HatcheryPullTable Resources, transaction-scoped RNG, EconomyLedger, and DragonProgressionService helpers"
+    not: "UI-owned random rolls, direct pity mutation, direct Scrap spend, or global RNG calls"
+    adr: docs/architecture/adr-0012-hatchery-pull-transaction-and-rng-boundaries.md
+    reason: "Pull outcomes, pity counters, currency spend, and dragon creation must commit atomically and be testable with deterministic seeds."
+    referenced_by:
+      - docs/architecture/adr-0012-hatchery-pull-transaction-and-rng-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: fusion_anvil_boundary
+    status: active
+    api: "FusionService preview and execute APIs using a shared formula path and DragonProgressionService source-specific creation helpers"
+    not: "duplicated UI preview formulas or separate child/parent commits"
+    adr: docs/architecture/adr-0013-fusion-anvil-transaction-boundaries.md
+    reason: "Fusion preview must match commit, and roster changes must be rollback-safe."
+    referenced_by:
+      - docs/architecture/adr-0013-fusion-anvil-transaction-boundaries.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: journal_console_resources
+    status: active
+    api: "JournalService plus JournalLibrary Resources with stable fragment and terminal IDs"
+    not: "milestone systems mutating Journal read state or content keyed by display text"
+    adr: docs/architecture/adr-0014-journal-console-and-lore-delivery-resources.md
+    reason: "Lore delivery needs stable content IDs, localization-safe text, and atomic read-state ownership."
+    referenced_by:
+      - docs/architecture/adr-0014-journal-console-and-lore-delivery-resources.md
+    added: 2026-05-26
+    revised: ""
+
+  - purpose: audio_event_and_mix_ownership
+    status: active
+    api: "AudioDirectorService plus AudioLibrary Resources, buses, cue pools, and corruption mix profiles"
+    not: "gameplay systems controlling AudioStreamPlayers directly or blocking on audio completion"
+    adr: docs/architecture/adr-0015-audio-event-routing-and-mix-ownership.md
+    reason: "Audio is presentation-only and must be safe when muted, missing, or delayed."
+    referenced_by:
+      - docs/architecture/adr-0015-audio-event-routing-and-mix-ownership.md
+    added: 2026-05-26
+    revised: ""
 
 # Example:
 #
@@ -157,7 +775,153 @@ api_decisions: []
 # Register a pattern when an ADR explicitly bans it AND other ADRs might
 # unknowingly use it (i.e., it's a tempting but wrong approach for this project).
 
-forbidden_patterns: []
+forbidden_patterns:
+  - pattern: direct_feature_save_writes
+    status: active
+    description: "Feature systems must not write durable save files directly."
+    why: "Direct writes can create partial economy, corruption, Journal, or ending states."
+    adr: docs/architecture/adr-0001-save-transaction-boundary.md
+    added: 2026-05-26
+
+  - pattern: emit_before_commit
+    status: active
+    description: "Durable-state signals must not be emitted before the backing save commit succeeds."
+    why: "Downstream systems could react to state that later rolls back."
+    adr: docs/architecture/adr-0001-save-transaction-boundary.md
+    added: 2026-05-26
+
+  - pattern: raw_input_in_feature_systems
+    status: active
+    description: "Feature systems must not branch on raw gamepad button constants for player-facing flows."
+    why: "Raw hardware branching creates inconsistent controls and undermines gamepad-first QA."
+    adr: docs/architecture/adr-0003-input-router-semantic-actions.md
+    added: 2026-05-26
+
+  - pattern: hover_only_interaction
+    status: active
+    description: "Required player-facing interactions must not depend on mouse hover."
+    why: "The project is gamepad-first and Godot 4.6 separates mouse/touch focus from keyboard/gamepad focus."
+    adr: docs/architecture/adr-0003-input-router-semantic-actions.md
+    added: 2026-05-26
+
+  - pattern: feature_scene_direct_root_instantiation
+    status: active
+    description: "Feature systems must not instantiate unrelated top-level screens directly."
+    why: "SceneFlow owns transition safety, focus restoration, and failure handling."
+    adr: docs/architecture/adr-0005-godot-scene-flow-and-autoload-boundaries.md
+    added: 2026-05-26
+
+  - pattern: live_save_resource_mutation_from_snapshots
+    status: active
+    description: "Systems must not mutate live nested SaveData Resources through read snapshots."
+    why: "Godot Resources are mutable; snapshot leaks bypass SaveTransaction and commit-before-emit rules."
+    adr: docs/architecture/adr-0006-dragon-data-model-and-progression-services.md
+    added: 2026-05-26
+
+  - pattern: battle_commits_durable_state
+    status: active
+    description: "Battle Engine must not write save files, mutate DragonRecord, apply XP, add Scraps, mark map nodes, or write Singularity flags."
+    why: "Battle owns combat runtime and raw settlement deltas; Campaign Map or Singularity owns durable settlement through Save / Persistence."
+    adr: docs/architecture/adr-0007-battle-runtime-state-machine.md
+    added: 2026-05-26
+
+  - pattern: mutable_runtime_state_in_authored_resources
+    status: active
+    description: "Runtime combat/session state must not be stored in shared authored .tres Resources."
+    why: "Authored Resources are shared content definitions; mutable battle state belongs in scene-local runtime objects."
+    adr: docs/architecture/adr-0007-battle-runtime-state-machine.md
+    added: 2026-05-26
+
+  - pattern: hardcoded_battle_animation_branches
+    status: active
+    description: "Battle runtime and UI code must not branch on move names to choose sprite paths or VFX assets."
+    why: "Move-specific animation coverage belongs in BattleAnimationManifest so every dragon, NPC, and boss action can be validated before content lock."
+    adr: docs/architecture/adr-0007-battle-runtime-state-machine.md
+    added: 2026-05-26
+
+  - pattern: campaign_writes_singularity_state
+    status: active
+    description: "Campaign Map must not write Singularity-owned `scar_nodes[]`, `ending_id`, gatekeeper flags, or Mirror Admin flags."
+    why: "Singularity owns corruption, boss milestone, Void grant, and ending settlement."
+    adr: docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+    added: 2026-05-26
+
+  - pattern: arbitrary_battle_scrap_authority
+    status: active
+    description: "Campaign Map settlement must not accept an arbitrary Battle-provided Scrap amount without validating it against authored encounter reward data."
+    why: "Campaign Map/Singularity authored encounter data owns reward authority; Battle may echo but not invent final economy rewards."
+    adr: docs/architecture/adr-0008-campaign-map-content-and-reward-pipeline.md
+    added: 2026-05-26
+
+  - pattern: direct_scrap_mutation
+    status: active
+    description: "Systems must not mutate `player_scraps` except through EconomyLedger inside a SaveTransaction."
+    why: "Central validation prevents negative balances, partial purchases, and inconsistent reward/spend behavior."
+    adr: docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+
+  - pattern: direct_expedition_flag_mutation
+    status: active
+    description: "Systems must not mutate expedition item flags except through source-specific ExpeditionInventoryLedger helpers."
+    why: "Purchase, use, reset, and Battle settlement paths need auditable ownership."
+    adr: docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+
+  - pattern: crown_relic_purchase
+    status: active
+    description: "Singularity Crown must not create, discount, sell, grant, reset, or consume relic ownership flags."
+    why: "Shop is the sole normal relic purchase writer and relic flags represent prior commitment."
+    adr: docs/architecture/adr-0009-economy-and-shop-transaction-boundaries.md
+    added: 2026-05-26
+
+  - pattern: campaign_or_battle_writes_singularity_flags
+    status: active
+    description: "Campaign Map and Battle Engine must not write corruption_class, scar_nodes[], gatekeeper flags, mirror_admin_defeated, void_dragon_granted, ending_id, or Mirror Admin phase checkpoints."
+    why: "Singularity is the sole endgame progression authority; other systems provide traversal, runtime combat, or presentation inputs."
+    adr: docs/architecture/adr-0010-singularity-boss-and-ending-orchestration.md
+    added: 2026-05-26
+
+  - pattern: gameplay_owned_rendering_mutation
+    status: active
+    description: "Gameplay systems must not directly mutate corruption rendering materials, compositor effects, or post-game overlays."
+    why: "Rendering is presentation-only and must subscribe to committed semantic state without feeding authority back into gameplay."
+    adr: docs/architecture/adr-0011-corruption-rendering-pipeline.md
+    added: 2026-05-26
+
+  - pattern: manual_corruption_viewport_chain
+    status: active
+    description: "MVP corruption screen effects must not use ad hoc manual viewport post-process chains."
+    why: "Godot 4 uses Compositor/CompositorEffect for structured post-processing; manual chains complicate UI ordering, accessibility, and backend validation."
+    adr: docs/architecture/adr-0011-corruption-rendering-pipeline.md
+    added: 2026-05-26
+
+  - pattern: global_rng_for_hatchery_pulls
+    status: active
+    description: "Hatchery pulls must not use global random calls or UI-owned RNG."
+    why: "Pull outcomes, pity boundaries, and shiny tests must be deterministic and rollback-safe."
+    adr: docs/architecture/adr-0012-hatchery-pull-transaction-and-rng-boundaries.md
+    added: 2026-05-26
+
+  - pattern: duplicated_fusion_preview_formula
+    status: active
+    description: "Fusion UI must not duplicate the fusion formula separately from FusionService."
+    why: "Preview/commit drift misleads players and breaks acceptance tests."
+    adr: docs/architecture/adr-0013-fusion-anvil-transaction-boundaries.md
+    added: 2026-05-26
+
+  - pattern: gameplay_writes_journal_state
+    status: active
+    description: "Gameplay systems must not directly mutate Journal unlock/read state."
+    why: "Journal / Console owns lore delivery and read-state persistence."
+    adr: docs/architecture/adr-0014-journal-console-and-lore-delivery-resources.md
+    added: 2026-05-26
+
+  - pattern: audio_blocks_gameplay
+    status: active
+    description: "Gameplay progression must not wait for audio playback or audio_event_finished."
+    why: "Muted buses, missing cue assets, and platform audio failures must never block progression."
+    adr: docs/architecture/adr-0015-audio-event-routing-and-mix-ownership.md
+    added: 2026-05-26
 
 # Example:
 #

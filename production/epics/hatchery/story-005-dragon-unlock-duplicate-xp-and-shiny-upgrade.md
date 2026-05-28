@@ -1,12 +1,12 @@
 # Story 005: Dragon Unlock Duplicate XP And Shiny Upgrade
 
 > **Epic**: Hatchery
-> **Status**: Ready
+> **Status**: In Progress
 > **Layer**: Core
 > **Type**: Integration
 > **Estimate**: 1.0 day
 > **Manifest Version**: 2026-05-26
-> **Last Updated**:
+> **Last Updated**: 2026-05-28
 
 ## Context
 
@@ -21,7 +21,7 @@
 **Engine Notes**: Verify staged dragon mutations do not leak before commit and duplicate XP uses Dragon Progression helpers.
 
 **Control Manifest Rules (this layer)**:
-- Required: CM-HATCH-03, CM-DRAGON-06, CM-GLOB-07
+- Required: CM-HATCH-03, CM-DRAGON-01, CM-DRAGON-03, CM-DRAGON-06, CM-GLOB-07
 - Forbidden: Hatchery constructing or mutating DragonRecord instances directly in UI code, creating Void, or bypassing DragonProgressionService for duplicate XP
 - Guardrail: XP and shiny upgrade must settle in the same transaction as Scrap spend and pity counters.
 
@@ -102,9 +102,9 @@ Performance: duplicate/new lookup should be bounded by the six standard elements
 **Required evidence**:
 - `tests/integration/hatchery/test_dragon_unlock_duplicate_xp_and_shiny_upgrade.gd`
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created and passing locally; focused HATCHERY-005 integration suite passed with 7/7 tests and 113 assertions; Hatchery unit/integration slice passed with 41/41 tests and 10,754 assertions; full unit/integration suite passed with 198/198 tests and 18,436 assertions.
 
 ## Dependencies
 
-- Depends on: Story 004, Dragon Progression Story 004
-- Unlocks: Story 006, Story 007
+- Depends on: HATCHERY-004 (`production/epics/hatchery/story-004-pull-transaction-boundary-and-scrap-spend.md`), DRAGON-004 (`production/epics/dragon-progression/story-004-dragon-creation-and-source-helpers.md`)
+- Unlocks: HATCHERY-006 (`production/epics/hatchery/story-006-post-commit-events-and-preview-contract.md`), HATCHERY-007 (`production/epics/hatchery/story-007-hatchery-ring-ui-and-reveal-evidence-contract.md`)

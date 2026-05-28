@@ -1,0 +1,22 @@
+; Engine configuration file.
+; It is best edited using the Godot editor.
+;
+; Format:
+;   [section]
+;   param=value
+
+config_version=5
+
+[application]
+
+config/name="Dragon Forge"
+config/features=PackedStringArray("4.6")
+run/main_scene="res://scenes/bootstrap/BootstrapRoot.tscn"
+
+[debug]
+
+gdscript/warnings/inferred_declaration=1
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gut/plugin.cfg")

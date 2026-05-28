@@ -118,19 +118,10 @@ func apply_xp(tx: SaveTransaction, dragon_id: StringName, xp_amount: Variant, so
 		return result
 
 	result.element = dragon.element
-	var xp_requested: int = int(xp_amount)
-	result.xp_requested = xp_requested
-	if xp_requested < 0:
-		push_error("XP award rejected: xpGained must be >= 0, got %d" % xp_requested)
-		return _fail_xp_result(result, &"invalid_xp", "xpGained must be >= 0.")
+	if not _validate_xp_request(result, xp_amount):
+		return result
 
-	var xp_awarded: int = min(xp_requested, XP_MAX_AWARD)
-	result.xp_awarded = xp_awarded
-	dragon.xp += xp_awarded
-	_apply_xp_levels(dragon, result)
-	_finalize_xp_result(dragon, result)
-	_queue_post_commit_events(tx, result.pending_events)
-	return result
+	return _apply_validated_xp_award(tx, dragon, result)
 
 
 ## Stages a new core-element dragon from a Hatchery pull.
@@ -211,19 +202,38 @@ func grant_void_dragon(tx: SaveTransaction, source_id: StringName = &"singularit
 
 ## Applies Hatchery duplicate XP to the matching owned dragon, or discards with the GDD-required log.
 func apply_hatchery_duplicate_xp(tx: SaveTransaction, element: StringName, xp_amount: Variant, source_id: StringName = &"hatchery_duplicate") -> XPApplyResult:
-	var xp_requested: int = int(xp_amount)
+	return apply_hatchery_duplicate_outcome(tx, element, xp_amount, false, source_id)
+
+
+## Applies Hatchery duplicate XP and same-pull shiny upgrades to the matching owned dragon.
+func apply_hatchery_duplicate_outcome(
+		tx: SaveTransaction,
+		element: StringName,
+		xp_amount: Variant,
+		shiny: bool,
+		source_id: StringName = &"hatchery_duplicate"
+) -> XPApplyResult:
 	var result: XPApplyResult = _make_xp_result(&"", source_id)
 	result.element = element
-	result.xp_requested = xp_requested
+	result.xp_requested = int(xp_amount)
+	result.shiny_requested = shiny
 	if tx == null or not tx.active or tx.staged_save == null:
-		return _fail_xp_result(result, &"invalid_transaction", "apply_hatchery_duplicate_xp requires an active SaveTransaction.")
+		return _fail_xp_result(result, &"invalid_transaction", "apply_hatchery_duplicate_outcome requires an active SaveTransaction.")
 
 	var dragon: DragonRecord = _find_staged_dragon_by_element(tx, element)
 	if dragon == null:
 		push_error("Hatchery XP discarded: element %s not in party." % element)
 		return _fail_xp_result(result, &"missing_duplicate_target", "No staged DragonRecord found for duplicate element '%s'." % element)
 
-	return apply_xp(tx, dragon.dragon_id, xp_requested, source_id)
+	result.dragon_id = dragon.dragon_id
+	if not _validate_xp_request(result, xp_amount):
+		return result
+
+	if shiny and not dragon.shiny and dragon.element != &"Void":
+		dragon.shiny = true
+		result.shiny_upgraded = true
+	result.shiny = dragon.shiny
+	return _apply_validated_xp_award(tx, dragon, result)
 
 
 ## Validates and repairs dragon records in a loaded SaveData copy.
@@ -435,6 +445,28 @@ func _validated_xp_target(result: XPApplyResult, tx: SaveTransaction, dragon_id:
 	return dragon
 
 
+func _validate_xp_request(result: XPApplyResult, xp_amount: Variant) -> bool:
+	var xp_requested: int = int(xp_amount)
+	result.xp_requested = xp_requested
+	if xp_requested < 0:
+		push_error("XP award rejected: xpGained must be >= 0, got %d" % xp_requested)
+		_fail_xp_result(result, &"invalid_xp", "xpGained must be >= 0.")
+		return false
+	return true
+
+
+func _apply_validated_xp_award(tx: SaveTransaction, dragon: DragonRecord, result: XPApplyResult) -> XPApplyResult:
+	result.element = dragon.element
+	result.shiny = dragon.shiny
+	var xp_awarded: int = min(result.xp_requested, XP_MAX_AWARD)
+	result.xp_awarded = xp_awarded
+	dragon.xp += xp_awarded
+	_apply_xp_levels(dragon, result)
+	_finalize_xp_result(dragon, result)
+	_queue_post_commit_events(tx, result.pending_events)
+	return result
+
+
 func _apply_xp_levels(dragon: DragonRecord, result: XPApplyResult) -> void:
 	var threshold: int = xp_threshold_for(dragon.level)
 	var effective_threshold: int = _effective_threshold(threshold, dragon.battle_charges)
@@ -469,6 +501,7 @@ func _finalize_xp_result(dragon: DragonRecord, result: XPApplyResult) -> void:
 	result.success = true
 	result.reason = &"ok"
 	result.xp_remainder = dragon.xp
+	result.shiny = dragon.shiny
 	result.stats = calculate_stats(dragon)
 
 

@@ -1,0 +1,102 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/Scott_1/df/.codex/hooks/validate-commit.sh'",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "bash '/Users/Scott_1/df/.codex/hooks/validate-push.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/Scott_1/df/.codex/hooks/validate-assets.sh'",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash '/Users/Scott_1/df/.codex/hooks/validate-skill-change.sh'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/Scott_1/df/.codex/hooks/pre-compact.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/Scott_1/df/.codex/hooks/post-compact.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/Scott_1/df/.codex/hooks/session-start.sh'",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash '/Users/Scott_1/df/.codex/hooks/detect-gaps.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/Scott_1/df/.codex/hooks/log-agent.sh'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/Scott_1/df/.codex/hooks/session-stop.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

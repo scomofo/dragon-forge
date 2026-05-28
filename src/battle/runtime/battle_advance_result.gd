@@ -11,3 +11,4 @@ var state_after: StringName = &""
 var completed: bool = false
 var payload: BattleEndedPayload = null
 var delta: BattleDurableDelta = null
+var turn_payload: TurnResolvedPayload = null

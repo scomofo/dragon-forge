@@ -37,7 +37,7 @@
 #   Each entry: name, status, source, referenced_by[], attributes{}, added, revised
 
 version: 1
-last_updated: ""
+last_updated: "2026-05-26"
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
 # Named game-world objects: enemies, NPCs, characters, factions, bosses.
@@ -48,25 +48,46 @@ last_updated: ""
 # Attribute fields: any key stats that could appear in another GDD
 #   (health, damage, drops, faction, etc.)
 
-entities: []
-
-# Example (remove when first real entry is added):
-#
-# entities:
-#   - name: goblin
-#     status: active              # active | deprecated
-#     source: design/gdd/combat.md
-#     referenced_by:
-#       - design/gdd/combat.md
-#       - design/gdd/inventory.md
-#     health: 40
-#     damage: 8
-#     drops:
-#       - item: goblin_arm        # must match an entry in items section
-#         qty: 1
-#         drop_rate: 0.8          # 0.0–1.0
-#     added: 2026-03-26
-#     revised: ""
+entities:
+  - name: dragon
+    status: active
+    source: design/gdd/dragon-progression.md
+    referenced_by:
+      - design/gdd/dragon-progression.md
+      - design/gdd/battle-engine.md
+      - design/gdd/hatchery.md
+      - design/gdd/fusion-engine.md
+      - design/gdd/dragon-forge-hub.md
+      - design/gdd/campaign-map.md
+      - design/gdd/shop.md
+      - design/gdd/singularity.md
+      - design/gdd/save-persistence.md
+    elements: [Fire, Ice, Storm, Stone, Venom, Shadow, Void]   # corrected 2026-05-23: Water→Ice, Earth→Stone, Wind→Storm, added Venom; was [Fire, Water, Earth, Wind, Shadow, Void]
+    stages: [I, II, III, IV]
+    level_range: [1, 60]        # MAX_LEVEL = 60
+    stage_thresholds:
+      I: "1-9"
+      II: "10-24"
+      III: "25-49"
+      IV: "50-60"
+    base_stat_increment: 3      # +3 to each stat (HP/ATK/DEF/SPD) per level above 1
+    shiny_stat_multiplier: 1.2  # multiplied against all four base stats when is_shiny=true
+    is_elder: "true only when Fusion Engine creates the dragon from two Stage IV parents; Elder multiplier applies only at Stage IV"
+    data_schema:                # child_data contract — must be consistent across all GDDs
+      id: int
+      element: str
+      stage: int                # 1–4
+      level: int                # 1–60
+      base_hp: int
+      base_atk: int
+      base_def: int
+      base_spd: int
+      is_elder: bool
+      is_shiny: bool
+      xp: int
+      battle_charges: int
+    added: "2026-05-22"
+    revised: "2026-05-26"
 
 
 # ─── ITEMS ───────────────────────────────────────────────────────────────────
@@ -77,24 +98,152 @@ entities: []
 # Attribute fields: value_gold, weight, stackable, category, and any stat
 #   modifiers that another system (e.g., economy, crafting) might reference.
 
-items: []
+items:
+  - name: field_kit
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/campaign-map.md
+    category: consumable
+    price: 50
+    cap: 1
+    cap_unit: expedition
+    flag: expedition_field_kit
+    effect: "Full HP restore, all loadout dragons (party slots 0–2). Identical to REST node recovery."
+    use_timing: "MAP_EXPLORE: any landmark node"
+    stackable: false
+    notes: "Flag set by Shop on purchase; cleared by Campaign Map on use; reset to false at Bulkhead departure by Campaign Map's departure handler."
+    added: "2026-05-25"
+    revised: ""
 
-# Example:
-#
-# items:
-#   - name: goblin_arm
-#     status: active
-#     source: design/gdd/combat.md   # drop defined in combat GDD
-#     referenced_by:
-#       - design/gdd/combat.md
-#       - design/gdd/inventory.md    # inventory GDD lists its weight/stack rules
-#       - design/gdd/economy.md      # economy GDD references its sell price
-#     value_gold: 5
-#     weight: 1
-#     stackable: true
-#     category: crafting_material
-#     added: 2026-03-26
-#     revised: ""
+  - name: defrag_patch
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/battle-engine.md
+    category: consumable
+    price: 35
+    cap: 1
+    cap_unit: expedition
+    flag: expedition_defrag_patch
+    effect: "Remove one active status effect from party[0] dragon."
+    use_timing: "In-battle: TELEGRAPH phase action"
+    stackable: false
+    notes: "Flag set by Shop on purchase; cleared by Battle Engine on use; reset to false at Bulkhead departure by Campaign Map's departure handler."
+    added: "2026-05-25"
+    revised: ""
+
+  - name: cache_shard
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/dragon-progression.md
+      - design/gdd/campaign-map.md
+    category: consumable
+    price: 50
+    cap: 1
+    cap_unit: expedition
+    flag: expedition_cache_shard
+    effect: "Grant XP to party[0] dragon via apply_xp(), stage-boundary-safe. Max 100 XP; apply_xp skipped when actual_xp=0."
+    use_timing: "MAP_EXPLORE: any landmark node"
+    stackable: false
+    notes: "Flag set by Shop on purchase; cleared by Campaign Map on use; reset to false at Bulkhead departure. See cache_shard_xp_grant formula."
+    added: "2026-05-25"
+    revised: ""
+
+  - name: emergency_patch
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/campaign-map.md
+    category: consumable
+    price: 45
+    cap: 1
+    cap_unit: expedition
+    flag: expedition_emergency_patch
+    effect: "Restore party[0] dragon current_hp to max(1, floor(max_hp × 0.5)) if below threshold. Can revive 0 HP dragon. Item consumed regardless of HP change."
+    use_timing: "MAP_EXPLORE: any landmark node (between battles, not in-battle)"
+    stackable: false
+    notes: "Flag set by Shop on purchase; cleared by Campaign Map on use at MAP_EXPLORE node; reset to false at Bulkhead departure and defeat-return. Campaign Map forward contract: must specify greying when current_hp >= target_hp and 0-HP dragon targeting at MAP_EXPLORE."
+    added: "2026-05-25"
+    revised: "2026-05-25"
+
+  - name: relic_wrench
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/singularity.md
+      - design/gdd/save-persistence.md
+    category: analog_relic
+    price: 175
+    cap: 1
+    cap_unit: lifetime
+    flag: relic_wrench_owned
+    effect: "Analog relic recognized at Mainframe Crown. No immediate gameplay effect. Internal ending mapping: Total Restore."
+    availability: "Visible and purchasable after acts_unlocked.has(2) until ending_id is committed"
+    stackable: false
+    notes: "One-time purchase. Flag never reset by any system. Singularity reads flag for ending gate check. Cheapest relic — soft-lock prevention tuning target. Crown cannot sell, discount, or grant emergency relics."
+    added: "2026-05-25"
+    revised: "2026-05-26"
+
+  - name: relic_lens
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/singularity.md
+      - design/gdd/save-persistence.md
+    category: analog_relic
+    price: 200
+    cap: 1
+    cap_unit: lifetime
+    flag: relic_lens_owned
+    effect: "Analog relic recognized at Mainframe Crown. No immediate gameplay effect. Internal ending mapping: The Patch."
+    availability: "Visible and purchasable after acts_unlocked.has(2) until ending_id is committed"
+    stackable: false
+    notes: "One-time purchase. Flag never reset by any system. Singularity reads flag for ending gate check. Crown cannot sell, discount, or grant emergency relics."
+    added: "2026-05-25"
+    revised: "2026-05-26"
+
+  - name: relic_blade
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/singularity.md
+      - design/gdd/save-persistence.md
+    category: analog_relic
+    price: 225
+    cap: 1
+    cap_unit: lifetime
+    flag: relic_blade_owned
+    effect: "Analog relic recognized at Mainframe Crown. No immediate gameplay effect. Internal ending mapping: Hardware Override."
+    availability: "Visible and purchasable after acts_unlocked.has(2) until ending_id is committed"
+    stackable: false
+    notes: "One-time purchase. Flag never reset by any system. Singularity reads flag for ending gate check. Most expensive item in the Shop. Crown cannot sell, discount, or grant emergency relics."
+    added: "2026-05-25"
+    revised: "2026-05-26"
+
+  - name: data_scrap
+    status: active
+    source: design/gdd/hatchery.md
+    referenced_by:
+      - design/gdd/hatchery.md
+      - design/gdd/dragon-forge-hub.md
+      - design/gdd/campaign-map.md
+      - design/gdd/shop.md
+    pull_cost: 50               # one Hatchery pull costs 50 scraps (PULL_COST)
+    stackable: true
+    category: currency
+    hud_overflow_threshold: 1000  # counts < 1000 display exactly; ≥ 1000 shows "999+"
+    notes: "Primary currency. Earned ~10-15 per battle. Hub HUD always displays current total."
+    added: "2026-05-22"
+    revised: ""
 
 
 # ─── FORMULAS ────────────────────────────────────────────────────────────────
@@ -106,29 +255,151 @@ items: []
 #   output_range[min, max], added
 # Optional: expression (the actual formula), notes
 
-formulas: []
+formulas:
+  - name: apply_xp
+    status: active
+    source: design/gdd/dragon-progression.md
+    referenced_by:
+      - design/gdd/dragon-progression.md
+      - design/gdd/hatchery.md
+      - design/gdd/shop.md
+    variables:
+      - dragon
+      - xp_amount
+      - battle_charges
+    output_range: [1, 60]       # dragon.level after application; clamped to MAX_LEVEL
+    expression: "Iterative: while xp >= xp_threshold_for(dragon.level): advance level, emit signals; applies Resonance battle-charge threshold reduction"
+    notes: "Canonical XP routine. Hatchery delegates all duplicate-dragon XP grants here. Returns {levels_gained, new_level, battle_charges_used}. stats_updated only emitted when levels_gained > 0."
+    added: "2026-05-22"
+    revised: "2026-05-26"
 
-# Example:
-#
-# formulas:
-#   - name: damage_formula
-#     status: active
-#     source: design/gdd/combat.md
-#     referenced_by:
-#       - design/gdd/combat.md
-#       - design/gdd/progression.md   # progression GDD scales attack variable
-#     variables:
-#       - attack
-#       - defense
-#       - crit_chance
-#       - crit_multiplier
-#     output_range: [0, 999]
-#     expression: "max(0, attack - defense) * (1 + crit_chance * crit_multiplier)"
-#     notes: "Output feeds into health-system damage intake. Min is 0 (armour
-#       can absorb all damage). Max is uncapped in formula but tuning knob
-#       damage_cap in combat.md clamps at 999."
-#     added: 2026-03-26
-#     revised: ""
+  - name: xp_battle_scaling
+    status: active
+    source: design/gdd/battle-engine.md
+    referenced_by:
+      - design/gdd/battle-engine.md
+      - design/gdd/dragon-progression.md
+      - design/gdd/campaign-map.md
+    variables:
+      - base_xp
+      - enemyLevel
+      - playerLevel
+    output_range: [1, null]     # min 1 enforced by max()
+    expression: "max(1, floor(base_xp × float(enemyLevel) / float(playerLevel)))"
+    notes: "Battle engine is canonical owner. Dragon Progression references this formula. Campaign Map extends this with over-leveling decay (see xp_battle_scaling_decayed). ADR pending to formalise ownership (XP formula ADR — Step 2c)."
+    added: "2026-05-22"
+    revised: "2026-05-24"
+
+  - name: xp_battle_scaling_decayed
+    status: active
+    source: design/gdd/campaign-map.md
+    referenced_by:
+      - design/gdd/campaign-map.md
+    variables:
+      - base_xp
+      - enemyLevel
+      - playerLevel
+      - XP_DECAY_BAND
+      - XP_DECAY_MULT
+    output_range: [1, null]     # min 1 enforced by outer max()
+    expression: |
+      xp_raw = max(1, floor(base_xp × float(enemyLevel) / float(playerLevel)))
+      decay_mult = XP_DECAY_MULT if playerLevel > (enemyLevel + XP_DECAY_BAND) else 1.0
+      xp_earned = max(1, floor(xp_raw × decay_mult))
+    notes: "Campaign Map extension of xp_battle_scaling. Adds over-leveling decay to discourage backtracking. XP_DECAY_BAND=5, XP_DECAY_MULT=0.25 are defaults (tunable). Base formula (without decay) is xp_battle_scaling."
+    added: "2026-05-24"
+    revised: ""
+
+  - name: damage_calculation
+    status: active
+    source: design/gdd/battle-engine.md
+    referenced_by:
+      - design/gdd/battle-engine.md
+      - design/gdd/dragon-progression.md
+    variables:
+      - atk
+      - def
+      - stage_mult             # lookup from stage_stat_multiplier formula
+      - typeEff
+      - defend_mult            # 0.5 when defending, else 1.0
+      - variance               # random float in [0.85, 1.0]
+    output_range: [1, null]    # min 1 enforced
+    expression: "preCritDamage = max(1, floor((((atk × stage_mult × 1.5) − (def × 0.5)) × typeEff × defend_mult) × variance)); crit may then multiply by 1.5"
+    notes: "Battle Engine is canonical. stage_mult must match stage_stat_multiplier, with an Elder Stage IV branch when is_elder=true."
+    added: "2026-05-22"
+    revised: "2026-05-26"
+
+  - name: fusion_stat_inherit
+    status: active
+    source: design/gdd/fusion-engine.md
+    referenced_by:
+      - design/gdd/fusion-engine.md
+      - design/gdd/dragon-progression.md
+    variables:
+      - parent_a_stat
+      - parent_b_stat
+      - parent_a_level
+      - parent_b_level
+      - element_modifier        # 1.25 same-element, 0.85 cross-element HP only, 1.0 otherwise
+    output_range: [1, null]
+    expression: "floor((parent_a_stat + parent_b_stat) / 2 × (1 + level_bonus) × element_modifier), min 1"
+    notes: "level_bonus capped at LEVEL_BONUS_MULT × (avg_parent_level / MAX_LEVEL). Output child stats feed into dragon-progression stat structure. ELDER_STAGE_MULT is a combat stage multiplier, not an inherited stat multiplier. MAX_LEVEL cap (60) must remain in sync."
+    added: "2026-05-22"
+    revised: "2026-05-26"
+
+  - name: cache_shard_xp_grant
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/dragon-progression.md
+    variables:
+      - dragon.level
+      - dragon.xp
+      - dragon.stage
+      - CACHE_SHARD_BASE_XP
+    output_range: [0, 100]
+    expression: |
+      if dragon.level == MAX_LEVEL: return (no call)
+      xp_to_boundary = stage-dependent algebraic formula (see shop.md Formula 1)
+      cap = max(0, xp_to_boundary - 1)
+      actual_xp = min(CACHE_SHARD_BASE_XP, cap)
+      if actual_xp > 0: apply_xp(party[0], actual_xp)
+    notes: "Stage-boundary-safe XP grant. Never causes a stage transition in a single apply_xp call. apply_xp is skipped entirely when actual_xp=0 to avoid zero-grant signals."
+    added: "2026-05-25"
+    revised: ""
+
+  - name: emergency_patch_hp_restore
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/battle-engine.md
+    variables:
+      - dragon.max_hp
+      - dragon.current_hp
+      - EMERGENCY_PATCH_FACTOR
+    output_range: [1, max_hp]
+    expression: |
+      target_hp = max(1, floor(dragon.max_hp × EMERGENCY_PATCH_FACTOR))
+      if dragon.current_hp < target_hp: dragon.current_hp = target_hp
+    notes: "Only restores (never reduces). Can revive 0 HP dragons. Item consumed regardless of HP change. Battle Engine GDD owns greying logic when current_hp >= target_hp."
+    added: "2026-05-25"
+    revised: ""
+
+  - name: stage_stat_multiplier
+    status: active
+    source: design/gdd/dragon-progression.md
+    referenced_by:
+      - design/gdd/dragon-progression.md
+      - design/gdd/battle-engine.md
+    variables:
+      - dragon_stage            # int 1-4
+    output_range: [0.5, 1.4]
+    expression: "lookup: I→0.5, II→0.75, III→1.0, IV→1.4"
+    notes: "Applied in battle-engine damage and defence calculations. Dragon Progression is authoritative; battle-engine must match exactly."
+    added: "2026-05-22"
+    revised: ""
 
 
 # ─── CONSTANTS ───────────────────────────────────────────────────────────────
@@ -139,30 +410,227 @@ formulas: []
 #
 # Required fields: name, status, source, referenced_by, value, unit, added
 
-constants: []
+constants:
+  - name: MAX_LEVEL
+    status: active
+    source: design/gdd/dragon-progression.md
+    referenced_by:
+      - design/gdd/dragon-progression.md
+      - design/gdd/fusion-engine.md
+    value: 60
+    unit: levels
+    notes: "Hard cap on dragon level. Fusion level_bonus formula uses this as the denominator — both GDDs must agree."
+    added: "2026-05-22"
+    revised: ""
 
-# Example:
-#
-# constants:
-#   - name: gold_carry_limit
-#     status: active
-#     source: design/gdd/economy.md
-#     referenced_by:
-#       - design/gdd/economy.md
-#       - design/gdd/inventory.md   # inventory enforces the carry limit
-#       - design/gdd/ui.md          # HUD displays current gold vs limit
-#     value: 9999
-#     unit: gold
-#     added: 2026-03-26
-#     revised: ""
-#
-#   - name: base_inventory_slots
-#     status: active
-#     source: design/gdd/inventory.md
-#     referenced_by:
-#       - design/gdd/inventory.md
-#       - design/gdd/progression.md  # progression unlocks additional slots
-#     value: 20
-#     unit: slots
-#     added: 2026-03-26
-#     revised: ""
+  - name: PULL_COST
+    status: active
+    source: design/gdd/hatchery.md
+    referenced_by:
+      - design/gdd/hatchery.md
+      - design/gdd/dragon-forge-hub.md
+    value: 50
+    unit: data_scraps
+    notes: "Cost of one Hatchery pull. Hub Hatchery Ring checks player scraps against this value to determine availability (visual dimming when insufficient)."
+    added: "2026-05-22"
+    revised: ""
+
+  - name: SHINY_MULT
+    status: active
+    source: design/gdd/dragon-progression.md
+    referenced_by:
+      - design/gdd/dragon-progression.md
+      - design/gdd/hatchery.md
+      - design/gdd/dragon-forge-hub.md
+    value: 1.2
+    unit: multiplier
+    notes: "Applied to all four base stats (HP/ATK/DEF/SPD) when dragon.is_shiny=true. Hatchery applies it at pull time; Hub Roster displays the resulting stat values."
+    added: "2026-05-22"
+    revised: ""
+
+  - name: ELDER_STAGE_MULT
+    status: active
+    source: design/gdd/fusion-engine.md
+    referenced_by:
+      - design/gdd/fusion-engine.md
+      - design/gdd/battle-engine.md
+    value: 1.75
+    unit: multiplier
+    notes: "Applied by Battle Engine as the Stage IV stage multiplier only when dragon.is_elder=true and dragon level is 50+. Fusion Engine defines the constant and sets is_elder; it does not multiply inherited base stats by this value."
+    added: "2026-05-22"
+    revised: "2026-05-26"
+
+  - name: ELDER_LEVEL_THRESHOLD
+    status: active
+    source: design/gdd/fusion-engine.md
+    referenced_by:
+      - design/gdd/fusion-engine.md
+      - design/gdd/dragon-progression.md
+    value: 50
+    unit: level
+    notes: "Dragon must be level ≥ 50 to qualify as an Elder parent. Dragon Progression defines Stage IV as levels 50-60 — these must stay identical. Any change to Stage IV threshold requires updating both GDDs."
+    added: "2026-05-22"
+    revised: ""
+
+  - name: STAGE_I_MULT
+    status: active
+    source: design/gdd/dragon-progression.md
+    referenced_by:
+      - design/gdd/dragon-progression.md
+      - design/gdd/battle-engine.md
+    value: 0.5
+    unit: multiplier
+    notes: "Stage I (levels 1-9) stat multiplier. Dragon Progression is authoritative; battle-engine must match."
+    added: "2026-05-22"
+    revised: ""
+
+  - name: STAGE_II_MULT
+    status: active
+    source: design/gdd/dragon-progression.md
+    referenced_by:
+      - design/gdd/dragon-progression.md
+      - design/gdd/battle-engine.md
+    value: 0.75
+    unit: multiplier
+    notes: "Stage II (levels 10-24) stat multiplier."
+    added: "2026-05-22"
+    revised: ""
+
+  - name: STAGE_III_MULT
+    status: active
+    source: design/gdd/dragon-progression.md
+    referenced_by:
+      - design/gdd/dragon-progression.md
+      - design/gdd/battle-engine.md
+    value: 1.0
+    unit: multiplier
+    notes: "Stage III (levels 25-49) stat multiplier — baseline/full-strength stage."
+    added: "2026-05-22"
+    revised: ""
+
+  - name: STAGE_IV_MULT
+    status: active
+    source: design/gdd/dragon-progression.md
+    referenced_by:
+      - design/gdd/dragon-progression.md
+      - design/gdd/battle-engine.md
+    value: 1.4
+    unit: multiplier
+    notes: "Standard Stage IV (levels 50-60) stage multiplier. Elder dragons use ELDER_STAGE_MULT instead of this value only when dragon.is_elder=true at Stage IV."
+    added: "2026-05-22"
+    revised: "2026-05-26"
+
+  - name: FIELD_KIT_PRICE
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+    value: 50
+    unit: data_scraps
+    notes: "Cost of the Field Kit consumable. Equals PULL_COST — evaluate together if either changes."
+    added: "2026-05-25"
+    revised: ""
+
+  - name: DEFRAG_PATCH_PRICE
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+    value: 35
+    unit: data_scraps
+    notes: "Cost of the Defrag Patch consumable. Cheapest consumable."
+    added: "2026-05-25"
+    revised: ""
+
+  - name: CACHE_SHARD_PRICE
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+    value: 50
+    unit: data_scraps
+    notes: "Cost of the Cache Shard consumable. Equals FIELD_KIT_PRICE — competing priorities at same price point."
+    added: "2026-05-25"
+    revised: ""
+
+  - name: EMERGENCY_PATCH_PRICE
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+    value: 45
+    unit: data_scraps
+    notes: "Cost of the Emergency Patch consumable."
+    added: "2026-05-25"
+    revised: ""
+
+  - name: RELIC_WRENCH_PRICE
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/singularity.md
+    value: 175
+    unit: data_scraps
+    notes: "Cost of the 10mm Wrench (Total Restore ending relic). Cheapest relic — the soft-lock prevention calibration target."
+    added: "2026-05-25"
+    revised: ""
+
+  - name: RELIC_LENS_PRICE
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/singularity.md
+    value: 200
+    unit: data_scraps
+    notes: "Cost of the Diagnostic Lens (The Patch ending relic)."
+    added: "2026-05-25"
+    revised: ""
+
+  - name: RELIC_BLADE_PRICE
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/singularity.md
+    value: 225
+    unit: data_scraps
+    notes: "Cost of the Kernel Blade (Hardware Override ending relic). Most expensive item in the Shop."
+    added: "2026-05-25"
+    revised: ""
+
+  - name: CACHE_SHARD_BASE_XP
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+    value: 100
+    unit: xp
+    notes: "Maximum XP Cache Shard can grant before the stage-boundary cap reduces it."
+    added: "2026-05-25"
+    revised: ""
+
+  - name: EMERGENCY_PATCH_FACTOR
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+      - design/gdd/campaign-map.md
+    value: 0.5
+    unit: multiplier
+    notes: "Target HP fraction for Emergency Patch restore. Campaign Map uses this value for MAP_EXPLORE action greying threshold (current_hp / max_hp < EMERGENCY_PATCH_FACTOR). Not used by Battle Engine (Emergency Patch is MAP_EXPLORE only)."
+    added: "2026-05-25"
+    revised: "2026-05-25"
+
+  - name: DWELL_REVEAL_THRESHOLD
+    status: active
+    source: design/gdd/shop.md
+    referenced_by:
+      - design/gdd/shop.md
+    value: 400             # was: 300ms before 2026-05-24 (raised in Shop Revision 2 — too aggressive for gamepad)
+    unit: ms
+    safe_range: "300–600 ms"   # was: "150–500 ms"
+    notes: "Minimum Confirm hold duration before DWELL_REVEAL activates in the Shop. Disambiguates deliberate hold (description reveal) from short press (purchase). Exposed as a player accessibility setting. Values below 300ms risk accidental reveals; values above 600ms feel sluggish."
+    added: "2026-05-25"
+    revised: "2026-05-24"

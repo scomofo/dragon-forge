@@ -1,56 +1,299 @@
 # Technical Requirement ID Registry
 #
 # PURPOSE: Persistent, stable IDs for every GDD technical requirement.
-# Prevents TR-ID renumbering across /architecture-review runs, which would
-# break story references.
+# Prevents TR-ID renumbering across /architecture-review runs.
 #
 # RULES:
-#   - IDs are PERMANENT. Never renumber, never delete (use status: deprecated).
-#   - Add new entries only at the END of each system's list.
-#   - When a GDD requirement is reworded (same intent): update `requirement`
-#     text and add a `revised` date. The ID stays the same.
-#   - When a requirement is removed from the GDD: set status: deprecated.
-#   - When a requirement is split or replaced: set status: superseded-by with
-#     the new TR-ID(s).
-#
-# WRITTEN BY: /architecture-review (appends new entries, never overwrites)
-# READ BY:    /create-stories (embed IDs in stories)
-#             /story-done (look up current requirement text at review time)
-#             /story-readiness (validate TR-ID exists and is active)
-#
-# ID FORMAT: TR-[system-slug]-[NNN]
-#   system-slug = short slug matching the GDD system name
-#   NNN = three-digit zero-padded sequence per system, starting at 001
-#
-# STATUS VALUES: active | deprecated | superseded-by: TR-[system]-NNN
+#   - IDs are PERMANENT. Never renumber, never delete.
+#   - Add new entries only at the end of each system's list.
+#   - Deprecated requirements stay in this file with status: deprecated.
 
 version: 1
-last_updated: ""
+last_updated: "2026-05-26"
 
-requirements: []
+requirements:
+  - id: TR-save-001
+    system: save
+    gdd: design/gdd/save-persistence.md
+    requirement: "Persist all durable gameplay state through typed SaveData Resource."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-save-002
+    system: save
+    gdd: design/gdd/save-persistence.md
+    requirement: "Multi-field durable changes use staged transactions with temp write, backup, reload validation, and rollback."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-save-003
+    system: save
+    gdd: design/gdd/save-persistence.md
+    requirement: "Committed-state signals fire only after save commit success."
+    created: 2026-05-26
+    revised: ""
+    status: active
 
-# --- EXAMPLE ENTRIES (remove when first real entries are added) ---
-#
-# - id: TR-combat-001
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Player takes damage from enemies based on attack power minus defence"
-#   created: 2026-03-10
-#   revised: ""
-#   status: active
-#
-# - id: TR-combat-002
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Combo window timing is 0.4 seconds between hits"
-#   created: 2026-03-10
-#   revised: "2026-04-01"
-#   status: active
-#
-# - id: TR-combat-003
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Old damage formula using raw stats"
-#   created: 2026-03-10
-#   revised: ""
-#   status: superseded-by: TR-combat-001
+  - id: TR-input-001
+    system: input
+    gdd: design/gdd/input-router.md
+    requirement: "Route hardware input into semantic actions; feature systems do not branch on raw device constants."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-input-002
+    system: input
+    gdd: design/gdd/input-router.md
+    requirement: "Hub, Shop, Campaign Map, Battle TELEGRAPH, Crown, and terminals are completable by d-pad plus confirm/cancel."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-input-003
+    system: input
+    gdd: design/gdd/input-router.md
+    requirement: "Preserve separate gamepad/keyboard focus and mouse/touch hover behavior under Godot 4.6 dual focus."
+    created: 2026-05-26
+    revised: ""
+    status: active
+
+  - id: TR-data-001
+    system: data
+    gdd: design/gdd/systems-index.md
+    requirement: "Cross-system content with stable IDs is implemented as typed Resources or approved generated tables."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-data-002
+    system: data
+    gdd: design/gdd/campaign-map.md
+    requirement: "Campaign Map uses a fixed directed graph of 40-46 authored nodes with node IDs, node types, connections, rewards, and gates."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-data-003
+    system: data
+    gdd: design/gdd/singularity.md
+    requirement: "SCAR nodes, protected nodes, boss definitions, phase profiles, endings, and terminal content use stable authored IDs."
+    created: 2026-05-26
+    revised: ""
+    status: active
+
+  - id: TR-dragon-001
+    system: dragon
+    gdd: design/gdd/dragon-progression.md
+    requirement: "Own canonical dragon record schema, level progression, stat calculation, stage derivation, shiny, battle_charges, and is_elder."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-dragon-002
+    system: dragon
+    gdd: design/gdd/dragon-progression.md
+    requirement: "Expose XP, stat calculation, stage, Resonance, and creation APIs for Battle, Hatchery, Campaign Map, Fusion, Singularity, and UI."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-dragon-003
+    system: dragon
+    gdd: design/gdd/dragon-progression.md
+    requirement: "Progression/stage events must be compatible with save transaction commit ordering."
+    created: 2026-05-26
+    revised: ""
+    status: active
+
+  - id: TR-hatch-001
+    system: hatchery
+    gdd: design/gdd/hatchery.md
+    requirement: "Implement egg pulls, pity counters, rarity probabilities, element soft-pity, shiny protocol, and duplicate-dragon XP grants."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-hatch-002
+    system: hatchery
+    gdd: design/gdd/hatchery.md
+    requirement: "Hatchery pull results, Scrap spend, dragon creation, pity updates, and duplicate XP are committed atomically."
+    created: 2026-05-26
+    revised: ""
+    status: active
+
+  - id: TR-fusion-001
+    system: fusion
+    gdd: design/gdd/fusion-engine.md
+    requirement: "Fuse two dragons through inherited base stats, level bonus, same-element bonus, cross-element HP penalty, and Elder flag generation."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-fusion-002
+    system: fusion
+    gdd: design/gdd/fusion-engine.md
+    requirement: "Fusion child creation is atomic with parent removal or retention rules and Save / Persistence transaction support."
+    created: 2026-05-26
+    revised: ""
+    status: active
+
+  - id: TR-battle-001
+    system: battle
+    gdd: design/gdd/battle-engine.md
+    requirement: "Implement five-phase 1v1 battle loop: INIT, TELEGRAPH, IMPACT, RECOIL, RESOLUTION."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-battle-002
+    system: battle
+    gdd: design/gdd/battle-engine.md
+    requirement: "Implement canonical damage, type effectiveness, status, crit, defend cooldown, simultaneous KO, and Elder Stage IV multiplier formulas."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-battle-003
+    system: battle
+    gdd: design/gdd/battle-engine.md
+    requirement: "Emit typed runtime battle result and presentation payloads, including raw_xp_awarded and scraps_earned, without committing durable rewards."
+    created: 2026-05-26
+    revised: ""
+    status: active
+
+  - id: TR-map-001
+    system: map
+    gdd: design/gdd/campaign-map.md
+    requirement: "Own expedition party, current node, cleared nodes, act gates, map traversal, final XP decay, and Campaign Map reward settlement."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-map-002
+    system: map
+    gdd: design/gdd/campaign-map.md
+    requirement: "Handle REST recovery, defeat return, replay prompts, HAZARD behavior, and MAP_EXPLORE consumable use."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-map-003
+    system: map
+    gdd: design/gdd/campaign-map.md
+    requirement: "Matrix stabilization latches once, unlocks Spine Access, and hands off endgame activation to Singularity."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-map-004
+    system: map
+    gdd: design/gdd/campaign-map.md
+    requirement: "Campaign Map reads Singularity-owned scar_nodes and ending_id but never mutates Singularity-owned state directly."
+    created: 2026-05-26
+    revised: ""
+    status: active
+
+  - id: TR-shop-001
+    system: shop
+    gdd: design/gdd/shop.md
+    requirement: "Own normal shop purchases, prices, item catalog, relic flags, and Unit 01 transaction flow."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-shop-002
+    system: shop
+    gdd: design/gdd/shop.md
+    requirement: "Every Scrap mutation uses EconomyLedger in a SaveTransaction and cannot make player_scraps negative."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-shop-003
+    system: shop
+    gdd: design/gdd/shop.md
+    requirement: "Expedition item flags use source-specific purchase, consume, and reset helpers; Battle reports Defrag consumption for owner settlement."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-shop-004
+    system: shop
+    gdd: design/gdd/shop.md
+    requirement: "Keep OQ-SH01 boss and hazard Scrap bonus tuning provisional until Campaign Map node and playtest or simulation data exists."
+    created: 2026-05-26
+    revised: ""
+    status: active
+
+  - id: TR-sing-001
+    system: singularity
+    gdd: design/gdd/singularity.md
+    requirement: "Own corruption class, SCAR nodes, gatekeeper flags, Mirror Admin state, Void grant, and ending_id."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-sing-002
+    system: singularity
+    gdd: design/gdd/singularity.md
+    requirement: "Run Crown ending flow from Shop-owned relic flags without emergency Crown purchases, discounts, relic grants, relic consumption, or relic resets."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-sing-003
+    system: singularity
+    gdd: design/gdd/singularity.md
+    requirement: "Mirror Admin is one continuous three-phase encounter with profile swaps, tritone Counter, checkpoint-safe corruption commits, and final-only battle completion."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-sing-004
+    system: singularity
+    gdd: design/gdd/singularity.md
+    requirement: "Void dragon grant uses reserved story identity, cannot be shiny, and succeeds even when normal roster capacity is full."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-sing-005
+    system: singularity
+    gdd: design/gdd/singularity.md
+    requirement: "Corruption and post-game presentation, including restored gold code overlays, have engine-compatible rendering and accessibility constraints."
+    created: 2026-05-26
+    revised: ""
+    status: active
+
+  - id: TR-journal-001
+    system: journal
+    gdd: design/gdd/journal.md
+    requirement: "Unlock and persist lore fragments and terminal read state from semantic milestones."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-journal-002
+    system: journal
+    gdd: design/gdd/journal.md
+    requirement: "Journal and post-game terminal content is authored as stable fragment and terminal IDs, with read state committed atomically."
+    created: 2026-05-26
+    revised: ""
+    status: active
+
+  - id: TR-audio-001
+    system: audio
+    gdd: design/gdd/audio-director.md
+    requirement: "Subscribe to semantic events and own buses, music, SFX, corruption mix, and tritone cues without gameplay authority."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-audio-002
+    system: audio
+    gdd: design/gdd/audio-director.md
+    requirement: "Audio cues, missing assets, muted buses, and audio_event_complete must never block gameplay progression."
+    created: 2026-05-26
+    revised: ""
+    status: active
+
+  - id: TR-hub-001
+    system: hub
+    gdd: design/gdd/dragon-forge-hub.md
+    requirement: "Own hub station navigation, presentation, roster display, Felix ambient behavior, Save Lantern entry, and Bulkhead departure."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-hub-002
+    system: hub
+    gdd: design/gdd/dragon-forge-hub.md
+    requirement: "Save Lantern starts non-blocking manual saves and keeps Hub navigation responsive while save is in progress."
+    created: 2026-05-26
+    revised: ""
+    status: active
+  - id: TR-hub-003
+    system: hub
+    gdd: design/gdd/dragon-forge-hub.md
+    requirement: "Bulkhead and station focus behavior preserve gamepad-first navigation, return focus, and scene transition safety."
+    created: 2026-05-26
+    revised: ""
+    status: active

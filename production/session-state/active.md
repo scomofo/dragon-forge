@@ -1,20 +1,35 @@
 # Session State
 
-**Task**: Hatchery Story 001 implementation
-**Current section**: HATCHERY-001 implemented; code review next
-**File**: production/epics/hatchery/story-001-pull-table-and-result-contracts.md
+**Task**: Sprint 04 Hatchery implementation lane
+**Current section**: HATCHERY-005 implementation complete locally; code review pending
+**File**: production/epics/hatchery/story-005-dragon-unlock-duplicate-xp-and-shiny-upgrade.md
 
 ## Latest Handoff — 2026-05-28
 
 Fresh handoff for a new chat:
 
-`production/session-state/active.md`
+`production/session-state/handoff-2026-05-28-hatchery-005.md`
 
 Immediate next action:
 
-1. Run `/code-review src/hatchery/hatchery_pull_table.gd src/hatchery/hatchery_pity_rules.gd src/hatchery/hatchery_rarity_weight.gd src/hatchery/hatchery_element_weight.gd src/hatchery/hatchery_pull_table_validation_result.gd src/hatchery/hatchery_pull_table_snapshot.gd src/hatchery/hatchery_preview_result.gd src/hatchery/hatchery_pull_result.gd src/hatchery/hatchery_rng_provider.gd assets/hatchery/pull_tables/standard_hatchery.tres tests/unit/hatchery/test_pull_table_and_result_contracts.gd production/epics/hatchery/story-001-pull-table-and-result-contracts.md`.
+1. Run `/code-review src/hatchery/hatchery_service.gd src/hatchery/hatchery_pull_result.gd src/dragon/dragon_progression_service.gd src/dragon/xp_apply_result.gd tests/integration/hatchery/test_dragon_unlock_duplicate_xp_and_shiny_upgrade.gd tests/integration/hatchery/test_pull_transaction_boundary_and_scrap_spend.gd production/epics/hatchery/story-005-dragon-unlock-duplicate-xp-and-shiny-upgrade.md`.
+2. Make any required review changes and rerun the same `/code-review`.
+3. Run `/story-done production/epics/hatchery/story-005-dragon-unlock-duplicate-xp-and-shiny-upgrade.md`.
 
-Fresh evidence: HATCHERY-001 implemented typed pull-table/result contracts, an authored `standard_hatchery.tres` table, validation results, detached runtime snapshots, and deterministic RNG seams. Review fix added per-rarity element total validation. Focused Hatchery unit suite passes with 8/8 tests and 94 assertions; full Godot/GUT unit + integration suite passes with 165/165 tests and 7,776 assertions. Sprint 04 still needs HATCHERY-001 code review/story-done, SCENE-003 manual launch evidence, BATTLE-007 source/content evidence, smoke check, and QA sign-off before close-out.
+Fresh evidence: HATCHERY-005 readiness was repaired and passed full-mode QA lead gate. Implementation is complete locally: focused HATCHERY-005 integration suite passes with 7/7 tests and 113 assertions; adjacent HATCHERY-004 transaction suite passes with 8/8 tests and 155 assertions; Hatchery unit/integration slice passes with 41/41 tests and 10,754 assertions; full Godot/GUT unit + integration suite passes with 198/198 tests and 18,436 assertions. Expected Dragon defensive error/warning output is reported by GUT as ExpectedError. Sprint 04 still needs HATCHERY-005 code review/story closure, SCENE-003 manual launch evidence or carry-forward, BATTLE-007 source/content evidence or carry-forward, smoke check, and QA sign-off before close-out.
+
+## Session Extract — /dev-story 2026-05-28
+
+- Story: production/epics/hatchery/story-005-dragon-unlock-duplicate-xp-and-shiny-upgrade.md — Dragon Unlock Duplicate XP And Shiny Upgrade
+- Status: In Progress; implementation and automated evidence are complete, code review/story closure pending.
+- Readiness repair: added CM-DRAGON-01 and CM-DRAGON-03 to the story manifest rules, replaced ambiguous dependencies with HATCHERY-004 and DRAGON-004 paths, and reran readiness. Local gate READY; full-mode QA lead gate PASS / ADEQUATE.
+- Implementation: `HatcheryService` now receives `DragonProgressionService`, stages new dragon creation or duplicate XP/shiny upgrade inside the existing pull SaveTransaction, computes duplicate XP from rarity multipliers, clears public outcome fields on save failure, and leaves durable dragon mutation inside Dragon Progression helpers. `DragonProgressionService.apply_hatchery_duplicate_outcome()` applies duplicate XP plus same-pull shiny upgrades with named `XPApplyResult` facts while preserving the old duplicate-XP discard contract.
+- Test written: `tests/integration/hatchery/test_dragon_unlock_duplicate_xp_and_shiny_upgrade.gd` with 7 test functions covering AC-H15, AC-H16, AC-H17, AC-H18, AC-H19, AC-H20, AC-H22, AC-H23, AC-H24, AC-H25, AC-H26, AC-H28, AC-H29, and rollback of XP plus shiny upgrade on save failure.
+- Adjacent regression updated: `tests/integration/hatchery/test_pull_transaction_boundary_and_scrap_spend.gd` now expects the completed transaction path to persist a dragon outcome and configures HatcheryService with DragonProgressionService.
+- Test evidence: focused HATCHERY-005 integration suite passed with 7/7 tests and 113 assertions; adjacent HATCHERY-004 transaction suite passed with 8/8 tests and 155 assertions; Hatchery unit/integration slice passed with 41/41 tests and 10,754 assertions; full unit/integration suite passed with 198/198 tests and 18,436 assertions.
+- Scope notes: no HATCHERY-006 post-commit event publication, no preview contract, no UI, no reveal/audio, and no Void duplicate handling implemented.
+- Blockers: None.
+- Next recommended: run the exact `/code-review` command in the latest handoff, then `/story-done production/epics/hatchery/story-005-dragon-unlock-duplicate-xp-and-shiny-upgrade.md`.
 
 <!-- QA RUN: 2026-05-27 | Sprint: sprint-02 | Verdict: APPROVED WITH CONDITIONS | Report: production/qa/qa-signoff-sprint-02-2026-05-27.md -->
 <!-- RETRO: 2026-05-27 | Sprint: sprint-02 | Report: production/retrospectives/retro-sprint-02-2026-05-27.md -->
@@ -24,6 +39,7 @@ Fresh evidence: HATCHERY-001 implemented typed pull-table/result contracts, an a
 <!-- QA RUN: 2026-05-27 | Sprint: sprint-03 | Verdict: APPROVED WITH CONDITIONS | Report: production/qa/qa-signoff-sprint-03-2026-05-27.md -->
 <!-- RETRO: 2026-05-27 | Sprint: sprint-03 | Report: production/retrospectives/retro-sprint-03-2026-05-27.md -->
 <!-- QA-PLAN: 2026-05-28 | System: sprint-04 | Plan written: production/qa/qa-plan-sprint-04-2026-05-28.md -->
+<!-- QA-PLAN: 2026-05-28 | System: sprint-04-hatchery-004-addendum | Plan written: production/qa/qa-plan-sprint-04-2026-05-28.md -->
 <!-- QA-EVIDENCE: 2026-05-28 | System: sprint-04-battle-delta | Evidence: production/qa/evidence/battle-sprint-04-delta-evidence.md -->
 <!-- CREATE-STORIES: 2026-05-28 | Epic: hatchery | Stories: 7 | Path: production/epics/hatchery/ -->
 <!-- DEV-STORY: 2026-05-28 | Story: production/epics/hatchery/story-001-pull-table-and-result-contracts.md | Focused: 8/8 tests, 94 assertions | Full: 165/165 tests, 7776 assertions -->
@@ -869,3 +885,84 @@ Advisory also resolved:
 - Code review: APPROVED after required per-rarity element-total validation fix.
 - Tech debt logged: None.
 - Next recommended: `/story-readiness production/epics/hatchery/story-002-rarity-pity-and-shiny-roll-resolution.md`.
+
+## Session Extract - /dev-story HATCHERY-002 2026-05-28
+
+- Story: `production/epics/hatchery/story-002-rarity-pity-and-shiny-roll-resolution.md` - Rarity Pity And Shiny Roll Resolution.
+- Status: In Progress; implementation and automated evidence are complete, formal `/code-review` and `/story-done` pending.
+- Implementation: added pure `HatcheryPullResolver` and named `HatcheryPullResolutionResult` contracts for natural rarity/element, final rarity/element, Rare+ pity forcing, shiny roll capture, roll basis points, and next pity counter.
+- Scope guardrails: no Scrap spend, SaveTransaction, SaveData mutation, dragon creation, duplicate XP, event emission, persistence, UI, or element soft-pity/drought logic.
+- Test evidence: focused HATCHERY-002 unit suite passed with 7/7 tests and 141 assertions; Hatchery unit slice passed with 15/15 tests and 250 assertions; full unit/integration suite passed with 172/172 tests and 7,932 assertions. Expected Dragon defensive error/warning output is reported by GUT as ExpectedError.
+- Sidecar gates: gameplay-programmer APPROVED WITH NOTES; godot-gdscript-specialist APPROVED WITH NOTES. Notes are non-blocking: concrete result typing is intentionally relaxed in `HatcheryPullResolver.resolve()` to avoid clean-checkout class registration parse fragility, and result snapshot reference immutability remains consistent with nearby Hatchery contracts.
+- Next recommended: `/code-review src/hatchery/hatchery_pull_resolver.gd src/hatchery/hatchery_pull_resolution_result.gd src/hatchery/hatchery_pull_table_snapshot.gd src/hatchery/hatchery_rng_provider.gd tests/unit/hatchery/test_rarity_pity_and_shiny_rolls.gd production/epics/hatchery/story-002-rarity-pity-and-shiny-roll-resolution.md`.
+
+## Session Extract - /story-done HATCHERY-002 2026-05-28
+
+- Verdict: COMPLETE WITH NOTES
+- Story: `production/epics/hatchery/story-002-rarity-pity-and-shiny-roll-resolution.md` - Rarity Pity And Shiny Roll Resolution
+- Acceptance criteria: 8/8 passing, covered by `tests/unit/hatchery/test_rarity_pity_and_shiny_rolls.gd`.
+- Test evidence: focused HATCHERY-002 suite passed with 7/7 tests and 141 assertions; Hatchery unit slice passed with 15/15 tests and 250 assertions; full unit/integration suite passed with 172/172 tests and 7,932 assertions. Expected Dragon defensive error/warning output is reported by GUT as ExpectedError.
+- QA coverage gate: GAPS with no blockers. Advisory follow-ups: explicit tier-to-element reconciliation assertions, natural-Rare shiny-false edge assertion, and named "no shiny penalty" assertion for forced pity.
+- Lead programmer gate: CONCERNS with no blockers. Advisory follow-ups: public method doc comments and commit hygiene for newly added Hatchery files.
+- Code review: APPROVED WITH SUGGESTIONS.
+- Tech debt logged: None.
+- Next recommended: `/story-readiness production/epics/hatchery/story-003-element-soft-pity-resolution.md`.
+
+## Session Extract - /dev-story HATCHERY-003 2026-05-28
+
+- Story: `production/epics/hatchery/story-003-element-soft-pity-resolution.md` - Element Soft Pity Resolution.
+- Status: In Progress; implementation and automated evidence are complete, formal `/code-review` and `/story-done` pending.
+- Implementation: added `HatcheryPullResolver.resolve_with_droughts()` and resolver result fields for `element_soft_pity_forced`, `element_soft_pity_ramped`, `element_soft_pity_element`, and complete `next_drought_counters`.
+- Scope guardrails: no SaveTransaction, SaveData persistence, Scrap spend, dragon creation, duplicate XP, UI, or event emission added. Story 004 still owns atomic staging/persistence.
+- Test written: `tests/unit/hatchery/test_element_soft_pity_resolution.gd` with 11 tests covering AC-H30 through AC-H38, including natural Shadow at pity 9 and next-pull element guarantee priority over Rare+ pity.
+- Test evidence: focused HATCHERY-003 unit suite passed with 11/11 tests and 10,236 assertions; Story 002 compatibility suite passed with 7/7 tests and 141 assertions; Hatchery unit slice passed with 26/26 tests and 10,486 assertions; full unit/integration suite passed with 183/183 tests and 18,168 assertions. Expected Dragon defensive error/warning output is reported by GUT as ExpectedError.
+- Sidecar guidance: gameplay-programmer and godot-gdscript-specialist read-only sidecars found no blockers; notes were incorporated around GDD Rule 4b order, RNG consumption, GDD tie-break priority, complete drought result surface, and ramp selection across all six elements.
+- Blockers: None.
+- Code-review fixes: drought-aware resolver now checks natural Rare before applying Rare+ pity when no element guarantee fires; AC-H33 wording now matches Rule 4b counter increments.
+- Next recommended: rerun `/code-review src/hatchery/hatchery_pull_resolver.gd src/hatchery/hatchery_pull_resolution_result.gd src/hatchery/hatchery_pull_table_snapshot.gd src/hatchery/hatchery_rng_provider.gd tests/unit/hatchery/test_element_soft_pity_resolution.gd production/epics/hatchery/story-003-element-soft-pity-resolution.md`, then `/story-done production/epics/hatchery/story-003-element-soft-pity-resolution.md` if clear.
+
+## Session Extract — /story-done 2026-05-28
+
+- Verdict: COMPLETE WITH NOTES
+- Story: `production/epics/hatchery/story-003-element-soft-pity-resolution.md` — Element Soft Pity Resolution
+- Criteria: 9/9 passing; AC-H30-H38 covered by `tests/unit/hatchery/test_element_soft_pity_resolution.gd`.
+- Code review: `/code-review` rerun approved; QL-TEST-COVERAGE ADEQUATE; LP-CODE-REVIEW PASS.
+- Test evidence: focused HATCHERY-003 suite passed with 11/11 tests and 10,236 assertions; Story 002 compatibility suite passed with 7/7 tests and 141 assertions; Hatchery unit slice passed with 26/26 tests and 10,486 assertions; full unit/integration suite passed with 183/183 tests and 18,168 assertions.
+- Advisory note: GDD AC-H37's full save/load persistence wording remains Story 004; HATCHERY-003 completed the resolver-side complete counter result surface.
+- Tech debt logged: None.
+- Next recommended: `/story-readiness production/epics/hatchery/story-004-pull-transaction-boundary-and-scrap-spend.md`.
+
+## Session Extract - /story-readiness + /qa-plan HATCHERY-004 2026-05-28
+
+- Story: `production/epics/hatchery/story-004-pull-transaction-boundary-and-scrap-spend.md` - Pull Transaction Boundary And Scrap Spend.
+- Readiness: READY after repairing outcome terminology, partial `TR-hatch-002` / `CM-HATCH-03` scope language, rollback wording, and `CM-HATCH-02` injected RNG coverage.
+- QA plan updated: `production/qa/qa-plan-sprint-04-2026-05-28.md` now includes the HATCHERY-004 implementation addendum.
+- QA classification: Integration.
+- Required evidence: `tests/integration/hatchery/test_pull_transaction_boundary_and_scrap_spend.gd`.
+- QA focus: successful exact spend, insufficient funds with no RNG/resolver consumption, pity/drought save-load persistence, save failure rollback before canonical swap, EconomyLedger-in-SaveTransaction boundary, and no Story 005/006 scope leakage.
+- Next recommended: `/dev-story production/epics/hatchery/story-004-pull-transaction-boundary-and-scrap-spend.md`.
+
+## Session Extract - /dev-story HATCHERY-004 2026-05-28
+
+- Story: `production/epics/hatchery/story-004-pull-transaction-boundary-and-scrap-spend.md` - Pull Transaction Boundary And Scrap Spend.
+- Status: In Progress; implementation and automated evidence are complete, formal `/code-review` and `/story-done` pending.
+- Implementation: added `HatcheryService.execute_pull()` as the SaveTransaction boundary for Hatchery pulls, spending through `EconomyLedger`, resolving with `HatcheryPullResolver.resolve_with_droughts()`, staging typed pity/drought counters, and committing through `SaveService`.
+- Result contract: extended `HatcheryPullResult` with balance, next counter, pending resolution, economy, and save commit evidence fields. Failed save commits hide the pending outcome and report canonical rollback balance.
+- Scope guardrails: no dragon creation, duplicate XP, post-commit event publication, UI, direct save file writes, direct `player_scraps` mutation, or global RNG calls added.
+- Test written: `tests/integration/hatchery/test_pull_transaction_boundary_and_scrap_spend.gd` with 8 tests covering exact spend, `51 -> 1` and high-balance remainders, Rare pity reset persistence, `49` and `0` Scrap insufficiency without RNG consumption, save failure rollback, missing drought counter repair, and source guardrails.
+- Test evidence: focused HATCHERY-004 integration suite passed with 8/8 tests and 154 assertions; Hatchery unit/integration slice passed with 34/34 tests and 10,640 assertions; full unit/integration suite passed with 191/191 tests and 18,322 assertions. Expected Dragon defensive error/warning output is reported by GUT as ExpectedError.
+- Code-review fixes: failed save commits now clear staged economy evidence from the public pull result; `HatcheryPullResult.next_drought_counters` is typed; the integration suite now covers the named `0`, `51`, Rare-reset, and full six-counter rollback edges.
+- Sidecar guidance: godot-gdscript-specialist read-only review flagged the important risks around RNG ordering, typed dictionaries, and failed-commit outcome hiding; implementation incorporated those guardrails.
+- Blockers: None.
+- Next recommended: `/code-review src/hatchery/hatchery_service.gd src/hatchery/hatchery_pull_result.gd tests/integration/hatchery/test_pull_transaction_boundary_and_scrap_spend.gd production/epics/hatchery/story-004-pull-transaction-boundary-and-scrap-spend.md`, then `/story-done production/epics/hatchery/story-004-pull-transaction-boundary-and-scrap-spend.md` if clear.
+
+## Session Extract - /story-done HATCHERY-004 2026-05-28
+
+- Verdict: COMPLETE WITH NOTES
+- Story: `production/epics/hatchery/story-004-pull-transaction-boundary-and-scrap-spend.md` - Pull Transaction Boundary And Scrap Spend.
+- Acceptance criteria: 7/7 passing, covered by `tests/integration/hatchery/test_pull_transaction_boundary_and_scrap_spend.gd`.
+- Test evidence: focused HATCHERY-004 suite passed with 8/8 tests and 154 assertions; Hatchery unit/integration slice passed with 34/34 tests and 10,640 assertions; full unit/integration suite passed with 191/191 tests and 18,322 assertions.
+- QA coverage gate: GAPS, accepted as advisory. Coverage is strong but staging proof and EconomyLedger-in-transaction proof are partly inferred from rollback/source guards rather than direct staged-temp inspection.
+- Lead programmer gate: PASS. Prior `/code-review` approved with suggestions; no blocking findings remain.
+- Tech debt logged: None.
+- Next recommended: `/story-readiness production/epics/hatchery/story-005-dragon-unlock-duplicate-xp-and-shiny-upgrade.md`.

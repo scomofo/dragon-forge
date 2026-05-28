@@ -8,4 +8,5 @@ var enemy_dot_damage: int = 0
 var player_ko: bool = false
 var enemy_ko: bool = false
 var resolution_required: bool = false
+var first_ko_actor: StringName = &""
 var tick_order: Array[StringName] = []

@@ -31,10 +31,10 @@
 
 *From GDD `design/gdd/shop.md`, scoped to this story:*
 
-- [ ] AC-SH14 helper scope: affordability/result helpers reject negative amount inputs and never report a successful afford/spend result that would imply `player_scraps < 0`. Full staged Scrap mutation enforcement belongs to ECO-002 and Shop purchase transaction stories.
-- [ ] AC-SH15: a purchase with `player_scraps` exactly equal to `item_price` is valid and leaves `player_scraps = 0`.
-- [ ] AC-SH45 helper scope: with `player_scraps = 0`, `can_afford()` returns false for every positive item price passed by the caller, including all current Shop catalog prices. Real catalog iteration and purchase blocking remain Shop integration scope.
-- [ ] AC-SH54: underlying `player_scraps` stores exact values above 999; any display cap is UI-only.
+- [x] AC-SH14 helper scope: affordability/result helpers reject negative amount inputs and never report a successful afford/spend result that would imply `player_scraps < 0`. Full staged Scrap mutation enforcement belongs to ECO-002 and Shop purchase transaction stories.
+- [x] AC-SH15: a purchase with `player_scraps` exactly equal to `item_price` is valid and leaves `player_scraps = 0`.
+- [x] AC-SH45 helper scope: with `player_scraps = 0`, `can_afford()` returns false for every positive item price passed by the caller, including all current Shop catalog prices. Real catalog iteration and purchase blocking remain Shop integration scope.
+- [x] AC-SH54: underlying `player_scraps` stores exact values above 999; any display cap is UI-only.
 
 ## Implementation Notes
 

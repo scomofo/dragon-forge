@@ -49,7 +49,7 @@ This epic is complete when:
 | 004 | [Telegraph, Defend, And Defrag Delta](story-004-telegraph-defend-and-defrag-delta.md) | Integration | Ready | ADR-0007, ADR-0009 |
 | 005 | [Turn Resolution And Presentation Events](story-005-turn-resolution-and-presentation-events.md) | Integration | Ready | ADR-0002, ADR-0007 |
 | 006 | [NPC Action Selection Heuristics](story-006-npc-action-selection-heuristics.md) | Logic | Ready | ADR-0007 |
-| 007 | [Animation Manifest Runtime Lookup](story-007-animation-manifest-runtime-lookup.md) | Integration | Ready | ADR-0007 |
+| 007 | [Animation Manifest Runtime Lookup](story-007-animation-manifest-runtime-lookup.md) | Integration | Complete | ADR-0007 |
 
 ## Next Step
 

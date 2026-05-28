@@ -1,0 +1,403 @@
+[gd_resource type="Resource" script_class="BattleAnimationManifest" format=3]
+
+[ext_resource type="Script" path="res://src/battle/animation/battle_actor_animation_set.gd" id="1_u1vt4"]
+[ext_resource type="Script" path="res://src/battle/animation/battle_action_animation_binding.gd" id="2_bktll"]
+[ext_resource type="Script" path="res://src/battle/animation/battle_animation_clip.gd" id="3_1u8kf"]
+[ext_resource type="Script" path="res://src/battle/animation/battle_animation_manifest.gd" id="4_cel76"]
+
+[sub_resource type="Resource" id="Resource_op33e"]
+script = ExtResource("2_bktll")
+binding_id = &"root_wyrmling_root_spark"
+move_id = &"root_spark"
+animation_action_id = &"root_spark"
+action_class = &"basic_attack"
+clip_id = &"root_wyrmling_root_spark"
+impact_frame_index = 3
+vfx_clip_id = &"vfx_root_spark"
+receive_clip_id = &"admin_protocol_hurt"
+presentation_event_id = &"battle.root_spark"
+coverage_status = &"approved"
+
+[sub_resource type="Resource" id="Resource_6r826"]
+script = ExtResource("2_bktll")
+binding_id = &"root_wyrmling_thorn_surge"
+move_id = &"thorn_surge"
+animation_action_id = &"thorn_surge"
+action_class = &"heavy_attack"
+clip_id = &"root_wyrmling_thorn_surge"
+impact_frame_index = 3
+vfx_clip_id = &"vfx_thorn_surge"
+receive_clip_id = &"admin_protocol_hurt"
+presentation_event_id = &"battle.thorn_surge"
+coverage_status = &"approved"
+
+[sub_resource type="Resource" id="Resource_7bgr5"]
+script = ExtResource("2_bktll")
+binding_id = &"root_wyrmling_guarded_spark"
+move_id = &"guarded_spark"
+animation_action_id = &"guarded_spark"
+action_class = &"defend"
+clip_id = &"root_wyrmling_guarded_spark"
+impact_frame_index = 3
+vfx_clip_id = &"vfx_guarded_spark"
+receive_clip_id = &"admin_protocol_hurt"
+presentation_event_id = &"battle.guarded_spark"
+coverage_status = &"approved"
+
+[sub_resource type="Resource" id="Resource_mggn8"]
+script = ExtResource("1_u1vt4")
+actor_id = &"root_wyrmling"
+actor_kind = &"dragon"
+element = &"Root"
+stage_id = &"I"
+variant_id = &"slice"
+frame_slot_size = Vector2i(224, 168)
+anchor = Vector2(112, 168)
+idle_clip_id = &"root_wyrmling_idle"
+telegraph_clip_id = &"root_wyrmling_telegraph"
+hurt_clip_id = &"root_wyrmling_hurt"
+defend_start_clip_id = &"root_wyrmling_defend_start"
+defend_hit_clip_id = &"root_wyrmling_defend_hit"
+ko_clip_id = &"root_wyrmling_ko"
+action_bindings = Array[ExtResource("2_bktll")]([SubResource("Resource_op33e"), SubResource("Resource_6r826"), SubResource("Resource_7bgr5")])
+
+[sub_resource type="Resource" id="Resource_fxal5"]
+script = ExtResource("2_bktll")
+binding_id = &"admin_protocol_data_leak"
+move_id = &"data_leak"
+animation_action_id = &"data_leak"
+action_class = &"basic_attack"
+clip_id = &"admin_protocol_data_leak"
+impact_frame_index = 3
+vfx_clip_id = &"vfx_shadow_burst"
+receive_clip_id = &"root_wyrmling_hurt"
+presentation_event_id = &"battle.data_leak"
+coverage_status = &"approved"
+
+[sub_resource type="Resource" id="Resource_au2fw"]
+script = ExtResource("1_u1vt4")
+actor_id = &"admin_protocol"
+actor_kind = &"support_enemy"
+element = &"Shadow"
+stage_id = &"protocol"
+variant_id = &"slice"
+facing = &"left"
+frame_slot_size = Vector2i(224, 168)
+anchor = Vector2(112, 168)
+idle_clip_id = &"admin_protocol_idle"
+telegraph_clip_id = &"admin_protocol_telegraph"
+hurt_clip_id = &"admin_protocol_hurt"
+defend_start_clip_id = &"admin_protocol_defend_start"
+defend_hit_clip_id = &"admin_protocol_defend_hit"
+ko_clip_id = &"admin_protocol_ko"
+action_bindings = Array[ExtResource("2_bktll")]([SubResource("Resource_fxal5")])
+
+[sub_resource type="Resource" id="Resource_0w1hn"]
+script = ExtResource("3_1u8kf")
+clip_id = &"root_wyrmling_idle"
+asset_path = "res://assets/battle/actors/root_wyrmling/battle/root_idle_0.png"
+frame_count = 4
+frame_duration_ms = 130
+frame_paths = PackedStringArray("res://assets/battle/actors/root_wyrmling/battle/root_idle_0.png", "res://assets/battle/actors/root_wyrmling/battle/root_idle_1.png", "res://assets/battle/actors/root_wyrmling/battle/root_idle_2.png", "res://assets/battle/actors/root_wyrmling/battle/root_idle_3.png")
+loop = true
+anchor = Vector2(96, 144)
+slot_size = Vector2i(192, 144)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/root_wyrmling_root_idle_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/08_battle_telegraph.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_x0ydb"]
+script = ExtResource("3_1u8kf")
+clip_id = &"root_wyrmling_telegraph"
+asset_path = "res://assets/battle/actors/root_wyrmling/battle/root_telegraph_0.png"
+frame_count = 4
+frame_duration_ms = 95
+frame_paths = PackedStringArray("res://assets/battle/actors/root_wyrmling/battle/root_telegraph_0.png", "res://assets/battle/actors/root_wyrmling/battle/root_telegraph_1.png", "res://assets/battle/actors/root_wyrmling/battle/root_telegraph_2.png", "res://assets/battle/actors/root_wyrmling/battle/root_telegraph_3.png")
+anchor = Vector2(112, 168)
+slot_size = Vector2i(224, 168)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/root_wyrmling_root_telegraph_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/08_battle_telegraph.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_rerig"]
+script = ExtResource("3_1u8kf")
+clip_id = &"root_wyrmling_hurt"
+asset_path = "res://assets/battle/actors/root_wyrmling/battle/root_hurt_0.png"
+frame_count = 4
+frame_duration_ms = 90
+frame_paths = PackedStringArray("res://assets/battle/actors/root_wyrmling/battle/root_hurt_0.png", "res://assets/battle/actors/root_wyrmling/battle/root_hurt_1.png", "res://assets/battle/actors/root_wyrmling/battle/root_hurt_2.png", "res://assets/battle/actors/root_wyrmling/battle/root_hurt_3.png")
+anchor = Vector2(96, 144)
+slot_size = Vector2i(192, 144)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/root_wyrmling_root_hurt_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/10_enemy_data_leak.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_lyl0a"]
+script = ExtResource("3_1u8kf")
+clip_id = &"root_wyrmling_defend_start"
+asset_path = "res://assets/battle/actors/root_wyrmling/battle/root_defend_start_0.png"
+frame_count = 4
+frame_duration_ms = 90
+frame_paths = PackedStringArray("res://assets/battle/actors/root_wyrmling/battle/root_defend_start_0.png", "res://assets/battle/actors/root_wyrmling/battle/root_defend_start_1.png", "res://assets/battle/actors/root_wyrmling/battle/root_defend_start_2.png", "res://assets/battle/actors/root_wyrmling/battle/root_defend_start_3.png")
+anchor = Vector2(112, 168)
+slot_size = Vector2i(224, 168)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/root_wyrmling_root_defend_start_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/12_guarded_spark_counter.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_nhy2g"]
+script = ExtResource("3_1u8kf")
+clip_id = &"root_wyrmling_defend_hit"
+asset_path = "res://assets/battle/actors/root_wyrmling/battle/root_defend_hit_0.png"
+frame_count = 4
+frame_duration_ms = 90
+frame_paths = PackedStringArray("res://assets/battle/actors/root_wyrmling/battle/root_defend_hit_0.png", "res://assets/battle/actors/root_wyrmling/battle/root_defend_hit_1.png", "res://assets/battle/actors/root_wyrmling/battle/root_defend_hit_2.png", "res://assets/battle/actors/root_wyrmling/battle/root_defend_hit_3.png")
+anchor = Vector2(112, 168)
+slot_size = Vector2i(224, 168)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/root_wyrmling_root_defend_hit_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/12_guarded_spark_counter.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_sgomb"]
+script = ExtResource("3_1u8kf")
+clip_id = &"root_wyrmling_ko"
+asset_path = "res://assets/battle/actors/root_wyrmling/battle/root_ko_0.png"
+frame_count = 4
+frame_duration_ms = 110
+frame_paths = PackedStringArray("res://assets/battle/actors/root_wyrmling/battle/root_ko_0.png", "res://assets/battle/actors/root_wyrmling/battle/root_ko_1.png", "res://assets/battle/actors/root_wyrmling/battle/root_ko_2.png", "res://assets/battle/actors/root_wyrmling/battle/root_ko_3.png")
+anchor = Vector2(112, 168)
+slot_size = Vector2i(224, 168)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/root_wyrmling_root_ko_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/10_enemy_data_leak.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_bmb7h"]
+script = ExtResource("3_1u8kf")
+clip_id = &"root_wyrmling_root_spark"
+asset_path = "res://assets/battle/actors/root_wyrmling/battle/root_spark_0.png"
+frame_count = 6
+frame_duration_ms = 85
+frame_paths = PackedStringArray("res://assets/battle/actors/root_wyrmling/battle/root_spark_0.png", "res://assets/battle/actors/root_wyrmling/battle/root_spark_1.png", "res://assets/battle/actors/root_wyrmling/battle/root_spark_2.png", "res://assets/battle/actors/root_wyrmling/battle/root_spark_3.png", "res://assets/battle/actors/root_wyrmling/battle/root_spark_4.png", "res://assets/battle/actors/root_wyrmling/battle/root_spark_5.png")
+anchor = Vector2(112, 168)
+slot_size = Vector2i(224, 168)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/root_wyrmling_root_spark_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/09_root_spark_impact.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_14cju"]
+script = ExtResource("3_1u8kf")
+clip_id = &"root_wyrmling_thorn_surge"
+asset_path = "res://assets/battle/actors/root_wyrmling/battle/thorn_surge_0.png"
+frame_count = 6
+frame_duration_ms = 95
+frame_paths = PackedStringArray("res://assets/battle/actors/root_wyrmling/battle/thorn_surge_0.png", "res://assets/battle/actors/root_wyrmling/battle/thorn_surge_1.png", "res://assets/battle/actors/root_wyrmling/battle/thorn_surge_2.png", "res://assets/battle/actors/root_wyrmling/battle/thorn_surge_3.png", "res://assets/battle/actors/root_wyrmling/battle/thorn_surge_4.png", "res://assets/battle/actors/root_wyrmling/battle/thorn_surge_5.png")
+anchor = Vector2(112, 168)
+slot_size = Vector2i(224, 168)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/root_wyrmling_thorn_surge_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/11_thorn_surge_impact.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_h0ejs"]
+script = ExtResource("3_1u8kf")
+clip_id = &"root_wyrmling_guarded_spark"
+asset_path = "res://assets/battle/actors/root_wyrmling/battle/guarded_spark_0.png"
+frame_count = 6
+frame_duration_ms = 90
+frame_paths = PackedStringArray("res://assets/battle/actors/root_wyrmling/battle/guarded_spark_0.png", "res://assets/battle/actors/root_wyrmling/battle/guarded_spark_1.png", "res://assets/battle/actors/root_wyrmling/battle/guarded_spark_2.png", "res://assets/battle/actors/root_wyrmling/battle/guarded_spark_3.png", "res://assets/battle/actors/root_wyrmling/battle/guarded_spark_4.png", "res://assets/battle/actors/root_wyrmling/battle/guarded_spark_5.png")
+anchor = Vector2(112, 168)
+slot_size = Vector2i(224, 168)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/root_wyrmling_guarded_spark_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/12_guarded_spark_counter.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_kyo15"]
+script = ExtResource("3_1u8kf")
+clip_id = &"admin_protocol_idle"
+asset_path = "res://assets/battle/actors/admin_protocol/battle/admin_idle_0.png"
+frame_count = 4
+frame_duration_ms = 130
+frame_paths = PackedStringArray("res://assets/battle/actors/admin_protocol/battle/admin_idle_0.png", "res://assets/battle/actors/admin_protocol/battle/admin_idle_1.png", "res://assets/battle/actors/admin_protocol/battle/admin_idle_2.png", "res://assets/battle/actors/admin_protocol/battle/admin_idle_3.png")
+loop = true
+anchor = Vector2(96, 176)
+slot_size = Vector2i(192, 176)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/admin_protocol_idle_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/08_battle_telegraph.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_v5n7f"]
+script = ExtResource("3_1u8kf")
+clip_id = &"admin_protocol_telegraph"
+asset_path = "res://assets/battle/actors/admin_protocol/battle/admin_telegraph_0.png"
+frame_count = 4
+frame_duration_ms = 95
+frame_paths = PackedStringArray("res://assets/battle/actors/admin_protocol/battle/admin_telegraph_0.png", "res://assets/battle/actors/admin_protocol/battle/admin_telegraph_1.png", "res://assets/battle/actors/admin_protocol/battle/admin_telegraph_2.png", "res://assets/battle/actors/admin_protocol/battle/admin_telegraph_3.png")
+anchor = Vector2(112, 168)
+slot_size = Vector2i(224, 168)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/admin_protocol_telegraph_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/08_battle_telegraph.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_1aqc0"]
+script = ExtResource("3_1u8kf")
+clip_id = &"admin_protocol_hurt"
+asset_path = "res://assets/battle/actors/admin_protocol/battle/admin_hurt_0.png"
+frame_count = 4
+frame_duration_ms = 90
+frame_paths = PackedStringArray("res://assets/battle/actors/admin_protocol/battle/admin_hurt_0.png", "res://assets/battle/actors/admin_protocol/battle/admin_hurt_1.png", "res://assets/battle/actors/admin_protocol/battle/admin_hurt_2.png", "res://assets/battle/actors/admin_protocol/battle/admin_hurt_3.png")
+anchor = Vector2(112, 168)
+slot_size = Vector2i(224, 168)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/admin_protocol_hurt_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/09_root_spark_impact.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_fkymq"]
+script = ExtResource("3_1u8kf")
+clip_id = &"admin_protocol_defend_start"
+asset_path = "res://assets/battle/actors/admin_protocol/battle/admin_defend_start_0.png"
+frame_count = 4
+frame_duration_ms = 90
+frame_paths = PackedStringArray("res://assets/battle/actors/admin_protocol/battle/admin_defend_start_0.png", "res://assets/battle/actors/admin_protocol/battle/admin_defend_start_1.png", "res://assets/battle/actors/admin_protocol/battle/admin_defend_start_2.png", "res://assets/battle/actors/admin_protocol/battle/admin_defend_start_3.png")
+anchor = Vector2(96, 176)
+slot_size = Vector2i(192, 176)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/admin_protocol_defend_start_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/08_battle_telegraph.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_ly54o"]
+script = ExtResource("3_1u8kf")
+clip_id = &"admin_protocol_defend_hit"
+asset_path = "res://assets/battle/actors/admin_protocol/battle/admin_defend_hit_0.png"
+frame_count = 4
+frame_duration_ms = 90
+frame_paths = PackedStringArray("res://assets/battle/actors/admin_protocol/battle/admin_defend_hit_0.png", "res://assets/battle/actors/admin_protocol/battle/admin_defend_hit_1.png", "res://assets/battle/actors/admin_protocol/battle/admin_defend_hit_2.png", "res://assets/battle/actors/admin_protocol/battle/admin_defend_hit_3.png")
+anchor = Vector2(112, 168)
+slot_size = Vector2i(224, 168)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/admin_protocol_defend_hit_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/11_thorn_surge_impact.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_lqebf"]
+script = ExtResource("3_1u8kf")
+clip_id = &"admin_protocol_ko"
+asset_path = "res://assets/battle/actors/admin_protocol/battle/admin_ko_0.png"
+frame_count = 4
+frame_duration_ms = 110
+frame_paths = PackedStringArray("res://assets/battle/actors/admin_protocol/battle/admin_ko_0.png", "res://assets/battle/actors/admin_protocol/battle/admin_ko_1.png", "res://assets/battle/actors/admin_protocol/battle/admin_ko_2.png", "res://assets/battle/actors/admin_protocol/battle/admin_ko_3.png")
+anchor = Vector2(112, 168)
+slot_size = Vector2i(224, 168)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/admin_protocol_ko_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/12_guarded_spark_counter.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_25oq8"]
+script = ExtResource("3_1u8kf")
+clip_id = &"admin_protocol_data_leak"
+asset_path = "res://assets/battle/actors/admin_protocol/battle/data_leak_0.png"
+frame_count = 6
+frame_duration_ms = 85
+frame_paths = PackedStringArray("res://assets/battle/actors/admin_protocol/battle/data_leak_0.png", "res://assets/battle/actors/admin_protocol/battle/data_leak_1.png", "res://assets/battle/actors/admin_protocol/battle/data_leak_2.png", "res://assets/battle/actors/admin_protocol/battle/data_leak_3.png", "res://assets/battle/actors/admin_protocol/battle/data_leak_4.png", "res://assets/battle/actors/admin_protocol/battle/data_leak_5.png")
+anchor = Vector2(112, 168)
+slot_size = Vector2i(224, 168)
+playback_mode = &"frame_sequence"
+preview_sheet_path = "res://assets/battle/previews/admin_protocol_data_leak_sheet.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/10_enemy_data_leak.png")
+approval_status = &"approved"
+accessibility_notes = "Reviewed against runtime capture; VFX/readability must remain visible without relying on color alone."
+
+[sub_resource type="Resource" id="Resource_q758v"]
+script = ExtResource("3_1u8kf")
+clip_id = &"vfx_root_spark"
+asset_path = "res://assets/battle/vfx/vfx_root_spark.png"
+frame_count = 1
+frame_duration_ms = 100
+frame_paths = PackedStringArray("res://assets/battle/vfx/vfx_root_spark.png")
+anchor = Vector2(112, 84)
+slot_size = Vector2i(224, 168)
+playback_mode = &"vfx_overlay"
+preview_sheet_path = "res://assets/battle/vfx/vfx_root_spark.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/09_root_spark_impact.png")
+approval_status = &"approved"
+accessibility_notes = "Overlay is validated by runtime capture; presentation adapter must preserve HP and TELEGRAPH readability."
+
+[sub_resource type="Resource" id="Resource_hiu7l"]
+script = ExtResource("3_1u8kf")
+clip_id = &"vfx_thorn_surge"
+asset_path = "res://assets/battle/vfx/vfx_thorn_surge.png"
+frame_count = 1
+frame_duration_ms = 100
+frame_paths = PackedStringArray("res://assets/battle/vfx/vfx_thorn_surge.png")
+anchor = Vector2(112, 84)
+slot_size = Vector2i(224, 168)
+playback_mode = &"vfx_overlay"
+preview_sheet_path = "res://assets/battle/vfx/vfx_thorn_surge.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/11_thorn_surge_impact.png")
+approval_status = &"approved"
+accessibility_notes = "Overlay is validated by runtime capture; presentation adapter must preserve HP and TELEGRAPH readability."
+
+[sub_resource type="Resource" id="Resource_lt6r8"]
+script = ExtResource("3_1u8kf")
+clip_id = &"vfx_guarded_spark"
+asset_path = "res://assets/battle/vfx/vfx_guarded_spark.png"
+frame_count = 1
+frame_duration_ms = 100
+frame_paths = PackedStringArray("res://assets/battle/vfx/vfx_guarded_spark.png")
+anchor = Vector2(112, 84)
+slot_size = Vector2i(224, 168)
+playback_mode = &"vfx_overlay"
+preview_sheet_path = "res://assets/battle/vfx/vfx_guarded_spark.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/12_guarded_spark_counter.png")
+approval_status = &"approved"
+accessibility_notes = "Overlay is validated by runtime capture; presentation adapter must preserve HP and TELEGRAPH readability."
+
+[sub_resource type="Resource" id="Resource_241uh"]
+script = ExtResource("3_1u8kf")
+clip_id = &"vfx_shadow_burst"
+asset_path = "res://assets/battle/vfx/vfx_shadow_burst.png"
+frame_count = 1
+frame_duration_ms = 100
+frame_paths = PackedStringArray("res://assets/battle/vfx/vfx_shadow_burst.png")
+anchor = Vector2(112, 84)
+slot_size = Vector2i(224, 168)
+playback_mode = &"vfx_overlay"
+preview_sheet_path = "res://assets/battle/vfx/vfx_shadow_burst.png"
+runtime_capture_paths = PackedStringArray("res://assets/battle/runtime_captures/village_edge_admin_protocol/10_enemy_data_leak.png")
+approval_status = &"approved"
+accessibility_notes = "Overlay is validated by runtime capture; presentation adapter must preserve HP and TELEGRAPH readability."
+
+[resource]
+script = ExtResource("4_cel76")
+manifest_id = &"root_wyrmling_vs_admin_protocol"
+actor_sets = Array[ExtResource("1_u1vt4")]([SubResource("Resource_mggn8"), SubResource("Resource_au2fw")])
+global_clips = Array[ExtResource("3_1u8kf")]([SubResource("Resource_0w1hn"), SubResource("Resource_x0ydb"), SubResource("Resource_rerig"), SubResource("Resource_lyl0a"), SubResource("Resource_nhy2g"), SubResource("Resource_sgomb"), SubResource("Resource_bmb7h"), SubResource("Resource_14cju"), SubResource("Resource_h0ejs"), SubResource("Resource_kyo15"), SubResource("Resource_v5n7f"), SubResource("Resource_1aqc0"), SubResource("Resource_fkymq"), SubResource("Resource_ly54o"), SubResource("Resource_lqebf"), SubResource("Resource_25oq8"), SubResource("Resource_q758v"), SubResource("Resource_hiu7l"), SubResource("Resource_lt6r8"), SubResource("Resource_241uh")])
+reduced_motion_profile_id = &"slice_reduced_motion"
+notes = "First validated slice-content manifest. Attack and reaction clips use dedicated frame-sequence strips with preview sheets and runtime capture evidence."

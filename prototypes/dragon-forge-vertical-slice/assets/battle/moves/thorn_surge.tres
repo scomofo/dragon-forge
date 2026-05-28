@@ -1,0 +1,12 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://src/battle_content/slice_move_definition.gd" id="1_fhaxd"]
+
+[resource]
+script = ExtResource("1_fhaxd")
+move_id = &"thorn_surge"
+element = &"Root"
+move_kind = &"attack"
+animation_action_id = &"thorn_surge"
+required_animation_class = &"heavy_attack"
+presentation_profile_id = &"thorn_surge"

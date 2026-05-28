@@ -14,3 +14,7 @@ var enemy_level: int = 1
 var player_dragon_id: StringName = &""
 var boss_id: StringName = &""
 var final_phase_id: StringName = &""
+var expedition_defrag_patch: bool = false
+var battle_definition: BattleDefinition = null
+var animation_manifest: BattleAnimationManifest = null
+var move_definitions: Dictionary = {}

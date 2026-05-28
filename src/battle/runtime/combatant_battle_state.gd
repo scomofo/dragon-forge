@@ -9,10 +9,12 @@ var element: StringName = &""
 var current_hp: int = 0
 var max_hp: int = 0
 var base_defense: int = 0
-var active_status: RefCounted = null
+var active_status: StatusRuntimeState = null
 var pending_skip: StringName = &""
+var defend_cooldown_turns: int = 0
 
 
+## Clears the active status slot and any pending status-driven TELEGRAPH skip.
 func clear_status() -> void:
 	active_status = null
 	pending_skip = &""

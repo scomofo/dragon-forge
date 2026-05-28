@@ -1,12 +1,12 @@
 # Story 003: Element Soft Pity Resolution
 
 > **Epic**: Hatchery
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: 1.0 day
 > **Manifest Version**: 2026-05-26
-> **Last Updated**:
+> **Last Updated**: 2026-05-28
 
 ## Context
 
@@ -15,7 +15,7 @@
 *(Requirement text lives in `docs/architecture/tr-registry.yaml` - read fresh at review time)*
 
 **ADR Governing Implementation**: ADR-0012: Hatchery Pull Transaction And RNG Boundaries
-**ADR Decision Summary**: Hatchery owns element drought counters and resolves soft-pity before Rare+ pity, using deterministic tests and captured roll results.
+**ADR Decision Summary**: Hatchery owns element drought counters, deterministic RNG seams, and captured roll results. For AC-H30-H38, the current Hatchery GDD Rule 4b is the source of truth for priority order: guaranteed element threshold first, Rare+ pity with Rule 4's natural-Rare check second, ramp draw third.
 
 **Engine**: Godot 4.6 | **Risk**: MEDIUM
 **Engine Notes**: Ordinary GDScript service logic; no engine-specific APIs beyond typed data classes and injected RNG.
@@ -31,19 +31,19 @@
 
 *From GDD `design/gdd/hatchery.md`, scoped to this story:*
 
-- [ ] AC-H30: With `drought[Stone] = 39`, a pull is not forced to Stone; the ramp draw executes.
-- [ ] AC-H31: With `drought[Stone] = 40`, the next pull is forced to Stone regardless of natural draw.
-- [ ] AC-H32: After any Stone pull, `drought[Stone] = 0` and each other standard element drought counter increments by 1.
-- [ ] AC-H33: With `drought[Storm] = 42` and `drought[Venom] = 40`, Storm is forced; Venom remains at 40 and can trigger next pull.
-- [ ] AC-H34: Soft-pity-forced Shadow resets Rare+ pity to 0; soft-pity-forced Stone increments Rare+ pity by 1.
-- [ ] AC-H35: With `drought[Stone] = 40` and `pityCounter = 9`, soft-pity forces Stone first, increments pity to 10, and the next pull fires Rare+ pity unless another element guarantee takes priority.
-- [ ] AC-H36: Over 10,000 simulated pulls with `drought[Stone] = 30` and other counters below onset, Stone appears in 35%-45% of pulls.
-- [ ] AC-H37: All six element drought counters are staged for atomic save with each pull.
-- [ ] AC-H38: Over 10,000 simulated pulls from `pityCounter = 0`, Shadow drought never reaches soft-pity onset 20.
+- [x] AC-H30: With `drought[Stone] = 39`, a pull is not forced to Stone; the ramp draw executes.
+- [x] AC-H31: With `drought[Stone] = 40`, the next pull is forced to Stone regardless of natural draw.
+- [x] AC-H32: After any Stone pull, `drought[Stone] = 0` and each other standard element drought counter increments by 1.
+- [x] AC-H33: With `drought[Storm] = 42` and `drought[Venom] = 40`, Storm is forced; Venom increments to 41, remains above the guaranteed threshold, and can trigger next pull.
+- [x] AC-H34: Soft-pity-forced Shadow resets Rare+ pity to 0; soft-pity-forced Stone increments Rare+ pity by 1.
+- [x] AC-H35: With `drought[Stone] = 40` and `pityCounter = 9`, the guaranteed element threshold forces Stone first, increments pity to 10, and the next pull fires Rare+ pity unless another element guarantee takes priority.
+- [x] AC-H36: Over 10,000 independent simulated pulls with `drought[Stone]` held/reset to 30 for each trial and other counters below onset, Stone appears in 35%-45% of pulls.
+- [x] AC-H37: Every successful resolver result returns a complete `next_drought_counters` set for all six standard elements so Story 004 can stage them atomically.
+- [x] AC-H38: Over 10,000 simulated pulls from `pityCounter = 0`, Shadow drought never reaches soft-pity onset 20.
 
 ## Implementation Notes
 
-Build on Story 002's pure resolver. Add a drought-counter projection and soft-pity resolution layer that runs before Rare+ pity. Use the GDD tie-break priority order: Fire, Ice, Shadow, Stone, Storm, Venom. Return next drought counters as values for Story 004 to stage atomically.
+Build on Story 002's pure resolver. Add a drought-counter projection and element soft-pity layer that follows Hatchery GDD Rule 4b exactly: first resolve any guaranteed element threshold, then run Rule 4's natural-Rare check before applying Rare+ pity if no element guarantee fired, then apply ramp-adjusted element weights only if neither guarantee nor Rare+ pity fired. Use the GDD tie-break priority order for simultaneous element guarantees: Fire, Ice, Shadow, Stone, Storm, Venom. Return complete next drought counters as values for Story 004 to stage atomically.
 
 Performance: no per-frame work. Simulation tests may run 10,000 pulls but production resolution is one bounded pass over six elements.
 
@@ -86,15 +86,15 @@ Performance: no per-frame work. Simulation tests may run 10,000 pulls but produc
   - Then: current pull forces Stone and increments pity; next pull forces Shadow if no element guarantee outranks it
   - Edge cases: another element at guarantee can still outrank Rare+ pity on the next pull
 - **AC-7**: Ramp expected value
-  - Given: `drought[Stone] = 30`, other counters below onset, and 10,000 fixed-seed pulls
+  - Given: `drought[Stone] = 30` held/reset for each independent trial, other counters below onset, and 10,000 fixed-seed pulls
   - When: ramp probabilities are applied
   - Then: Stone appears in 35%-45% of pulls
   - Edge cases: total probabilities renormalize to 1.0
 - **AC-8**: Counter staging surface
   - Given: next drought counters are returned by the resolver
-  - When: Story 004 stages a pull
-  - Then: all six counters can be written atomically as one result set
-  - Edge cases: missing counters reject before commit
+  - When: a pull result is successful
+  - Then: all six standard element counters are present as one complete result set for Story 004 to stage atomically
+  - Edge cases: missing counters return a named resolver failure before Story 004 attempts commit
 - **AC-9**: Shadow drought unreachable
   - Given: a 10,000-pull simulation from `pityCounter = 0`
   - When: Rare+ pity is active
@@ -107,9 +107,17 @@ Performance: no per-frame work. Simulation tests may run 10,000 pulls but produc
 **Required evidence**:
 - `tests/unit/hatchery/test_element_soft_pity_resolution.gd`
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created - focused HATCHERY-003 unit suite passed with 11/11 tests and 10,236 assertions; Story 002 compatibility suite passed with 7/7 tests and 141 assertions; Hatchery unit slice passed with 26/26 tests and 10,486 assertions; full unit/integration suite passed with 183/183 tests and 18,168 assertions.
 
 ## Dependencies
 
 - Depends on: Story 001, Story 002
 - Unlocks: Story 004
+
+## Completion Notes
+
+**Completed**: 2026-05-28
+**Criteria**: 9/9 passing.
+**Deviations**: None blocking. Scope note: GDD AC-H37's full save/load persistence wording remains owned by Story 004; this story completes the resolver-side `next_drought_counters` result surface for atomic staging.
+**Test Evidence**: Logic unit test at `tests/unit/hatchery/test_element_soft_pity_resolution.gd`; focused HATCHERY-003 suite passed with 11/11 tests and 10,236 assertions; Story 002 compatibility suite passed with 7/7 tests and 141 assertions; Hatchery unit slice passed with 26/26 tests and 10,486 assertions; full unit/integration suite passed with 183/183 tests and 18,168 assertions.
+**Code Review**: Complete - `/code-review` rerun approved; QL-TEST-COVERAGE verdict ADEQUATE; LP-CODE-REVIEW verdict PASS.

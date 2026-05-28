@@ -1,0 +1,26 @@
+name: Automated Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  gut:
+    name: Run GUT Tests
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.6
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Import Godot Project
+        run: godot --headless --import
+
+      - name: Run GUT
+        run: godot --headless --path . -s res://addons/gut/gut_cmdln.gd -gdir=res://tests/unit -gdir=res://tests/integration -ginclude_subdirs -gexit

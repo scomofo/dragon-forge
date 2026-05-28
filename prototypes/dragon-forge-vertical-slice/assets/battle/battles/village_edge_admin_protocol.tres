@@ -1,0 +1,13 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://src/battle_content/slice_battle_definition.gd" id="1_sf4tg"]
+
+[resource]
+script = ExtResource("1_sf4tg")
+battle_id = &"village_edge_admin_protocol"
+move_ids = Array[StringName]([&"root_spark", &"thorn_surge", &"guarded_spark"])
+enemy_move_ids = Array[StringName]([&"data_leak"])
+animation_manifest_id = &"root_wyrmling_vs_admin_protocol"
+player_actor_animation_selector = &"active_dragon"
+player_actor_animation_set_id = &"root_wyrmling"
+enemy_actor_animation_set_id = &"admin_protocol"

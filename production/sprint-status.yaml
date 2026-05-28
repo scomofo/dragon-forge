@@ -9,74 +9,38 @@
 #   done           -> Complete
 #   blocked        -> Blocked
 
-sprint: 3
-goal: "Turn the Core service layer into a smokeable production shell path while hardening Dragon save/load integrity and the next Battle runtime interaction contracts."
-start: "2026-06-11"
-end: "2026-06-24"
-generated: "2026-05-27"
-updated: "2026-05-27"
+sprint: 4
+goal: "Close the pulled Battle runtime stories with formal review and QA delta evidence, then prepare the next Core implementation lane by generating and readiness-gating Hatchery stories."
+start: "2026-06-25"
+end: "2026-07-08"
+generated: "2026-05-28"
+updated: "2026-05-28"
 
 stories:
-  - id: "SCENE-003"
-    name: "Production Shell Main Scene Smoke Path"
-    file: "production/epics/scene-flow/story-003-production-shell-main-scene-smoke-path.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 1.0
-    blocker: ""
-    completed: "2026-05-27"
-  - id: "DRAGON-005"
-    name: "Save Load Integrity And Repair"
-    file: "production/epics/dragon-progression/story-005-save-load-integrity-and-repair.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 1.0
-    blocker: ""
-    completed: "2026-05-27"
-  - id: "BATTLE-003"
-    name: "Status And Recoil Effects"
-    file: "production/epics/battle-engine/story-003-status-and-recoil-effects.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 1.0
-    blocker: ""
-    completed: "2026-05-27"
-  - id: "BATTLE-004"
-    name: "Telegraph, Defend, And Defrag Delta"
-    file: "production/epics/battle-engine/story-004-telegraph-defend-and-defrag-delta.md"
-    priority: must-have
-    status: ready-for-dev
-    owner: ""
-    estimate_days: 1.0
-    blocker: ""
-    completed: ""
-  - id: "BATTLE-007"
-    name: "Animation Manifest Runtime Lookup"
-    file: "production/epics/battle-engine/story-007-animation-manifest-runtime-lookup.md"
-    priority: should-have
-    status: backlog
-    owner: ""
-    estimate_days: 0.75
-    blocker: ""
-    completed: ""
   - id: "BATTLE-005"
     name: "Turn Resolution And Presentation Events"
     file: "production/epics/battle-engine/story-005-turn-resolution-and-presentation-events.md"
-    priority: nice-to-have
-    status: backlog
+    priority: must-have
+    status: done
     owner: ""
-    estimate_days: 1.0
+    estimate_days: 0.25
     blocker: ""
-    completed: ""
+    completed: "2026-05-28"
   - id: "BATTLE-006"
     name: "NPC Action Selection Heuristics"
     file: "production/epics/battle-engine/story-006-npc-action-selection-heuristics.md"
-    priority: nice-to-have
-    status: backlog
+    priority: must-have
+    status: done
     owner: ""
-    estimate_days: 0.75
+    estimate_days: 0.25
     blocker: ""
-    completed: ""
+    completed: "2026-05-28"
+  - id: "HATCHERY-004"
+    name: "Pull Transaction Boundary And Scrap Spend"
+    file: "production/epics/hatchery/story-004-pull-transaction-boundary-and-scrap-spend.md"
+    priority: should-have
+    status: done
+    owner: ""
+    estimate_days: 1.0
+    blocker: ""
+    completed: "2026-05-28"
