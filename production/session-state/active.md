@@ -1,7 +1,7 @@
 # Session State
 
-**Task**: Sprint 04 Hatchery implementation lane
-**Current section**: HATCHERY-005 implementation complete locally; code review pending
+**Task**: Sprint 04 smoke and QA closeout
+**Current section**: HATCHERY-005 complete; Sprint 04 smoke and QA closeout pending
 **File**: production/epics/hatchery/story-005-dragon-unlock-duplicate-xp-and-shiny-upgrade.md
 
 ## Latest Handoff — 2026-05-28
@@ -12,11 +12,11 @@ Fresh handoff for a new chat:
 
 Immediate next action:
 
-1. Run `/code-review src/hatchery/hatchery_service.gd src/hatchery/hatchery_pull_result.gd src/dragon/dragon_progression_service.gd src/dragon/xp_apply_result.gd tests/integration/hatchery/test_dragon_unlock_duplicate_xp_and_shiny_upgrade.gd tests/integration/hatchery/test_pull_transaction_boundary_and_scrap_spend.gd production/epics/hatchery/story-005-dragon-unlock-duplicate-xp-and-shiny-upgrade.md`.
-2. Make any required review changes and rerun the same `/code-review`.
-3. Run `/story-done production/epics/hatchery/story-005-dragon-unlock-duplicate-xp-and-shiny-upgrade.md`.
+1. Run `/smoke-check sprint` to create the Sprint 04 smoke report.
+2. Run `/team-qa sprint` after smoke exists.
+3. Resolve or explicitly carry forward SCENE-003 manual launch evidence and BATTLE-007 source/content evidence during QA sign-off.
 
-Fresh evidence: HATCHERY-005 readiness was repaired and passed full-mode QA lead gate. Implementation is complete locally: focused HATCHERY-005 integration suite passes with 7/7 tests and 113 assertions; adjacent HATCHERY-004 transaction suite passes with 8/8 tests and 155 assertions; Hatchery unit/integration slice passes with 41/41 tests and 10,754 assertions; full Godot/GUT unit + integration suite passes with 198/198 tests and 18,436 assertions. Expected Dragon defensive error/warning output is reported by GUT as ExpectedError. Sprint 04 still needs HATCHERY-005 code review/story closure, SCENE-003 manual launch evidence or carry-forward, BATTLE-007 source/content evidence or carry-forward, smoke check, and QA sign-off before close-out.
+Fresh evidence: HATCHERY-005 readiness was repaired and passed full-mode QA lead gate. Implementation is complete locally: focused HATCHERY-005 integration suite passes with 7/7 tests and 113 assertions; adjacent HATCHERY-004 transaction suite passes with 8/8 tests and 155 assertions; Hatchery unit/integration slice passes with 41/41 tests and 10,754 assertions; full Godot/GUT unit + integration suite passes with 198/198 tests and 18,436 assertions. Expected Dragon defensive error/warning output is reported by GUT as ExpectedError. Sprint 04 still needs SCENE-003 manual launch evidence or carry-forward, BATTLE-007 source/content evidence or carry-forward, smoke check, and QA sign-off before close-out.
 
 ## Session Extract — /dev-story 2026-05-28
 
@@ -966,3 +966,15 @@ Advisory also resolved:
 - Lead programmer gate: PASS. Prior `/code-review` approved with suggestions; no blocking findings remain.
 - Tech debt logged: None.
 - Next recommended: `/story-readiness production/epics/hatchery/story-005-dragon-unlock-duplicate-xp-and-shiny-upgrade.md`.
+
+<!-- ROADMAP: 2026-05-28 | Report: production/roadmap.md | Current lane: Sprint 04 smoke and QA closeout | HATCHERY-005 complete -->
+
+## Session Extract - /story-done HATCHERY-005 2026-05-28
+
+- Verdict: COMPLETE WITH NOTES
+- Story: `production/epics/hatchery/story-005-dragon-unlock-duplicate-xp-and-shiny-upgrade.md` - Dragon Unlock Duplicate XP And Shiny Upgrade.
+- Acceptance criteria: 13/13 passing, covered by `tests/integration/hatchery/test_dragon_unlock_duplicate_xp_and_shiny_upgrade.gd`.
+- Test evidence: focused HATCHERY-005 suite passed locally with 7/7 tests and 113 assertions; adjacent HATCHERY-004 transaction suite passed locally with 8/8 tests and 155 assertions; Hatchery unit/integration slice passed locally with 41/41 tests and 10,754 assertions; full unit/integration suite passed locally with 198/198 tests and 18,436 assertions. Godot/GUT could not be rerun in this environment because `godot` is not available on `PATH`.
+- Code review: COMPLETE. Prior `/code-review` verdict was APPROVED WITH SUGGESTIONS; no required changes.
+- Tech debt logged: None.
+- Next recommended: `/smoke-check sprint`, then `/team-qa sprint` after smoke exists.
