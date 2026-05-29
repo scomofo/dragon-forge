@@ -10,6 +10,7 @@ config_version=5
 [application]
 
 config/name="Dragon Forge"
+config/icon="res://assets/icons/app-icon.png"
 config/features=PackedStringArray("4.6")
 run/main_scene="res://scenes/bootstrap/BootstrapRoot.tscn"
 
