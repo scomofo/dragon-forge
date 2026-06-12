@@ -12,6 +12,7 @@ import StatsScreen from './StatsScreen';
 import SettingsScreen from './SettingsScreen';
 import SingularityScreen from './SingularityScreen';
 import ForgeScreen from './ForgeScreen';
+import CreditsScreen from './CreditsScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
 import { loadSave } from './persistence';
 import { getSingularityStage, scaleBossForPlayer } from './singularityProgress';
@@ -30,6 +31,7 @@ const SCREENS = {
   SETTINGS: 'settings',
   SINGULARITY: 'singularity',
   FORGE: 'forge',
+  CREDITS: 'credits',
 };
 
 export default function App() {
@@ -140,10 +142,11 @@ export default function App() {
   }
 
   function handleSingularityBattleEnd() {
+    const wasMirrorAdmin = battleConfig?.isMirrorAdmin;
     refreshSave();
-    playMusic('battle', true);
+    playMusic(wasMirrorAdmin ? 'hatchery' : 'battle', true);
     setBattleConfig(null);
-    setScreen(SCREENS.SINGULARITY);
+    setScreen(wasMirrorAdmin ? SCREENS.CREDITS : SCREENS.SINGULARITY);
   }
 
   return (
@@ -202,6 +205,11 @@ export default function App() {
       {screen === SCREENS.FORGE && (
         <div className="screen-enter" key="forge">
           <ForgeScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+        </div>
+      )}
+      {screen === SCREENS.CREDITS && (
+        <div className="screen-enter" key="credits">
+          <CreditsScreen onNavigate={handleNavigate} save={save} />
         </div>
       )}
       {screen === SCREENS.BATTLE_SELECT && (

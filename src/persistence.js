@@ -60,7 +60,7 @@ function migrateSave(save) {
   if (save.milestones === undefined) save.milestones = [];
   // Retroactively grant full_roster for saves that met the old 6-dragon threshold before it was raised to 8.
   if (!save.milestones.includes('full_roster') &&
-      Object.values(save.dragons).filter(d => d.owned).length >= 6) {
+      Object.values(save.dragons).filter(d => d.owned).length >= 8) {
     save.milestones.push('full_roster');
     save.dataScraps += 500;
   }

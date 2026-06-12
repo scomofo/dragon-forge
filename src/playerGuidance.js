@@ -11,6 +11,26 @@ function hasCores(save) {
 export function getPlayerGuidance(save) {
   const ownedDragons = getOwnedDragons(save);
 
+  if (save?.mirrorAdminDefeated) {
+    return {
+      target: 'journal',
+      action: 'ARCHIVE COMPLETE',
+      title: "The simulation is stable. Your legend is logged.",
+    };
+  }
+
+  if (save?.singularityComplete) {
+    const fragments = save?.flags?.fragmentsUnlocked || [];
+    const remaining = 7 - fragments.length;
+    return {
+      target: 'singularity',
+      action: remaining > 0 ? `FRAGMENTS ${fragments.length}/7` : 'MIRROR ADMIN',
+      title: remaining > 0
+        ? `${remaining} captain's log fragment${remaining !== 1 ? 's' : ''} remaining`
+        : 'Confront the Mirror Admin',
+    };
+  }
+
   if (ownedDragons.length === 0) {
     return {
       target: 'hatchery',

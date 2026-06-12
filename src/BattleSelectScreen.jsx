@@ -129,7 +129,7 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                   <div className="select-card-name" style={{ color: '#ffcc00' }}>
                     ⚔ DAILY CHALLENGE
                     {(save.dailyStreak || 0) > 0 && !completed && (
-                      <span style={{ marginLeft: 6, color: '#ff6600' }}>🔥{save.dailyStreak}</span>
+                      <span style={{ marginLeft: 6, color: '#ff6600' }}>🔥{(save.dailyStreak || 0) + 1}</span>
                     )}
                     {completed && <span style={{ color: '#44cc44', marginLeft: 6 }}>✓</span>}
                   </div>

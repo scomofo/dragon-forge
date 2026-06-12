@@ -683,10 +683,13 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         if (battleConfig?.isMirrorAdmin) {
           markMirrorAdminDefeated();
         } else if (battleConfig?.isSingularity) {
+          const fragIds = battleConfig.boss?.fragmentIds || [];
           if (phases) {
             markSingularityComplete();
+            fragIds.forEach(id => unlockFragment(id));
           } else {
             recordSingularityDefeat(npcId);
+            fragIds.forEach(id => unlockFragment(id));
           }
         } else {
           recordNpcDefeat(npcId);
@@ -1174,6 +1177,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           {state.coreDropped && (
             <div className="core-drop-display" style={{ color: elementColors[state.coreDropped.element]?.glow || '#44aaff' }}>
               +{state.coreDropped.count} {state.coreDropped.element.toUpperCase()} CORE{state.coreDropped.count > 1 ? 'S' : ''}
+            </div>
+          )}
+          {battleConfig?.dailyNpc && save.dailyStreak > 0 && (
+            <div style={{ color: '#ff6600', fontSize: 12, marginTop: 6 }}>
+              🔥 Daily Streak ×{save.dailyStreak} applied
             </div>
           )}
             <button className="result-btn" onClick={onBattleEnd}>CONTINUE</button>

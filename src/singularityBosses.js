@@ -17,6 +17,7 @@ export const SINGULARITY_BOSSES = [
     spriteFilter: 'saturate(1.5) hue-rotate(15deg) contrast(1.2)',
     felixQuote: "It's eating through our data layers. Fire with fire — you'll need a dragon that can take the heat.",
     unlockRequires: null,
+    fragmentIds: ['001'],
   },
   {
     id: 'memory_leak',
@@ -35,6 +36,7 @@ export const SINGULARITY_BOSSES = [
     spriteFilter: 'saturate(1.5) hue-rotate(-30deg) contrast(1.2)',
     felixQuote: "This thing absorbs and never releases. It'll freeze you solid if you let it accumulate.",
     unlockRequires: 'data_corruption',
+    fragmentIds: ['002'],
   },
   {
     id: 'stack_overflow',
@@ -53,6 +55,7 @@ export const SINGULARITY_BOSSES = [
     spriteFilter: 'saturate(1.5) hue-rotate(30deg) contrast(1.2)',
     felixQuote: "Infinite recursion manifested as pure electricity. It's fast. Faster than anything we've faced.",
     unlockRequires: 'memory_leak',
+    fragmentIds: ['003'],
   },
 ];
 
@@ -66,6 +69,7 @@ export const FINAL_BOSS = {
   arenaFilter: 'saturate(1.5) contrast(1.2)',
   felixQuote: "This is it. The source of everything. It will adapt. It will learn. Do not let it win.",
   unlockRequires: 'stack_overflow',
+  fragmentIds: ['004', '005', '006', '007'],
   idleSprite: assetUrl('/assets/npc/recursive_golem_sprites.png'),
   attackSprite: assetUrl('/assets/npc/recursive_golem_attack.png'),
   phases: [
