@@ -117,6 +117,7 @@ export const EPILOGUE_LINES = [
   'You did it. The Singularity is contained.',
   'The Matrix is stabilizing. I can feel it.',
   "You've saved every dragon in the Forge.",
+  'And... a new signal. Radiant. Stable. The Light Dragon has joined your roster.',
   "But between you and me... I don't think it's gone forever.",
   'Stay sharp, Dragon Forger.',
 ];

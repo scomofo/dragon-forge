@@ -38,6 +38,12 @@ describe('getStabilityTier', () => {
     expect(getStabilityTier('fire', 'storm')).toBe('normal');
     expect(getStabilityTier('ice', 'venom')).toBe('normal');
   });
+
+  it('stability boost promotes one tier', () => {
+    expect(getStabilityTier('fire', 'storm', true)).toBe('stable');
+    expect(getStabilityTier('fire', 'ice', true)).toBe('normal');
+    expect(getStabilityTier('fire', 'fire', true)).toBe('stable');
+  });
 });
 
 describe('calculateFusionStats', () => {
@@ -91,5 +97,12 @@ describe('executeFusion', () => {
     const parentB = { id: 'fire', element: 'fire', stats: { hp: 100, atk: 20, def: 20, spd: 20 }, level: 25, shiny: false };
     const result = executeFusion(parentA, parentB);
     expect(result.level).toBe(1);
+  });
+
+  it('applies the stability boost to the fusion result', () => {
+    const parentA = { id: 'fire', element: 'fire', stats: { hp: 100, atk: 20, def: 20, spd: 20 }, level: 12, shiny: false };
+    const parentB = { id: 'storm', element: 'storm', stats: { hp: 100, atk: 20, def: 20, spd: 20 }, level: 12, shiny: false };
+    expect(executeFusion(parentA, parentB).stabilityTier).toBe('normal');
+    expect(executeFusion(parentA, parentB, { stabilityBoost: true }).stabilityTier).toBe('stable');
   });
 });

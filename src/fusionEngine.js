@@ -36,14 +36,24 @@ export function getFusionElement(elementA, elementB) {
   return ALCHEMY[sortedKey(elementA, elementB)] || elementA;
 }
 
-export function getStabilityTier(elementA, elementB) {
-  if (elementA === elementB) return 'stable';
-  for (const [a, b] of OPPOSING_PAIRS) {
-    if ((elementA === a && elementB === b) || (elementA === b && elementB === a)) {
-      return 'unstable';
+const STABILITY_ORDER = ['unstable', 'normal', 'stable'];
+
+export function getStabilityTier(elementA, elementB, stabilityBoost = false) {
+  let tier = 'normal';
+  if (elementA === elementB) {
+    tier = 'stable';
+  } else {
+    for (const [a, b] of OPPOSING_PAIRS) {
+      if ((elementA === a && elementB === b) || (elementA === b && elementB === a)) {
+        tier = 'unstable';
+        break;
+      }
     }
   }
-  return 'normal';
+  if (stabilityBoost && tier !== 'stable') {
+    tier = STABILITY_ORDER[STABILITY_ORDER.indexOf(tier) + 1];
+  }
+  return tier;
 }
 
 export function calculateFusionStats(statsA, statsB, stabilityTier) {
@@ -76,9 +86,9 @@ export function calculateFusionStats(statsA, statsB, stabilityTier) {
   return fused;
 }
 
-export function executeFusion(parentA, parentB) {
+export function executeFusion(parentA, parentB, { stabilityBoost = false } = {}) {
   const element = getFusionElement(parentA.element, parentB.element);
-  const stabilityTier = getStabilityTier(parentA.element, parentB.element);
+  const stabilityTier = getStabilityTier(parentA.element, parentB.element, stabilityBoost);
   const fusedBaseStats = calculateFusionStats(parentA.stats, parentB.stats, stabilityTier);
   const shiny = parentA.shiny || parentB.shiny;
 

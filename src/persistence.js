@@ -58,11 +58,18 @@ function migrateSave(save) {
   if (!save.dragons.void) {
     save.dragons.void = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
   }
+  if (!save.dragons.light) {
+    save.dragons.light = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
+  }
   if (save.defeatedNpcs === undefined) save.defeatedNpcs = [];
   if (save.singularityProgress === undefined) {
     save.singularityProgress = { defeated: [], finalBossPhase: 0 };
   }
   if (save.singularityComplete === undefined) save.singularityComplete = false;
+  // Light Dragon is the Singularity completion reward; grant retroactively to finishers.
+  if (save.singularityComplete && !save.dragons.light.owned) {
+    save.dragons.light.owned = true;
+  }
   if (save.inventory === undefined) {
     save.inventory = { cores: {}, xpBoostBattles: 0, stabilityBoost: false };
   }
@@ -207,6 +214,9 @@ export function markSingularityComplete() {
   const save = loadSave();
   save.singularityComplete = true;
   save.singularityProgress.finalBossPhase = 4;
+  if (save.dragons.light && !save.dragons.light.owned) {
+    save.dragons.light.owned = true;
+  }
   writeSave(save);
 }
 

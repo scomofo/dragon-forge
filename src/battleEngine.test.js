@@ -298,10 +298,24 @@ describe('Void type effectiveness', () => {
     expect(getTypeEffectiveness('void', 'void')).toBe(1.0);
   });
 
-  it('returns 1.0 for any element attacking void', () => {
+  it('returns 1.0 for base elements attacking void', () => {
     expect(getTypeEffectiveness('fire', 'void')).toBe(1.0);
     expect(getTypeEffectiveness('ice', 'void')).toBe(1.0);
-    expect(getTypeEffectiveness('shadow', 'void')).toBe(1.0);
+  });
+
+  it('shadow is the predator of void', () => {
+    expect(getTypeEffectiveness('shadow', 'void')).toBe(2.0);
+  });
+});
+
+describe('Shadow and light rebalance', () => {
+  it('shadow is super effective vs storm and void', () => {
+    expect(getTypeEffectiveness('shadow', 'storm')).toBe(2.0);
+    expect(getTypeEffectiveness('shadow', 'void')).toBe(2.0);
+  });
+
+  it('stone no longer dominates light', () => {
+    expect(getTypeEffectiveness('stone', 'light')).toBe(1.0);
   });
 });
 

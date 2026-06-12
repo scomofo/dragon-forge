@@ -7,3 +7,4 @@ dist/
 dragon-forge-godot/.godot/
 # Temporary GUT clone used during setup
 .gut_tmp/
+npm-debug.log

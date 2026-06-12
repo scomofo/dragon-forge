@@ -56,7 +56,13 @@ async function smokeViewport(browser, viewport) {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   page.on('console', (message) => {
-    if (message.type() === 'error') pageErrors.push(message.text());
+    if (message.type() === 'error') {
+      const location = message.location();
+      pageErrors.push(location?.url ? `${message.text()} (${location.url})` : message.text());
+    }
+  });
+  page.on('response', (response) => {
+    if (response.status() >= 400) pageErrors.push(`HTTP ${response.status()} ${response.url()}`);
   });
 
   await boot(page);
@@ -72,11 +78,13 @@ async function smokeViewport(browser, viewport) {
   await assertNoHorizontalOverflow(page, `${viewport.name} forge`);
 
   await page.locator('.forge-screen').click({ force: true });
-  const before = await page.locator('[data-testid="forge-skye"]').evaluate((el) => getComputedStyle(el).left);
+  // Read the inline style (the state React writes), not getComputedStyle —
+  // .forge-skye transitions `left`, so the computed value lags behind input.
+  const before = await page.locator('[data-testid="forge-skye"]').evaluate((el) => el.style.left);
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('ArrowRight');
   await page.waitForTimeout(180);
-  const after = await page.locator('[data-testid="forge-skye"]').evaluate((el) => getComputedStyle(el).left);
+  const after = await page.locator('[data-testid="forge-skye"]').evaluate((el) => el.style.left);
   if (before === after) {
     throw new Error(`${viewport.name}: Forge movement did not change Skye position`);
   }
@@ -91,7 +99,7 @@ async function smokeViewport(browser, viewport) {
 
 await mkdir(ARTIFACT_DIR, { recursive: true });
 await ensureServer();
-const browser = await chromium.launch();
+const browser = await chromium.launch({ channel: process.env.PLAYTEST_CHANNEL || undefined });
 try {
   for (const viewport of viewports) {
     await smokeViewport(browser, viewport);

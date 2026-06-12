@@ -3,7 +3,7 @@ import { wait } from './utils';
 import { dragons, elementColors } from './gameData';
 import { getFusionElement, getStabilityTier, calculateFusionStats, executeFusion } from './fusionEngine';
 import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
-import { fuseDragons, trackStat } from './persistence';
+import { fuseDragons, trackStat, setStabilityBoost } from './persistence';
 import { playSound } from './soundEngine';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
@@ -25,11 +25,12 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
     });
 
   const canFuse = parentA && parentB && save.dataScraps >= 100;
+  const stabilityBoost = !!save.inventory?.stabilityBoost;
 
   function getPreview() {
     if (!parentA || !parentB) return null;
     const element = getFusionElement(parentA.element, parentB.element);
-    const stability = getStabilityTier(parentA.element, parentB.element);
+    const stability = getStabilityTier(parentA.element, parentB.element, stabilityBoost);
     const fusedStats = calculateFusionStats(parentA.stats, parentB.stats, stability);
     const color = elementColors[element];
     return { element, stability, fusedStats, color, dragonName: dragons[element].name };
@@ -50,7 +51,8 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
 
     const result = executeFusion(
       { id: parentA.id, element: parentA.element, stats: parentA.stats, level: parentA.level, shiny: parentA.shiny },
-      { id: parentB.id, element: parentB.element, stats: parentB.stats, level: parentB.level, shiny: parentB.shiny }
+      { id: parentB.id, element: parentB.element, stats: parentB.stats, level: parentB.level, shiny: parentB.shiny },
+      { stabilityBoost }
     );
 
     fuseDragons(
@@ -58,13 +60,14 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
       result.element, result.level, result.xp,
       result.shiny, result.fusedBaseStats
     );
+    if (stabilityBoost) setStabilityBoost(false);
     trackStat('fusionsCompleted');
 
     playSound('fusionReveal');
     setFusionResult(result);
     setPhase('result');
     refreshSave();
-  }, [canFuse, phase, parentA, parentB]);
+  }, [canFuse, phase, parentA, parentB, stabilityBoost]);
 
   const handleDismiss = () => {
     setPhase('select');
@@ -145,6 +148,9 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
                 <div className={`fusion-preview-stability ${preview.stability}`}>
                   {preview.stability.toUpperCase()}
                 </div>
+                {stabilityBoost && (
+                  <div style={{ fontSize: 8, color: '#cc88ff' }}>🔮 STABILITY MATRIX ACTIVE — +1 TIER</div>
+                )}
                 <div className="fusion-preview-stats">
                   HP:{preview.fusedStats.hp} ATK:{preview.fusedStats.atk} DEF:{preview.fusedStats.def} SPD:{preview.fusedStats.spd}
                 </div>

@@ -58,7 +58,7 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                   </div>
                   <div className="select-card-info">
                     <div className="select-card-name" style={{ color: '#444' }}>???</div>
-                    <div className="select-card-stats">LOCKED — Pull from Hatchery</div>
+                    <div className="select-card-stats">LOCKED — {dragon.unlockHint || 'Pull from Hatchery'}</div>
                   </div>
                 </div>
               );

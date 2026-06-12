@@ -22,11 +22,11 @@ export const MILESTONES = [
   {
     id: 'full_roster',
     name: 'Full Roster',
-    description: 'Own all 6 dragons',
+    description: 'Own all 8 dragons',
     reward: 500,
     check: (save) => {
       const owned = Object.values(save.dragons).filter(d => d.owned).length;
-      return { met: owned >= 6, progress: `${owned}/6` };
+      return { met: owned >= 8, progress: `${owned}/8` };
     },
   },
   {
@@ -47,6 +47,16 @@ export const MILESTONES = [
     check: (save) => {
       const shinies = Object.values(save.dragons).filter(d => d.owned && d.shiny).length;
       return { met: shinies >= 3, progress: `${shinies}/3` };
+    },
+  },
+  {
+    id: 'shiny_completionist',
+    name: 'Shiny Completionist',
+    description: 'Own all 8 shiny dragons',
+    reward: 2000,
+    check: (save) => {
+      const shinies = Object.values(save.dragons).filter(d => d.owned && d.shiny).length;
+      return { met: shinies >= 8, progress: `${shinies}/8` };
     },
   },
   {
@@ -128,6 +138,16 @@ export const MILESTONES = [
     check: (save) => {
       const hasVoid = save.dragons.void?.owned;
       return { met: hasVoid, progress: hasVoid ? '1/1' : '0/1' };
+    },
+  },
+  {
+    id: 'light_bearer',
+    name: 'Light Bearer',
+    description: 'Obtain the Light Dragon',
+    reward: 500,
+    check: (save) => {
+      const hasLight = !!save.dragons.light?.owned;
+      return { met: hasLight, progress: hasLight ? '1/1' : '0/1' };
     },
   },
   {
