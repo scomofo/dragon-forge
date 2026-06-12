@@ -96,4 +96,7 @@ func _migrate(s: Dictionary) -> Dictionary:
 			s["hatchery_state"] = DEFAULT_SAVE["hatchery_state"].duplicate(true)
 		s["version"] = 3
 		push_warning("SaveIO: migrated save to v3")
+	# Load-time grant, mirroring the browser (persistence.js): saves that
+	# contained the Singularity before this unlock existed get it on load.
+	s = DragonProgression.apply_singularity_unlocks(s)
 	return s

@@ -51,6 +51,15 @@ const DRAGONS: Dictionary = {
 		"base_stats": { "hp": 75, "atk": 34, "def": 12, "spd": 30 },
 		"move_keys": ["void_rift", "null_reflect"],
 	},
+	"light": {
+		"id": "light",
+		"name": "Light Dragon",
+		"element": "light",
+		"base_stats": { "hp": 100, "atk": 26, "def": 22, "spd": 22 },
+		"move_keys": ["radiant_beam", "solar_flare"],
+		# Not pullable from the hatchery — granted when the Singularity is contained.
+		"singularity_locked": true,
+	},
 }
 
 static func calculate_stats(dragon_def: Dictionary, level: int) -> Dictionary:

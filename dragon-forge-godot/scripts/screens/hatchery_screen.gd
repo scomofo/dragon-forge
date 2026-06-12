@@ -98,6 +98,8 @@ func _on_pull_pressed() -> void:
 	var all_ids: Array = DragonData.DRAGONS.keys()
 	var candidates: Array = []
 	for id in all_ids:
+		if DragonData.DRAGONS[id].get("singularity_locked", false):
+			continue
 		if not owned.has(id):
 			candidates.append(id)
 

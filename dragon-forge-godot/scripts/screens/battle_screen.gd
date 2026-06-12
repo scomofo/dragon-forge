@@ -144,6 +144,7 @@ func _derive_npc_move_keys(element: String) -> Array:
 		"venom":  ["acid_spit", "toxic_cloud"],
 		"shadow": ["shadow_strike", "void_pulse"],
 		"void":   ["void_rift", "null_reflect"],
+		"light":  ["radiant_beam", "solar_flare"],
 	}
 	return table.get(element, ["basic_attack"])
 
@@ -420,6 +421,7 @@ func _end_battle(player_won: bool) -> void:
 		var reward_flag: String = str(_npc_data.get("reward_flag", ""))
 		if reward_flag != "":
 			_save = DragonProgression.set_mission_flag(_save, reward_flag)
+			_save = DragonProgression.apply_singularity_unlocks(_save)
 
 		var reward_key_item: String = str(_npc_data.get("reward_key_item", ""))
 		if reward_key_item != "":

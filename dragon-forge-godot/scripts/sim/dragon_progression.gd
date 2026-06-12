@@ -111,6 +111,25 @@ static func grant_key_item(save: Dictionary, item_id: String) -> Dictionary:
 	result["key_items"] = items
 	return result
 
+# Mirror of the browser's load-time grant (persistence.js): once the
+# Singularity is contained, singularity-locked dragons become owned.
+static func apply_singularity_unlocks(save: Dictionary) -> Dictionary:
+	if not save.get("mission_flags", []).has("singularity_defeated"):
+		return save
+	var result: Dictionary = save.duplicate(true)
+	var hatchery: Dictionary = result.get("hatchery_state", {}).duplicate(true)
+	var owned: Array = hatchery.get("owned_dragons", []).duplicate()
+	for id in DragonData.DRAGONS:
+		if DragonData.DRAGONS[id].get("singularity_locked", false) and not owned.has(id):
+			owned.append(id)
+			if not result.get("dragon_levels", {}).has(id):
+				result["dragon_levels"][id] = 1
+			if not result.get("dragon_xp", {}).has(id):
+				result["dragon_xp"][id] = 0
+	hatchery["owned_dragons"] = owned
+	result["hatchery_state"] = hatchery
+	return result
+
 static func open_hatchery_ring(save: Dictionary) -> Dictionary:
 	var result: Dictionary = save.duplicate(true)
 	var hatchery: Dictionary = result.get("hatchery_state", {}).duplicate(true)

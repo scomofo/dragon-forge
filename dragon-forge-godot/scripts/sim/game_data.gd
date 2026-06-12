@@ -2,18 +2,19 @@ extends RefCounted
 class_name GameData
 
 # ── ELEMENTS ────────────────────────────────────────────────────────────────
-const ELEMENTS: Array = ["fire", "ice", "storm", "stone", "venom", "shadow", "void"]
+const ELEMENTS: Array = ["fire", "ice", "storm", "stone", "venom", "shadow", "void", "light"]
 
 # ── TYPE CHART ───────────────────────────────────────────────────────────────
 # typeChart[attacker][defender] = multiplier
 const TYPE_CHART: Dictionary = {
-	"fire":   { "fire": 0.5, "ice": 2.0, "storm": 1.0, "stone": 0.5, "venom": 2.0, "shadow": 1.0, "void": 1.0 },
-	"ice":    { "fire": 0.5, "ice": 0.5, "storm": 2.0, "stone": 1.0, "venom": 1.0, "shadow": 2.0, "void": 1.0 },
-	"storm":  { "fire": 1.0, "ice": 0.5, "storm": 0.5, "stone": 2.0, "venom": 1.0, "shadow": 0.5, "void": 2.0 },
-	"stone":  { "fire": 2.0, "ice": 1.0, "storm": 0.5, "stone": 0.5, "venom": 2.0, "shadow": 1.0, "void": 1.0 },
-	"venom":  { "fire": 0.5, "ice": 1.0, "storm": 1.0, "stone": 0.5, "venom": 0.5, "shadow": 2.0, "void": 1.0 },
-	"shadow": { "fire": 1.0, "ice": 0.5, "storm": 2.0, "stone": 1.0, "venom": 0.5, "shadow": 0.5, "void": 2.0 },
-	"void":   { "fire": 1.0, "ice": 1.0, "storm": 1.0, "stone": 2.0, "venom": 1.0, "shadow": 0.5, "void": 1.0 },
+	"fire":   { "fire": 0.5, "ice": 2.0, "storm": 1.0, "stone": 0.5, "venom": 2.0, "shadow": 1.0, "void": 1.0, "light": 1.0 },
+	"ice":    { "fire": 0.5, "ice": 0.5, "storm": 2.0, "stone": 1.0, "venom": 1.0, "shadow": 2.0, "void": 1.0, "light": 1.0 },
+	"storm":  { "fire": 1.0, "ice": 0.5, "storm": 0.5, "stone": 2.0, "venom": 1.0, "shadow": 0.5, "void": 2.0, "light": 1.0 },
+	"stone":  { "fire": 2.0, "ice": 1.0, "storm": 0.5, "stone": 0.5, "venom": 2.0, "shadow": 1.0, "void": 1.0, "light": 1.0 },
+	"venom":  { "fire": 0.5, "ice": 1.0, "storm": 1.0, "stone": 0.5, "venom": 0.5, "shadow": 2.0, "void": 1.0, "light": 0.5 },
+	"shadow": { "fire": 1.0, "ice": 0.5, "storm": 2.0, "stone": 1.0, "venom": 0.5, "shadow": 0.5, "void": 2.0, "light": 0.5 },
+	"void":   { "fire": 1.0, "ice": 1.0, "storm": 1.0, "stone": 2.0, "venom": 1.0, "shadow": 0.5, "void": 1.0, "light": 2.0 },
+	"light":  { "fire": 1.0, "ice": 1.0, "storm": 1.0, "stone": 1.0, "venom": 2.0, "shadow": 2.0, "void": 0.5, "light": 1.0 },
 }
 
 # ── STAGE MULTIPLIERS ────────────────────────────────────────────────────────
@@ -54,6 +55,8 @@ const MOVES: Dictionary = {
 	"void_pulse":       { "name": "Void Pulse",        "element": "shadow",  "power": 75, "accuracy": 85,  "can_apply_status": true,  "is_reflect": false },
 	"void_rift":        { "name": "Void Rift",         "element": "void",    "power": 80, "accuracy": 80,  "can_apply_status": true,  "is_reflect": false },
 	"null_reflect":     { "name": "Null Reflect",      "element": "void",    "power": 0,  "accuracy": 100, "can_apply_status": false, "is_reflect": true  },
+	"radiant_beam":     { "name": "Radiant Beam",      "element": "light",   "power": 65, "accuracy": 95,  "can_apply_status": true,  "is_reflect": false },
+	"solar_flare":      { "name": "Solar Flare",       "element": "light",   "power": 70, "accuracy": 85,  "can_apply_status": true,  "is_reflect": false },
 	"basic_attack":     { "name": "Basic Attack",      "element": "neutral", "power": 40, "accuracy": 100, "can_apply_status": false, "is_reflect": false },
 }
 

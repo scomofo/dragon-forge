@@ -10,6 +10,8 @@ const ELEMENT_COLORS := {
 	"stone": Color("#a0956a"),
 	"venom": Color("#70ff8f"),
 	"shadow": Color("#b084ff"),
+	"void": Color("#00cccc"),
+	"light": Color("#FFD966"),
 }
 
 var _manifest: Dictionary = {}
