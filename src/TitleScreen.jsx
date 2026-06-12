@@ -148,7 +148,7 @@ export default function TitleScreen({ onStart, save }) {
         <SoundToggle />
       </div>
       {phase !== 'ready' && (
-        <div style={{ position: 'absolute', bottom: 12, right: 12, fontSize: 10, color: '#555', pointerEvents: 'none', userSelect: 'none', letterSpacing: '0.05em' }}>
+        <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', fontSize: 14, color: '#888', pointerEvents: 'none', userSelect: 'none', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
           ▸ click to skip
         </div>
       )}

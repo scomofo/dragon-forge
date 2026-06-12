@@ -314,8 +314,13 @@ describe('Shadow and light rebalance', () => {
     expect(getTypeEffectiveness('shadow', 'void')).toBe(2.0);
   });
 
-  it('stone no longer dominates light', () => {
+  it('stone and light are neutral to each other in both directions', () => {
     expect(getTypeEffectiveness('stone', 'light')).toBe(1.0);
+    expect(getTypeEffectiveness('light', 'stone')).toBe(1.0);
+  });
+
+  it('storm is super effective against void', () => {
+    expect(getTypeEffectiveness('storm', 'void')).toBe(2.0);
   });
 
   it('storm resists shadow — relationship is asymmetric, shadow predates storm', () => {

@@ -110,6 +110,7 @@ export const MIRROR_ADMIN = {
   arenaFilter: 'hue-rotate(220deg) saturate(1.5) contrast(1.4)',
   felixQuote: "This is what safety looks like when it forgot what it was protecting. The Great Reset isn't cruelty — it's mercy gone wrong. Do not let it win.",
   unlockRequires: 'the_singularity',
+  // TODO: replace with unique Mirror Admin sprite sheets — currently reuses Recursive Golem
   idleSprite: assetUrl('/assets/npc/recursive_golem_sprites.png'),
   attackSprite: assetUrl('/assets/npc/recursive_golem_attack.png'),
   phases: [

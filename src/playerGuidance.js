@@ -40,6 +40,13 @@ export function getPlayerGuidance(save) {
   }
 
   if ((save?.defeatedNpcs || []).length === 0) {
+    if ((save?.stats?.battlesLost || 0) > 0) {
+      return {
+        target: 'map',
+        action: 'RETRY',
+        title: "You keep your dragon — keep fighting",
+      };
+    }
     return {
       target: 'map',
       action: 'FIRST BATTLE',
