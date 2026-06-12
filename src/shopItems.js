@@ -7,8 +7,8 @@ export const BUY_ITEMS = [
   {
     id: 'xp_booster',
     name: 'XP Booster',
-    description: 'Next 3 battles give 2x XP',
-    cost: 150,
+    description: 'Next 3 battles give 3x XP',
+    cost: 100,
     icon: '⚡',
     effect: 'xpBoost',
     stackable: true,

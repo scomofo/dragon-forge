@@ -14,7 +14,8 @@ import SingularityScreen from './SingularityScreen';
 import ForgeScreen from './ForgeScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
 import { loadSave } from './persistence';
-import { getSingularityStage } from './singularityProgress';
+import { getSingularityStage, scaleBossForPlayer } from './singularityProgress';
+import { checkMilestones } from './journalMilestones';
 
 const SCREENS = {
   TITLE: 'title',
@@ -35,7 +36,13 @@ export default function App() {
   const [screen, setScreen] = useState(SCREENS.TITLE);
   const [battleConfig, setBattleConfig] = useState(null);
   const [save, setSave] = useState(() => loadSave());
-  const refreshSave = () => setSave(loadSave());
+  function refreshSave() {
+    const newSave = loadSave();
+    const prevIds = new Set(checkMilestones(save).filter(m => m.newlyClaimed).map(m => m.id));
+    const fresh = checkMilestones(newSave).filter(m => m.newlyClaimed && !prevIds.has(m.id));
+    if (fresh.length > 0) showToast(`Milestone ready: "${fresh[0].name}" — claim in JOURNAL`);
+    setSave(newSave);
+  }
   const stage = getSingularityStage(save);
   const [toasts, setToasts] = useState([]);
 
@@ -112,12 +119,14 @@ export default function App() {
   function handleEngageBoss(config) {
     playSound('buttonClick');
     playMusic('battleTense', true);
+    const scaledBoss = scaleBossForPlayer(config.boss, save);
     setBattleConfig({
       dragonId: config.dragonId,
       npcId: config.boss.id,
-      boss: config.boss,
+      boss: scaledBoss,
       isSingularity: true,
-      phases: config.boss.phases || null,
+      isMirrorAdmin: config.isMirrorAdmin || false,
+      phases: scaledBoss.phases || null,
     });
     setScreen(SCREENS.BATTLE);
   }

@@ -8,7 +8,7 @@ import NpcSprite from './NpcSprite';
 import NavBar from './NavBar';
 
 const dragonList = Object.values(dragons);
-const npcList = Object.values(npcs);
+const npcList = Object.values(npcs).sort((a, b) => a.level - b.level);
 
 export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, refreshSave }) {
   const [selectedDragon, setSelectedDragon] = useState(null);
@@ -23,6 +23,23 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
   }
 
   const matchup = getMatchup();
+
+  const maxPlayerLevel = Object.values(save.dragons)
+    .filter(d => d.owned)
+    .reduce((max, d) => Math.max(max, d.level), 1);
+
+  const recommendedNpcId = (() => {
+    const nonBoss = npcList.filter(n => n.difficulty !== 'Boss');
+    return (nonBoss.find(n => n.level >= maxPlayerLevel) || nonBoss[nonBoss.length - 1])?.id;
+  })();
+
+  function isBossLocked(npc) {
+    if (npc.difficulty !== 'Boss') return false;
+    const defeated = save.defeatedNpcs || [];
+    if (npc.id === 'recursive_golem') return defeated.filter(id => npcs[id]?.difficulty !== 'Boss').length < 3;
+    if (npc.id === 'protocol_vulture') return !defeated.includes('recursive_golem');
+    return false;
+  }
 
   function handleBegin() {
     if (!selectedDragon || !selectedNpc) return;
@@ -111,6 +128,9 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                 <div className="select-card-info">
                   <div className="select-card-name" style={{ color: '#ffcc00' }}>
                     ⚔ DAILY CHALLENGE
+                    {(save.dailyStreak || 0) > 0 && !completed && (
+                      <span style={{ marginLeft: 6, color: '#ff6600' }}>🔥{save.dailyStreak}</span>
+                    )}
                     {completed && <span style={{ color: '#44cc44', marginLeft: 6 }}>✓</span>}
                   </div>
                   <div className="select-card-stats">
@@ -127,6 +147,23 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
           })()}
           {npcList.map((npc) => {
             const color = elementColors[npc.element];
+            if (isBossLocked(npc)) {
+              const defeated = save.defeatedNpcs || [];
+              const hint = npc.id === 'recursive_golem'
+                ? `Defeat ${3 - defeated.filter(id => npcs[id]?.difficulty !== 'Boss').length} more enemies first`
+                : 'Defeat Recursive Golem first';
+              return (
+                <div key={npc.id} className="select-card" style={{ opacity: 0.4, cursor: 'default' }}>
+                  <div style={{ width: 60, height: 60, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ fontSize: 20, color: '#555' }}>🔒</div>
+                  </div>
+                  <div className="select-card-info">
+                    <div className="select-card-name" style={{ color: '#555' }}>{npc.name}</div>
+                    <div className="select-card-stats">{hint}</div>
+                  </div>
+                </div>
+              );
+            }
             return (
               <div
                 key={npc.id}
@@ -141,7 +178,10 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                   <NpcSprite idleSprite={npc.idleSprite} attackSprite={npc.attackSprite} size={55} />
                 </div>
                 <div className="select-card-info">
-                  <div className="select-card-name" style={{ color: color.primary }}>{color.icon} {npc.name}</div>
+                  <div className="select-card-name" style={{ color: color.primary }}>
+                    {color.icon} {npc.name}
+                    {npc.id === recommendedNpcId && <span style={{ fontSize: 8, color: '#ffcc00', marginLeft: 5 }}>★ REC.</span>}
+                  </div>
                   <div className="select-card-stats">
                     Lv.{npc.level} | {npc.difficulty} | {npc.element.toUpperCase()}
                     {selectedDragon && (() => {

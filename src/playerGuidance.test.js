@@ -69,7 +69,7 @@ describe('getPlayerGuidance', () => {
     const save = {
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 7 } },
-      defeatedNpcs: ['firewall_sentinel'],
+      defeatedNpcs: ['firewall_sentinel', 'protocol_vulture'],
       dataScraps: 0,
       inventory: { cores: {} },
       singularityProgress: { defeated: [] },

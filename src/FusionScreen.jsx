@@ -26,6 +26,7 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
 
   const canFuse = parentA && parentB && save.dataScraps >= 100;
   const stabilityBoost = !!save.inventory?.stabilityBoost;
+  const boostEffective = stabilityBoost && !!parentA && !!parentB && getStabilityTier(parentA.element, parentB.element) !== 'stable';
 
   function getPreview() {
     if (!parentA || !parentB) return null;
@@ -60,7 +61,7 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
       result.element, result.level, result.xp,
       result.shiny, result.fusedBaseStats
     );
-    if (stabilityBoost) setStabilityBoost(false);
+    if (stabilityBoost && getStabilityTier(parentA.element, parentB.element) !== 'stable') setStabilityBoost(false);
     trackStat('fusionsCompleted');
 
     playSound('fusionReveal');
@@ -148,7 +149,10 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
                 <div className={`fusion-preview-stability ${preview.stability}`}>
                   {preview.stability.toUpperCase()}
                 </div>
-                {stabilityBoost && (
+                {stabilityBoost && !boostEffective && (
+                  <div style={{ fontSize: 8, color: '#888' }}>🔮 STABILITY MATRIX — NO EFFECT (pair already stable)</div>
+                )}
+                {boostEffective && (
                   <div style={{ fontSize: 8, color: '#cc88ff' }}>🔮 STABILITY MATRIX ACTIVE — +1 TIER</div>
                 )}
                 <div className="fusion-preview-stats">

@@ -317,6 +317,10 @@ describe('Shadow and light rebalance', () => {
   it('stone no longer dominates light', () => {
     expect(getTypeEffectiveness('stone', 'light')).toBe(1.0);
   });
+
+  it('storm resists shadow — relationship is asymmetric, shadow predates storm', () => {
+    expect(getTypeEffectiveness('storm', 'shadow')).toBe(0.5);
+  });
 });
 
 describe('Null Reflect', () => {

@@ -11,7 +11,7 @@ export const STAGES = [
 ];
 
 export function getSingularityStage(save) {
-  if (save.singularityComplete) return 3;
+  if (save.singularityComplete) return 0;
   const ownedCount = BASE_ELEMENTS.filter(el => save.dragons[el]?.owned).length;
   const hasElder = Object.values(save.dragons).some(d => d.owned && d.level >= 50);
   const defeatedNpcs = save.defeatedNpcs || [];
@@ -28,5 +28,32 @@ export function getSingularityStage(save) {
 export function isSingularityUnlocked(save) {
   if (save.singularityComplete) return true;
   const defeatedNpcs = save.defeatedNpcs || [];
-  return BASE_NPC_IDS.every(id => defeatedNpcs.includes(id));
+  return defeatedNpcs.includes('protocol_vulture');
+}
+
+export function scaleBossForPlayer(boss, save) {
+  const playerMaxLevel = Object.values(save.dragons)
+    .filter(d => d.owned)
+    .reduce((max, d) => Math.max(max, d.level), 1);
+  const replayCounts = save.singularityProgress?.replayCounts || {};
+  const replayBonus = (replayCounts[boss.id] || 0) * 5;
+
+  const scaleStats = (stats, factor) =>
+    Object.fromEntries(Object.entries(stats).map(([k, v]) => [k, Math.floor(v * factor)]));
+
+  if (boss.phases) {
+    const baseLevel = boss.phases[0].level;
+    const scaledBase = Math.max(baseLevel, playerMaxLevel) + replayBonus;
+    const factor = scaledBase / baseLevel;
+    const scaledPhases = boss.phases.map((phase, i) => ({
+      ...phase,
+      level: Math.max(phase.level, playerMaxLevel + i) + replayBonus,
+      stats: scaleStats(phase.stats, factor),
+    }));
+    return { ...boss, phases: scaledPhases };
+  }
+
+  const scaledLevel = Math.max(boss.level, playerMaxLevel) + replayBonus;
+  const factor = scaledLevel / boss.level;
+  return { ...boss, level: scaledLevel, stats: scaleStats(boss.stats, factor) };
 }

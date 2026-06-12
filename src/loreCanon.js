@@ -35,21 +35,10 @@ export const OPENING_BOOT_LINES = [
 ];
 
 export const OPENING_FELIX_LINES = [
-  '"Skye. Good. You can hear me.',
-  'Do not trust the sky if it tears. Do not trust',
-  'a perfect reflection. That is the Mirror Admin.',
-  '',
-  'The world you know is rendered over the old',
-  'Astraeus hardware. It was meant to protect us.',
-  'Now it is trying to preserve us by erasing us.',
-  '',
-  'The dragons are not pets. Not exactly.',
-  'They are living guardian protocols with teeth,',
-  'memory, and opinions. If they bond to you,',
-  'they can hold the Matrix together.',
-  '',
-  'Get to the Forge. Hatch what still answers.',
-  'I will explain the impossible parts while we run."',
+  '"Skye. You can hear me — good.',
+  'Mirror Admin is active. This world is failing.',
+  'The dragons are guardian protocols. Hatch them.',
+  'Get to the Forge. Check JOURNAL for the full briefing."',
 ];
 
 export const FELIX_CONTEXT_LINES = {

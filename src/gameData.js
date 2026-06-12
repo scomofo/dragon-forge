@@ -8,7 +8,7 @@ export const ELEMENTS = ['fire', 'ice', 'storm', 'stone', 'venom', 'shadow', 'vo
 export const typeChart = {
   fire:   { fire: 0.5, ice: 2.0, storm: 1.0, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 1.0 },
   ice:    { fire: 0.5, ice: 0.5, storm: 2.0, stone: 1.0, venom: 1.0, shadow: 2.0, void: 1.0, light: 1.0 },
-  storm:  { fire: 1.0, ice: 0.5, storm: 0.5, stone: 2.0, venom: 1.0, shadow: 2.0, void: 1.0, light: 1.0 },
+  storm:  { fire: 1.0, ice: 0.5, storm: 0.5, stone: 2.0, venom: 1.0, shadow: 0.5, void: 1.0, light: 1.0 },
   stone:  { fire: 2.0, ice: 1.0, storm: 0.5, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 1.0 },
   venom:  { fire: 0.5, ice: 1.0, storm: 1.0, stone: 0.5, venom: 0.5, shadow: 2.0, void: 1.0, light: 0.5 },
   shadow: { fire: 1.0, ice: 0.5, storm: 2.0, stone: 1.0, venom: 0.5, shadow: 0.5, void: 2.0, light: 0.5 },

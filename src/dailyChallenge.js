@@ -52,6 +52,19 @@ export function isDailyChallengeCompleted(save) {
   return save.lastDailyCompleted === seed;
 }
 
+function getYesterdaySeed() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+
+export function getDailyStreakMultiplier(save) {
+  const yesterdaySeed = getYesterdaySeed();
+  const currentStreak = (save.lastDailyCompleted === yesterdaySeed ? (save.dailyStreak || 0) : 0) + 1;
+  if (currentStreak <= 1) return 1.0;
+  return Math.min(1.5, 1.0 + (currentStreak - 1) * 0.1);
+}
+
 export function getDateString() {
   const now = new Date();
   return now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });

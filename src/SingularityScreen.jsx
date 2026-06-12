@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { playSound } from './soundEngine';
 import { dragons, elementColors, ELEMENTS } from './gameData';
-import { SINGULARITY_BOSSES, FINAL_BOSS, getBossStatus } from './singularityBosses';
+import { SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN, getBossStatus } from './singularityBosses';
 import NavBar from './NavBar';
 import NpcSprite from './NpcSprite';
 
-const ALL_BOSSES = [...SINGULARITY_BOSSES, FINAL_BOSS];
+const ALL_BOSSES = [...SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN];
 
 export default function SingularityScreen({ onNavigate, onEngageBoss, save }) {
   const [selectedBossId, setSelectedBossId] = useState(ALL_BOSSES[0].id);
@@ -34,6 +34,7 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, save }) {
       dragonId: selectedDragonId,
       boss: selectedBoss,
       isSingularity: true,
+      isMirrorAdmin: selectedBoss.id === 'mirror_admin',
     });
   };
 
@@ -66,8 +67,13 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, save }) {
                     {status === 'locked' ? '???' : boss.name.toUpperCase()}
                   </div>
                   <div className="singularity-boss-sub">
-                    {status === 'locked' ? 'LOCKED' : `${boss.difficulty} · ${(boss.phases ? boss.phases[0].element : boss.element).toUpperCase()}`}
+                    {status === 'locked'
+                      ? (boss.id === 'mirror_admin' && save.singularityComplete ? 'UNLOCK ALL LOG FRAGMENTS' : 'LOCKED')
+                      : `${boss.difficulty} · ${(boss.phases ? boss.phases[0].element : boss.element).toUpperCase()}`}
                     {boss.phases && status !== 'locked' && ' · 3 PHASES'}
+                    {status === 'defeated' && (save.singularityProgress?.replayCounts?.[boss.id] || 0) > 1 && (
+                      <span style={{ marginLeft: 4, color: '#ff6600' }}>×{save.singularityProgress.replayCounts[boss.id]}</span>
+                    )}
                   </div>
                 </div>
                 <div className={`singularity-boss-status ${status}`}>

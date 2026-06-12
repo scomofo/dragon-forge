@@ -6,10 +6,11 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain, getTypeEffectivenessLabel,
 } from './battleEngine';
-import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, addCore, decrementXpBoost, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
+import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
+import { getDailyStreakMultiplier } from './dailyChallenge';
 import { FRAGMENT_TRIGGERS } from './forgeData';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
-import { EPILOGUE_LINES } from './singularityBosses';
+import { EPILOGUE_LINES, MIRROR_ADMIN_EPILOGUE_LINES } from './singularityBosses';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
@@ -216,7 +217,7 @@ function battleReducer(state, action) {
         currentPhase: (state.currentPhase || 0) + 1,
       };
     case 'SET_EPILOGUE':
-      return { ...state, phase: PHASES.EPILOGUE, xpGained: action.xpGained, scrapsGained: action.scrapsGained };
+      return { ...state, phase: PHASES.EPILOGUE, xpGained: action.xpGained, scrapsGained: action.scrapsGained, isMirrorAdmin: action.isMirrorAdmin || false };
     default:
       return state;
   }
@@ -652,23 +653,36 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         // True victory
         let xpGained = calculateXpGain(state.npc.baseXP || 50, state.playerLevel, state.npc.level);
         if (save.inventory?.xpBoostBattles > 0) {
-          xpGained *= 2;
+          xpGained *= 3;
           decrementXpBoost();
         }
-        const scrapsGained = state.npc.scrapsReward || 0;
+        const isRepeatDefeat = !battleConfig?.isSingularity && !battleConfig?.dailyNpc &&
+          (save.defeatedNpcs || []).includes(npcId);
+        const rawScraps = state.npc.scrapsReward || 0;
+        let scrapsGained;
+        if (isRepeatDefeat) {
+          scrapsGained = Math.floor(rawScraps * 0.25);
+        } else if (battleConfig?.dailyNpc) {
+          scrapsGained = Math.floor(rawScraps * getDailyStreakMultiplier(save));
+        } else {
+          scrapsGained = rawScraps;
+        }
         const newXp = state.playerXp + xpGained;
         const xpPerLevel = 100;
         let newLevel = state.playerLevel;
         let remainingXp = newXp;
-        while (remainingXp >= xpPerLevel) {
+        while (remainingXp >= xpPerLevel && newLevel < 50) {
           remainingXp -= xpPerLevel;
           newLevel++;
         }
+        if (newLevel >= 50) remainingXp = 0;
         const leveledUp = newLevel > state.playerLevel;
         saveDragonProgress(state.dragonId, newLevel, remainingXp);
         if (scrapsGained > 0) addScraps(scrapsGained);
 
-        if (battleConfig?.isSingularity) {
+        if (battleConfig?.isMirrorAdmin) {
+          markMirrorAdminDefeated();
+        } else if (battleConfig?.isSingularity) {
           if (phases) {
             markSingularityComplete();
           } else {
@@ -704,9 +718,20 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           await wait(600);
         }
 
-        if (battleConfig?.isSingularity && phases && !save.singularityComplete) {
+        if (battleConfig?.isMirrorAdmin && phases) {
           trackStat('battlesWon');
           if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
+          updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: true });
+          runFragmentUnlockPass();
+          dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-celebrate' });
+          dispatch({ type: 'SET_EPILOGUE', xpGained, scrapsGained, isMirrorAdmin: true });
+          stopMusic();
+          stopHeartbeat();
+          playSound('victoryFanfare');
+        } else if (battleConfig?.isSingularity && phases && !save.singularityComplete) {
+          trackStat('battlesWon');
+          if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
+          updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: true });
           runFragmentUnlockPass();
           dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-celebrate' });
           dispatch({ type: 'SET_EPILOGUE', xpGained, scrapsGained });
@@ -1200,7 +1225,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             <img src={`${import.meta.env.BASE_URL}assets/felix_pixel.jpg`} alt="Professor Felix" className="pixelated" />
           </div>
           <div className="epilogue-text">
-            {EPILOGUE_LINES.map((line, i) => (
+            {(state.isMirrorAdmin ? MIRROR_ADMIN_EPILOGUE_LINES : EPILOGUE_LINES).map((line, i) => (
               <div key={i}>"{line}"</div>
             ))}
           </div>

@@ -96,9 +96,59 @@ export const FINAL_BOSS = {
   ],
 };
 
+export const MIRROR_ADMIN = {
+  id: 'mirror_admin',
+  name: 'Mirror Admin',
+  difficulty: 'TRUE FINAL',
+  baseXP: 1000,
+  scrapsReward: 2000,
+  arena: assetUrl('/assets/arenas/gravity_chamber.png'),
+  arenaFilter: 'hue-rotate(220deg) saturate(1.5) contrast(1.4)',
+  felixQuote: "This is what safety looks like when it forgot what it was protecting. The Great Reset isn't cruelty — it's mercy gone wrong. Do not let it win.",
+  unlockRequires: 'the_singularity',
+  idleSprite: assetUrl('/assets/npc/recursive_golem_sprites.png'),
+  attackSprite: assetUrl('/assets/npc/recursive_golem_attack.png'),
+  phases: [
+    {
+      name: 'Mirror Admin — Protocol',
+      element: 'shadow',
+      level: 35,
+      stats: { hp: 160, atk: 38, def: 22, spd: 20 },
+      moveKeys: ['shadow_strike', 'void_pulse'],
+      spriteFilter: 'hue-rotate(220deg) saturate(3) contrast(1.4)',
+    },
+    {
+      name: 'Mirror Admin — Warden',
+      element: 'void',
+      level: 38,
+      stats: { hp: 140, atk: 42, def: 18, spd: 28 },
+      moveKeys: ['void_rift', 'null_reflect'],
+      spriteFilter: 'hue-rotate(270deg) saturate(3) contrast(1.5)',
+    },
+    {
+      name: 'Mirror Admin — Great Reset',
+      element: 'light',
+      level: 40,
+      stats: { hp: 120, atk: 48, def: 14, spd: 34 },
+      moveKeys: ['radiant_beam', 'solar_flare'],
+      spriteFilter: 'brightness(1.8) saturate(0.4) contrast(1.8)',
+    },
+  ],
+};
+
+const ALL_FRAGMENT_IDS = ['001', '002', '003', '004', '005', '006', '007'];
+
 export function getBossStatus(boss, save) {
   const progress = save.singularityProgress || { defeated: [], finalBossPhase: 0 };
   const defeated = progress.defeated || [];
+
+  if (boss.id === 'mirror_admin') {
+    if (save.mirrorAdminDefeated) return 'defeated';
+    if (!save.singularityComplete) return 'locked';
+    const fragments = save.flags?.fragmentsUnlocked || [];
+    if (!ALL_FRAGMENT_IDS.every(id => fragments.includes(id))) return 'locked';
+    return 'available';
+  }
 
   if (boss.id === 'the_singularity') {
     const allGatekeepersDefeated = SINGULARITY_BOSSES.every(b => defeated.includes(b.id));
@@ -120,4 +170,14 @@ export const EPILOGUE_LINES = [
   'And... a new signal. Radiant. Stable. The Light Dragon has joined your roster.',
   "But between you and me... I don't think it's gone forever.",
   'Stay sharp, Dragon Forger.',
+];
+
+export const MIRROR_ADMIN_EPILOGUE_LINES = [
+  'You did it. The Mirror Admin is gone.',
+  'The Great Reset countdown... it stopped. Completely.',
+  'All this time, it thought it was protecting something.',
+  'It just forgot that what makes the world worth saving — was the people inside it.',
+  'The Astraeus is stable. The simulation continues.',
+  'Every guardian protocol is awake. Every dragon remembers.',
+  "You didn't just save this world, Skye. You made it real.",
 ];

@@ -147,6 +147,11 @@ export default function TitleScreen({ onStart, save }) {
       <div className="terminal-sound-toggle">
         <SoundToggle />
       </div>
+      {phase !== 'ready' && (
+        <div style={{ position: 'absolute', bottom: 12, right: 12, fontSize: 10, color: '#555', pointerEvents: 'none', userSelect: 'none', letterSpacing: '0.05em' }}>
+          ▸ click to skip
+        </div>
+      )}
 
       <div className="terminal-output" ref={containerRef}>
         {lines.map((line, i) => (

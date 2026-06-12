@@ -2,6 +2,7 @@ import { getStageForLevel } from './battleEngine';
 import { getSingularityStage, isSingularityUnlocked } from './singularityProgress';
 import { getTickerMessage } from './felixDialogue';
 import { getPlayerGuidance } from './playerGuidance';
+import { checkMilestones } from './journalMilestones';
 import SoundToggle from './SoundToggle';
 
 export default function NavBar({ activeScreen, onNavigate, save }) {
@@ -12,6 +13,13 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
   const stage = getSingularityStage(save);
   const ticker = getTickerMessage(stage);
   const guidance = getPlayerGuidance(save);
+
+  const defeatedNpcs = save.defeatedNpcs || [];
+  const hasAnyCores = Object.values(save.inventory?.cores || {}).some(c => c > 0);
+  const showShop = save.dataScraps > 0 || hasAnyCores;
+  const showForge = defeatedNpcs.length >= 1;
+  const showStats = (save.stats?.battlesWon || 0) >= 1;
+  const hasClaimableMilestone = checkMilestones(save).some(m => m.newlyClaimed);
 
   return (
     <div className="nav-bar">
@@ -34,14 +42,16 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
           className={`nav-tab ${activeScreen === 'journal' ? 'active' : ''}`}
           onClick={() => onNavigate('journal')}
         >
-          JOURNAL
+          JOURNAL{hasClaimableMilestone && <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#ffcc00', marginLeft: 4, verticalAlign: 'middle' }} />}
         </button>
-        <button
-          className={`nav-tab ${activeScreen === 'shop' ? 'active' : ''}`}
-          onClick={() => onNavigate('shop')}
-        >
-          SHOP
-        </button>
+        {showShop && (
+          <button
+            className={`nav-tab ${activeScreen === 'shop' ? 'active' : ''}`}
+            onClick={() => onNavigate('shop')}
+          >
+            SHOP
+          </button>
+        )}
         <button
           className={`nav-tab ${activeScreen === 'map' ? 'active' : ''}`}
           onClick={() => onNavigate('map')}
@@ -54,12 +64,14 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
         >
           BATTLES
         </button>
-        <button
-          className={`nav-tab ${activeScreen === 'forge' ? 'active' : ''}`}
-          onClick={() => onNavigate('forge')}
-        >
-          FORGE
-        </button>
+        {showForge && (
+          <button
+            className={`nav-tab ${activeScreen === 'forge' ? 'active' : ''}`}
+            onClick={() => onNavigate('forge')}
+          >
+            FORGE
+          </button>
+        )}
         {isSingularityUnlocked(save) && (
           <button
             className={`nav-tab singularity-tab ${activeScreen === 'singularity' ? 'active' : ''}`}
@@ -68,12 +80,14 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
             SINGULARITY
           </button>
         )}
-        <button
-          className={`nav-tab ${activeScreen === 'stats' ? 'active' : ''}`}
-          onClick={() => onNavigate('stats')}
-        >
-          STATS
-        </button>
+        {showStats && (
+          <button
+            className={`nav-tab ${activeScreen === 'stats' ? 'active' : ''}`}
+            onClick={() => onNavigate('stats')}
+          >
+            STATS
+          </button>
+        )}
         <button
           className={`nav-tab ${activeScreen === 'settings' ? 'active' : ''}`}
           onClick={() => onNavigate('settings')}

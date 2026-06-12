@@ -1,3 +1,5 @@
+import { isSingularityUnlocked } from './singularityProgress';
+
 function getOwnedDragons(save) {
   return Object.entries(save?.dragons || {}).filter(([, dragon]) => dragon?.owned);
 }
@@ -25,11 +27,22 @@ export function getPlayerGuidance(save) {
     };
   }
 
-  if ((save?.dataScraps || 0) > 0 || hasCores(save)) {
+  if ((save?.dataScraps || 0) >= 100 || hasCores(save)) {
     return {
       target: 'shop',
       action: 'SPEND REWARDS',
       title: 'Turn scraps and cores into power',
+    };
+  }
+
+  const forgeReady = ownedDragons.length >= 1 &&
+    (save?.defeatedNpcs || []).length >= 3 &&
+    (save?.skye?.wrenchTier || 1) < 2;
+  if (forgeReady) {
+    return {
+      target: 'forge',
+      action: 'VISIT FORGE',
+      title: "Upgrade Skye's equipment",
     };
   }
 
@@ -42,7 +55,7 @@ export function getPlayerGuidance(save) {
     };
   }
 
-  const singularityUnlocked = (save?.flags?.currentAct || 1) >= 3 && !save?.singularityComplete;
+  const singularityUnlocked = isSingularityUnlocked(save) && !save?.singularityComplete;
   const hasSingularityProgress = (save?.singularityProgress?.defeated || []).length > 0;
   if (singularityUnlocked && !hasSingularityProgress) {
     return {

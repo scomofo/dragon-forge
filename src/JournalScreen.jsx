@@ -190,6 +190,20 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
             <span style={{ color: '#555' }}>— Professor Felix</span>
           </div>
 
+          {/* Fusion Lineage */}
+          {(save.fusionLineage?.length > 0 || (save.stats?.fusionsCompleted || 0) > 0) && (
+            <div style={{ marginTop: 12, fontSize: 8, color: '#666' }}>
+              <div style={{ color: '#888', letterSpacing: '0.1em', marginBottom: 4 }}>
+                FORGE LINEAGE · {save.stats?.fusionsCompleted || 0} FUSION{(save.stats?.fusionsCompleted || 0) !== 1 ? 'S' : ''}
+              </div>
+              {(save.fusionLineage || []).slice(-5).reverse().map((entry, i) => (
+                <div key={i} style={{ color: '#555', marginBottom: 2 }}>
+                  {entry.parentA.toUpperCase()} + {entry.parentB.toUpperCase()} → {entry.offspring.toUpperCase()} Lv.{entry.offspringLevel}
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Milestones */}
           <div className="journal-milestones">
             {milestoneResults.map((m) => {

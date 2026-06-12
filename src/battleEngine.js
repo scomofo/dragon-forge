@@ -50,7 +50,7 @@ export function getStageForLevel(level) {
 }
 
 export function calculateXpGain(baseXP, playerLevel, enemyLevel) {
-  const ratio = enemyLevel / playerLevel;
+  const ratio = Math.min(2, Math.max(0.25, enemyLevel / playerLevel));
   return Math.max(1, Math.floor(baseXP * ratio));
 }
 

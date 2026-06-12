@@ -61,10 +61,11 @@ export function applyPullResult(save, pull) {
     xpGained = 50 * pull.rarityMultiplier;
     dragon.xp += xpGained;
     const xpPerLevel = 100;
-    while (dragon.xp >= xpPerLevel) {
+    while (dragon.xp >= xpPerLevel && dragon.level < 50) {
       dragon.xp -= xpPerLevel;
       dragon.level++;
     }
+    if (dragon.level >= 50) dragon.xp = 0;
     if (pull.shiny && !dragon.shiny) {
       dragon.shiny = true;
     }
