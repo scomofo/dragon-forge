@@ -1189,7 +1189,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
               🔥 Streak bonus ×{state.streakMultiplier.toFixed(1)} applied
             </div>
           )}
-            <button className="result-btn" onClick={onBattleEnd}>CONTINUE</button>
+            <button className="result-btn" onClick={() => onBattleEnd(true)}>CONTINUE</button>
           </div>
         </div>
       )}
@@ -1235,7 +1235,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                     ? 'Level up your dragon and try again, or pick another opponent in Battle Select.'
                     : 'Head to the Campaign Map to try a different matchup.'}
             </p>
-            <button className="result-btn" onClick={onBattleEnd}>TRY AGAIN</button>
+            <button className="result-btn" onClick={() => onBattleEnd(false)}>TRY AGAIN</button>
           </div>
         </div>
       )}
@@ -1255,7 +1255,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             <div style={{ color: '#44aaff' }}>+{state.xpGained} XP</div>
             {state.scrapsGained > 0 && <div style={{ color: '#ffcc00' }}>+{state.scrapsGained} ◆</div>}
           </div>
-          <button className="epilogue-btn" onClick={onBattleEnd}>
+          <button className="epilogue-btn" onClick={() => onBattleEnd(true)}>
             RETURN TO THE FORGE
           </button>
         </div>

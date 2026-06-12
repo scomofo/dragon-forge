@@ -141,10 +141,12 @@ export default function App() {
     setScreen(returnScreen || SCREENS.BATTLE_SELECT);
   }
 
-  function handleSingularityBattleEnd() {
+  function handleSingularityBattleEnd(won) {
     // Credits only on a real Mirror Admin victory — the defeat overlay's
     // TRY AGAIN routes here too, and a loser must not see the epilogue.
-    const wonMirrorAdmin = battleConfig?.isMirrorAdmin && loadSave().mirrorAdminDefeated;
+    // The per-battle outcome is required: the mirrorAdminDefeated save flag
+    // is permanent after the first win, so it cannot gate replay losses.
+    const wonMirrorAdmin = battleConfig?.isMirrorAdmin && won === true;
     refreshSave();
     playMusic(wonMirrorAdmin ? 'hatchery' : 'battle', true);
     setBattleConfig(null);
