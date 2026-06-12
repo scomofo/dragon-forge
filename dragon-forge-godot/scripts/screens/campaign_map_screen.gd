@@ -116,7 +116,11 @@ func _rebuild_zone_list() -> void:
 		row.add_child(info)
 
 		var sel_btn := Button.new()
-		sel_btn.text = "AGAIN" if is_defeated else "FIGHT"
+		if TacticalBattle.is_boss_locked(_save, npc_id):
+			sel_btn.text = "LOCKED"
+			sel_btn.disabled = true
+		else:
+			sel_btn.text = "AGAIN" if is_defeated else "FIGHT"
 		sel_btn.toggle_mode = true
 		var nid: String = npc_id
 		sel_btn.pressed.connect(func():

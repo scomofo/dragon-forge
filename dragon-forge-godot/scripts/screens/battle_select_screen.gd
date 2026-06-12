@@ -79,6 +79,9 @@ func _make_enemy_btn(enemy_id: String, defeated: Dictionary) -> Button:
 	]
 	if times_defeated > 0:
 		btn.text += "  v"
+	if TacticalBattle.is_boss_locked(_save, enemy_id):
+		btn.text = "[LOCKED] " + btn.text
+		btn.disabled = true
 	btn.toggle_mode = true
 	btn.pressed.connect(func():
 		_selected_enemy = enemy_id

@@ -78,11 +78,12 @@ var _trauma: float = 0.0
 var _phases: Array = []
 var _phase_index: int = 0
 
+# All initialization lives here, NOT in _ready(): main.gd add_child()s the
+# screen (firing _ready with empty _save/_config) and only then calls setup
+# with the real save and battle config. Node refs are ready by this point.
 func setup(save: Dictionary, config: Dictionary) -> void:
 	_save = save.duplicate(true)
 	_config = config.duplicate(true)
-
-func _ready() -> void:
 	_init_battle()
 	_build_move_buttons()
 	if _config.get("is_singularity", false):
@@ -110,7 +111,10 @@ func _init_battle() -> void:
 		_phases = _load_singularity_phases()
 		_phase_index = 0
 		if not _phases.is_empty():
+			_scale_phases_for_player()
 			_merge_phase_into_npc_data(_phases[0])
+	elif str(_npc_data.get("reward_flag", "")).begins_with("singularity_"):
+		_scale_boss_for_player()
 
 	var dragon_def: Dictionary = DragonData.DRAGONS.get(dragon_id, {}).duplicate(true)
 	var level: int = DragonProgression.get_dragon_level(_save, dragon_id)
@@ -148,6 +152,43 @@ func _init_battle() -> void:
 	npc_name.text    = str(_npc_data.get("name", npc_id))
 	header_label.text = "%s  VS  %s" % [player_name.text, npc_name.text]
 	_update_hp_display()
+
+func _player_max_level() -> int:
+	var levels: Dictionary = _save.get("dragon_levels", {})
+	var owned: Array = _save.get("hatchery_state", {}).get("owned_dragons", [])
+	var max_level: int = 1
+	for did in owned:
+		max_level = maxi(max_level, int(levels.get(did, 1)))
+	return max_level
+
+# Browser parity (singularityProgress.js scaleBossForPlayer), minus the
+# +5/replay bonus — the Godot build has no replay counter yet.
+func _scale_boss_for_player() -> void:
+	var base_level: int = int(_npc_data.get("level", 1))
+	var scaled_level: int = maxi(base_level, _player_max_level())
+	if scaled_level == base_level:
+		return
+	var factor: float = float(scaled_level) / float(base_level)
+	_npc_data["level"] = scaled_level
+	var stats: Dictionary = _npc_data.get("stats", {}).duplicate(true)
+	for key in stats:
+		stats[key] = int(float(stats[key]) * factor)
+	_npc_data["stats"] = stats
+
+func _scale_phases_for_player() -> void:
+	var player_max: int = _player_max_level()
+	var base_level: int = int(_phases[0].get("level", 30))
+	var factor: float = float(maxi(base_level, player_max)) / float(base_level)
+	var scaled: Array = []
+	for i in range(_phases.size()):
+		var phase: Dictionary = _phases[i].duplicate(true)
+		phase["level"] = maxi(int(phase.get("level", base_level)), player_max + i)
+		var stats: Dictionary = phase.get("stats", {}).duplicate(true)
+		for key in stats:
+			stats[key] = int(float(stats[key]) * factor)
+		phase["stats"] = stats
+		scaled.append(phase)
+	_phases = scaled
 
 func _load_singularity_phases() -> Array:
 	var file := FileAccess.open("res://data/singularity_bosses.json", FileAccess.READ)

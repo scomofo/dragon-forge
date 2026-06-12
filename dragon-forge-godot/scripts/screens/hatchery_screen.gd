@@ -86,6 +86,11 @@ func _make_dragon_card(dragon_id: String, levels: Dictionary, xp_dict: Dictionar
 
 	return card
 
+# NOTE: this pull flow intentionally diverges from the browser
+# (hatcheryEngine.js): it always grants an un-owned dragon and refunds 25
+# scraps once the roster is full, instead of rolling rarity tiers with
+# duplicate-XP. HatcheryEngine mirrors the browser rules for a future port
+# and is not wired in here.
 func _on_pull_pressed() -> void:
 	var scraps: int = int(_save.get("data_scraps", 0))
 	if scraps < PULL_COST:

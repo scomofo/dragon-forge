@@ -1,6 +1,27 @@
 extends RefCounted
 class_name TacticalBattle
 
+const BOSS_IDS := ["recursive_golem", "protocol_vulture"]
+
+# Browser parity (BattleSelectScreen.jsx isBossLocked): the golem needs 3
+# distinct non-boss defeats; the vulture needs the golem.
+static func is_boss_locked(save: Dictionary, npc_id: String) -> bool:
+	var defeated: Dictionary = save.get("bestiary_defeated", {})
+	if npc_id == "recursive_golem":
+		var non_boss: int = 0
+		for id in defeated:
+			if int(defeated[id]) <= 0:
+				continue
+			if BOSS_IDS.has(id):
+				continue
+			if str(EnemyData.get(id, {}).get("reward_flag", "")).begins_with("singularity_"):
+				continue
+			non_boss += 1
+		return non_boss < 3
+	if npc_id == "protocol_vulture":
+		return int(defeated.get("recursive_golem", 0)) <= 0
+	return false
+
 const EnemyData: Dictionary = {
 	"firewall_sentinel": {
 		"name": "Firewall Sentinel",

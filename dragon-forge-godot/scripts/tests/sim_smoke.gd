@@ -307,6 +307,22 @@ func _init() -> void:
 	else:
 		failed += 1
 
+	# Test 20: boss progression gates (browser parity)
+	var lock_save := { "bestiary_defeated": {} }
+	var t20_ok: bool = TacticalBattle3.is_boss_locked(lock_save, "recursive_golem") \
+		and TacticalBattle3.is_boss_locked(lock_save, "protocol_vulture")
+	lock_save["bestiary_defeated"] = { "firewall_sentinel": 1, "buffer_overflow": 1, "bit_wraith": 1 }
+	t20_ok = t20_ok and not TacticalBattle3.is_boss_locked(lock_save, "recursive_golem") \
+		and TacticalBattle3.is_boss_locked(lock_save, "protocol_vulture")
+	lock_save["bestiary_defeated"]["recursive_golem"] = 1
+	t20_ok = t20_ok and not TacticalBattle3.is_boss_locked(lock_save, "protocol_vulture")
+	if t20_ok:
+		print("PASS: boss progression gates")
+		passed += 1
+	else:
+		print("FAIL: boss progression gates diverge from browser")
+		failed += 1
+
 	# ── Summary ───────────────────────────────────────────────────────────────
 	print("")
 	print("Smoke test complete: %d passed, %d failed" % [passed, failed])
