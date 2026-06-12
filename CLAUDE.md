@@ -62,14 +62,14 @@ Headless smoke test:
 ```
 
 Layout:
-- `scripts/sim/` — pure simulation modules (dragon data, combat rules, quest manager, signal bus, etc.). The GDScript counterpart to `src/*Engine.js`.
-- `scripts/world/` — overworld scene controllers, flight, transitions, map view, opening sequence.
-- `scripts/battle/` — authored battle scene + backdrop.
-- `scripts/dungeon/` — hardware-dungeon scene.
-- `scripts/vfx/`, `scripts/tests/` — effects + smoke tests.
-- `scenes/main.tscn` is the entry; it switches between world and battle views. `scripts/main.gd` is the top-level orchestrator (analogous to `App.jsx`).
+- `scripts/sim/` — pure simulation modules (dragon data, combat rules, BattleEngine, DragonProgression, TechniqueData, etc.). The GDScript counterpart to `src/*Engine.js`. No scene state.
+- `scripts/world/` — one-zone overworld slice: `world_screen.gd` (procedural 2D map builder, screen controller), `player_dragon.gd` (CharacterBody2D walk/fly), `encounter_zone.gd` (Area2D trigger), `boss_gate.gd` (gated StaticBody2D). Entry point for the Godot build's gameplay differentiator.
+- `scripts/screens/` — UI screen controllers (hatchery, battle, fusion, shop, etc.), each `extends Control` and used by `scripts/main.gd`'s screen router.
+- `scripts/components/` — reusable UI nodes (DragonSpriteComponent, etc.).
+- `scripts/tests/` — headless smoke tests (`sim_smoke.gd`).
+- `scenes/main.tscn` is the entry; `scripts/main.gd` is the top-level screen router (analogous to `App.jsx`). `scenes/world/world.tscn` is the overworld entry.
 
-When porting a system from web → Godot, the convention is: data/rules go into `scripts/sim/` as a stateless module, scene-specific controllers go into the matching `scripts/world|battle|dungeon/` folder.
+When porting a system from web → Godot: data/rules go into `scripts/sim/` as a stateless module; screen controllers go into `scripts/screens/`; world-specific nodes go into `scripts/world/`.
 
 ## Cross-build notes
 

@@ -55,9 +55,9 @@ static func get_dragon_level(save: Dictionary, dragon_id: String) -> int:
 static func get_active_techniques(save: Dictionary) -> Array:
 	return save.get("active_techniques", [])
 
-static func award_dragon_xp(save: Dictionary, xp_amount: int) -> Dictionary:
+static func award_dragon_xp(save: Dictionary, xp_amount: int, target_id: String = "") -> Dictionary:
 	var result: Dictionary = save.duplicate(true)
-	var dragon_id: String = result.get("dragon_id", "")
+	var dragon_id: String = target_id if target_id != "" else result.get("dragon_id", "")
 	if dragon_id == "":
 		return result
 

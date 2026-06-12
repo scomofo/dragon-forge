@@ -46,6 +46,7 @@ const SCREENS := {
 	"settings":     "res://scenes/screens/settings_screen.tscn",
 	"singularity":  "res://scenes/screens/singularity_screen.tscn",
 	"campaignMap":  "res://scenes/screens/campaign_map_screen.tscn",
+	"world":        "res://scenes/world/world.tscn",
 }
 
 const SCREEN_MUSIC := {
@@ -61,6 +62,7 @@ const SCREEN_MUSIC := {
 	"settings":     "hatchery",
 	"singularity":  "battle_tense",
 	"campaignMap":  "select",
+	"world":        "hatchery",
 }
 
 @onready var fade_overlay: ColorRect = $FadeOverlay
