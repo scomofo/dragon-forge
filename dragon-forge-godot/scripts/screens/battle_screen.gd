@@ -97,7 +97,7 @@ func _init_battle() -> void:
 	_player_element = str(dragon_def.get("element", "fire"))
 	_npc_element = str(_npc_data.get("element", "fire"))
 
-	_player_stats = DragonData.calculate_stats(dragon_def.get("base_stats", {}), level)
+	_player_stats = DragonData.calculate_stats(dragon_def, level)
 	_player_stats["element"] = _player_element
 	var npc_raw: Dictionary = _npc_data.get("stats", {})
 	_npc_stats = npc_raw.duplicate(true)

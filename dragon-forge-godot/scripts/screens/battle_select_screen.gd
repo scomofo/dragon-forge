@@ -23,7 +23,7 @@ var _selected_enemy: String = ""
 
 func setup(save: Dictionary) -> void:
 	_save = save.duplicate(true)
-	_refresh()
+	_build_lists()
 
 func _ready() -> void:
 	fight_button.pressed.connect(_on_fight_pressed)
