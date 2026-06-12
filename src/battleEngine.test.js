@@ -28,7 +28,7 @@ describe('getTypeEffectivenessLabel', () => {
   it('derives labels from the same type chart as combat damage', () => {
     expect(getTypeEffectivenessLabel('venom', 'stone')).toBe('RESISTED');
     expect(getTypeEffectivenessLabel('stone', 'fire')).toBe('ADVANTAGE');
-    expect(getTypeEffectivenessLabel('void', 'shadow')).toBe('NORMAL');
+    expect(getTypeEffectivenessLabel('void', 'shadow')).toBe('RESISTED');
   });
 
   it('labels every non-neutral strong and resisted matchup from the type chart', () => {
@@ -291,11 +291,18 @@ describe('processStatusTick', () => {
 });
 
 describe('Void type effectiveness', () => {
-  it('returns 1.0 for void attacking any element', () => {
+  it('returns 1.0 for void attacking neutral elements', () => {
     expect(getTypeEffectiveness('void', 'fire')).toBe(1.0);
     expect(getTypeEffectiveness('void', 'ice')).toBe(1.0);
-    expect(getTypeEffectiveness('void', 'shadow')).toBe(1.0);
     expect(getTypeEffectiveness('void', 'void')).toBe(1.0);
+  });
+
+  it('void erodes solid form — super effective vs stone', () => {
+    expect(getTypeEffectiveness('void', 'stone')).toBe(2.0);
+  });
+
+  it('void is at home in shadow — resisted by shadow', () => {
+    expect(getTypeEffectiveness('void', 'shadow')).toBe(0.5);
   });
 
   it('returns 1.0 for base elements attacking void', () => {

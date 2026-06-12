@@ -285,6 +285,7 @@ export function setStabilityBoost(value) {
 export function fuseDragons(parentAId, parentBId, offspringElement, offspringLevel, offspringXp, offspringShiny, fusedBaseStats) {
   const save = loadSave();
   if (save.dataScraps < 100) return null;
+  offspringLevel = Math.min(offspringLevel, 50);
   save.dragons[parentAId] = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
   save.dragons[parentBId] = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
   save.dragons[offspringElement] = {
