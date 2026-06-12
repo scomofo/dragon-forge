@@ -1,7 +1,7 @@
 # save_data.gd
-# Resource class mirroring DEFAULT_SAVE from src/persistence.js.
-# Snake_case field names; types match their JS counterparts.
-# Loaded and saved by save_io.gd (autoload: SaveIO).
+# Browser-mirror Resource schema for src/persistence.js.
+# NOT the active Godot save format — SaveIO uses a Dictionary (see save_io.gd).
+# Kept as a typed reference for future browser↔Godot save sync work.
 class_name SaveData
 extends Resource
 

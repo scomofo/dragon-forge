@@ -127,6 +127,4 @@ func _on_craft(recipe: Dictionary) -> void:
 	_refresh()
 
 func _write_save() -> void:
-	var main := get_tree().get_root().get_node_or_null("Main")
-	if main != null and main.has_method("save_to_disk"):
-		main.save_to_disk(_save)
+	SaveIO.flush(_save)

@@ -1,37 +1,5 @@
 extends Control
 
-const SAVE_PATH := "user://dragon_forge_save.json"
-const DEFAULT_SAVE := {
-	"dragon_id": "fire",
-	"dragon_levels": { "fire": 1 },
-	"dragon_xp": { "fire": 0 },
-	"dragon_techniques": { "fire": ["magma_breath"] },
-	"dragon_loadouts": { "fire": ["magma_breath"] },
-	"data_scraps": 320,
-	"system_credits": 0,
-	"known_techniques": ["magma_breath"],
-	"active_techniques": ["magma_breath"],
-	"key_items": [],
-	"mission_flags": [],
-	"captains_log_fragments": [],
-	"equipped_anvil_relics": [],
-	"hatchery_state": {
-		"opened": false,
-		"owned_dragons": ["fire"],
-		"visit_count": 0,
-		"last_ring": "",
-		"pity_counter": 0,
-	},
-	"bestiary_seen": {},
-	"bestiary_defeated": {},
-	"singularity_defeated": [],
-	"inventory": {},
-	"stats": {},
-	"records": {},
-	"journal": { "claimedMilestones": [] },
-	"settings_music": true,
-	"settings_sfx": true,
-}
 
 const SCREENS := {
 	"title":        "res://scenes/screens/title_screen.tscn",
@@ -74,7 +42,7 @@ var _current_screen_id: String = ""
 var _transitioning: bool = false
 
 func _ready() -> void:
-	save = _load_save()
+	save = SaveIO.save
 	_switch_screen("title")
 
 func _switch_screen(target: String, payload: Variant = null) -> void:
@@ -124,32 +92,9 @@ func _switch_screen(target: String, payload: Variant = null) -> void:
 	_transitioning = false
 
 func _on_screen_navigate(target: String, payload: Variant = null) -> void:
-	save = _load_save()
+	save = SaveIO.save
 	_switch_screen(target, payload)
 
-func save_to_disk(updated_save: Dictionary) -> void:
-	save = updated_save.duplicate(true)
-	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if file == null:
-		push_error("Cannot open save file for writing.")
-		return
-	file.store_string(JSON.stringify(save, "\t"))
-	file.close()
-
-func _load_save() -> Dictionary:
-	if not FileAccess.file_exists(SAVE_PATH):
-		return DEFAULT_SAVE.duplicate(true)
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if file == null:
-		return DEFAULT_SAVE.duplicate(true)
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
-	file.close()
-	if typeof(parsed) != TYPE_DICTIONARY:
-		return DEFAULT_SAVE.duplicate(true)
-	var result := DEFAULT_SAVE.duplicate(true)
-	for key in parsed:
-		result[key] = parsed[key]
-	return result
 
 func _play_music(track: String) -> void:
 	var director := get_node_or_null("/root/AudioDirector")
