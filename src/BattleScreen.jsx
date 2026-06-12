@@ -1181,7 +1181,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           )}
           {battleConfig?.dailyNpc && save.dailyStreak > 0 && (
             <div style={{ color: '#ff6600', fontSize: 12, marginTop: 6 }}>
-              🔥 Daily Streak ×{save.dailyStreak} applied
+              🔥 Daily Streak ×{save.dailyStreak + 1} applied
             </div>
           )}
             <button className="result-btn" onClick={onBattleEnd}>CONTINUE</button>
@@ -1220,6 +1220,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             <p>
               "Hmm, a setback! But every great Dragon Forger learns from defeat. Recalibrate and try again!"
               <br />— Professor Felix
+            </p>
+            <p style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
+              Head to the Campaign Map to try a different matchup.
             </p>
             <button className="result-btn" onClick={onBattleEnd}>TRY AGAIN</button>
           </div>

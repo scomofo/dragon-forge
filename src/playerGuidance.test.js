@@ -94,4 +94,37 @@ describe('getPlayerGuidance', () => {
 
     expect(getPlayerGuidance(save)).toBeNull();
   });
+
+  it('shows RETRY after a first loss with no wins', () => {
+    const save = {
+      ...freshSave,
+      dragons: { ...freshSave.dragons, fire: { owned: true, level: 1 } },
+      stats: { battlesLost: 1, battlesWon: 0 },
+    };
+    expect(getPlayerGuidance(save)).toMatchObject({ action: 'RETRY' });
+  });
+
+  it('shows archive-complete guidance after Mirror Admin defeat', () => {
+    const save = { ...freshSave, mirrorAdminDefeated: true };
+    expect(getPlayerGuidance(save)).toMatchObject({ target: 'journal', action: 'ARCHIVE COMPLETE' });
+  });
+
+  it('shows fragment progress after Singularity complete with no fragments collected', () => {
+    const save = {
+      ...freshSave,
+      singularityComplete: true,
+      flags: { fragmentsUnlocked: [] },
+    };
+    expect(getPlayerGuidance(save)).toMatchObject({ target: 'singularity', action: 'FRAGMENTS 0/7' });
+  });
+
+  it('points at forge when player has enough progression to upgrade', () => {
+    const save = {
+      ...freshSave,
+      dragons: { ...freshSave.dragons, fire: { owned: true, level: 5 } },
+      defeatedNpcs: ['a', 'b', 'c'],
+      skye: { wrenchTier: 1 },
+    };
+    expect(getPlayerGuidance(save)).toMatchObject({ target: 'forge', action: 'VISIT FORGE' });
+  });
 });

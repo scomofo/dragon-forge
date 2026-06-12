@@ -125,9 +125,7 @@ export default function TitleScreen({ onStart, save }) {
   const handleClick = () => {
     // Retry music on first user interaction (autoplay policy requires click)
     playMusic('opening');
-    if (phase === 'boot') {
-      skippedRef.current = true;
-    } else if (phase === 'felix') {
+    if (phase === 'boot' || phase === 'glitch' || phase === 'felix') {
       skippedRef.current = true;
     }
   };
@@ -148,7 +146,7 @@ export default function TitleScreen({ onStart, save }) {
         <SoundToggle />
       </div>
       {phase !== 'ready' && (
-        <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', fontSize: 14, color: '#888', pointerEvents: 'none', userSelect: 'none', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+        <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', fontSize: 16, color: '#bbb', pointerEvents: 'none', userSelect: 'none', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
           ▸ click to skip
         </div>
       )}

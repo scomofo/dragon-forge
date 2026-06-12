@@ -45,7 +45,7 @@ export default function CreditsScreen({ onNavigate }) {
         ))}
         {visibleLines >= MIRROR_ADMIN_EPILOGUE_LINES.length && (
           <button
-            onClick={() => { playSound('buttonClick'); onNavigate('hatchery'); }}
+            onClick={() => { playSound('buttonClick'); onNavigate('journal'); }}
             style={{
               marginTop: 48,
               padding: '12px 36px',

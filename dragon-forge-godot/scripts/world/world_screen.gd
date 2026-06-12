@@ -59,6 +59,10 @@ func _build_world() -> void:
 	_build_boss_zone(root)
 	_build_player(root)
 	_build_hud()
+	# Refresh visual state after zones are built (no-op when _save is empty;
+	# setup() does the real refresh once the save is provided).
+	_refresh_zone_states()
+	_refresh_boss_gate()
 
 func _build_floor(parent: Node2D) -> void:
 	var bg := ColorRect.new()
@@ -279,6 +283,9 @@ func _refresh_boss_gate() -> void:
 func _on_dragon_selected(index: int) -> void:
 	_selected_dragon_id = str(_dragon_select.get_item_metadata(index))
 	_update_status_label()
+
+func _write_save() -> void:
+	SaveIO.flush(_save)
 
 func _on_zone_entered(npc_id: String) -> void:
 	if _in_battle:
