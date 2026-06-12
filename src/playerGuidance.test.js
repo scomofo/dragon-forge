@@ -31,7 +31,22 @@ describe('getPlayerGuidance', () => {
     });
   });
 
-  it('points players with early rewards at upgrades', () => {
+  it('points players with spendable rewards at the shop', () => {
+    const save = {
+      ...freshSave,
+      dragons: { ...freshSave.dragons, fire: { owned: true, level: 3 } },
+      defeatedNpcs: ['firewall_sentinel'],
+      dataScraps: 120,
+      inventory: { cores: { stone: 1 } },
+    };
+
+    expect(getPlayerGuidance(save)).toMatchObject({
+      target: 'shop',
+      action: 'SPEND REWARDS',
+    });
+  });
+
+  it('does not point at the shop when nothing is affordable', () => {
     const save = {
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 3 } },
@@ -41,8 +56,8 @@ describe('getPlayerGuidance', () => {
     };
 
     expect(getPlayerGuidance(save)).toMatchObject({
-      target: 'shop',
-      action: 'SPEND REWARDS',
+      target: 'map',
+      action: 'CONTINUE',
     });
   });
 
@@ -82,7 +97,7 @@ describe('getPlayerGuidance', () => {
     });
   });
 
-  it('returns no guidance when there is no immediate objective', () => {
+  it('points at the next campaign node when nothing else is actionable', () => {
     const save = {
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 4 } },
@@ -92,7 +107,10 @@ describe('getPlayerGuidance', () => {
       flags: { currentAct: 1 },
     };
 
-    expect(getPlayerGuidance(save)).toBeNull();
+    expect(getPlayerGuidance(save)).toMatchObject({
+      target: 'map',
+      action: 'CONTINUE',
+    });
   });
 
   it('shows RETRY after a first loss with no wins', () => {

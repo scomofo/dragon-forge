@@ -1,11 +1,9 @@
 import { isSingularityUnlocked } from './singularityProgress';
+import { getAvailableCampaignNodes } from './campaignMap';
+import { BUY_ITEMS, FORGE_RECIPES, canAffordBuy, canForge } from './shopItems';
 
 function getOwnedDragons(save) {
   return Object.entries(save?.dragons || {}).filter(([, dragon]) => dragon?.owned);
-}
-
-function hasCores(save) {
-  return Object.values(save?.inventory?.cores || {}).some((count) => count > 0);
 }
 
 export function getPlayerGuidance(save) {
@@ -54,14 +52,6 @@ export function getPlayerGuidance(save) {
     };
   }
 
-  if ((save?.dataScraps || 0) >= 100 || hasCores(save)) {
-    return {
-      target: 'shop',
-      action: 'SPEND REWARDS',
-      title: 'Turn scraps and cores into power',
-    };
-  }
-
   const forgeReady = ownedDragons.length >= 1 &&
     (save?.defeatedNpcs || []).length >= 3 &&
     (save?.skye?.wrenchTier || 1) < 2;
@@ -89,6 +79,26 @@ export function getPlayerGuidance(save) {
       target: 'singularity',
       action: 'SINGULARITY',
       title: 'Check the unstable breach',
+    };
+  }
+
+  // Only point at the shop when something is actually buyable or forgeable.
+  const shopActionable = BUY_ITEMS.some((item) => canAffordBuy(item, save)) ||
+    FORGE_RECIPES.some((recipe) => canForge(recipe, save));
+  if (shopActionable) {
+    return {
+      target: 'shop',
+      action: 'SPEND REWARDS',
+      title: 'Turn scraps and cores into power',
+    };
+  }
+
+  const availableNodes = getAvailableCampaignNodes(save);
+  if (availableNodes.length > 0) {
+    return {
+      target: 'map',
+      action: 'CONTINUE',
+      title: `Next: ${availableNodes[0].label}`,
     };
   }
 

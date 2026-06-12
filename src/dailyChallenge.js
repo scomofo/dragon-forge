@@ -58,9 +58,16 @@ function getYesterdaySeed() {
   return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
 }
 
-export function getDailyStreakMultiplier(save) {
+// The stored dailyStreak never decays — it only counts toward today's
+// multiplier if yesterday's daily was completed. Display sites must use
+// this gated value, not raw save.dailyStreak.
+export function getEffectiveStreak(save) {
   const yesterdaySeed = getYesterdaySeed();
-  const currentStreak = (save.lastDailyCompleted === yesterdaySeed ? (save.dailyStreak || 0) : 0) + 1;
+  return save?.lastDailyCompleted === yesterdaySeed ? (save.dailyStreak || 0) : 0;
+}
+
+export function getDailyStreakMultiplier(save) {
+  const currentStreak = getEffectiveStreak(save) + 1;
   if (currentStreak <= 1) return 1.0;
   return Math.min(1.5, 1.0 + (currentStreak - 1) * 0.1);
 }

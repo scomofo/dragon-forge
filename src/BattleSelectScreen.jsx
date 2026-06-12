@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { playSound } from './soundEngine';
 import { dragons, npcs, elementColors } from './gameData';
 import { getTypeEffectiveness, calculateStatsForLevel, getStageForLevel } from './battleEngine';
-import { getDailyChallenge, isDailyChallengeCompleted, getDateString } from './dailyChallenge';
+import { getDailyChallenge, isDailyChallengeCompleted, getDateString, getEffectiveStreak } from './dailyChallenge';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import NavBar from './NavBar';
@@ -128,8 +128,8 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                 <div className="select-card-info">
                   <div className="select-card-name" style={{ color: '#ffcc00' }}>
                     ⚔ DAILY CHALLENGE
-                    {(save.dailyStreak || 0) > 0 && !completed && (
-                      <span style={{ marginLeft: 6, color: '#ff6600' }}>🔥{(save.dailyStreak || 0) + 1}</span>
+                    {getEffectiveStreak(save) > 0 && !completed && (
+                      <span style={{ marginLeft: 6, color: '#ff6600' }}>🔥{getEffectiveStreak(save) + 1}</span>
                     )}
                     {completed && <span style={{ color: '#44cc44', marginLeft: 6 }}>✓</span>}
                   </div>

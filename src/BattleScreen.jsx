@@ -8,6 +8,7 @@ import {
 } from './battleEngine';
 import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
 import { getDailyStreakMultiplier } from './dailyChallenge';
+import { getAvailableCampaignNodes } from './campaignMap';
 import { FRAGMENT_TRIGGERS } from './forgeData';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
 import { EPILOGUE_LINES, MIRROR_ADMIN_EPILOGUE_LINES } from './singularityBosses';
@@ -183,7 +184,7 @@ function battleReducer(state, action) {
     case 'SET_PHASE':
       return { ...state, phase: action.phase };
     case 'SET_VICTORY':
-      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null };
+      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1 };
     case 'SET_DEFEAT':
       return { ...state, phase: PHASES.DEFEAT };
     case 'RESET_TURN':
@@ -660,10 +661,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           (save.defeatedNpcs || []).includes(npcId);
         const rawScraps = state.npc.scrapsReward || 0;
         let scrapsGained;
+        // Captured before completeDailyChallenge mutates the streak — the
+        // overlay must show the multiplier that was actually applied.
+        let streakMultiplier = 1.0;
         if (isRepeatDefeat) {
           scrapsGained = Math.floor(rawScraps * 0.25);
         } else if (battleConfig?.dailyNpc) {
-          scrapsGained = Math.floor(rawScraps * getDailyStreakMultiplier(save));
+          streakMultiplier = getDailyStreakMultiplier(save);
+          scrapsGained = Math.floor(rawScraps * streakMultiplier);
         } else {
           scrapsGained = rawScraps;
         }
@@ -747,7 +752,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: true });
           runFragmentUnlockPass();
           dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-celebrate' });
-          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped });
+          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier });
           stopMusic();
           stopHeartbeat();
           playSound('victoryFanfare');
@@ -1179,9 +1184,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
               +{state.coreDropped.count} {state.coreDropped.element.toUpperCase()} CORE{state.coreDropped.count > 1 ? 'S' : ''}
             </div>
           )}
-          {battleConfig?.dailyNpc && save.dailyStreak > 0 && (
+          {battleConfig?.dailyNpc && state.streakMultiplier > 1 && (
             <div style={{ color: '#ff6600', fontSize: 12, marginTop: 6 }}>
-              🔥 Daily Streak ×{save.dailyStreak + 1} applied
+              🔥 Streak bonus ×{state.streakMultiplier.toFixed(1)} applied
             </div>
           )}
             <button className="result-btn" onClick={onBattleEnd}>CONTINUE</button>
@@ -1222,7 +1227,13 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
               <br />— Professor Felix
             </p>
             <p style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
-              Head to the Campaign Map to try a different matchup.
+              {battleConfig?.dailyNpc
+                ? 'The daily card is still open — retry it from Battle Select.'
+                : (battleConfig?.isSingularity || battleConfig?.isMirrorAdmin)
+                  ? 'Return to the Singularity breach to re-engage.'
+                  : getAvailableCampaignNodes(save).length <= 1
+                    ? 'Level up your dragon and try again, or pick another opponent in Battle Select.'
+                    : 'Head to the Campaign Map to try a different matchup.'}
             </p>
             <button className="result-btn" onClick={onBattleEnd}>TRY AGAIN</button>
           </div>

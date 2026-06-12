@@ -142,11 +142,13 @@ export default function App() {
   }
 
   function handleSingularityBattleEnd() {
-    const wasMirrorAdmin = battleConfig?.isMirrorAdmin;
+    // Credits only on a real Mirror Admin victory — the defeat overlay's
+    // TRY AGAIN routes here too, and a loser must not see the epilogue.
+    const wonMirrorAdmin = battleConfig?.isMirrorAdmin && loadSave().mirrorAdminDefeated;
     refreshSave();
-    playMusic(wasMirrorAdmin ? 'hatchery' : 'battle', true);
+    playMusic(wonMirrorAdmin ? 'hatchery' : 'battle', true);
     setBattleConfig(null);
-    setScreen(wasMirrorAdmin ? SCREENS.CREDITS : SCREENS.SINGULARITY);
+    setScreen(wonMirrorAdmin ? SCREENS.CREDITS : SCREENS.SINGULARITY);
   }
 
   return (
