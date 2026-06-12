@@ -30,7 +30,6 @@ const DEFAULT_SAVE := {
 	},
 	"bestiary_seen": {},
 	"bestiary_defeated": {},
-	"singularity_defeated": [],
 	"inventory": {},
 	"stats": {},
 	"records": {},
@@ -81,22 +80,27 @@ func _load_or_create() -> Dictionary:
 	var result := DEFAULT_SAVE.duplicate(true)
 	for key in parsed:
 		result[key] = parsed[key]
-	return _migrate(result)
+	return _sanitize(result)
 
-func _migrate(s: Dictionary) -> Dictionary:
-	var v: int = int(s.get("version", 1))
-	if v < 3:
-		# v3: ensure 'light' dragon entries exist
-		var levels: Dictionary = s.get("dragon_levels", {})
-		if not levels.has("light"):
-			s["dragon_levels"]["light"] = 1
-			s["dragon_xp"]["light"] = 0
-		# Ensure hatchery_state is a proper dict
-		if typeof(s.get("hatchery_state")) != TYPE_DICTIONARY:
-			s["hatchery_state"] = DEFAULT_SAVE["hatchery_state"].duplicate(true)
-		s["version"] = 3
-		push_warning("SaveIO: migrated save to v3")
+# Unconditional shape repair — the DEFAULT_SAVE merge above only covers
+# missing top-level keys, not keys present with the wrong type (e.g. a
+# hand-edited "hatchery_state": null), which would otherwise crash every
+# consumer on every launch. Runs on every load.
+func _sanitize(s: Dictionary) -> Dictionary:
+	if typeof(s.get("hatchery_state")) != TYPE_DICTIONARY:
+		s["hatchery_state"] = DEFAULT_SAVE["hatchery_state"].duplicate(true)
+	if typeof(s["hatchery_state"].get("owned_dragons")) != TYPE_ARRAY:
+		s["hatchery_state"]["owned_dragons"] = ["fire"]
+	if typeof(s.get("dragon_levels")) != TYPE_DICTIONARY:
+		s["dragon_levels"] = DEFAULT_SAVE["dragon_levels"].duplicate(true)
+	if typeof(s.get("dragon_xp")) != TYPE_DICTIONARY:
+		s["dragon_xp"] = DEFAULT_SAVE["dragon_xp"].duplicate(true)
+	if typeof(s.get("mission_flags")) != TYPE_ARRAY:
+		s["mission_flags"] = []
+	if not s["dragon_levels"].has("light"):
+		s["dragon_levels"]["light"] = 1
+		s["dragon_xp"]["light"] = 0
+	s["version"] = SCHEMA_VERSION
 	# Load-time grant, mirroring the browser (persistence.js): saves that
 	# contained the Singularity before this unlock existed get it on load.
-	s = DragonProgression.apply_singularity_unlocks(s)
-	return s
+	return DragonProgression.apply_singularity_unlocks(s)

@@ -45,6 +45,11 @@ func _build_lists() -> void:
 
 	var defeated: Dictionary = _save.get("bestiary_defeated", {})
 	for enemy_id in TacticalBattle.EnemyData.keys():
+		# Singularity bosses are fought from the gated Singularity screen,
+		# never from the open roster.
+		var flag: String = str(TacticalBattle.EnemyData[enemy_id].get("reward_flag", ""))
+		if flag.begins_with("singularity_"):
+			continue
 		var btn := _make_enemy_btn(enemy_id, defeated)
 		enemy_scroll.add_child(btn)
 

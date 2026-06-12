@@ -39,8 +39,7 @@ func _refresh() -> void:
 	var scraps: int = int(_save.get("data_scraps", 0))
 	scraps_label.text = "DATA SCRAPS: %d" % scraps
 	pull_button.disabled = scraps < PULL_COST
-	var sing_defeated: Array = _save.get("singularity_defeated", [])
-	singularity_button.visible = sing_defeated.size() >= 1
+	singularity_button.visible = SingularityProgress.is_singularity_unlocked(_save)
 	_rebuild_dragon_grid()
 
 func _rebuild_dragon_grid() -> void:

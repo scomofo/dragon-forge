@@ -21,6 +21,7 @@ const CAMPAIGN_ORDER := [
 	"glitch_hydra",
 	"logic_bomb",
 	"recursive_golem",
+	"protocol_vulture",
 ]
 
 @onready var dragon_list: VBoxContainer = $VBoxContainer/ContentRow/DragonPick/ScrollContainer/DragonList
@@ -43,8 +44,17 @@ func _ready() -> void:
 	challenge_button.pressed.connect(_on_challenge_pressed)
 
 func _refresh() -> void:
+	_refresh_nav()
 	_rebuild_dragon_list()
 	_rebuild_zone_list()
+
+func _refresh_nav() -> void:
+	var entries: Array = []
+	for entry in NAV_ENTRIES:
+		if str(entry.get("target", "")) == "singularity" and not SingularityProgress.is_singularity_unlocked(_save):
+			continue
+		entries.append(entry)
+	nav_bar.setup(entries)
 
 func _rebuild_dragon_list() -> void:
 	for c in dragon_list.get_children(): c.queue_free()

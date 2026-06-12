@@ -36,7 +36,6 @@ static func create_profile(starting_dragon_id: String) -> Dictionary:
 		},
 		"bestiary_seen": {},
 		"bestiary_defeated": {},
-		"singularity_defeated": [],
 	}
 
 static func get_hatchery_state(save: Dictionary) -> Dictionary:
@@ -52,9 +51,6 @@ static func get_dragon_level(save: Dictionary, dragon_id: String) -> int:
 	var levels: Dictionary = save.get("dragon_levels", {})
 	return levels.get(dragon_id, 1)
 
-static func get_active_techniques(save: Dictionary) -> Array:
-	return save.get("active_techniques", [])
-
 static func award_dragon_xp(save: Dictionary, xp_amount: int, target_id: String = "") -> Dictionary:
 	var result: Dictionary = save.duplicate(true)
 	var dragon_id: String = target_id if target_id != "" else result.get("dragon_id", "")
@@ -67,7 +63,7 @@ static func award_dragon_xp(save: Dictionary, xp_amount: int, target_id: String 
 	var current_xp: int = int(xp_map.get(dragon_id, 0)) + xp_amount
 	var current_level: int = int(level_map.get(dragon_id, 1))
 
-	while current_level < 100:
+	while current_level < 50:
 		var needed: int = xp_to_next_level(current_level)
 		if current_xp >= needed:
 			current_xp -= needed
@@ -75,7 +71,7 @@ static func award_dragon_xp(save: Dictionary, xp_amount: int, target_id: String 
 		else:
 			break
 
-	if current_level >= 100:
+	if current_level >= 50:
 		current_xp = 0
 	xp_map[dragon_id] = current_xp
 	level_map[dragon_id] = current_level
@@ -126,6 +122,17 @@ static func apply_singularity_unlocks(save: Dictionary) -> Dictionary:
 				result["dragon_levels"][id] = 1
 			if not result.get("dragon_xp", {}).has(id):
 				result["dragon_xp"][id] = 0
+			# Seed the per-dragon loadout so the granted dragon fights with
+			# its own moves, not the global starter techniques.
+			var move_keys: Array = DragonData.DRAGONS[id].get("move_keys", []).duplicate()
+			if not result.has("dragon_techniques"):
+				result["dragon_techniques"] = {}
+			if not result.has("dragon_loadouts"):
+				result["dragon_loadouts"] = {}
+			if not result["dragon_techniques"].has(id):
+				result["dragon_techniques"][id] = move_keys.duplicate()
+			if not result["dragon_loadouts"].has(id):
+				result["dragon_loadouts"][id] = move_keys.duplicate()
 	hatchery["owned_dragons"] = owned
 	result["hatchery_state"] = hatchery
 	return result

@@ -73,6 +73,10 @@ var _player_reflecting: bool = false
 var _npc_reflecting: bool = false
 var _battle_over: bool = false
 var _trauma: float = 0.0
+# Final-boss phase chain (the_singularity): loaded from
+# data/singularity_bosses.json; empty for every other fight.
+var _phases: Array = []
+var _phase_index: int = 0
 
 func setup(save: Dictionary, config: Dictionary) -> void:
 	_save = save.duplicate(true)
@@ -100,6 +104,14 @@ func _init_battle() -> void:
 	var npc_id: String    = str(_config.get("npc_id", "firewall_sentinel"))
 	_npc_data = TacticalBattle.EnemyData.get(npc_id, {}).duplicate(true)
 
+	# The final boss is a 3-phase fight; the EnemyData entry only describes
+	# phase 1. Rewards stay on _npc_data and only fire after the last phase.
+	if npc_id == "the_singularity":
+		_phases = _load_singularity_phases()
+		_phase_index = 0
+		if not _phases.is_empty():
+			_merge_phase_into_npc_data(_phases[0])
+
 	var dragon_def: Dictionary = DragonData.DRAGONS.get(dragon_id, {}).duplicate(true)
 	var level: int = DragonProgression.get_dragon_level(_save, dragon_id)
 	_player_element = str(dragon_def.get("element", "fire"))
@@ -117,7 +129,9 @@ func _init_battle() -> void:
 	_player_hp     = _player_max_hp
 	_npc_hp        = _npc_max_hp
 
-	_player_move_keys = Array(DragonProgression.get_active_techniques(_save))
+	# Per-dragon loadout first; the dragon's own move_keys as fallback. The
+	# global active_techniques list is starter-only legacy and never updated.
+	_player_move_keys = Array(_save.get("dragon_loadouts", {}).get(dragon_id, []))
 	if _player_move_keys.is_empty():
 		_player_move_keys = Array(dragon_def.get("move_keys", ["basic_attack"]))
 	_npc_move_keys = _derive_npc_move_keys(_npc_element)
@@ -134,6 +148,44 @@ func _init_battle() -> void:
 	npc_name.text    = str(_npc_data.get("name", npc_id))
 	header_label.text = "%s  VS  %s" % [player_name.text, npc_name.text]
 	_update_hp_display()
+
+func _load_singularity_phases() -> Array:
+	var file := FileAccess.open("res://data/singularity_bosses.json", FileAccess.READ)
+	if file == null:
+		return []
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	file.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return []
+	return parsed.get("final_boss", {}).get("phases", [])
+
+func _merge_phase_into_npc_data(phase: Dictionary) -> void:
+	_npc_data["name"]    = phase.get("name", _npc_data.get("name", "The Singularity"))
+	_npc_data["element"] = phase.get("element", _npc_data.get("element", "fire"))
+	_npc_data["level"]   = phase.get("level", _npc_data.get("level", 30))
+	_npc_data["stats"]   = phase.get("stats", _npc_data.get("stats", {})).duplicate(true)
+
+func _advance_singularity_phase() -> void:
+	_phase_index += 1
+	_merge_phase_into_npc_data(_phases[_phase_index])
+
+	_npc_element = str(_npc_data.get("element", "fire"))
+	_npc_stats = _npc_data.get("stats", {}).duplicate(true)
+	_npc_stats["element"] = _npc_element
+	_npc_max_hp = int(_npc_stats.get("hp", 100))
+	_npc_hp = _npc_max_hp
+	_npc_status = null
+	_npc_defending = false
+	_npc_reflecting = false
+	_npc_move_keys = _derive_npc_move_keys(_npc_element)
+
+	npc_name.text = str(_npc_data.get("name", "The Singularity"))
+	header_label.text = "%s  VS  %s" % [player_name.text, npc_name.text]
+	_append_log("[color=#ff4daa]The Singularity adapts — %s![/color]" % str(_npc_data.get("name", "")))
+	_add_trauma(0.8)
+	_update_hp_display()
+	_update_status_icons()
+	await get_tree().create_timer(1.0).timeout
 
 func _derive_npc_move_keys(element: String) -> Array:
 	var table := {
@@ -230,6 +282,10 @@ func _execute_turn(player_move_key: String) -> void:
 	_update_status_icons()
 
 	if _npc_hp <= 0:
+		if _phase_index < _phases.size() - 1:
+			await _advance_singularity_phase()
+			_set_buttons_disabled(false)
+			return
 		await _end_battle(true)
 		return
 	if _player_hp <= 0:
@@ -410,7 +466,9 @@ func _end_battle(player_won: bool) -> void:
 
 	if player_won:
 		var dragon_id: String    = str(_config.get("dragon_id", _save.get("dragon_id", "fire")))
-		var reward_xp: int       = int(_npc_data.get("reward_xp", 50))
+		var player_level: int    = DragonProgression.get_dragon_level(_save, dragon_id)
+		var reward_xp: int       = BattleEngine.calculate_xp_gain(
+			int(_npc_data.get("reward_xp", 50)), player_level, int(_npc_data.get("level", 1)))
 		var reward_scraps: int   = int(_npc_data.get("reward_scraps", 30))
 		var npc_id: String       = str(_config.get("npc_id", ""))
 

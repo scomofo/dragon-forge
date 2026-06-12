@@ -12,25 +12,35 @@ const NAV_ENTRIES := [
 ]
 const FUSE_COST := 100
 
+# Verbatim port of the browser ALCHEMY table (fusionEngine.js). Every key
+# MUST be in _pair_key form (alphabetically sorted, "+"-joined) or it can
+# never match a lookup.
 const FUSION_TABLE := {
+	"fire+fire": "fire",
+	"ice+ice": "ice",
+	"storm+storm": "storm",
+	"stone+stone": "stone",
+	"venom+venom": "venom",
+	"shadow+shadow": "shadow",
 	"fire+ice": "storm",
-	"fire+stone": "fire",
-	"fire+storm": "venom",
+	"fire+storm": "fire",
+	"fire+stone": "stone",
 	"fire+venom": "shadow",
 	"fire+shadow": "fire",
-	"ice+stone": "ice",
 	"ice+storm": "ice",
-	"ice+venom": "shadow",
-	"ice+shadow": "venom",
-	"stone+storm": "stone",
-	"stone+venom": "stone",
-	"stone+shadow": "stone",
-	"storm+venom": "storm",
-	"storm+shadow": "shadow",
-	"venom+shadow": "venom",
+	"ice+stone": "stone",
+	"ice+venom": "venom",
+	"ice+shadow": "shadow",
+	"stone+storm": "storm",
+	"storm+venom": "venom",
+	"shadow+storm": "shadow",
+	"stone+venom": "venom",
+	"shadow+stone": "stone",
+	"shadow+venom": "shadow",
 }
 
-const UNSTABLE_PAIRS := ["fire+ice", "stone+storm", "venom+shadow"]
+# Browser OPPOSING_PAIRS, in _pair_key form.
+const UNSTABLE_PAIRS := ["fire+ice", "stone+storm", "shadow+venom"]
 
 const STABILITY_COLORS := {
 	"stable":   Color("#ffd166"),
@@ -80,6 +90,9 @@ func _rebuild_lists() -> void:
 	for dragon_id in owned:
 		var dragon_def: Dictionary = DragonData.DRAGONS.get(dragon_id, {})
 		var level: int = int(levels.get(dragon_id, 1))
+		# Browser parity (FusionScreen.jsx): only level 10+ dragons may fuse.
+		if level < 10:
+			continue
 		var label_text := "%s LV%d" % [str(dragon_def.get("name", dragon_id)), level]
 
 		var btn_a := Button.new()
@@ -151,8 +164,8 @@ func _update_preview() -> void:
 	if def_a.is_empty() or def_b.is_empty():
 		preview_stats.text = ""
 	else:
-		var stats_a := DragonData.calculate_stats(def_a.get("base_stats", {}), level_a)
-		var stats_b := DragonData.calculate_stats(def_b.get("base_stats", {}), level_b)
+		var stats_a := DragonData.calculate_stats(def_a, level_a)
+		var stats_b := DragonData.calculate_stats(def_b, level_b)
 		var result_level: int = maxi(1, (level_a + level_b) / 2)
 		var penalty: float = 0.85 if stability == "unstable" else 1.0
 		var result_hp := floori((stats_a["hp"] + stats_b["hp"]) * 0.6 * penalty)
@@ -171,13 +184,14 @@ func _fuse_elements(a: String, b: String) -> String:
 	var key := _pair_key(a, b)
 	return FUSION_TABLE.get(key, a)
 
+# Browser parity (fusionEngine.js getStabilityTier): same element fuses
+# stable, opposing pairs unstable, everything else normal.
 func _get_stability(a: String, b: String) -> String:
 	if a == b:
+		return "stable"
+	if UNSTABLE_PAIRS.has(_pair_key(a, b)):
 		return "unstable"
-	var key := _pair_key(a, b)
-	if UNSTABLE_PAIRS.has(key):
-		return "unstable"
-	return "stable"
+	return "normal"
 
 func _pair_key(a: String, b: String) -> String:
 	var pair := [a, b]
@@ -220,6 +234,10 @@ func _on_fuse_pressed() -> void:
 
 	hatchery_state["owned_dragons"] = owned
 	_save["hatchery_state"] = hatchery_state
+
+	# A fused-away singularity-locked dragon (light) would only return on the
+	# next launch via SaveIO; regrant now so the session matches the next load.
+	_save = DragonProgression.apply_singularity_unlocks(_save)
 
 	_write_save()
 	await _play_fusion_animation(_selected_a, _selected_b, result_id, stability)

@@ -38,7 +38,9 @@ static func get_stage_for_level(level: int) -> int:
 	return 1
 
 static func calculate_xp_gain(base_xp: int, player_level: int, enemy_level: int) -> int:
-	var ratio: float = float(enemy_level) / float(player_level)
+	# Browser parity (battleEngine.js): ratio clamped so farming low-level
+	# enemies still pays something and stomping high-level ones can't 30x.
+	var ratio: float = clampf(float(enemy_level) / float(player_level), 0.25, 2.0)
 	return maxi(1, int(base_xp * ratio))
 
 static func calculate_stats_for_level(base_stats: Dictionary, level: int, shiny: bool = false) -> Dictionary:

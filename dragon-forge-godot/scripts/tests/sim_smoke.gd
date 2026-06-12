@@ -185,6 +185,128 @@ func _init() -> void:
 		print("PASS: singularity boss reward_flags correct")
 		passed += 1
 
+	# ── S6 sprint pins (Godot tracks A+B) ─────────────────────────────────────
+
+	# Test 13: award_dragon_xp caps at level 50 and zeroes xp at the cap
+	var cap_save: Dictionary = DragonProgression.create_profile("fire")
+	cap_save = DragonProgression.award_dragon_xp(cap_save, 1000000, "fire")
+	var cap_level: int = DragonProgression.get_dragon_level(cap_save, "fire")
+	var cap_xp: int = int(cap_save.get("dragon_xp", {}).get("fire", -1))
+	if cap_level == 50 and cap_xp == 0:
+		print("PASS: award_dragon_xp level-50 cap")
+		passed += 1
+	else:
+		print("FAIL: award_dragon_xp cap — level=%d xp=%d" % [cap_level, cap_xp])
+		failed += 1
+
+	# Test 14: hatchery pull XP cannot push a dragon past level 50
+	var HatcheryEngine = preload("res://scripts/sim/hatchery_engine.gd")
+	var h_save := { "dragons": { "fire": { "owned": true, "level": 49, "xp": 950, "shiny": false } } }
+	var h_pull := { "element": "fire", "rarity_name": "Common", "rarity_multiplier": 100, "shiny": false, "new_pity_counter": 0 }
+	var h_result: Dictionary = HatcheryEngine.apply_pull_result(h_save, h_pull)
+	var h_dragon: Dictionary = h_result["save"]["dragons"]["fire"]
+	if int(h_dragon["level"]) == 50 and int(h_dragon["xp"]) == 0:
+		print("PASS: hatchery pull level-50 cap")
+		passed += 1
+	else:
+		print("FAIL: hatchery pull cap — level=%d xp=%d" % [int(h_dragon["level"]), int(h_dragon["xp"])])
+		failed += 1
+
+	# Test 15: calculate_xp_gain ratio clamped to [0.25, 2.0]
+	var BattleEngine = preload("res://scripts/sim/battle_engine.gd")
+	var xp_high: int = BattleEngine.calculate_xp_gain(50, 1, 30)
+	var xp_low: int  = BattleEngine.calculate_xp_gain(100, 40, 2)
+	if xp_high == 100 and xp_low == 25:
+		print("PASS: calculate_xp_gain clamp")
+		passed += 1
+	else:
+		print("FAIL: calculate_xp_gain clamp — high=%d (want 100) low=%d (want 25)" % [xp_high, xp_low])
+		failed += 1
+
+	# Test 16: SingularityProgress reads the Godot save shape
+	var SingularityProgressScript = preload("res://scripts/sim/singularity_progress.gd")
+	var sp_save: Dictionary = DragonProgression.create_profile("fire")
+	var sp_fresh_locked: bool = not SingularityProgressScript.is_singularity_unlocked(sp_save)
+	sp_save["bestiary_defeated"] = { "protocol_vulture": 1 }
+	var sp_unlocked: bool = SingularityProgressScript.is_singularity_unlocked(sp_save)
+	sp_save["bestiary_defeated"] = {
+		"firewall_sentinel": 1, "bit_wraith": 1, "glitch_hydra": 1, "recursive_golem": 1,
+	}
+	var sp_stage5: bool = SingularityProgressScript.get_singularity_stage(sp_save) == 5
+	sp_save["mission_flags"] = ["singularity_defeated"]
+	var sp_stage0: bool = SingularityProgressScript.get_singularity_stage(sp_save) == 0
+	if sp_fresh_locked and sp_unlocked and sp_stage5 and sp_stage0:
+		print("PASS: SingularityProgress godot-shape + post-completion stage 0")
+		passed += 1
+	else:
+		print("FAIL: SingularityProgress — locked=%s unlocked=%s stage5=%s stage0=%s" % [sp_fresh_locked, sp_unlocked, sp_stage5, sp_stage0])
+		failed += 1
+
+	# Test 17: fusion table keys normalized; stability matches browser tiers
+	var FusionScreenScript = preload("res://scripts/screens/fusion_screen.gd")
+	var fs = FusionScreenScript.new()
+	var t17_ok := true
+	for key in fs.FUSION_TABLE:
+		var parts: PackedStringArray = String(key).split("+")
+		if fs._pair_key(parts[0], parts[1]) != key:
+			print("FAIL: FUSION_TABLE key not _pair_key-normalized: %s" % key)
+			t17_ok = false
+			break
+	if t17_ok and fs._fuse_elements("venom", "shadow") != "shadow":
+		print("FAIL: venom+shadow should fuse to shadow (browser parity)")
+		t17_ok = false
+	if t17_ok and fs._fuse_elements("storm", "stone") != "storm":
+		print("FAIL: stone+storm should fuse to storm (browser parity)")
+		t17_ok = false
+	if t17_ok and (fs._get_stability("fire", "fire") != "stable"
+			or fs._get_stability("shadow", "venom") != "unstable"
+			or fs._get_stability("fire", "storm") != "normal"):
+		print("FAIL: stability tiers diverge from browser")
+		t17_ok = false
+	fs.free()
+	if t17_ok:
+		print("PASS: fusion table + stability browser parity")
+		passed += 1
+	else:
+		failed += 1
+
+	# Test 18: final boss ships 3 phases in singularity_bosses.json
+	var sb_file := FileAccess.open("res://data/singularity_bosses.json", FileAccess.READ)
+	var t18_ok := sb_file != null
+	if t18_ok:
+		var sb_parsed: Variant = JSON.parse_string(sb_file.get_as_text())
+		sb_file.close()
+		t18_ok = typeof(sb_parsed) == TYPE_DICTIONARY \
+			and (sb_parsed as Dictionary).get("final_boss", {}).get("phases", []).size() == 3
+	if t18_ok:
+		print("PASS: final boss has 3 phases")
+		passed += 1
+	else:
+		print("FAIL: final boss phases missing or malformed")
+		failed += 1
+
+	# Test 19: protocol_vulture exists and singularity bosses carry browser rewards
+	var TacticalBattle3 = preload("res://scripts/sim/tactical_battle.gd")
+	var reward_expect := {
+		"data_corruption": [100, 200], "memory_leak": [150, 300],
+		"stack_overflow": [200, 400], "the_singularity": [500, 1000],
+	}
+	var t19_ok: bool = TacticalBattle3.EnemyData.has("protocol_vulture")
+	if not t19_ok:
+		print("FAIL: protocol_vulture missing from EnemyData")
+	for boss_id in reward_expect:
+		if not t19_ok:
+			break
+		var e: Dictionary = TacticalBattle3.EnemyData.get(boss_id, {})
+		if int(e.get("reward_xp", 0)) != reward_expect[boss_id][0] or int(e.get("reward_scraps", 0)) != reward_expect[boss_id][1]:
+			print("FAIL: %s rewards %d/%d diverge from browser %d/%d" % [boss_id, int(e.get("reward_xp", 0)), int(e.get("reward_scraps", 0)), reward_expect[boss_id][0], reward_expect[boss_id][1]])
+			t19_ok = false
+	if t19_ok:
+		print("PASS: protocol_vulture present, boss rewards browser-synced")
+		passed += 1
+	else:
+		failed += 1
+
 	# ── Summary ───────────────────────────────────────────────────────────────
 	print("")
 	print("Smoke test complete: %d passed, %d failed" % [passed, failed])

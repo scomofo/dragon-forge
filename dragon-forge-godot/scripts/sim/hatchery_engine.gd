@@ -66,9 +66,11 @@ static func apply_pull_result(save: Dictionary, pull: Dictionary) -> Dictionary:
 		xp_gained = 50 * pull.get("rarity_multiplier", 1)
 		dragon["xp"] += xp_gained
 		var xp_per_level: int = 100
-		while dragon["xp"] >= xp_per_level:
+		while dragon["xp"] >= xp_per_level and dragon["level"] < 50:
 			dragon["xp"]    -= xp_per_level
 			dragon["level"] += 1
+		if dragon["level"] >= 50:
+			dragon["xp"] = 0
 		if pull.get("shiny", false) and not dragon.get("shiny", false):
 			dragon["shiny"] = true
 
