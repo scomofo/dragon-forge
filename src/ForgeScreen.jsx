@@ -30,6 +30,7 @@ import {
   unlockFragment,
 } from './persistence';
 import { playSound } from './soundEngine';
+import { assetUrl } from './utils';
 import useGamepadController from './useGamepadController';
 
 function bootstrapForgeSave(save) {
@@ -158,6 +159,7 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
         '--forge-wall': FORGE_PALETTE.wallShadow,
         '--forge-floor': FORGE_PALETTE.floor,
         '--forge-floor-accent': FORGE_PALETTE.floorAccent,
+        '--forge-bg-url': `url(${assetUrl('/assets/backgrounds/forge_bg.png')})`,
       }}
       data-active-station={activeStation || ''}
     >

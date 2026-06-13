@@ -21,7 +21,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: url('/assets/decoration/lab_equipment.png') center / cover no-repeat;
+  background: var(--lab-equipment-url) center / cover no-repeat;
   opacity: 0.03;
   pointer-events: none;
   z-index: 0;

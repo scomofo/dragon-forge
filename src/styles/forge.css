@@ -7,10 +7,9 @@
   image-rendering: pixelated;
   font-family: monospace;
   color: #f0e6d2;
-  /* Gradient overlay stays visible until forge_bg.png is generated and dropped in */
   background:
-    linear-gradient(180deg, rgba(26, 18, 8, 0.80) 0%, rgba(42, 29, 20, 0.68) 58%, rgba(58, 42, 31, 0.62) 100%),
-    url('/assets/backgrounds/forge_bg.png') center / cover no-repeat,
+    linear-gradient(180deg, rgba(26, 18, 8, 0.50) 0%, rgba(42, 29, 20, 0.38) 58%, rgba(58, 42, 31, 0.32) 100%),
+    var(--forge-bg-url) center / cover no-repeat,
     linear-gradient(180deg, var(--forge-wall) 0%, var(--forge-floor) 60%, var(--forge-floor-accent) 100%);
 }
 

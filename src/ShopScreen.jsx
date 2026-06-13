@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { playSound } from './soundEngine';
+import { assetUrl } from './utils';
 import { dragons, elementColors, ELEMENTS } from './gameData';
 import { spendScraps, addDragonXp, upgradeDragonShiny, updatePityCounter, setXpBoost, spendCores, setStabilityBoost } from './persistence';
 import { BUY_ITEMS, FORGE_RECIPES, canAffordBuy, canForge, getForgeableElement, ELEMENTS_FOR_CORES } from './shopItems';
@@ -135,7 +136,7 @@ export default function ShopScreen({ onNavigate, save, refreshSave }) {
     <div>
       <NavBar activeScreen="shop" onNavigate={onNavigate} save={save} />
 
-      <div className="shop-layout">
+      <div className="shop-layout" style={{ '--forge-props-url': `url(${assetUrl('/assets/decoration/forge_props.png')})` }}>
         {/* Tabs */}
         <div className="shop-tabs">
           <button className={`shop-tab ${tab === 'buy' ? 'active' : ''}`} onClick={() => { setTab('buy'); setSelectedItemId(null); }}>

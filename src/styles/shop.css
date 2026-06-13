@@ -13,7 +13,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: url('/assets/decoration/forge_props.png') center / cover no-repeat;
+  background: var(--forge-props-url) center / cover no-repeat;
   opacity: 0.04;
   pointer-events: none;
   z-index: 0;

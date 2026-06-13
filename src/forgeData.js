@@ -236,6 +236,7 @@ export const WRENCH_TIERS = [
 // Maps NPC/boss id → relic id dropped on first defeat.
 // grantRelic() is idempotent; the drop is shown in the victory overlay only when newly obtained.
 export const RELIC_DROPS = {
+  recursive_golem: 'iron_knuckle',
   glitch_hydra:    'hydra_cog',
   bit_wraith:      'coolant_core',
   data_corruption: 'phase_lens',

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { wait } from './utils';
+import { wait, assetUrl } from './utils';
 import { dragons, elementColors } from './gameData';
 import { getFusionElement, getStabilityTier, calculateFusionStats, executeFusion } from './fusionEngine';
 import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
@@ -93,7 +93,7 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
     <div className="fusion-screen">
       <NavBar activeScreen="fusion" onNavigate={onNavigate} save={save} />
 
-      <div className="fusion-content">
+      <div className="fusion-content" style={{ '--lab-equipment-url': `url(${assetUrl('/assets/decoration/lab_equipment.png')})` }}>
         <div className="fusion-title">FUSION CHAMBER</div>
 
         {phase === 'select' && (
