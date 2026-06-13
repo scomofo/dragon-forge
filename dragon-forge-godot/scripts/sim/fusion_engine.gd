@@ -96,3 +96,48 @@ static func _sorted_key(a: String, b: String) -> String:
 	var parts := [a, b]
 	parts.sort()
 	return "%s_%s" % [parts[0], parts[1]]
+
+# ── + separator public API (mirrors fusion_screen.gd / browser _pair_key) ───
+
+# Same data as ALCHEMY but with "+" separator keys (browser parity for tests
+# and for fusion_screen.gd's FUSION_TABLE constant).
+const FUSION_TABLE := {
+	"fire+fire": "fire",
+	"ice+ice": "ice",
+	"storm+storm": "storm",
+	"stone+stone": "stone",
+	"venom+venom": "venom",
+	"shadow+shadow": "shadow",
+	"fire+ice": "storm",
+	"fire+storm": "fire",
+	"fire+stone": "stone",
+	"fire+venom": "shadow",
+	"fire+shadow": "fire",
+	"ice+storm": "ice",
+	"ice+stone": "stone",
+	"ice+venom": "venom",
+	"ice+shadow": "shadow",
+	"stone+storm": "storm",
+	"storm+venom": "venom",
+	"shadow+storm": "shadow",
+	"stone+venom": "venom",
+	"shadow+stone": "stone",
+	"shadow+venom": "shadow",
+}
+
+const UNSTABLE_PAIRS := ["fire+ice", "stone+storm", "shadow+venom"]
+
+static func pair_key(a: String, b: String) -> String:
+	var p := [a, b]
+	p.sort()
+	return "%s+%s" % [p[0], p[1]]
+
+static func fuse_elements(a: String, b: String) -> String:
+	return FUSION_TABLE.get(pair_key(a, b), a)
+
+static func get_stability(a: String, b: String) -> String:
+	if a == b:
+		return "stable"
+	if UNSTABLE_PAIRS.has(pair_key(a, b)):
+		return "unstable"
+	return "normal"

@@ -98,7 +98,7 @@ func _rebuild_lists() -> void:
 		var btn_a := Button.new()
 		btn_a.text = label_text
 		btn_a.toggle_mode = true
-		var id_a := dragon_id
+		var id_a: String = dragon_id
 		btn_a.pressed.connect(func():
 			if _selected_b == id_a:
 				_selected_b = ""
@@ -112,7 +112,7 @@ func _rebuild_lists() -> void:
 		var btn_b := Button.new()
 		btn_b.text = label_text
 		btn_b.toggle_mode = true
-		var id_b := dragon_id
+		var id_b: String = dragon_id
 		btn_b.pressed.connect(func():
 			if _selected_a == id_b:
 				_selected_a = ""

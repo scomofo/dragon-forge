@@ -4,6 +4,7 @@ signal navigate(target: String, payload: Variant)
 
 const DragonData = preload("res://scripts/sim/dragon_data.gd")
 const TacticalBattle = preload("res://scripts/sim/tactical_battle.gd")
+const SingularityProgress = preload("res://scripts/sim/singularity_progress.gd")
 
 const NAV_ENTRIES := [
 	{"label": "HATCHERY",    "target": "hatchery"},

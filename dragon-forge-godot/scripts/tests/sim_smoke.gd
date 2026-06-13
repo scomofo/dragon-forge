@@ -243,27 +243,27 @@ func _init() -> void:
 		failed += 1
 
 	# Test 17: fusion table keys normalized; stability matches browser tiers
-	var FusionScreenScript = preload("res://scripts/screens/fusion_screen.gd")
-	var fs = FusionScreenScript.new()
+	# Use FusionEngine pure module directly — avoids the SaveIO autoload issue
+	# that makes fusion_screen.gd fail to compile in --script mode.
+	var FusionEngine = preload("res://scripts/sim/fusion_engine.gd")
 	var t17_ok := true
-	for key in fs.FUSION_TABLE:
+	for key in FusionEngine.FUSION_TABLE:
 		var parts: PackedStringArray = String(key).split("+")
-		if fs._pair_key(parts[0], parts[1]) != key:
-			print("FAIL: FUSION_TABLE key not _pair_key-normalized: %s" % key)
+		if FusionEngine.pair_key(parts[0], parts[1]) != key:
+			print("FAIL: FUSION_TABLE key not pair_key-normalized: %s" % key)
 			t17_ok = false
 			break
-	if t17_ok and fs._fuse_elements("venom", "shadow") != "shadow":
+	if t17_ok and FusionEngine.fuse_elements("venom", "shadow") != "shadow":
 		print("FAIL: venom+shadow should fuse to shadow (browser parity)")
 		t17_ok = false
-	if t17_ok and fs._fuse_elements("storm", "stone") != "storm":
+	if t17_ok and FusionEngine.fuse_elements("storm", "stone") != "storm":
 		print("FAIL: stone+storm should fuse to storm (browser parity)")
 		t17_ok = false
-	if t17_ok and (fs._get_stability("fire", "fire") != "stable"
-			or fs._get_stability("shadow", "venom") != "unstable"
-			or fs._get_stability("fire", "storm") != "normal"):
+	if t17_ok and (FusionEngine.get_stability("fire", "fire") != "stable"
+			or FusionEngine.get_stability("shadow", "venom") != "unstable"
+			or FusionEngine.get_stability("fire", "storm") != "normal"):
 		print("FAIL: stability tiers diverge from browser")
 		t17_ok = false
-	fs.free()
 	if t17_ok:
 		print("PASS: fusion table + stability browser parity")
 		passed += 1

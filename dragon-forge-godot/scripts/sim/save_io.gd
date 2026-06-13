@@ -4,6 +4,7 @@
 # save_data.gd is kept as a browser-mirror Resource schema; not used here.
 extends Node
 
+const DragonProgression = preload("res://scripts/sim/dragon_progression.gd")
 const SAVE_PATH := "user://dragon_forge_save.json"
 const SCHEMA_VERSION := 3
 
