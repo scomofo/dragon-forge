@@ -33,7 +33,10 @@ function sortedKey(a, b) {
 }
 
 export function getFusionElement(elementA, elementB) {
-  return ALCHEMY[sortedKey(elementA, elementB)] || elementA;
+  const key = sortedKey(elementA, elementB);
+  // Fallback picks the alphabetically-first element so the result doesn't
+  // depend on argument order when the pair isn't in ALCHEMY (e.g. void/light).
+  return ALCHEMY[key] ?? key.split('_')[0];
 }
 
 const STABILITY_ORDER = ['unstable', 'normal', 'stable'];

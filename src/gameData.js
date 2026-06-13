@@ -332,6 +332,7 @@ export const STATUS_EFFECTS = {
   venom:  { name: 'Poison',      icon: '☠️', duration: 2, type: 'dot',     value: 0.06 },
   shadow: { name: 'Blind',       icon: '👁️', duration: 2, type: 'debuff',  value: 0.3 },
   void:   { name: 'Glitch',      icon: '🌀', duration: 1, type: 'randomize', value: 1.0 },
+  light:  { name: 'Dazzle',     icon: '✨', duration: 2, type: 'debuff',    value: 0.3 },
 };
 
 export const STATUS_APPLY_CHANCE = 0.30;

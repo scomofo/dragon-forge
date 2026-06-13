@@ -42,14 +42,11 @@ export function scaleBossForPlayer(boss, save) {
     Object.fromEntries(Object.entries(stats).map(([k, v]) => [k, Math.floor(v * factor)]));
 
   if (boss.phases) {
-    const baseLevel = boss.phases[0].level;
-    const scaledBase = Math.max(baseLevel, playerMaxLevel) + replayBonus;
-    const factor = scaledBase / baseLevel;
-    const scaledPhases = boss.phases.map((phase, i) => ({
-      ...phase,
-      level: Math.max(phase.level, playerMaxLevel + i) + replayBonus,
-      stats: scaleStats(phase.stats, factor),
-    }));
+    const scaledPhases = boss.phases.map((phase, i) => {
+      const scaledLevel = Math.max(phase.level, playerMaxLevel + i) + replayBonus;
+      const factor = scaledLevel / phase.level;
+      return { ...phase, level: scaledLevel, stats: scaleStats(phase.stats, factor) };
+    });
     return { ...boss, phases: scaledPhases };
   }
 

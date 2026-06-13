@@ -104,6 +104,18 @@ export const VFX_FRAMES = {
     crop: { x: 512, y: 384, w: 512, h: 256 },
     filter: 'hue-rotate(180deg) saturate(1.5)',
   },
+  RADIANT_BEAM: {
+    src: assetUrl('/assets/vfx/storm_lightning.png'),
+    sheet: { w: 1536, h: 1024 },
+    crop: { x: 512, y: 512, w: 512, h: 256 },
+    filter: 'brightness(1.5) hue-rotate(40deg) saturate(0.5)',
+  },
+  SOLAR_FLARE: {
+    src: assetUrl('/assets/vfx/storm_lightning.png'),
+    sheet: { w: 1536, h: 1024 },
+    crop: { x: 1024, y: 0, w: 512, h: 256 },
+    filter: 'brightness(1.6) hue-rotate(20deg) saturate(1.3)',
+  },
   NULL_REFLECT: null, // CSS-only reflect shield effect
   BASIC_ATTACK: null, // CSS-only, no sprite
 };
