@@ -308,7 +308,8 @@ export const eggSheets = {
   stone:   assetUrl('/assets/eggs/egg_stone_sheet.png'),
   venom:   assetUrl('/assets/eggs/egg_venom_sheet.png'),
   shadow:  assetUrl('/assets/eggs/egg_shadow_sheet.png'),
-  void:    assetUrl('/assets/eggs/egg_shadow_sheet.png'),
+  void:    assetUrl('/assets/eggs/egg_void_sheet.png'),
+  light:   assetUrl('/assets/eggs/egg_light_sheet.png'),
 };
 
 // === RARITY CONFIG ===
