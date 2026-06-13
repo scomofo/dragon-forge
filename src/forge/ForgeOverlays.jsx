@@ -6,6 +6,7 @@ import {
   FORGE_PALETTE,
   WRENCH_TIERS,
   getCaptainLogDisplay,
+  getCurrentAct,
   getRelic,
   getUsedRelicSlots,
   listRelics,
@@ -200,8 +201,7 @@ export function HatcheryRingOverlay({ save, onClose, onNavigate, refreshSave }) 
     .filter(([, dragon]) => dragon.owned)
     .map(([id]) => id);
   const companionId = save?.skye?.companionDragonId || null;
-  const companionLockedUntilAct = 4;
-  const companionUnlocked = (save?.flags?.currentAct || 1) >= companionLockedUntilAct;
+  const companionUnlocked = getCurrentAct(save) >= 4;
 
   function pickCompanion(id) {
     if (!companionUnlocked) {

@@ -21,6 +21,7 @@ import {
   STATION_IDS,
   findNearestStation,
   getBulkheadView,
+  getCurrentAct,
   pickFelixLine,
 } from './forgeData';
 import {
@@ -66,7 +67,7 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
   const [felixLine, setFelixLine] = useState(null);
   const isFirstVisitRef = useRef(!save?.flags?.felixGreeted);
 
-  const act = save?.flags?.currentAct || 1;
+  const act = getCurrentAct(save);
   const view = getBulkheadView(act);
   const nearest = findNearestStation(skyePos);
 

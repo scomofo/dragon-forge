@@ -2,6 +2,7 @@
 // All positions are percentages of the screen rect so layout scales cleanly.
 
 import { CAPTAINS_LOG_ARC, FELIX_CONTEXT_LINES } from './loreCanon';
+import { getSingularityStage } from './singularityProgress';
 
 export const FORGE_PALETTE = {
   floor: '#3a2a1f',
@@ -281,6 +282,15 @@ export const BULKHEAD_VIEWS = {
 
 export function getBulkheadView(actNumber) {
   return BULKHEAD_VIEWS[actNumber] || BULKHEAD_VIEWS[1];
+}
+
+// Derives current act from live save state so currentAct flag never needs to be written.
+export function getCurrentAct(save) {
+  if (save?.singularityComplete) return 4;
+  const stage = getSingularityStage(save);
+  if (stage >= 3) return 3;
+  if (stage >= 1) return 2;
+  return 1;
 }
 
 export function getCaptainLogDisplay(fragment, unlockedIds = []) {
