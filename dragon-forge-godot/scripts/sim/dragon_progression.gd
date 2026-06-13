@@ -5,13 +5,7 @@ const DragonData = preload("res://scripts/sim/dragon_data.gd")
 
 static func create_profile(starting_dragon_id: String) -> Dictionary:
 	var dragon_def: Dictionary = DragonData.DRAGONS.get(starting_dragon_id, {})
-	var first_move: String = ""
-	if dragon_def.has("move_keys") and dragon_def["move_keys"].size() > 0:
-		first_move = dragon_def["move_keys"][0]
-
-	var techniques: Array = []
-	if first_move != "":
-		techniques = [first_move]
+	var techniques: Array = dragon_def.get("move_keys", []).duplicate()
 
 	return {
 		"dragon_id": starting_dragon_id,

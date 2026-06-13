@@ -11,12 +11,12 @@ const DEFAULT_SAVE := {
 	"dragon_id": "fire",
 	"dragon_levels": { "fire": 1 },
 	"dragon_xp": { "fire": 0 },
-	"dragon_techniques": { "fire": ["magma_breath"] },
-	"dragon_loadouts": { "fire": ["magma_breath"] },
+	"dragon_techniques": { "fire": ["magma_breath", "flame_wall"] },
+	"dragon_loadouts": { "fire": ["magma_breath", "flame_wall"] },
 	"data_scraps": 320,
 	"system_credits": 0,
-	"known_techniques": ["magma_breath"],
-	"active_techniques": ["magma_breath"],
+	"known_techniques": ["magma_breath", "flame_wall"],
+	"active_techniques": ["magma_breath", "flame_wall"],
 	"key_items": [],
 	"mission_flags": [],
 	"captains_log_fragments": [],
@@ -97,6 +97,10 @@ func _sanitize(s: Dictionary) -> Dictionary:
 		s["dragon_xp"] = DEFAULT_SAVE["dragon_xp"].duplicate(true)
 	if typeof(s.get("mission_flags")) != TYPE_ARRAY:
 		s["mission_flags"] = []
+	if typeof(s.get("bestiary_defeated")) != TYPE_DICTIONARY:
+		s["bestiary_defeated"] = {}
+	if typeof(s.get("dragon_loadouts")) != TYPE_DICTIONARY:
+		s["dragon_loadouts"] = DEFAULT_SAVE["dragon_loadouts"].duplicate(true)
 	if not s["dragon_levels"].has("light"):
 		s["dragon_levels"]["light"] = 1
 		s["dragon_xp"]["light"] = 0
