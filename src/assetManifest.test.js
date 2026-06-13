@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { dragons, eggSheets, npcs } from './gameData';
-import { SINGULARITY_BOSSES, FINAL_BOSS } from './singularityBosses';
+import { SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN } from './singularityBosses';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -23,9 +23,13 @@ function collectAssetUrls() {
     urls.add(npc.attackSprite);
     urls.add(npc.arena);
   }
-  for (const boss of [...SINGULARITY_BOSSES, FINAL_BOSS]) {
-    if (boss?.sprite) urls.add(boss.sprite);
-    for (const phase of boss?.phases || []) {
+  for (const boss of [...SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN]) {
+    if (!boss) continue;
+    if (boss.sprite) urls.add(boss.sprite);
+    if (boss.idleSprite) urls.add(boss.idleSprite);
+    if (boss.attackSprite) urls.add(boss.attackSprite);
+    if (boss.arena) urls.add(boss.arena);
+    for (const phase of boss.phases || []) {
       if (phase.sprite) urls.add(phase.sprite);
     }
   }
