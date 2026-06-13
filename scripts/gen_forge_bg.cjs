@@ -330,6 +330,6 @@ for (let sl=0; sl<H; sl+=4)
 
 // ── Write ─────────────────────────────────────────────────────────────────────
 
-const outFile = path.join(__dirname, '..', 'assets', 'backgrounds', 'forge_bg.png');
+const outFile = path.join(__dirname, '..', 'public', 'assets', 'backgrounds', 'forge_bg.png');
 writePNG(outFile, W, H, pixels);
 console.log(`Written: ${outFile} (${(fs.statSync(outFile).size/1024).toFixed(1)} KB)`);

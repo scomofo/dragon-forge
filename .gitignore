@@ -8,3 +8,7 @@ dragon-forge-godot/.godot/
 # Temporary GUT clone used during setup
 .gut_tmp/
 npm-debug.log
+# Repo-root art master is no longer tracked. public/assets/ is the tracked web
+# source of truth; dragon-forge-godot/assets/ is the tracked Godot copy. The
+# assets/ tree is local scratch for art generators.
+/assets/

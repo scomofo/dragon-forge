@@ -73,7 +73,7 @@ When porting a system from web → Godot: data/rules go into `scripts/sim/` as a
 
 ## Cross-build notes
 
-- Art lives in `assets/` at the repo root and is referenced by both builds. The Godot project has copied a subset under `dragon-forge-godot/assets/`. When adding sprites, update both if the system is mirrored.
+- Art is tracked per-build: **`public/assets/` is the source of truth for the browser build** — Vite serves `public/` at the deploy base, so anything referenced via `assetUrl('/assets/...')` MUST exist here or it 404s in production. `dragon-forge-godot/assets/` is the Godot copy, kept as its own tracked tree because Godot's `.import` UID sidecars must travel with it. The repo-root **`assets/` master is no longer tracked** (gitignored); art generators may write there as scratch, but new web art must be placed in `public/assets/` to ship. When a sprite is used by both builds, add it to `public/assets/` and `dragon-forge-godot/assets/`.
 - `handoff/` contains art briefs and reference material for outstanding generation work — see `TODO.md` "Needs Art Generation".
 - `docs/superpowers/` is workflow scaffolding, not game code.
 
