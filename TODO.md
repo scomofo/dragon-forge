@@ -30,8 +30,7 @@
 ## Needs Art Generation
 - [x] 24 dragon evolution sprite sheets — all 8 elements × 4 stages done (fire/ice/storm/stone/venom/shadow/void/light)
 - [x] 10 NPC sprite sheets — all 9 campaign NPCs done (idle + attack)
-- [ ] Mirror Admin unique sprites — `mirror_admin_sprites.png` + `mirror_admin_attack.png`
-  (currently reusing recursive_golem; generation prompts in `handoff/SPRITE_GENERATION_PROMPTS.md` Part 3)
+- [x] Mirror Admin unique sprites — `mirror_admin_sprites.png` + `mirror_admin_attack.png`
 
 ## Remaining
 - [x] Integrate forge/workshop prop art into shop screen background/decoration
