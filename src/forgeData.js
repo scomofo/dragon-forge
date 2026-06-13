@@ -127,14 +127,14 @@ export const FELIX_CONTEXTUAL = [
     line: FELIX_CONTEXT_LINES.firstVisit,
   },
   {
-    id: 'tundraReturn',
-    when: (s) => s?.flags?.lastZone === 'tundra',
-    line: 'You came back smelling like coolant. Tundra\'s getting under your suit, kid.',
-  },
-  {
     id: 'irisFragmentUnlocked',
     when: (s) => s?.flags?.fragmentsUnlocked?.includes('007'),
     line: FELIX_CONTEXT_LINES.irisFragmentUnlocked,
+  },
+  {
+    id: 'firstBountyKill',
+    when: (s) => (s?.skye?.bountiesCleared || 0) === 1,
+    line: FELIX_CONTEXT_LINES.firstBountyKill,
   },
   {
     id: 'wrenchTier3',
@@ -142,9 +142,9 @@ export const FELIX_CONTEXTUAL = [
     line: FELIX_CONTEXT_LINES.wrenchTier3,
   },
   {
-    id: 'firstBountyKill',
-    when: (s) => (s?.skye?.bountiesCleared || 0) === 1,
-    line: FELIX_CONTEXT_LINES.firstBountyKill,
+    id: 'tundraReturn',
+    when: (s) => s?.flags?.lastZone === 'tundra',
+    line: 'You came back smelling like coolant. Tundra\'s getting under your suit, kid.',
   },
 ];
 

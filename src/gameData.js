@@ -216,6 +216,7 @@ export const npcs = {
   crypto_crab: {
     id: 'crypto_crab',
     name: 'Crypto Crab',
+    zone: 'tundra',
     element: 'ice',
     level: 5,
     stats: { hp: 85, atk: 20, def: 22, spd: 12 },

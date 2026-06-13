@@ -6,7 +6,7 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain, getTypeEffectivenessLabel,
 } from './battleEngine';
-import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
+import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, setLastZone, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
 import { getDailyStreakMultiplier } from './dailyChallenge';
 import { getAvailableCampaignNodes } from './campaignMap';
 import { FRAGMENT_TRIGGERS, RELIC_DROPS, getRelic, getRelicBattleModifiers } from './forgeData';
@@ -810,6 +810,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
           updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: true });
           runFragmentUnlockPass();
+          setLastZone(state.npc.zone ?? null);
           dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-celebrate' });
           dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped });
           stopMusic();

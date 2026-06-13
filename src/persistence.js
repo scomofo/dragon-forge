@@ -386,6 +386,12 @@ export function incrementBountiesCleared() {
   writeSave(save);
 }
 
+export function setLastZone(zone) {
+  const save = loadSave();
+  save.flags.lastZone = zone ?? null;
+  writeSave(save);
+}
+
 export function grantRelic(relicId) {
   const save = loadSave();
   if (!save.skye.relicsOwned.includes(relicId)) {
