@@ -380,6 +380,12 @@ export function upgradeWrench(nextTier, nextSlots, cost) {
   return true;
 }
 
+export function incrementBountiesCleared() {
+  const save = loadSave();
+  save.skye.bountiesCleared = (save.skye.bountiesCleared || 0) + 1;
+  writeSave(save);
+}
+
 export function grantRelic(relicId) {
   const save = loadSave();
   if (!save.skye.relicsOwned.includes(relicId)) {

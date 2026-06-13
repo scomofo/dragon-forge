@@ -6,7 +6,7 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain, getTypeEffectivenessLabel,
 } from './battleEngine';
-import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
+import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
 import { getDailyStreakMultiplier } from './dailyChallenge';
 import { getAvailableCampaignNodes } from './campaignMap';
 import { FRAGMENT_TRIGGERS, RELIC_DROPS, getRelic, getRelicBattleModifiers } from './forgeData';
@@ -767,6 +767,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           const alreadyOwned = (loadSave()?.skye?.relicsOwned || []).includes(relicDropId);
           if (!alreadyOwned) {
             grantRelic(relicDropId);
+            incrementBountiesCleared();
             relicDropped = relicDropId;
           }
         }
