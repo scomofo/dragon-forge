@@ -148,7 +148,12 @@ export default function App() {
     // is permanent after the first win, so it cannot gate replay losses.
     const wonMirrorAdmin = battleConfig?.isMirrorAdmin && won === true;
     refreshSave();
-    playMusic(wonMirrorAdmin ? 'hatchery' : 'battle', true);
+    if (wonMirrorAdmin) {
+      playSound('victoryFanfare');
+      playMusic('title', true);
+    } else {
+      playMusic('battle', true);
+    }
     setBattleConfig(null);
     setScreen(wonMirrorAdmin ? SCREENS.CREDITS : SCREENS.SINGULARITY);
   }
