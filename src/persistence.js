@@ -29,6 +29,7 @@ const DEFAULT_SAVE = {
   flags: {
     currentAct: 1,
     metFelix: false,
+    felixGreeted: false,
     lastZone: null,
     fragmentsUnlocked: [],
   },
@@ -93,10 +94,11 @@ function migrateSave(save) {
   if (save.lastDailyCompleted === undefined) save.lastDailyCompleted = 0;
   if (save.records === undefined) save.records = { fastestWin: null, highestDamage: 0, longestStreak: 0, currentStreak: 0 };
   if (save.flags === undefined) {
-    save.flags = { currentAct: 1, metFelix: false, lastZone: null, fragmentsUnlocked: [] };
+    save.flags = { currentAct: 1, metFelix: false, felixGreeted: false, lastZone: null, fragmentsUnlocked: [] };
   } else {
     if (save.flags.currentAct === undefined) save.flags.currentAct = 1;
     if (save.flags.metFelix === undefined) save.flags.metFelix = false;
+    if (save.flags.felixGreeted === undefined) save.flags.felixGreeted = false;
     if (save.flags.lastZone === undefined) save.flags.lastZone = null;
     if (!Array.isArray(save.flags.fragmentsUnlocked)) save.flags.fragmentsUnlocked = [];
   }

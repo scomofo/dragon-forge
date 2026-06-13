@@ -12,6 +12,7 @@ export default function ForgeScene({ skyePos, nearest, view }) {
         <Station key={station.id} station={station} highlighted={nearest?.id === station.id} />
       ))}
       <SkyeSprite pos={skyePos} />
+      <StationIndex nearest={nearest} />
       <ProximityHud nearest={nearest} />
       <ControlsHint />
     </>
@@ -166,6 +167,26 @@ function ProximityHud({ nearest }) {
   );
 }
 
+function StationIndex({ nearest }) {
+  return (
+    <div className="forge-station-index" aria-label="Station guide">
+      {FORGE_STATIONS.map((station) => (
+        <div
+          key={station.id}
+          className={`forge-index-row ${nearest?.id === station.id ? 'is-active' : ''}`}
+          style={{ '--index-color': station.glow || '#c9a567' }}
+        >
+          <span className="forge-index-pip" aria-hidden="true" />
+          <div className="forge-index-copy">
+            <strong>{station.label}</strong>
+            <small>{station.hint}</small>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ControlsHint() {
-  return <div className="forge-controls-hint">WASD / arrows to walk | E to interact | Esc to close</div>;
+  return <div className="forge-controls-hint">WASD / arrows to walk &nbsp;|&nbsp; E to interact &nbsp;|&nbsp; Esc to close</div>;
 }

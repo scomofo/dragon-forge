@@ -9,7 +9,7 @@ import {
 import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
 import { getDailyStreakMultiplier } from './dailyChallenge';
 import { getAvailableCampaignNodes } from './campaignMap';
-import { FRAGMENT_TRIGGERS } from './forgeData';
+import { FRAGMENT_TRIGGERS, getRelicBattleModifiers } from './forgeData';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
 import { EPILOGUE_LINES, MIRROR_ADMIN_EPILOGUE_LINES } from './singularityBosses';
 import DragonSprite from './DragonSprite';
@@ -530,17 +530,24 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     dispatch({ type: 'START_ANIMATION' });
     playSound('commandExecute', { element: moves[moveKey]?.element });
 
+    const relicMods = getRelicBattleModifiers(save?.skye?.relicsEquipped || []);
+
+    // resonant_fork: cleanse BEFORE engine so status tick damage is skipped on cleanse turns
+    const shouldCleanse = relicMods.autoCleanseTurns > 0 &&
+      state.playerStatus != null &&
+      (state.turnCount + 1) % relicMods.autoCleanseTurns === 0;
+
     const playerState = {
       name: state.dragon.name,
       element: state.dragon.element,
       stage: state.playerStage,
       hp: state.playerHp,
       maxHp: state.playerMaxHp,
-      atk: state.playerStats.atk,
-      def: state.playerStats.def,
-      spd: state.playerStats.spd,
+      atk: state.playerStats.atk + relicMods.atkBonus,
+      def: Math.floor(state.playerStats.def * relicMods.defMultiplier),
+      spd: state.playerStats.spd + relicMods.spdBonus,
       defending: false,
-      status: state.playerStatus,
+      status: shouldCleanse ? null : state.playerStatus,
     };
 
     const npcState = {
@@ -557,7 +564,17 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     };
 
     const npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, state.dragon.element, state.playerStatus);
-    const result = resolveTurn(playerState, npcState, moveKey, npcMoveKey, state.dragon.moveKeys, state.npc.moveKeys);
+    let result = resolveTurn(playerState, npcState, moveKey, npcMoveKey, state.dragon.moveKeys, state.npc.moveKeys);
+
+    // hydra_cog: 20% chance for a follow-up hit after a successful player attack
+    let chainDamage = 0;
+    if (relicMods.chainHitChance > 0 && result.npc.hp > 0) {
+      const playerHit = result.events.find(e => e.attacker === 'player' && e.action === 'attack' && e.hit && !e.reflected);
+      if (playerHit && Math.random() < relicMods.chainHitChance) {
+        chainDamage = Math.max(1, Math.floor(playerHit.damage * 0.4));
+        result = { ...result, npc: { ...result.npc, hp: Math.max(0, result.npc.hp - chainDamage) } };
+      }
+    }
 
     for (const event of result.events) {
       if (shouldAnimateBattleEvent(event)) {
@@ -565,27 +582,46 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       }
     }
 
+    // Show chain hit damage number after main animation
+    if (chainDamage > 0) {
+      const chainId = ++damageIdRef.current;
+      dispatch({ type: 'ADD_DAMAGE_NUMBER', entry: { id: chainId, damage: chainDamage, effectiveness: 1.0, hit: true, target: 'npc', isCritical: false } });
+      dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: chainDamage });
+      await wait(200);
+    }
+
+    // coolant_core: extend status duration when player applies a NEW status to the NPC
+    let finalNpcStatus = result.npc.status;
+    if (relicMods.statusDurationBonus > 0 && result.npc.status &&
+        result.npc.status.effect !== npcState.status?.effect) {
+      finalNpcStatus = { ...result.npc.status, turnsLeft: result.npc.status.turnsLeft + relicMods.statusDurationBonus };
+    }
+
+    // resonant_fork: status was cleared pre-turn via shouldCleanse; normalise to null
+    const finalPlayerStatus = result.player.status || null;
+    if (shouldCleanse) playSound('statusExpire');
+
     // Sync status from engine
-    dispatch({ type: 'SET_PLAYER_STATUS', value: result.player.status || null });
-    dispatch({ type: 'SET_NPC_STATUS', value: result.npc.status || null });
+    dispatch({ type: 'SET_PLAYER_STATUS', value: finalPlayerStatus || null });
+    dispatch({ type: 'SET_NPC_STATUS', value: finalNpcStatus || null });
 
     // Apply/remove status auras
-    if (result.player.status && !playerAuraRef.current) {
+    if (finalPlayerStatus && !playerAuraRef.current) {
       const spriteEl = playerSpriteRef.current?.getCanvas?.() || playerSpriteContainerRef.current;
       if (spriteEl) {
-        playerAuraRef.current = statusAuraApply(spriteEl, result.player.status.effect);
+        playerAuraRef.current = statusAuraApply(spriteEl, finalPlayerStatus.effect);
       }
-    } else if (!result.player.status && playerAuraRef.current) {
+    } else if (!finalPlayerStatus && playerAuraRef.current) {
       playerAuraRef.current.kill();
       playerAuraRef.current = null;
     }
 
-    if (result.npc.status && !npcAuraRef.current) {
+    if (finalNpcStatus && !npcAuraRef.current) {
       const npcEl = npcSpriteImgRef.current || npcSpriteContainerRef.current;
       if (npcEl) {
-        npcAuraRef.current = statusAuraApply(npcEl, result.npc.status.effect);
+        npcAuraRef.current = statusAuraApply(npcEl, finalNpcStatus.effect);
       }
-    } else if (!result.npc.status && npcAuraRef.current) {
+    } else if (!finalNpcStatus && npcAuraRef.current) {
       npcAuraRef.current.kill();
       npcAuraRef.current = null;
     }
@@ -663,6 +699,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         if (save.inventory?.xpBoostBattles > 0) {
           xpGained *= 3;
           decrementXpBoost();
+        }
+        // astraeus_engine: +15% XP from all battles
+        if (relicMods.xpMultiplier !== 1.0) {
+          xpGained = Math.floor(xpGained * relicMods.xpMultiplier);
         }
         const isRepeatDefeat = !battleConfig?.isSingularity && !battleConfig?.dailyNpc &&
           (save.defeatedNpcs || []).includes(npcId);
@@ -807,7 +847,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     animatingRef.current = false;
     setSelectedMoveKey(null);
-  }, [state, animateEvent]);
+  }, [state, animateEvent, save]);
 
   const dragon = state.dragon;
   const npc = state.npc;
@@ -869,7 +909,12 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     <div
       ref={battleContainerRef}
       className={`battle-screen ${isResolvingTurn ? 'resolving' : 'awaiting'} player-${playerHpState} npc-${npcHpState}`}
-      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
+      style={{
+        position: 'relative', width: '100%', height: '100%', overflow: 'hidden',
+        '--arena-npc-glow': npcColor.glow,
+        '--arena-npc-primary': npcColor.primary,
+        '--arena-player-glow': playerColor.glow,
+      }}
     >
       {/* Arena background */}
       <div className="arena pixelated" style={{ backgroundImage: `url(${npc.arena})`, filter: state.npc.arenaFilter || 'none' }} />

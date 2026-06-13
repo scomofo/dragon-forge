@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ForgeScene from './forge/ForgeScene';
 import {
   AnvilOverlay,
@@ -15,6 +15,7 @@ import {
   moveSkye,
 } from './forge/forgeMovement';
 import {
+  FELIX_FIRST_VISIT_LINE,
   FORGE_PALETTE,
   FRAGMENT_TRIGGERS,
   STATION_IDS,
@@ -63,6 +64,7 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
   const [activeStation, setActiveStation] = useState(null);
   const [overlay, setOverlay] = useState(null);
   const [felixLine, setFelixLine] = useState(null);
+  const isFirstVisitRef = useRef(!save?.flags?.felixGreeted);
 
   const act = save?.flags?.currentAct || 1;
   const view = getBulkheadView(act);
@@ -86,7 +88,10 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
     setActiveStation(nearest.id);
 
     if (nearest.id === STATION_IDS.FELIX) {
-      setFelixLine(pickFelixLine(save));
+      const wasFirstVisit = isFirstVisitRef.current;
+      isFirstVisitRef.current = false;
+      if (wasFirstVisit) setFlag('felixGreeted', true);
+      setFelixLine(wasFirstVisit ? FELIX_FIRST_VISIT_LINE : pickFelixLine(save));
       setOverlay('felix');
     } else if (nearest.id === STATION_IDS.BULKHEAD) {
       playSound('screenTransition');

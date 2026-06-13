@@ -32,6 +32,7 @@ export const FORGE_STATIONS = [
   {
     id: STATION_IDS.HATCHERY_RING,
     label: 'Hatchery Ring',
+    hint: 'View & manage dragons',
     pos: { x: 30, y: 30 },
     size: { w: 16, h: 14 },
     glow: FORGE_PALETTE.hatcheryCyan,
@@ -42,6 +43,7 @@ export const FORGE_STATIONS = [
   {
     id: STATION_IDS.SAVE_LANTERN,
     label: 'Save Lantern',
+    hint: 'Sync checkpoint',
     pos: { x: 70, y: 28 },
     size: { w: 6, h: 10 },
     glow: FORGE_PALETTE.lanternWarm,
@@ -52,6 +54,7 @@ export const FORGE_STATIONS = [
   {
     id: STATION_IDS.ANVIL,
     label: 'The Anvil',
+    hint: 'Equip relics & loadout',
     pos: { x: 30, y: 60 },
     size: { w: 14, h: 12 },
     glow: FORGE_PALETTE.coalGlow,
@@ -62,6 +65,7 @@ export const FORGE_STATIONS = [
   {
     id: STATION_IDS.CONSOLE,
     label: 'The Console',
+    hint: "Captain's Log fragments",
     pos: { x: 55, y: 60 },
     size: { w: 12, h: 14 },
     glow: FORGE_PALETTE.consoleGreen,
@@ -72,6 +76,7 @@ export const FORGE_STATIONS = [
   {
     id: STATION_IDS.FELIX,
     label: 'Felix',
+    hint: 'Talk to the smith',
     pos: { x: 22, y: 78 },
     size: { w: 6, h: 10 },
     glow: null,
@@ -81,13 +86,14 @@ export const FORGE_STATIONS = [
   },
   {
     id: STATION_IDS.BULKHEAD,
-    label: 'Bulkhead Window',
+    label: 'World Exit',
+    hint: 'Return to world map',
     pos: { x: 88, y: 50 },
     size: { w: 10, h: 60 },
     glow: FORGE_PALETTE.jungleDay,
     pulseMs: 0,
     proximity: 8,
-    description: 'A jagged render breach. Step through to leave the Forge and test what the Admin changed outside.',
+    description: 'A jagged render breach — step through to return to the world map.',
   },
 ];
 
@@ -160,7 +166,7 @@ export const RELICS = {
     slotCost: 1,
     mythic: false,
     source: 'Recursive Golem (Cooling Intake boss)',
-    effect: 'Heavy poise damage +1.',
+    effect: '+5 ATK in dragon battles.',
   },
   hydra_cog: {
     id: 'hydra_cog',
@@ -169,7 +175,7 @@ export const RELICS = {
     slotCost: 1,
     mythic: false,
     source: 'Glitch Hydra (Tundra boss)',
-    effect: 'Heavy can chain twice on hit.',
+    effect: '20% chance for a follow-up hit (40% damage) after each successful attack.',
   },
   coolant_core: {
     id: 'coolant_core',
@@ -178,7 +184,7 @@ export const RELICS = {
     slotCost: 1,
     mythic: false,
     source: 'Tundra Bit-Wraith swarm bonus',
-    effect: 'Capacitor stuns last +50%.',
+    effect: 'Ice and storm statuses your dragon applies last +1 turn.',
   },
   phase_lens: {
     id: 'phase_lens',
@@ -187,7 +193,7 @@ export const RELICS = {
     slotCost: 2,
     mythic: false,
     source: 'Sub-routine Stalker (rare drop)',
-    effect: 'Roll i-frames extend to 12f.',
+    effect: '+15% DEF in dragon battles.',
   },
   twin_forge: {
     id: 'twin_forge',
@@ -196,7 +202,7 @@ export const RELICS = {
     slotCost: 2,
     mythic: false,
     source: 'Volcanic miniboss',
-    effect: 'Light chain extends to 4 hits.',
+    effect: '+5 SPD in dragon battles — helps go first.',
   },
   resonant_fork: {
     id: 'resonant_fork',
@@ -205,7 +211,7 @@ export const RELICS = {
     slotCost: 1,
     mythic: false,
     source: 'Lattice-Singer (The Last Verse)',
-    effect: 'Every 4th Heavy pulses an AOE that strips frostbite.',
+    effect: 'Clears your dragon\'s status at the start of every third turn.',
   },
   astraeus_engine: {
     id: 'astraeus_engine',
@@ -214,7 +220,7 @@ export const RELICS = {
     slotCost: 1,
     mythic: true,
     source: 'Mirror Admin\'s Sanctum (Act IV)',
-    effect: 'All bounty windows last 50% longer.',
+    effect: '+15% XP gain from all dragon battles.',
   },
 };
 
@@ -269,11 +275,28 @@ export function getCaptainLogDisplay(fragment, unlockedIds = []) {
   };
 }
 
+export const FELIX_FIRST_VISIT_LINE = FELIX_CONTEXT_LINES.firstVisit;
+
 export function pickFelixLine(save) {
   for (const entry of FELIX_CONTEXTUAL) {
+    if (entry.id === 'firstVisit') continue;
     try { if (entry.when(save)) return entry.line; } catch { /* ignore */ }
   }
   return FELIX_IDLE_LINES[Math.floor(Math.random() * FELIX_IDLE_LINES.length)];
+}
+
+export function getRelicBattleModifiers(relicIds = []) {
+  if (!Array.isArray(relicIds)) relicIds = [];
+  const has = (id) => relicIds.includes(id);
+  return {
+    atkBonus:            has('iron_knuckle')     ? 5    : 0,
+    defMultiplier:       has('phase_lens')        ? 1.15 : 1.0,
+    spdBonus:            has('twin_forge')        ? 5    : 0,
+    chainHitChance:      has('hydra_cog')         ? 0.20 : 0,
+    statusDurationBonus: has('coolant_core')      ? 1    : 0,
+    autoCleanseTurns:    has('resonant_fork')     ? 3    : 0,
+    xpMultiplier:        has('astraeus_engine')   ? 1.15 : 1.0,
+  };
 }
 
 export function distance(a, b) {

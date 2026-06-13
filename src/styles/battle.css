@@ -15,7 +15,12 @@
   background:
     linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     radial-gradient(circle at 50% 52%, transparent 38%, rgba(0, 0, 0, 0.52) 100%),
-    linear-gradient(90deg, rgba(255, 102, 34, 0.12), transparent 28%, transparent 72%, rgba(68, 170, 255, 0.12));
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--arena-npc-glow, #ff6622) 12%, transparent),
+      transparent 28%,
+      transparent 72%,
+      color-mix(in srgb, var(--arena-player-glow, #44aaff) 12%, transparent)
+    );
   background-size: 100% 4px, auto, auto;
   mix-blend-mode: screen;
   opacity: 0.48;
@@ -70,8 +75,8 @@
   position: absolute;
   width: 24px;
   height: 24px;
-  color: rgba(255, 204, 0, 0.7);
-  filter: drop-shadow(0 0 5px rgba(255, 136, 68, 0.28));
+  color: color-mix(in srgb, var(--arena-npc-glow, #ffcc00) 70%, transparent);
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--arena-npc-glow, #ff8844) 28%, transparent));
 }
 
 .battle-frame-corners .corner::after {
@@ -123,8 +128,8 @@
   height: 2px;
   background:
     linear-gradient(90deg, currentColor 0 10px, transparent 10px 17px, currentColor 17px);
-  color: rgba(68, 170, 255, 0.68);
-  box-shadow: 0 0 9px rgba(68, 170, 255, 0.3);
+  color: color-mix(in srgb, var(--arena-player-glow, #44aaff) 68%, transparent);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--arena-player-glow, #44aaff) 30%, transparent);
 }
 
 .battle-frame-corners .target-tick.left {
@@ -149,7 +154,7 @@
   position: absolute;
   width: 10px;
   height: 10px;
-  border: 1px solid rgba(255, 204, 0, 0.55);
+  border: 1px solid color-mix(in srgb, var(--arena-npc-glow, #ffcc00) 55%, transparent);
   transform: rotate(45deg);
   animation: telemetryBlink 2.2s steps(2, end) infinite;
 }
@@ -542,15 +547,16 @@
 .arena::after {
   content: '';
   position: absolute;
-  inset: 44% 0 18%;
+  inset: 40% 0 14%;
   pointer-events: none;
   background:
     linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.22) 18%, transparent 19%),
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 18px),
-    radial-gradient(ellipse at 30% 74%, rgba(255, 120, 40, 0.14), transparent 30%),
-    radial-gradient(ellipse at 72% 74%, rgba(130, 70, 255, 0.12), transparent 30%);
+    radial-gradient(ellipse at 28% 80%, color-mix(in srgb, var(--arena-npc-glow, #ff7828) 16%, transparent), transparent 38%),
+    radial-gradient(ellipse at 74% 80%, color-mix(in srgb, var(--arena-player-glow, #8246ff) 13%, transparent), transparent 38%),
+    radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--arena-npc-glow, #ff7828) 8%, transparent), transparent 55%);
   mix-blend-mode: screen;
-  opacity: 0.55;
+  opacity: 0.62;
 }
 
 .arena-sprites {

@@ -194,11 +194,6 @@ export function HatcheryRingOverlay({ save, onClose, onNavigate, refreshSave }) 
         </div>
       ) : (
         <>
-          <p className="forge-muted">
-            {companionUnlocked
-              ? 'Select a dragon to bond as your Act IV companion.'
-              : `Companion bonding unlocks in Act ${companionLockedUntilAct}. Manage dragons or review discoveries below.`}
-          </p>
           <div className="forge-hatchery-grid">
             {ownedIds.map((id) => {
               const dragon = save.dragons[id];
@@ -210,9 +205,10 @@ export function HatcheryRingOverlay({ save, onClose, onNavigate, refreshSave }) 
                 <button
                   type="button"
                   key={id}
-                  className={`forge-dragon-card ${isCompanion ? 'is-companion' : ''}`}
+                  className={`forge-dragon-card ${isCompanion ? 'is-companion' : ''} ${!companionUnlocked ? 'no-action' : ''}`}
                   style={{ '--dragon-accent': element.primary }}
                   onClick={() => pickCompanion(id)}
+                  disabled={!companionUnlocked}
                   aria-label={`${def?.name || id}, level ${dragon.level}, stage ${stage}${isCompanion ? ', companion' : ''}`}
                 >
                   <span className="forge-dragon-sprite">
@@ -231,6 +227,11 @@ export function HatcheryRingOverlay({ save, onClose, onNavigate, refreshSave }) 
               );
             })}
           </div>
+          <p className="forge-companion-note">
+            {companionUnlocked
+              ? 'Select a dragon above to bond as your Act IV companion.'
+              : `Companion bonding unlocks in Act ${companionLockedUntilAct}.`}
+          </p>
           <div className="forge-overlay-actions">
             <button type="button" onClick={() => { onClose(); onNavigate?.('hatchery'); }}>OPEN FULL HATCHERY</button>
             <button type="button" onClick={() => { onClose(); onNavigate?.('journal'); }}>OPEN JOURNAL</button>
@@ -250,7 +251,7 @@ export function LanternOverlay({ onClose, refreshSave }) {
 
   return (
     <OverlayShell title="SAVE LANTERN" accent={FORGE_PALETTE.lanternWarm} onClose={onClose}>
-      <p className="forge-muted">Checkpoint synced. Current systems have no rest-only HP or capacitor state to refill yet.</p>
+      <p className="forge-muted">Astraeus memory synced. Your progress is written to the engine core — the Admin cannot roll it back.</p>
       <button className="forge-primary-action" type="button" onClick={checkpoint}>SYNC CHECKPOINT</button>
     </OverlayShell>
   );

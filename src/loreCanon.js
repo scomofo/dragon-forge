@@ -42,7 +42,7 @@ export const OPENING_FELIX_LINES = [
 ];
 
 export const FELIX_CONTEXT_LINES = {
-  firstVisit: 'Skye. There you are. Sit, breathe, and do not touch anything glowing blue unless I say so.',
+  firstVisit: 'Skye. There you are. The Anvil is your loadout — start there. The Console holds the record. The Hatchery Ring shows your dragons. I will be here.',
   firstBountyKill: 'First bounty banked. That means the Admin has noticed you properly. Congratulations, unfortunately.',
   wrenchTier3: 'That wrench is starting to remember the Astraeus. Tools do that here if you survive long enough.',
   irisFragmentUnlocked: 'Iris... gods. The Admin kept the promise and lost the child. That is the tragedy in miniature.',
