@@ -6,10 +6,10 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain, getTypeEffectivenessLabel,
 } from './battleEngine';
-import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
+import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
 import { getDailyStreakMultiplier } from './dailyChallenge';
 import { getAvailableCampaignNodes } from './campaignMap';
-import { FRAGMENT_TRIGGERS, getRelicBattleModifiers } from './forgeData';
+import { FRAGMENT_TRIGGERS, RELIC_DROPS, getRelic, getRelicBattleModifiers } from './forgeData';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
 import { EPILOGUE_LINES, MIRROR_ADMIN_EPILOGUE_LINES } from './singularityBosses';
 import DragonSprite from './DragonSprite';
@@ -184,7 +184,7 @@ function battleReducer(state, action) {
     case 'SET_PHASE':
       return { ...state, phase: action.phase };
     case 'SET_VICTORY':
-      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1 };
+      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1, relicDropped: action.relicDropped || null };
     case 'SET_DEFEAT':
       return { ...state, phase: PHASES.DEFEAT };
     case 'RESET_TURN':
@@ -760,6 +760,17 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           coreDropped = { element: npcElement, count: coreCount };
         }
 
+        // Relic drops — first defeat of specific NPCs only
+        const relicDropId = RELIC_DROPS[npcId];
+        let relicDropped = null;
+        if (relicDropId) {
+          const alreadyOwned = (loadSave()?.skye?.relicsOwned || []).includes(relicDropId);
+          if (!alreadyOwned) {
+            grantRelic(relicDropId);
+            relicDropped = relicDropId;
+          }
+        }
+
         playSound('ko');
         const victoryNpcEl = npcSpriteImgRef.current;
         if (victoryNpcEl) {
@@ -799,7 +810,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: true });
           runFragmentUnlockPass();
           dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-celebrate' });
-          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier });
+          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped });
           stopMusic();
           stopHeartbeat();
           playSound('victoryFanfare');
@@ -1236,6 +1247,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
               +{state.coreDropped.count} {state.coreDropped.element.toUpperCase()} CORE{state.coreDropped.count > 1 ? 'S' : ''}
             </div>
           )}
+          {state.relicDropped && (() => {
+            const r = getRelic(state.relicDropped);
+            return (
+              <div className="relic-drop-display">
+                <span>{r?.icon}</span> ANALOG RELIC: {r?.name}
+              </div>
+            );
+          })()}
           {battleConfig?.dailyNpc && state.streakMultiplier > 1 && (
             <div style={{ color: '#ff6600', fontSize: 12, marginTop: 6 }}>
               🔥 Streak bonus ×{state.streakMultiplier.toFixed(1)} applied

@@ -1028,6 +1028,14 @@
   line-height: 1.7;
 }
 
+.relic-drop-display {
+  font-size: 9px;
+  line-height: 1.7;
+  color: #c9a567;
+  text-shadow: 0 0 8px rgba(201, 165, 103, 0.6);
+  letter-spacing: 0.04em;
+}
+
 .result-card p {
   color: #44ff44;
   max-width: 420px;

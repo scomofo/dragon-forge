@@ -183,7 +183,7 @@ export const RELICS = {
     icon: '❄',
     slotCost: 1,
     mythic: false,
-    source: 'Tundra Bit-Wraith swarm bonus',
+    source: 'Bit Wraith (Tundra campaign)',
     effect: 'Ice and storm statuses your dragon applies last +1 turn.',
   },
   phase_lens: {
@@ -192,7 +192,7 @@ export const RELICS = {
     icon: '◉',
     slotCost: 2,
     mythic: false,
-    source: 'Sub-routine Stalker (rare drop)',
+    source: 'Data Corruption (first Singularity boss)',
     effect: '+15% DEF in dragon battles.',
   },
   twin_forge: {
@@ -201,7 +201,7 @@ export const RELICS = {
     icon: '⚒',
     slotCost: 2,
     mythic: false,
-    source: 'Volcanic miniboss',
+    source: 'Memory Leak (second Singularity boss)',
     effect: '+5 SPD in dragon battles — helps go first.',
   },
   resonant_fork: {
@@ -210,7 +210,7 @@ export const RELICS = {
     icon: '♪',
     slotCost: 1,
     mythic: false,
-    source: 'Lattice-Singer (The Last Verse)',
+    source: 'Stack Overflow (third Singularity boss)',
     effect: 'Clears your dragon\'s status at the start of every third turn.',
   },
   astraeus_engine: {
@@ -222,6 +222,17 @@ export const RELICS = {
     source: 'Mirror Admin\'s Sanctum (Act IV)',
     effect: '+15% XP gain from all dragon battles.',
   },
+};
+
+// Maps NPC/boss id → relic id dropped on first defeat.
+// grantRelic() is idempotent; the drop is shown in the victory overlay only when newly obtained.
+export const RELIC_DROPS = {
+  glitch_hydra:    'hydra_cog',
+  bit_wraith:      'coolant_core',
+  data_corruption: 'phase_lens',
+  memory_leak:     'twin_forge',
+  stack_overflow:  'resonant_fork',
+  mirror_admin:    'astraeus_engine',
 };
 
 export function getRelic(id) { return RELICS[id] || null; }
