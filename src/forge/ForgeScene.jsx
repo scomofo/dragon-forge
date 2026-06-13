@@ -3,8 +3,11 @@ import { FORGE_PALETTE, FORGE_STATIONS, STATION_IDS } from '../forgeData';
 export default function ForgeScene({ skyePos, nearest, view }) {
   return (
     <>
+      <WallTexture />
+      <CeilingBand />
       <ForgeAtmosphere />
       <BulkheadView view={view} />
+      <ForgeFloorHorizon />
       <ForgeFloorZones />
       <CablePaths />
       <FloorGrid />
@@ -15,8 +18,25 @@ export default function ForgeScene({ skyePos, nearest, view }) {
       <StationIndex nearest={nearest} />
       <ProximityHud nearest={nearest} />
       <ControlsHint />
+      <ForgeScanlines />
     </>
   );
+}
+
+function WallTexture() {
+  return <div className="forge-wall-texture" aria-hidden />;
+}
+
+function CeilingBand() {
+  return <div className="forge-ceiling-band" aria-hidden />;
+}
+
+function ForgeFloorHorizon() {
+  return <div className="forge-floor-horizon" aria-hidden />;
+}
+
+function ForgeScanlines() {
+  return <div className="forge-scanlines" aria-hidden />;
 }
 
 function ForgeAtmosphere() {
@@ -74,29 +94,45 @@ function ForgeFloorZones() {
 }
 
 function CablePaths() {
-  const cable = (points, color, width = 3) => (
-    <polyline
-      points={points}
-      fill="none"
-      stroke={color}
-      strokeWidth={width}
-      strokeLinecap="square"
-      strokeLinejoin="miter"
-      opacity="0.72"
-    />
+  const shadow = (points, w) => (
+    <polyline points={points} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth={w}
+      strokeLinecap="square" strokeLinejoin="miter" />
+  );
+  const cable = (points, color, width) => (
+    <polyline points={points} fill="none" stroke={color} strokeWidth={width}
+      strokeLinecap="square" strokeLinejoin="miter" opacity="0.78" />
+  );
+  const box = (x, y, color) => (
+    <rect x={x - 1.2} y={y - 1.2} width={2.4} height={2.4}
+      fill="rgba(0,0,0,0.7)" stroke={color} strokeWidth={0.4} opacity="0.85" />
   );
 
   return (
     <svg className="forge-cables" aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none">
-      {cable('30,75 30,60 42,60 55,60', '#5cff8a', 0.45)}
-      {cable('30,75 30,60 30,30', '#5edcff', 0.5)}
-      {cable('55,60 70,60 70,28', '#ffcd6b', 0.42)}
-      {cable('55,60 76,56 88,50', '#8fcf6c', 0.5)}
-      {cable('22,78 30,75', '#c9a567', 0.38)}
-      {cable('30,75 30,60 42,60 55,60', 'rgba(0,0,0,0.55)', 1.25)}
-      {cable('30,75 30,60 30,30', 'rgba(0,0,0,0.55)', 1.25)}
-      {cable('55,60 70,60 70,28', 'rgba(0,0,0,0.55)', 1.1)}
-      {cable('55,60 76,56 88,50', 'rgba(0,0,0,0.55)', 1.1)}
+      {/* Shadows first */}
+      {shadow('30,75 30,60 42,60 55,60', 1.3)}
+      {shadow('30,75 30,60 30,30 30,8', 1.3)}
+      {shadow('55,60 70,60 70,28 70,8', 1.15)}
+      {shadow('55,60 76,56 88,50', 1.15)}
+      {shadow('22,78 30,75', 1.1)}
+      {shadow('55,60 55,8', 1.1)}
+      {shadow('42,60 42,8', 1.1)}
+
+      {/* Colour cables */}
+      {cable('30,75 30,60 42,60 55,60', '#5cff8a', 0.48)}
+      {cable('30,75 30,60 30,30 30,8', '#5edcff', 0.52)}
+      {cable('55,60 70,60 70,28 70,8', '#ffcd6b', 0.44)}
+      {cable('55,60 76,56 88,50', '#8fcf6c', 0.52)}
+      {cable('22,78 30,75', '#c9a567', 0.40)}
+      {cable('55,60 55,8', '#5cff8a', 0.36)}
+      {cable('42,60 42,8', '#5edcff', 0.36)}
+
+      {/* Junction boxes at key intersections */}
+      {box(30, 60, '#5edcff')}
+      {box(55, 60, '#5cff8a')}
+      {box(70, 60, '#ffcd6b')}
+      {box(42, 60, '#5edcff')}
+      {box(30, 30, '#5edcff')}
     </svg>
   );
 }

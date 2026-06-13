@@ -21,10 +21,12 @@
 
 .forge-atmosphere {
   background:
-    radial-gradient(ellipse at 30% 62%, rgba(255, 90, 31, 0.24) 0 12%, transparent 36%),
-    radial-gradient(ellipse at 30% 30%, rgba(94, 220, 255, 0.18) 0 11%, transparent 30%),
-    radial-gradient(ellipse at 56% 58%, rgba(92, 255, 138, 0.16) 0 10%, transparent 28%),
-    linear-gradient(180deg, rgba(8, 5, 3, 0.48) 0%, transparent 28%, rgba(4, 3, 2, 0.38) 100%);
+    radial-gradient(ellipse at 30% 62%, rgba(255, 90, 31, 0.28) 0 12%, transparent 38%),
+    radial-gradient(ellipse at 30% 30%, rgba(94, 220, 255, 0.20) 0 11%, transparent 32%),
+    radial-gradient(ellipse at 56% 58%, rgba(92, 255, 138, 0.18) 0 10%, transparent 30%),
+    radial-gradient(ellipse at 70% 30%, rgba(255, 205, 107, 0.14) 0 8%, transparent 24%),
+    radial-gradient(ellipse at 50% 95%, rgba(255, 90, 31, 0.18) 0 18%, transparent 42%),
+    linear-gradient(180deg, rgba(8, 5, 3, 0.55) 0%, transparent 24%, rgba(4, 3, 2, 0.28) 80%, rgba(10, 6, 4, 0.50) 100%);
 }
 
 .forge-light-slice {
@@ -84,6 +86,64 @@
 .forge-cables {
   width: 100%;
   height: 100%;
+}
+
+/* Stone block pattern over the upper wall area */
+.forge-wall-texture {
+  position: absolute;
+  inset: 0 14% 48% 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 16px, rgba(0, 0, 0, 0.18) 16px 18px),
+    repeating-linear-gradient(90deg, transparent 0 30px, rgba(0, 0, 0, 0.13) 30px 32px);
+  opacity: 0.55;
+  z-index: 0;
+}
+
+/* Dark ceiling band with faint conduit marks */
+.forge-ceiling-band {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 7%;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.06) 100%),
+    repeating-linear-gradient(90deg, transparent 0 54px, rgba(255, 90, 31, 0.06) 54px 56px);
+  z-index: 0;
+}
+
+/* Warm horizon line where wall meets floor */
+.forge-floor-horizon {
+  position: absolute;
+  left: 0;
+  right: 14%;
+  top: 52%;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(201, 165, 103, 0.35) 0%,
+    rgba(201, 165, 103, 0.55) 28%,
+    rgba(255, 90, 31, 0.3) 52%,
+    rgba(201, 165, 103, 0.2) 72%,
+    transparent 100%
+  );
+  z-index: 1;
+}
+
+/* CRT scanlines over the whole scene */
+.forge-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 3px,
+    rgba(0, 0, 0, 0.07) 3px 4px
+  );
+  z-index: 9;
 }
 
 .forge-station {
