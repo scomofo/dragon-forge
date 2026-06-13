@@ -181,6 +181,28 @@ Copy each prompt into your AI image generator (ChatGPT/DALL-E, Midjourney, etc.)
 
 ---
 
+## Part 3: Mirror Admin Boss Sprites (2 total)
+
+The TRUE FINAL boss — a bureaucratic AI safety system that forgot what it was protecting. Three-phase fight: shadow "Protocol" → void "Warden" → light "Great Reset". The base sprite is tinted by CSS filters per phase, so design it in steel-blue and silver tones.
+
+### Shared Specifications
+- Size: 512 × 256 pixels
+- Background: Bright green (#00ff00) chroma key
+- Style: 16-bit pixel art, 1-2px black outlines
+- Faces LEFT
+- Reference existing boss sprites (recursive_golem) for scale — fills most of the 512×256 frame
+- Design theme: corrupted administrator — an authority figure rendered in digital chrome and shadow, wielding void energy as a tool of "order"
+
+---
+
+**35. `mirror_admin_sprites.png` — Idle**
+> Create a 512x256 pixel 16-bit pixel art sprite of the "Mirror Admin" — the TRUE FINAL BOSS of a cyber-retro dragon game. It is a towering, armored digital authority figure: humanoid but alien, clad in silver-chrome bureaucratic armor covered in administrative glyphs and recursive mirror-like panels that reflect distorted copies of the viewer. Its form is partially made of compressed shadow energy with void tendrils floating from its shoulders. A single massive eye in its chest pulses with cold white light. It carries an oversized administrative seal or stamp dripping with void matter. The overall feel is "corrupted corporate deity" — powerful, cold, and utterly certain of its authority. Colors: steel blue #336699, chrome silver #aabbcc, void dark #110033, cold white glow #eef8ff, void accent #6633cc. Bright green (#00ff00) chroma key background. Faces LEFT in a commanding idle stance. 1-2px black outlines. Boss-level scale — fills most of the 512×256 frame.
+
+**36. `mirror_admin_attack.png` — Attack**
+> Create a 512x256 pixel 16-bit pixel art sprite of the "Mirror Admin" boss in an ATTACK pose — surging forward with its mirror panels open and firing reflected void energy beams, shadow tendrils whipping outward, the chest-eye blazing with intense white light at full blast, and its administrative seal raised to strike. An overwhelming display of cold, bureaucratic power. Same design as idle but fully unleashed. Colors: steel blue #336699, chrome silver #aabbcc, void dark #110033, cold white glow #eef8ff, void accent #6633cc. Bright green (#00ff00) chroma key background. Faces LEFT. 1-2px black outlines.
+
+---
+
 ## Delivery Checklist
 
 ### Dragon Evolution (drop into `handoff/dragons/`):
@@ -225,4 +247,10 @@ Copy each prompt into your AI image generator (ChatGPT/DALL-E, Midjourney, etc.)
 [ ] protocol_vulture_attack.png
 ```
 
-Once files are in the handoff folders, let me know and I'll integrate them — updating `gameData.js` stageSprites paths and NPC idle/attack sprite references.
+### Mirror Admin sprites (drop into `handoff/npc/`):
+```
+[ ] mirror_admin_sprites.png
+[ ] mirror_admin_attack.png
+```
+
+Once files are in the handoff folders, let me know and I'll integrate them — updating `singularityBosses.js` MIRROR_ADMIN idle/attack sprite references and clearing the TODO comment on line 113.
