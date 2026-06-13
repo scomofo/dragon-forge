@@ -333,6 +333,11 @@ describe('Shadow and light rebalance', () => {
   it('storm resists shadow — relationship is asymmetric, shadow predates storm', () => {
     expect(getTypeEffectiveness('storm', 'shadow')).toBe(0.5);
   });
+
+  it('venom corrodes radiance — super effective vs light, giving light a pre-endgame weakness', () => {
+    expect(getTypeEffectiveness('venom', 'light')).toBe(2.0);
+    expect(getTypeEffectiveness('light', 'venom')).toBe(2.0);
+  });
 });
 
 describe('Null Reflect', () => {
