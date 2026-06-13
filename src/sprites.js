@@ -64,14 +64,14 @@ export const VFX_FRAMES = {
   },
   ROCK_SLIDE: {
     src: assetUrl('/assets/vfx/stone_meteor.png'),
-    sheet: { w: 1024, h: 1536 },
-    crop: { x: 0, y: 384, w: 512, h: 384 },
+    sheet: { w: 1774, h: 887 },
+    crop: { x: 0, y: 0, w: 1774, h: 887 },
     filter: 'brightness(0.7) contrast(1.4)',
   },
   EARTHQUAKE: {
     src: assetUrl('/assets/vfx/stone_explosion.png'),
-    sheet: { w: 1536, h: 1024 },
-    crop: { x: 0, y: 640, w: 512, h: 256 },
+    sheet: { w: 1774, h: 887 },
+    crop: { x: 0, y: 0, w: 1774, h: 887 },
     filter: 'brightness(0.7) contrast(1.4)',
   },
   ACID_SPIT: {
@@ -88,20 +88,20 @@ export const VFX_FRAMES = {
   },
   SHADOW_STRIKE: {
     src: assetUrl('/assets/vfx/shadow_flames.png'),
-    sheet: { w: 1536, h: 1024 },
-    crop: { x: 0, y: 384, w: 512, h: 256 },
+    sheet: { w: 1774, h: 887 },
+    crop: { x: 0, y: 0, w: 887, h: 887 },
     filter: null,
   },
   VOID_PULSE: {
     src: assetUrl('/assets/vfx/shadow_flames.png'),
-    sheet: { w: 1536, h: 1024 },
-    crop: { x: 512, y: 384, w: 512, h: 256 },
+    sheet: { w: 1774, h: 887 },
+    crop: { x: 887, y: 0, w: 887, h: 887 },
     filter: null,
   },
   VOID_RIFT: {
     src: assetUrl('/assets/vfx/shadow_flames.png'),
-    sheet: { w: 1536, h: 1024 },
-    crop: { x: 512, y: 384, w: 512, h: 256 },
+    sheet: { w: 1774, h: 887 },
+    crop: { x: 887, y: 0, w: 887, h: 887 },
     filter: 'hue-rotate(180deg) saturate(1.5)',
   },
   RADIANT_BEAM: {
