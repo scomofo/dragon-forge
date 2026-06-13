@@ -151,7 +151,7 @@ export const npcs = {
     scrapsReward: 30,
     idleSprite: assetUrl('/assets/npc/firewall_sentinel_sprites.png'),
     attackSprite: assetUrl('/assets/npc/firewall_sentinel_attack.png'),
-    arena: assetUrl('/assets/arenas/stone.png'),
+    arena: assetUrl('/assets/arenas/npc_firewall_sentinel.png'),
     flipSprite: false,
   },
   bit_wraith: {
@@ -166,7 +166,7 @@ export const npcs = {
     scrapsReward: 50,
     idleSprite: assetUrl('/assets/npc/bit_wraith_sprites.png'),
     attackSprite: assetUrl('/assets/npc/bit_wraith_attack.png'),
-    arena: assetUrl('/assets/arenas/shadow.png'),
+    arena: assetUrl('/assets/arenas/npc_bit_wraith.png'),
     flipSprite: false,
   },
   glitch_hydra: {
@@ -196,7 +196,7 @@ export const npcs = {
     scrapsReward: 120,
     idleSprite: assetUrl('/assets/npc/recursive_golem_sprites.png'),
     attackSprite: assetUrl('/assets/npc/recursive_golem_attack.png'),
-    arena: assetUrl('/assets/arenas/stone.png'),
+    arena: assetUrl('/assets/arenas/npc_recursive_golem.png'),
   },
   buffer_overflow: {
     id: 'buffer_overflow',
@@ -210,7 +210,7 @@ export const npcs = {
     scrapsReward: 40,
     idleSprite: assetUrl('/assets/npc/buffer_overflow_sprites.png'),
     attackSprite: assetUrl('/assets/npc/buffer_overflow_attack.png'),
-    arena: assetUrl('/assets/arenas/magma.png'),
+    arena: assetUrl('/assets/arenas/npc_buffer_overflow.png'),
     flipSprite: true,
   },
   crypto_crab: {
@@ -225,7 +225,7 @@ export const npcs = {
     scrapsReward: 60,
     idleSprite: assetUrl('/assets/npc/crypto_crab_sprites.png'),
     attackSprite: assetUrl('/assets/npc/crypto_crab_attack.png'),
-    arena: assetUrl('/assets/arenas/ice.png'),
+    arena: assetUrl('/assets/arenas/npc_crypto_crab.png'),
     flipSprite: true,
   },
   logic_bomb: {
@@ -240,7 +240,7 @@ export const npcs = {
     scrapsReward: 90,
     idleSprite: assetUrl('/assets/npc/logic_bomb_sprites.png'),
     attackSprite: assetUrl('/assets/npc/logic_bomb_attack.png'),
-    arena: assetUrl('/assets/arenas/magma.png'),
+    arena: assetUrl('/assets/arenas/npc_logic_bomb.png'),
   },
   phishing_siren: {
     id: 'phishing_siren',
@@ -254,7 +254,7 @@ export const npcs = {
     scrapsReward: 70,
     idleSprite: assetUrl('/assets/npc/phishing_siren_sprites.png'),
     attackSprite: assetUrl('/assets/npc/phishing_siren_attack.png'),
-    arena: assetUrl('/assets/arenas/venom.png'),
+    arena: assetUrl('/assets/arenas/npc_phishing_siren.png'),
     flipSprite: true,
   },
   protocol_vulture: {
@@ -269,7 +269,7 @@ export const npcs = {
     scrapsReward: 130,
     idleSprite: assetUrl('/assets/npc/protocol_vulture_sprites.png'),
     attackSprite: assetUrl('/assets/npc/protocol_vulture_attack.png'),
-    arena: assetUrl('/assets/arenas/shadow.png'),
+    arena: assetUrl('/assets/arenas/npc_protocol_vulture.png'),
     flipSprite: true,
   },
 };
