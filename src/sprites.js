@@ -28,26 +28,26 @@ export const DRAGON_DISPLAY = {
 export const VFX_FRAMES = {
   MAGMA_BREATH: {
     src: assetUrl('/assets/vfx/fire_effects.png'),
-    sheet: { w: 1024, h: 1024 },
-    crop: { x: 0, y: 512, w: 512, h: 256 },
+    sheet: { w: 1774, h: 887 },
+    crop: { x: 0, y: 0, w: 887, h: 887 },
     filter: 'brightness(0.8) contrast(1.3)',
   },
   FLAME_WALL: {
     src: assetUrl('/assets/vfx/fire_effects.png'),
-    sheet: { w: 1024, h: 1024 },
-    crop: { x: 0, y: 768, w: 1024, h: 256 },
+    sheet: { w: 1774, h: 887 },
+    crop: { x: 887, y: 0, w: 887, h: 887 },
     filter: 'brightness(0.8) contrast(1.3)',
   },
   FROST_BITE: {
     src: assetUrl('/assets/vfx/ice_crystals.png'),
-    sheet: { w: 1024, h: 1536 },
-    crop: { x: 0, y: 768, w: 512, h: 384 },
+    sheet: { w: 1774, h: 887 },
+    crop: { x: 0, y: 0, w: 887, h: 887 },
     filter: null,
   },
   BLIZZARD: {
     src: assetUrl('/assets/vfx/ice_crystals.png'),
-    sheet: { w: 1024, h: 1536 },
-    crop: { x: 0, y: 1152, w: 1024, h: 384 },
+    sheet: { w: 1774, h: 887 },
+    crop: { x: 887, y: 0, w: 887, h: 887 },
     filter: null,
   },
   LIGHTNING_STRIKE: {
@@ -76,14 +76,14 @@ export const VFX_FRAMES = {
   },
   ACID_SPIT: {
     src: assetUrl('/assets/vfx/venom_splash.png'),
-    sheet: { w: 1536, h: 1024 },
-    crop: { x: 256, y: 256, w: 512, h: 256 },
+    sheet: { w: 1774, h: 887 },
+    crop: { x: 0, y: 0, w: 1774, h: 887 },
     filter: null,
   },
   TOXIC_CLOUD: {
     src: assetUrl('/assets/vfx/venom_cloud.png'),
     sheet: { w: 1536, h: 1024 },
-    crop: { x: 384, y: 256, w: 512, h: 384 },
+    crop: { x: 0, y: 0, w: 1536, h: 1024 },
     filter: null,
   },
   SHADOW_STRIKE: {
