@@ -323,6 +323,39 @@ func _init() -> void:
 		print("FAIL: boss progression gates diverge from browser")
 		failed += 1
 
+	# Test 21: FusionEngine.execute_fusion result level — both Stage III → 50, else 1
+	var FusionEngine2 = preload("res://scripts/sim/fusion_engine.gd")
+	var fu_a := {"element": "fire", "level": 25, "stats": {"hp": 120, "atk": 30, "def": 20, "spd": 18}, "shiny": false}
+	var fu_b := {"element": "fire", "level": 25, "stats": {"hp": 110, "atk": 28, "def": 22, "spd": 20}, "shiny": false}
+	var fu_c := {"element": "fire", "level": 10, "stats": {"hp": 80,  "atk": 20, "def": 15, "spd": 12}, "shiny": false}
+	var fu_both: Dictionary = FusionEngine2.execute_fusion(fu_a, fu_b)
+	var fu_low:  Dictionary = FusionEngine2.execute_fusion(fu_c, fu_b)
+	if fu_both.get("level", -1) == 50 and fu_low.get("level", -1) == 1:
+		print("PASS: fusion result level (bothStageIII=50, else=1)")
+		passed += 1
+	else:
+		print("FAIL: fusion result level — bothStageIII=%d oneLow=%d" % [fu_both.get("level", -1), fu_low.get("level", -1)])
+		failed += 1
+
+	# Test 22: SingularityProgress._defeated_count reads both Godot dict and legacy array
+	var SP2 = preload("res://scripts/sim/singularity_progress.gd")
+	var sp_godot_save := { "bestiary_defeated": { "protocol_vulture": 1 } }
+	var sp_legacy_save := { "defeatedNpcs": ["protocol_vulture"] }
+	var sp_absent_save := {}
+	var t22_ok: bool = SP2.is_singularity_unlocked(sp_godot_save) \
+		and SP2.is_singularity_unlocked(sp_legacy_save) \
+		and not SP2.is_singularity_unlocked(sp_absent_save)
+	if t22_ok:
+		print("PASS: _defeated_count dual-key lookup (Godot dict + legacy array)")
+		passed += 1
+	else:
+		print("FAIL: _defeated_count dual-key — godot=%s legacy=%s absent=%s" % [
+			SP2.is_singularity_unlocked(sp_godot_save),
+			SP2.is_singularity_unlocked(sp_legacy_save),
+			not SP2.is_singularity_unlocked(sp_absent_save),
+		])
+		failed += 1
+
 	# ── Summary ───────────────────────────────────────────────────────────────
 	print("")
 	print("Smoke test complete: %d passed, %d failed" % [passed, failed])
