@@ -25,10 +25,9 @@ static func get_singularity_stage(save: Dictionary) -> int:
 			has_elder = true
 			break
 
-	var defeated: Dictionary = save.get("bestiary_defeated", {})
 	var all_npcs_defeated: bool = true
 	for npc_id in GameData.BASE_NPC_IDS:
-		if int(defeated.get(npc_id, 0)) <= 0:
+		if _defeated_count(save, npc_id) <= 0:
 			all_npcs_defeated = false
 			break
 
@@ -43,4 +42,14 @@ static func is_singularity_unlocked(save: Dictionary) -> bool:
 	# Browser parity: unlocked once Protocol Vulture falls (or arc complete).
 	if is_singularity_complete(save):
 		return true
-	return int(save.get("bestiary_defeated", {}).get("protocol_vulture", 0)) > 0
+	return _defeated_count(save, "protocol_vulture") > 0
+
+# Dual-key lookup: checks Godot shape (bestiary_defeated dict) and browser/
+# legacy shape (defeatedNpcs array) so saves migrated from either format work.
+static func _defeated_count(save: Dictionary, npc_id: String) -> int:
+	var n: int = int(save.get("bestiary_defeated", {}).get(npc_id, 0))
+	if n > 0:
+		return n
+	if save.get("defeatedNpcs", []).has(npc_id):
+		return 1
+	return 0

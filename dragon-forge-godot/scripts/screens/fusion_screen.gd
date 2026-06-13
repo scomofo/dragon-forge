@@ -166,7 +166,7 @@ func _update_preview() -> void:
 	else:
 		var stats_a := DragonData.calculate_stats(def_a, level_a)
 		var stats_b := DragonData.calculate_stats(def_b, level_b)
-		var result_level: int = maxi(1, (level_a + level_b) / 2)
+		var result_level: int = 50 if (level_a >= 25 and level_b >= 25) else 1
 		var penalty: float = 0.85 if stability == "unstable" else 1.0
 		var result_hp := floori((stats_a["hp"] + stats_b["hp"]) * 0.6 * penalty)
 		var result_atk := floori((stats_a["atk"] + stats_b["atk"]) * 0.6 * penalty)
@@ -224,7 +224,7 @@ func _on_fuse_pressed() -> void:
 
 	var level_a: int = DragonProgression.get_dragon_level(_save, _selected_a)
 	var level_b: int = DragonProgression.get_dragon_level(_save, _selected_b)
-	var result_level: int = maxi(1, (level_a + level_b) / 2)
+	var result_level: int = 50 if (level_a >= 25 and level_b >= 25) else 1
 	if not _save.has("dragon_levels"):
 		_save["dragon_levels"] = {}
 	_save["dragon_levels"][result_id] = result_level
