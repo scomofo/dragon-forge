@@ -53,12 +53,12 @@ Godot 4.6 project. Not driven by npm — launch with the local Godot binary:
 ```powershell
 .\run-godot.ps1
 # or
-& 'C:\Users\Scott Morley\Downloads\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64.exe' --path 'C:\Users\Scott Morley\Dev\DF\dragon-forge-godot'
+& 'C:\Users\ScottMorley\Downloads\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe' --path 'C:\dev\dragon-forge\dragon-forge-godot'
 ```
 
 Headless smoke test:
 ```powershell
-& '...\Godot_v4.6.2-stable_win64.exe' --headless --path '...\dragon-forge-godot' --script res://scripts/tests/sim_smoke.gd
+& '...\Godot_v4.6.3-stable_win64.exe' --headless --path '...\dragon-forge-godot' --script res://scripts/tests/sim_smoke.gd
 ```
 
 Layout:
