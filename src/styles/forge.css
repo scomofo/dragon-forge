@@ -420,6 +420,51 @@
   color: #ff8b3d;
 }
 
+.forge-upgrade-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 90, 31, 0.3);
+  background: rgba(255, 90, 31, 0.06);
+  font-size: 10px;
+  color: #c9a567;
+  letter-spacing: 0.03em;
+}
+
+.forge-upgrade-maxed {
+  justify-content: center;
+  color: #5cff8a;
+  border-color: rgba(92, 255, 138, 0.3);
+  background: rgba(92, 255, 138, 0.06);
+}
+
+.forge-upgrade-btn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  background: rgba(255, 90, 31, 0.18);
+  border: 1px solid #ff5a1f;
+  color: #ff8b3d;
+  font-size: 9px;
+  font-family: inherit;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.forge-upgrade-btn:hover:not(:disabled) {
+  background: rgba(255, 90, 31, 0.35);
+}
+
+.forge-upgrade-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: rgba(255, 90, 31, 0.3);
+  color: #7a5530;
+}
+
 .forge-relic-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

@@ -224,6 +224,14 @@ export const RELICS = {
   },
 };
 
+// Wrench upgrade tiers — each upgrade unlocks more relic slots.
+// cost: null means the starting tier (no purchase needed).
+export const WRENCH_TIERS = [
+  { tier: 1, slots: 1, label: 'Standard Issue',   cost: null },
+  { tier: 2, slots: 2, label: 'Field Reinforced',  cost: 400  },
+  { tier: 3, slots: 4, label: 'Astraeus Core',     cost: 900  },
+];
+
 // Maps NPC/boss id → relic id dropped on first defeat.
 // grantRelic() is idempotent; the drop is shown in the victory overlay only when newly obtained.
 export const RELIC_DROPS = {

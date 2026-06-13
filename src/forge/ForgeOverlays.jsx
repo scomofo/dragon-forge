@@ -4,6 +4,7 @@ import DragonSprite from '../DragonSprite';
 import {
   CAPTAINS_LOG_FRAGMENTS,
   FORGE_PALETTE,
+  WRENCH_TIERS,
   getCaptainLogDisplay,
   getRelic,
   getUsedRelicSlots,
@@ -14,6 +15,7 @@ import {
   equipRelic as persistEquipRelic,
   setCompanionDragon,
   unequipRelic as persistUnequipRelic,
+  upgradeWrench,
 } from '../persistence';
 import { playSound } from '../soundEngine';
 
@@ -49,7 +51,9 @@ export function AnvilOverlay({ save, onClose, refreshSave }) {
   const slots = save?.skye?.relicSlots || 1;
   const owned = save?.skye?.relicsOwned || [];
   const equipped = save?.skye?.relicsEquipped || [];
+  const scraps = save?.dataScraps || 0;
   const usedSlots = getUsedRelicSlots(equipped);
+  const nextTier = WRENCH_TIERS[tier]; // tier is 1-indexed; index `tier` is the next entry
   const [, force] = useState(0);
   const refresh = () => {
     refreshSave?.();
@@ -73,12 +77,39 @@ export function AnvilOverlay({ save, onClose, refreshSave }) {
     refresh();
   }
 
+  function handleUpgrade() {
+    if (!nextTier) return;
+    const ok = upgradeWrench(nextTier.tier, nextTier.slots, nextTier.cost);
+    if (ok) {
+      playSound('terminalOk');
+      refresh();
+    } else {
+      playSound('terminalWarning');
+    }
+  }
+
   return (
     <OverlayShell title="THE ANVIL - LOADOUT" accent={FORGE_PALETTE.coalGlow} onClose={onClose}>
       <div className="forge-overlay-summary">
-        <div><span>Wrench Tier</span><strong>T{tier}</strong></div>
+        <div><span>Wrench Tier</span><strong>T{tier} — {WRENCH_TIERS[tier - 1]?.label}</strong></div>
         <div><span>Relic Slots</span><strong>{usedSlots} / {slots}</strong></div>
+        <div><span>Data Scraps</span><strong>{scraps}</strong></div>
       </div>
+      {nextTier ? (
+        <div className="forge-upgrade-row">
+          <span>Upgrade to T{nextTier.tier} ({nextTier.label}) — {nextTier.slots} slots</span>
+          <button
+            type="button"
+            className="forge-upgrade-btn"
+            onClick={handleUpgrade}
+            disabled={scraps < nextTier.cost}
+          >
+            {scraps >= nextTier.cost ? `UPGRADE (${nextTier.cost} ◈)` : `NEED ${nextTier.cost} ◈`}
+          </button>
+        </div>
+      ) : (
+        <div className="forge-upgrade-row forge-upgrade-maxed">MAX TIER — Astraeus Core wrench online.</div>
+      )}
       {owned.length === 0 ? (
         <p className="forge-muted">No relics yet. Defeat bounty targets to claim Analog Relics.</p>
       ) : (

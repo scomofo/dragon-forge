@@ -370,6 +370,16 @@ export function setCompanionDragon(dragonId) {
   writeSave(save);
 }
 
+export function upgradeWrench(nextTier, nextSlots, cost) {
+  const save = loadSave();
+  if (save.dataScraps < cost) return false;
+  save.dataScraps -= cost;
+  save.skye.wrenchTier = nextTier;
+  save.skye.relicSlots = nextSlots;
+  writeSave(save);
+  return true;
+}
+
 export function grantRelic(relicId) {
   const save = loadSave();
   if (!save.skye.relicsOwned.includes(relicId)) {
