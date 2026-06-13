@@ -240,10 +240,10 @@ export const FRAGMENT_TRIGGERS = {
   '001': (s) => !!s?.flags?.metFelix,
   '002': (s) => !!s?.flags?.metFelix,
   '003': (s) => (s?.stats?.battlesWon || 0) >= 3,
-  '004': (s) => (s?.flags?.currentAct || 1) >= 2,
-  '005': (s) => (s?.flags?.currentAct || 1) >= 2 && (s?.stats?.battlesWon || 0) >= 5,
-  '006': (s) => (s?.flags?.currentAct || 1) >= 2 && (s?.stats?.battlesWon || 0) >= 8,
-  '007': (s) => (s?.flags?.currentAct || 1) >= 3,
+  '004': (s) => (s?.singularityProgress?.defeated?.length || 0) >= 1,
+  '005': (s) => (s?.singularityProgress?.defeated?.length || 0) >= 2,
+  '006': (s) => (s?.singularityProgress?.defeated?.length || 0) >= 3,
+  '007': (s) => !!s?.singularityComplete,
 };
 
 // Bulkhead view by act — palette + parallax variant key.

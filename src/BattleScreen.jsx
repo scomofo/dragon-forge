@@ -515,6 +515,13 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     };
   }, []);
 
+  const runFragmentUnlockPass = () => {
+    const s = loadSave();
+    Object.entries(FRAGMENT_TRIGGERS).forEach(([id, trigger]) => {
+      if (trigger(s)) unlockFragment(id);
+    });
+  };
+
   const handleMoveSelect = useCallback(async (moveKey) => {
     if (animatingRef.current) return;
     playSound('commandSelect', { element: moves[moveKey]?.element });
