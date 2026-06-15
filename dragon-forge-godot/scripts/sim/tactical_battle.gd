@@ -110,7 +110,7 @@ const EnemyData: Dictionary = {
 		"stats": { "hp": 100, "atk": 28, "def": 22, "spd": 16 },
 		"reward_xp": 90,
 		"reward_scraps": 130,
-		"reward_flag": "",
+		"reward_flag": "protocol_vulture_defeated",
 		"reward_key_item": "",
 	},
 	"data_corruption": {

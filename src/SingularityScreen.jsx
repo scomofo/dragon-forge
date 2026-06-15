@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { playSound } from './soundEngine';
 import { dragons, elementColors, ELEMENTS } from './gameData';
-import { SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN, getBossStatus } from './singularityBosses';
+import { SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN, CORRUPTION_REMNANTS, getBossStatus } from './singularityBosses';
+import { getRemnantProgress } from './singularityProgress';
 import NavBar from './NavBar';
 import NpcSprite from './NpcSprite';
 
 const ALL_BOSSES = [...SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN];
 
-export default function SingularityScreen({ onNavigate, onEngageBoss, save }) {
+export default function SingularityScreen({ onNavigate, onEngageBoss, onEngageRemnant, save }) {
   const [selectedBossId, setSelectedBossId] = useState(ALL_BOSSES[0].id);
   const [selectedDragonId, setSelectedDragonId] = useState(() => {
     const firstOwned = ELEMENTS.find(el => save.dragons[el]?.owned);
@@ -18,6 +19,7 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, save }) {
   const bossStatus = getBossStatus(selectedBoss, save);
   const canEngage = bossStatus === 'available' || bossStatus === 'defeated';
   const ownedDragons = ELEMENTS.filter(el => save.dragons[el]?.owned);
+  const remnantProgress = getRemnantProgress(save);
 
   const handleSelectBoss = (bossId) => {
     const boss = ALL_BOSSES.find(b => b.id === bossId);
@@ -36,6 +38,22 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, save }) {
       isSingularity: true,
       isMirrorAdmin: selectedBoss.id === 'mirror_admin',
     });
+  };
+
+  const handleEngageRemnant = (remnant) => {
+    playSound('buttonClick');
+    onEngageRemnant({
+      dragonId: selectedDragonId,
+      boss: remnant,
+    });
+  };
+
+  const getRemnantStatus = (remnant) => {
+    if (!remnantProgress.available) return 'locked';
+    if (remnantProgress.defeated.includes(remnant.id)) return 'defeated';
+    if (!remnant.unlockRequires) return 'available';
+    if (remnantProgress.defeated.includes(remnant.unlockRequires)) return 'available';
+    return 'locked';
   };
 
   const displayStats = selectedBoss.phases ? selectedBoss.phases[0].stats : selectedBoss.stats;
@@ -82,6 +100,62 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, save }) {
               </div>
             );
           })}
+
+          {/* Corruption Remnants — post-game only */}
+          {remnantProgress.available && (
+            <>
+              <div
+                className="singularity-boss-card"
+                style={{
+                  marginTop: 12,
+                  borderTop: '1px solid #330033',
+                  paddingTop: 8,
+                  cursor: 'default',
+                  background: 'transparent',
+                }}
+              >
+                <div style={{ fontSize: 7, color: '#aa00aa', letterSpacing: 2, textTransform: 'uppercase' }}>
+                  Corruption Remnants
+                </div>
+                <div style={{ fontSize: 6, color: '#660066' }}>
+                  {remnantProgress.defeated.length}/3 CLEARED
+                </div>
+              </div>
+              {CORRUPTION_REMNANTS.map((remnant) => {
+                const rstatus = getRemnantStatus(remnant);
+                return (
+                  <div
+                    key={remnant.id}
+                    className={`singularity-boss-card ${rstatus}`}
+                    style={{ opacity: rstatus === 'locked' ? 0.45 : 1 }}
+                  >
+                    <div>
+                      <div className="singularity-boss-name" style={{ color: rstatus === 'locked' ? '#555' : '#cc44cc' }}>
+                        {rstatus === 'locked' ? '???' : remnant.name.toUpperCase()}
+                      </div>
+                      <div className="singularity-boss-sub">
+                        {rstatus === 'locked' ? 'LOCKED' : `REMNANT · ${remnant.phases[0].element.toUpperCase()} · 3 PHASES`}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      <div className={`singularity-boss-status ${rstatus}`}>
+                        {rstatus === 'locked' ? '🔒' : rstatus === 'defeated' ? '✓' : '⚔'}
+                      </div>
+                      {rstatus !== 'locked' && (
+                        <button
+                          className="singularity-engage-btn"
+                          style={{ fontSize: 6, padding: '2px 6px', marginTop: 2 }}
+                          onClick={() => handleEngageRemnant(remnant)}
+                        >
+                          CHALLENGE
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
 
         {/* Right panel — detail */}

@@ -14,7 +14,7 @@ import SingularityScreen from './SingularityScreen';
 import ForgeScreen from './ForgeScreen';
 import CreditsScreen from './CreditsScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
-import { loadSave } from './persistence';
+import { loadSave, recordRemnantDefeat } from './persistence';
 import { getSingularityStage, scaleBossForPlayer } from './singularityProgress';
 import { checkMilestones } from './journalMilestones';
 
@@ -133,6 +133,23 @@ export default function App() {
     setScreen(SCREENS.BATTLE);
   }
 
+  function handleEngageRemnant(config) {
+    playSound('buttonClick');
+    playMusic('battleTense', true);
+    const scaledBoss = scaleBossForPlayer(config.boss, save);
+    setBattleConfig({
+      dragonId: config.dragonId,
+      npcId: config.boss.id,
+      boss: scaledBoss,
+      isSingularity: true,
+      isRemnant: true,
+      remnantId: config.boss.id,
+      phases: scaledBoss.phases || null,
+      returnScreen: SCREENS.SINGULARITY,
+    });
+    setScreen(SCREENS.BATTLE);
+  }
+
   function handleBattleEnd() {
     refreshSave();
     const returnScreen = battleConfig?.returnScreen;
@@ -147,6 +164,10 @@ export default function App() {
     // The per-battle outcome is required: the mirrorAdminDefeated save flag
     // is permanent after the first win, so it cannot gate replay losses.
     const wonMirrorAdmin = battleConfig?.isMirrorAdmin && won === true;
+    const wonRemnant = battleConfig?.isRemnant && won === true;
+    if (wonRemnant && battleConfig.remnantId) {
+      recordRemnantDefeat(battleConfig.remnantId);
+    }
     refreshSave();
     if (wonMirrorAdmin) {
       playSound('victoryFanfare');
@@ -207,6 +228,7 @@ export default function App() {
           <SingularityScreen
             onNavigate={handleNavigate}
             onEngageBoss={handleEngageBoss}
+            onEngageRemnant={handleEngageRemnant}
             save={save}
           />
         </div>

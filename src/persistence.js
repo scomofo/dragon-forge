@@ -10,8 +10,9 @@ const DEFAULT_SAVE = {
     stone:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
     venom:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
     shadow: { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
-    void:   { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
-    light:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
+    void:      { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
+    light:     { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
+    synthesis: { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
   },
   dataScraps: 0,
   pityCounter: 0,
@@ -20,6 +21,7 @@ const DEFAULT_SAVE = {
   singularityProgress: { defeated: [], finalBossPhase: 0, replayCounts: {} },
   singularityComplete: false,
   mirrorAdminDefeated: false,
+  remnantDefeated: [],
   fusionLineage: [],
   inventory: { cores: {}, xpBoostBattles: 0, stabilityBoost: false },
   stats: { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 },
@@ -71,6 +73,9 @@ function migrateSave(save) {
   if (!save.dragons.light) {
     save.dragons.light = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
   }
+  if (!save.dragons.synthesis) {
+    save.dragons.synthesis = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
+  }
   if (save.defeatedNpcs === undefined) save.defeatedNpcs = [];
   if (save.singularityProgress === undefined) {
     save.singularityProgress = { defeated: [], finalBossPhase: 0, replayCounts: {} };
@@ -80,6 +85,7 @@ function migrateSave(save) {
   if (save.dailyStreak === undefined) save.dailyStreak = 0;
   if (save.singularityComplete === undefined) save.singularityComplete = false;
   if (save.mirrorAdminDefeated === undefined) save.mirrorAdminDefeated = false;
+  if (!Array.isArray(save.remnantDefeated)) save.remnantDefeated = [];
   if (!Array.isArray(save.fusionLineage)) save.fusionLineage = [];
   // Light Dragon is the Singularity completion reward; grant retroactively to finishers.
   if (save.singularityComplete && !save.dragons.light.owned) {
@@ -233,6 +239,15 @@ export function markMirrorAdminDefeated() {
   save.mirrorAdminDefeated = true;
   save.singularityProgress.replayCounts['mirror_admin'] =
     (save.singularityProgress.replayCounts['mirror_admin'] || 0) + 1;
+  writeSave(save);
+}
+
+export function recordRemnantDefeat(remnantId) {
+  const save = loadSave();
+  if (!Array.isArray(save.remnantDefeated)) save.remnantDefeated = [];
+  if (!save.remnantDefeated.includes(remnantId)) {
+    save.remnantDefeated.push(remnantId);
+  }
   writeSave(save);
 }
 

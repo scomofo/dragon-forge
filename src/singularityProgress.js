@@ -31,6 +31,16 @@ export function isSingularityUnlocked(save) {
   return defeatedNpcs.includes('protocol_vulture');
 }
 
+export function getRemnantProgress(save) {
+  const available = save.singularityComplete === true;
+  const defeated = Array.isArray(save.remnantDefeated) ? save.remnantDefeated : [];
+  const allDefeated =
+    defeated.includes('data_corruption_remnant') &&
+    defeated.includes('memory_leak_remnant') &&
+    defeated.includes('stack_overflow_remnant');
+  return { available, defeated, allDefeated };
+}
+
 export function scaleBossForPlayer(boss, save) {
   const playerMaxLevel = Object.values(save.dragons)
     .filter(d => d.owned)

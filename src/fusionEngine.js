@@ -20,6 +20,8 @@ const ALCHEMY = {
   'stone_venom': 'venom',
   'shadow_stone': 'stone',
   'shadow_venom': 'shadow',
+  'light_void': 'synthesis',
+  'void_light': 'synthesis',
 };
 
 const OPPOSING_PAIRS = [
@@ -35,7 +37,7 @@ function sortedKey(a, b) {
 export function getFusionElement(elementA, elementB) {
   const key = sortedKey(elementA, elementB);
   // Fallback picks the alphabetically-first element so the result doesn't
-  // depend on argument order when the pair isn't in ALCHEMY (e.g. void/light).
+  // depend on argument order when the pair isn't in ALCHEMY.
   return ALCHEMY[key] ?? key.split('_')[0];
 }
 
