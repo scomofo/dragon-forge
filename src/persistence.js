@@ -227,12 +227,31 @@ export function recordNpcDefeat(npcId) {
   }
 }
 
+// Endgame replay reward: every 5th total clear of a Singularity boss yields a
+// core cache, so replays (which scale harder — see scaleBossForPlayer's rising
+// REPLAY_CAP) stay worth repeating. Pure + deterministic so it is unit-testable.
+const REPLAY_REWARD_CORE_ELEMENTS = ['fire', 'ice', 'storm', 'stone', 'venom', 'shadow'];
+export function getReplayReward(clearCount) {
+  if (!clearCount || clearCount % 5 !== 0) return null;
+  const element = REPLAY_REWARD_CORE_ELEMENTS[((clearCount / 5) - 1) % REPLAY_REWARD_CORE_ELEMENTS.length];
+  return { element, count: 5 };
+}
+
+function grantReplayReward(save, clearCount) {
+  const reward = getReplayReward(clearCount);
+  if (!reward) return;
+  if (!save.inventory.cores[reward.element]) save.inventory.cores[reward.element] = 0;
+  save.inventory.cores[reward.element] = Math.min(99, save.inventory.cores[reward.element] + reward.count);
+}
+
 export function recordSingularityDefeat(bossId) {
   const save = loadSave();
   if (!save.singularityProgress.defeated.includes(bossId)) {
     save.singularityProgress.defeated.push(bossId);
   }
-  save.singularityProgress.replayCounts[bossId] = (save.singularityProgress.replayCounts[bossId] || 0) + 1;
+  const clearCount = (save.singularityProgress.replayCounts[bossId] || 0) + 1;
+  save.singularityProgress.replayCounts[bossId] = clearCount;
+  grantReplayReward(save, clearCount);
   writeSave(save);
 }
 
@@ -252,8 +271,9 @@ export function markIntroSeen() {
 export function markMirrorAdminDefeated() {
   const save = loadSave();
   save.mirrorAdminDefeated = true;
-  save.singularityProgress.replayCounts['mirror_admin'] =
-    (save.singularityProgress.replayCounts['mirror_admin'] || 0) + 1;
+  const clearCount = (save.singularityProgress.replayCounts['mirror_admin'] || 0) + 1;
+  save.singularityProgress.replayCounts['mirror_admin'] = clearCount;
+  grantReplayReward(save, clearCount);
   writeSave(save);
 }
 

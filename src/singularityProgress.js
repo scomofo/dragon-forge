@@ -52,7 +52,7 @@ const phasePlayerTtk = (phaseCount) => (phaseCount >= 3 ? 3 : phaseCount === 2 ?
 // so the player wins with a margin (>1 = player-favoured; lower = harder).
 const BOSS_SURVIVAL_MARGIN = 1.8;
 const REPLAY_STEP = 0.1; // each repeat clear adds this much HP+ATK ...
-const REPLAY_CAP = 0.5;  // ... capped here, so replays get harder, not free.
+const REPLAY_CAP = 1.0;  // ... capped at +100%, so endgame replays stay a real challenge (paired with the per-5-clear core reward in persistence).
 
 // Fixed-TTK boss scaling: set boss HP and ATK from the player's ACTUAL damage
 // output and HP so the fight lasts ~the same number of turns at any player
