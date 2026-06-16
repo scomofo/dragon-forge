@@ -120,12 +120,17 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
     ? 'drop-shadow(0 0 6px gold) drop-shadow(0 0 12px rgba(255,215,0,0.4))'
     : (stage === 4 ? 'drop-shadow(0 0 8px gold)' : 'none');
 
+  // Synthesis reuses the 'void' element for type mechanics but is gold, not
+  // void-tinted — exclude it from the .void-sprite hue-rotate(180deg) filter,
+  // which would swing its gold to blue.
+  const useVoidFilter = element === 'void' && !String(spriteSheet).includes('synthesis');
+
   return (
     <canvas
       ref={canvasRef}
       width={width}
       height={height}
-      className={`dragon-sprite stage-${stage} ${className} ${shiny ? 'shiny-sprite' : ''} ${element === 'void' ? 'void-sprite' : ''}`}
+      className={`dragon-sprite stage-${stage} ${className} ${shiny ? 'shiny-sprite' : ''} ${useVoidFilter ? 'void-sprite' : ''}`}
       style={{
         imageRendering: 'pixelated',
         filter: shinyFilter,
