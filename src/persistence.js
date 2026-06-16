@@ -138,12 +138,6 @@ export function writeSave(save) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
 }
 
-export function saveDragonProgress(dragonId, level, xp) {
-  const save = loadSave();
-  save.dragons[dragonId] = { ...save.dragons[dragonId], level, xp };
-  writeSave(save);
-}
-
 export function addScraps(amount) {
   const save = loadSave();
   save.dataScraps += amount;
@@ -173,17 +167,25 @@ export function unlockDragon(dragonId, shiny) {
 
 export function xpForLevel(level) { return 50 + (level - 1) * 5; }  // L1:50 .. L49:290, smooth ramp
 
+// Single source of truth for XP->level progression. Mutates `dragon` in place on
+// the one canonical curve, capping at level 50. EVERY XP source (battle wins,
+// duplicate pulls, shop items) must go through this so a dragon levels the same
+// no matter where the XP came from.
+export function applyDragonXp(dragon, amount) {
+  dragon.xp += amount;
+  let need = xpForLevel(dragon.level);
+  while (dragon.xp >= need && dragon.level < 50) {
+    dragon.xp -= need;
+    dragon.level++;
+    need = xpForLevel(dragon.level);
+  }
+  if (dragon.level >= 50) dragon.xp = 0;
+  return dragon;
+}
+
 export function addDragonXp(dragonId, bonusXp) {
   const save = loadSave();
-  const d = save.dragons[dragonId];
-  d.xp += bonusXp;
-  let need = xpForLevel(d.level);
-  while (d.xp >= need && d.level < 50) {
-    d.xp -= need;
-    d.level++;
-    need = xpForLevel(d.level);
-  }
-  if (d.level >= 50) d.xp = 0;
+  applyDragonXp(save.dragons[dragonId], bonusXp);
   writeSave(save);
 }
 

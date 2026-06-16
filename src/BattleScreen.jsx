@@ -6,7 +6,7 @@ import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain, getTypeEffectivenessLabel,
 } from './battleEngine';
-import { loadSave, saveDragonProgress, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, setLastZone, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
+import { loadSave, addDragonXp, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, setLastZone, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
 import { getDailyStreakMultiplier } from './dailyChallenge';
 import { getAvailableCampaignNodes } from './campaignMap';
 import { FRAGMENT_TRIGGERS, RELIC_DROPS, getRelic, getRelicBattleModifiers } from './forgeData';
@@ -741,17 +741,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         } else {
           scrapsGained = rawScraps;
         }
-        const newXp = state.playerXp + xpGained;
-        const xpPerLevel = 100;
-        let newLevel = state.playerLevel;
-        let remainingXp = newXp;
-        while (remainingXp >= xpPerLevel && newLevel < 50) {
-          remainingXp -= xpPerLevel;
-          newLevel++;
-        }
-        if (newLevel >= 50) remainingXp = 0;
+        addDragonXp(state.dragonId, xpGained); // canonical XP curve (persistence.js) — no source-specific leveling
+        const newLevel = loadSave().dragons[state.dragonId].level;
         const leveledUp = newLevel > state.playerLevel;
-        saveDragonProgress(state.dragonId, newLevel, remainingXp);
         if (scrapsGained > 0) addScraps(scrapsGained);
 
         if (battleConfig?.isMirrorAdmin) {

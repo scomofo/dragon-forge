@@ -1,4 +1,5 @@
 import { rarityTiers, SHINY_CHANCE, PITY_THRESHOLD } from './gameData';
+import { applyDragonXp } from './persistence';
 
 export function rollRarity(pityCounter) {
   if (pityCounter >= PITY_THRESHOLD - 1) {
@@ -59,13 +60,7 @@ export function applyPullResult(save, pull) {
     isNew = true;
   } else {
     xpGained = 50 * pull.rarityMultiplier;
-    dragon.xp += xpGained;
-    const xpPerLevel = 100;
-    while (dragon.xp >= xpPerLevel && dragon.level < 50) {
-      dragon.xp -= xpPerLevel;
-      dragon.level++;
-    }
-    if (dragon.level >= 50) dragon.xp = 0;
+    applyDragonXp(dragon, xpGained); // one canonical XP curve (see persistence.js)
     if (pull.shiny && !dragon.shiny) {
       dragon.shiny = true;
     }

@@ -107,7 +107,8 @@ describe('applyPullResult', () => {
     const result = applyPullResult(save, pull);
     expect(result.isNew).toBe(false);
     expect(result.xpGained).toBe(100);
-    expect(result.save.dragons.fire.xp).toBe(0);
+    // Canonical curve: L1 needs 50, L2 needs 55 -> 100 XP lands at L2 with 50 left.
+    expect(result.save.dragons.fire.xp).toBe(50);
     expect(result.save.dragons.fire.level).toBe(2);
   });
 
@@ -141,7 +142,8 @@ describe('applyPullResult', () => {
     };
     const pull = { element: 'fire', rarityName: 'Exotic', rarityMultiplier: 5, shiny: false, newPityCounter: 0 };
     const result = applyPullResult(save, pull);
-    expect(result.save.dragons.fire.level).toBe(4);
+    // Canonical rising curve (L1..L5 need 50/55/60/65/70): 80+250=330 XP lands at L6 with 30 left.
+    expect(result.save.dragons.fire.level).toBe(6);
     expect(result.save.dragons.fire.xp).toBe(30);
     expect(result.xpGained).toBe(250);
   });
