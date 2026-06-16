@@ -17,12 +17,26 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
   const frameStartRef = useRef(0);
   const unstableSheetRef = useRef(false);
 
+  // Some dragons (synthesis) are authored as a single pose, not a 3×4 animation
+  // sheet — the frame tiler would slice the one dragon into fragments. Render
+  // the whole image as a single static frame instead.
+  const singleFrame = /synthesis(?:_stage[1-4])?\.png/.test(String(spriteSheet));
+
   // Load sprite sheet image
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       imageRef.current = img;
+      if (singleFrame) {
+        actualColsRef.current = 1;
+        frameStartRef.current = 0;
+        actualFramesRef.current = 1;
+        frameOffsetsRef.current = [0];
+        unstableSheetRef.current = false;
+        setImageLoaded(true);
+        return;
+      }
       // Detect actual frame count from image dimensions
       const cols = Math.floor(img.width / DRAGON_SHEET.frameWidth);
       const rows = Math.floor(img.height / DRAGON_SHEET.frameHeight);
@@ -41,6 +55,10 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
 
   // Animate frames
   useEffect(() => {
+    if (singleFrame) {
+      setFrame(0);
+      return;
+    }
     if (forcedFrame !== null) {
       const clamped = Math.min(forcedFrame, actualFramesRef.current - 1);
       setFrame(clamped);
@@ -52,7 +70,7 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
     }, DRAGON_SHEET.frameDuration);
 
     return () => clearInterval(interval);
-  }, [forcedFrame]);
+  }, [forcedFrame, singleFrame]);
 
   // Draw frame to canvas with chroma key
   const drawFrame = useCallback(() => {
@@ -61,6 +79,28 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
     if (!canvas || !img) return;
 
     const ctx = canvas.getContext('2d');
+
+    if (singleFrame) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      if (flipX) {
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
+      // Green chroma-key (no-op when the sprite already has baked transparency).
+      const single = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const sd = single.data;
+      for (let i = 0; i < sd.length; i += 4) {
+        if (sd[i + 1] > 150 && sd[i] < 150 && sd[i + 2] < 150 && sd[i + 1] > sd[i] * 1.3 && sd[i + 1] > sd[i + 2] * 1.3) {
+          sd[i + 3] = 0;
+        }
+      }
+      ctx.putImageData(single, 0, 0);
+      return;
+    }
+
     const sourceFrame = frameStartRef.current + frame;
     const col = sourceFrame % actualColsRef.current;
     const row = Math.floor(sourceFrame / actualColsRef.current);
@@ -102,7 +142,7 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
       }
     }
     ctx.putImageData(imageData, 0, 0);
-  }, [frame, flipX]);
+  }, [frame, flipX, singleFrame]);
 
   useEffect(() => {
     if (imageLoaded) {
