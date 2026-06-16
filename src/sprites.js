@@ -21,101 +21,36 @@ export const DRAGON_DISPLAY = {
   height: 250,
 };
 
-// === VFX IMPACT FRAMES ===
-// Each vfxKey maps to a source image and crop region for the impact overlay.
-// Crop coordinates (x, y, w, h) define the rectangle in the source sheet.
-// The crop is displayed at 200x200px on screen with mix-blend-mode: screen.
+// === VFX PROJECTILE SHEETS ===
+// Each vfxKey maps to an animated 4-frame projectile strip (1024x256, four
+// 256x256 frames laid out horizontally: launch -> travel -> peak -> impact).
+// VfxOverlay plays the strip while translating it from attacker to target,
+// stepping frames as it flies and holding the impact frame on contact.
+//
+// Art lives in public/assets/vfx/vfx_<move>.png. Placeholder strips are baked
+// by tools/asset_gen/make_vfx_strips.py; high-fidelity hand-art from
+// tools/asset_gen/gen_vfx_sheets.sh (fal pipeline) drops in over the same
+// filenames. Strips face right; VfxOverlay mirrors them for right-to-left flight.
+const strip = (move, frames = 4) => ({
+  strip: { src: assetUrl(`/assets/vfx/vfx_${move}.png`), frames },
+});
+
 export const VFX_FRAMES = {
-  MAGMA_BREATH: {
-    src: assetUrl('/assets/vfx/fire_effects.png'),
-    sheet: { w: 1774, h: 887 },
-    crop: { x: 0, y: 0, w: 887, h: 887 },
-    filter: 'brightness(0.8) contrast(1.3)',
-  },
-  FLAME_WALL: {
-    src: assetUrl('/assets/vfx/fire_effects.png'),
-    sheet: { w: 1774, h: 887 },
-    crop: { x: 887, y: 0, w: 887, h: 887 },
-    filter: 'brightness(0.8) contrast(1.3)',
-  },
-  FROST_BITE: {
-    src: assetUrl('/assets/vfx/ice_crystals.png'),
-    sheet: { w: 1774, h: 887 },
-    crop: { x: 0, y: 0, w: 887, h: 887 },
-    filter: null,
-  },
-  BLIZZARD: {
-    src: assetUrl('/assets/vfx/ice_crystals.png'),
-    sheet: { w: 1774, h: 887 },
-    crop: { x: 887, y: 0, w: 887, h: 887 },
-    filter: null,
-  },
-  LIGHTNING_STRIKE: {
-    src: assetUrl('/assets/vfx/storm_lightning.png'),
-    sheet: { w: 1536, h: 1024 },
-    crop: { x: 512, y: 512, w: 512, h: 256 },
-    filter: null,
-  },
-  THUNDER_CLAP: {
-    src: assetUrl('/assets/vfx/storm_lightning.png'),
-    sheet: { w: 1536, h: 1024 },
-    crop: { x: 1024, y: 0, w: 512, h: 256 },
-    filter: null,
-  },
-  ROCK_SLIDE: {
-    src: assetUrl('/assets/vfx/stone_meteor.png'),
-    sheet: { w: 1774, h: 887 },
-    crop: { x: 0, y: 0, w: 1774, h: 887 },
-    filter: 'brightness(0.7) contrast(1.4)',
-  },
-  EARTHQUAKE: {
-    src: assetUrl('/assets/vfx/stone_explosion.png'),
-    sheet: { w: 1774, h: 887 },
-    crop: { x: 0, y: 0, w: 1774, h: 887 },
-    filter: 'brightness(0.7) contrast(1.4)',
-  },
-  ACID_SPIT: {
-    src: assetUrl('/assets/vfx/venom_splash.png'),
-    sheet: { w: 1774, h: 887 },
-    crop: { x: 0, y: 0, w: 1774, h: 887 },
-    filter: null,
-  },
-  TOXIC_CLOUD: {
-    src: assetUrl('/assets/vfx/venom_cloud.png'),
-    sheet: { w: 1536, h: 1024 },
-    crop: { x: 0, y: 0, w: 1536, h: 1024 },
-    filter: null,
-  },
-  SHADOW_STRIKE: {
-    src: assetUrl('/assets/vfx/shadow_flames.png'),
-    sheet: { w: 1774, h: 887 },
-    crop: { x: 0, y: 0, w: 887, h: 887 },
-    filter: null,
-  },
-  VOID_PULSE: {
-    src: assetUrl('/assets/vfx/shadow_flames.png'),
-    sheet: { w: 1774, h: 887 },
-    crop: { x: 887, y: 0, w: 887, h: 887 },
-    filter: null,
-  },
-  VOID_RIFT: {
-    src: assetUrl('/assets/vfx/shadow_flames.png'),
-    sheet: { w: 1774, h: 887 },
-    crop: { x: 887, y: 0, w: 887, h: 887 },
-    filter: 'hue-rotate(180deg) saturate(1.5)',
-  },
-  RADIANT_BEAM: {
-    src: assetUrl('/assets/vfx/storm_lightning.png'),
-    sheet: { w: 1536, h: 1024 },
-    crop: { x: 512, y: 512, w: 512, h: 256 },
-    filter: 'brightness(1.5) hue-rotate(40deg) saturate(0.5)',
-  },
-  SOLAR_FLARE: {
-    src: assetUrl('/assets/vfx/storm_lightning.png'),
-    sheet: { w: 1536, h: 1024 },
-    crop: { x: 1024, y: 0, w: 512, h: 256 },
-    filter: 'brightness(1.6) hue-rotate(20deg) saturate(1.3)',
-  },
+  MAGMA_BREATH:     strip('magma_breath'),
+  FLAME_WALL:       strip('flame_wall'),
+  FROST_BITE:       strip('frost_bite'),
+  BLIZZARD:         strip('blizzard'),
+  LIGHTNING_STRIKE: strip('lightning_strike'),
+  THUNDER_CLAP:     strip('thunder_clap'),
+  ROCK_SLIDE:       strip('rock_slide'),
+  EARTHQUAKE:       strip('earthquake'),
+  ACID_SPIT:        strip('acid_spit'),
+  TOXIC_CLOUD:      strip('toxic_cloud'),
+  SHADOW_STRIKE:    strip('shadow_strike'),
+  VOID_PULSE:       strip('void_pulse'),
+  VOID_RIFT:        strip('void_rift'),
+  RADIANT_BEAM:     strip('radiant_beam'),
+  SOLAR_FLARE:      strip('solar_flare'),
   NULL_REFLECT: null, // CSS-only reflect shield effect
-  BASIC_ATTACK: null, // CSS-only, no sprite
+  BASIC_ATTACK: null, // CSS-only melee slash, no projectile
 };

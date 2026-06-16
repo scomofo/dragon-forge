@@ -163,49 +163,57 @@ export function criticalHit(container, targetContainer, targetSide = 'left') {
 }
 
 // === DEFEND SHIELD ===
+// Layered energy aegis: a translucent element-tinted dome, a dashed rotating
+// containment ring, and a bright sweep arc that circles the barrier. The CSS
+// (.shield-aegis) drives the persistent rotation/sweep; GSAP handles the
+// snap-in, idle breathing, deflect ripple, and dismiss.
 export function shieldUp(targetContainer, element = 'neutral') {
   const colors = elementColors[element] || elementColors.neutral;
   const shield = document.createElement('div');
-  shield.className = 'shield-hex';
-  Object.assign(shield.style, {
-    position: 'absolute',
-    inset: '-10%',
-    background: `radial-gradient(ellipse, ${colors.glow}33, ${colors.primary}22)`,
-    border: `2px solid ${colors.primary}88`,
-    borderRadius: '50%',
-    opacity: '0',
-    pointerEvents: 'none',
-    zIndex: '15',
-    boxShadow: `0 0 20px ${colors.primary}44, inset 0 0 20px ${colors.glow}22`,
-  });
+  shield.className = 'shield-aegis';
+  shield.style.setProperty('--shield-primary', colors.primary);
+  shield.style.setProperty('--shield-glow', colors.glow);
+  shield.innerHTML =
+    '<span class="shield-dome"></span>' +
+    '<span class="shield-ring"></span>' +
+    '<span class="shield-sweep"></span>';
   targetContainer.style.position = 'relative';
   targetContainer.appendChild(shield);
 
   const tl = gsap.timeline();
   tl.fromTo(shield,
-    { opacity: 0, scale: 0.5 },
-    { opacity: 0.8, scale: 1.05, duration: 0.15, ease: 'power2.out' }
+    { opacity: 0, scale: 0.55 },
+    { opacity: 1, scale: 1.07, duration: 0.16, ease: 'back.out(2.6)' }
   );
-  tl.to(shield, { scale: 1.0, duration: 0.1, ease: 'power2.inOut' });
-  tl.to(shield, { opacity: 0.7, duration: 0.5, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+  tl.to(shield, { scale: 1.0, duration: 0.12, ease: 'power2.inOut' });
+  tl.to(shield, { opacity: 0.82, duration: 0.7, yoyo: true, repeat: -1, ease: 'sine.inOut' });
 
   return { element: shield, timeline: tl };
 }
 
 // === SHIELD DEFLECT ===
 export function shieldDeflect(shieldEl, targetContainer, attackDir = 'left') {
+  const colors = {
+    primary: shieldEl.style.getPropertyValue('--shield-primary') || elementColors.neutral.primary,
+    glow: shieldEl.style.getPropertyValue('--shield-glow') || elementColors.neutral.glow,
+  };
+
+  // Expanding impact ripple from the contact edge
+  const ripple = document.createElement('span');
+  ripple.className = 'shield-ripple';
+  shieldEl.appendChild(ripple);
+  gsap.fromTo(ripple,
+    { opacity: 0.9, scale: 0.55 },
+    { opacity: 0, scale: 1.35, duration: 0.4, ease: 'power2.out', onComplete() { ripple.remove(); } }
+  );
+
   const tl = gsap.timeline();
+  tl.to(shieldEl, { filter: 'brightness(2.4) saturate(1.3)', duration: 0.05 });
+  tl.to(shieldEl, { scaleX: 0.9, scaleY: 1.06, duration: 0.05, ease: 'power2.in' });
+  tl.to(shieldEl, { scaleX: 1.06, scaleY: 0.95, duration: 0.06, ease: 'power2.out' });
+  tl.to(shieldEl, { scaleX: 1, scaleY: 1, filter: 'brightness(1) saturate(1)', duration: 0.1, ease: 'back.out(2)' });
 
-  tl.to(shieldEl, { opacity: 1, duration: 0.08 });
-  tl.to(shieldEl, { scaleX: 0.95, duration: 0.05 });
-  tl.to(shieldEl, { scaleX: 1.05, duration: 0.05 });
-  tl.to(shieldEl, { scaleX: 1.0, duration: 0.05 });
-
-  tl.add(() => {
-    createSparks(targetContainer, attackDir, elementColors.neutral.primary);
-  }, '<');
-
-  tl.to(shieldEl, { opacity: 0.8, duration: 0.1 });
+  tl.add(() => createSparks(targetContainer, attackDir, colors.glow, 6), 0.02);
 
   return tl;
 }
@@ -571,4 +579,137 @@ export function hitSquash(el) {
   tl.to(el, { scaleY: 0.95, scaleX: 1.05, duration: 0.05, ease: 'power2.in' });
   tl.to(el, { scaleY: 1, scaleX: 1, duration: 0.1, ease: 'back.out(3)' });
   return tl;
+}
+
+// === EGG HATCH BURST ===
+// The moment the egg cracks open: a white flash, radiant light rays, the shell
+// shattering into shards that scatter, and element-colored sparkle motes. All
+// nodes are appended to the egg container and self-remove. `container` is the
+// .egg-container element; element drives the glow palette.
+export function eggBurst(container, element = 'fire') {
+  if (!container) return;
+  const colors = elementColors[element] || elementColors.fire;
+  container.style.position = 'relative';
+
+  // 1) Light flash
+  const flash = document.createElement('div');
+  Object.assign(flash.style, {
+    position: 'absolute',
+    inset: '-25%',
+    borderRadius: '50%',
+    background: `radial-gradient(circle, #ffffff, ${colors.glow} 42%, transparent 72%)`,
+    opacity: '0',
+    pointerEvents: 'none',
+    zIndex: '30',
+    mixBlendMode: 'screen',
+  });
+  container.appendChild(flash);
+  gsap.fromTo(flash,
+    { opacity: 0, scale: 0.5 },
+    {
+      opacity: 1, scale: 1.4, duration: 0.16, ease: 'power2.out',
+      onComplete() {
+        gsap.to(flash, { opacity: 0, duration: 0.5, ease: 'power2.in', onComplete() { flash.remove(); } });
+      },
+    }
+  );
+
+  // 2) Radiant light rays
+  const rays = document.createElement('div');
+  rays.className = 'hatch-rays';
+  rays.style.setProperty('--ray-color', colors.glow);
+  container.appendChild(rays);
+  gsap.fromTo(rays,
+    { opacity: 0, scale: 0.4, rotation: 0 },
+    {
+      opacity: 0.85, scale: 1.1, rotation: 26, duration: 0.5, ease: 'power2.out',
+      onComplete() {
+        gsap.to(rays, { opacity: 0, duration: 0.6, onComplete() { rays.remove(); } });
+      },
+    }
+  );
+
+  // 3) Shell shards — slice the rendered egg canvas into a grid that scatters
+  const canvas = container.querySelector('canvas');
+  if (canvas) {
+    let imageSrc = '';
+    try { imageSrc = canvas.toDataURL(); } catch { imageSrc = ''; }
+    if (imageSrc) {
+      canvas.style.visibility = 'hidden';
+      const rect = canvas.getBoundingClientRect();
+      const parentRect = container.getBoundingClientRect();
+      const offsetX = rect.left - parentRect.left;
+      const offsetY = rect.top - parentRect.top;
+      const w = rect.width;
+      const h = rect.height;
+      const cols = 3;
+      const rows = 3;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const frag = document.createElement('div');
+          const fw = w / cols;
+          const fh = h / rows;
+          Object.assign(frag.style, {
+            position: 'absolute',
+            left: `${offsetX + c * fw}px`,
+            top: `${offsetY + r * fh}px`,
+            width: `${fw}px`,
+            height: `${fh}px`,
+            backgroundImage: `url(${imageSrc})`,
+            backgroundSize: `${w}px ${h}px`,
+            backgroundPosition: `-${c * fw}px -${r * fh}px`,
+            imageRendering: 'pixelated',
+            pointerEvents: 'none',
+            zIndex: '24',
+          });
+          container.appendChild(frag);
+          const dirX = c - (cols - 1) / 2;
+          const dx = dirX * (45 + Math.random() * 55);
+          const dy = -25 + (r / rows) * 50 + Math.random() * 110;
+          gsap.to(frag, {
+            x: dx,
+            y: dy,
+            rotation: (Math.random() - 0.5) * 420,
+            opacity: 0,
+            scale: 0.4,
+            duration: 0.6,
+            delay: (r * cols + c) * 0.012,
+            ease: 'power2.in',
+            onComplete() { frag.remove(); },
+          });
+        }
+      }
+    }
+  }
+
+  // 4) Sparkle motes
+  for (let i = 0; i < 14; i++) {
+    const p = document.createElement('div');
+    const size = 4 + Math.random() * 6;
+    Object.assign(p.style, {
+      position: 'absolute',
+      left: '50%',
+      top: '46%',
+      width: `${size}px`,
+      height: `${size}px`,
+      borderRadius: '50%',
+      background: i % 3 === 0 ? '#ffffff' : colors.glow,
+      boxShadow: `0 0 8px ${colors.primary}`,
+      pointerEvents: 'none',
+      zIndex: '28',
+    });
+    container.appendChild(p);
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 50 + Math.random() * 90;
+    gsap.to(p, {
+      x: Math.cos(ang) * dist,
+      y: Math.sin(ang) * dist - 10,
+      opacity: 0,
+      scale: 0.3,
+      duration: 0.55 + Math.random() * 0.25,
+      delay: 0.04 + Math.random() * 0.1,
+      ease: 'power2.out',
+      onComplete() { p.remove(); },
+    });
+  }
 }

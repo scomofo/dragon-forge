@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { dragons, eggSheets, npcs } from './gameData';
 import { SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN } from './singularityBosses';
+import { VFX_FRAMES } from './sprites';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -32,6 +33,9 @@ function collectAssetUrls() {
     for (const phase of boss.phases || []) {
       if (phase.sprite) urls.add(phase.sprite);
     }
+  }
+  for (const frame of Object.values(VFX_FRAMES)) {
+    if (frame?.strip?.src) urls.add(frame.strip.src);
   }
   return [...urls].filter(Boolean);
 }
