@@ -261,7 +261,7 @@ export function HatcheryRingOverlay({ save, onClose, onNavigate, refreshSave }) 
           <p className="forge-companion-note">
             {companionUnlocked
               ? 'Select a dragon above to bond as your Act IV companion.'
-              : `Companion bonding unlocks in Act ${companionLockedUntilAct}.`}
+              : 'Companion bonding unlocks in Act IV.'}
           </p>
           <div className="forge-overlay-actions">
             <button type="button" onClick={() => { onClose(); onNavigate?.('hatchery'); }}>OPEN FULL HATCHERY</button>
