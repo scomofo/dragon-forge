@@ -100,12 +100,12 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
   ];
 
   function selectNode(node) {
-    playSound('buttonClick');
+    playSound('mapNodeReach');
     setSelectedNodeId(node.id);
   }
 
   function selectDragon(dragonId) {
-    playSound('buttonClick');
+    playSound('dragonSelect');
     setSelectedDragonId(dragonId);
   }
 

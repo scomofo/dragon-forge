@@ -212,6 +212,8 @@ const SFX_SCHEMA = {
     buttonHover: { role: 'hover', priority: 0, cooldownMs: 35 },
     navSwitch: { role: 'navigation', priority: 1, cooldownMs: 80 },
     screenTransition: { role: 'transition', priority: 2, cooldownMs: 180 },
+    journalUnlock: { role: 'achievement', priority: 3, cooldownMs: 300 },
+    shopPurchase: { role: 'transaction', priority: 2, cooldownMs: 100 },
   },
   terminal: {
     terminalType: { role: 'text', priority: 0, cooldownMs: 12 },
@@ -245,8 +247,8 @@ const SFX_SCHEMA = {
     statusTick: { role: 'status-tick', priority: 1, cooldownMs: 70 },
     statusExpire: { role: 'status-expire', priority: 1, cooldownMs: 110 },
     ko: { role: 'ko', priority: 4, cooldownMs: 350 },
-    victoryFanfare: { role: 'victory', priority: 5, cooldownMs: 800 },
-    defeatDrone: { role: 'defeat', priority: 5, cooldownMs: 800 },
+    victoryFanfare: { role: 'victory', priority: 5, cooldownMs: 1200 },
+    defeatDrone: { role: 'defeat', priority: 5, cooldownMs: 1300 },
     xpGain: { role: 'reward-small', priority: 2, cooldownMs: 150 },
     levelUp: { role: 'reward-major', priority: 4, cooldownMs: 450 },
     scrapsEarned: { role: 'currency', priority: 1, cooldownMs: 120 },
@@ -255,6 +257,15 @@ const SFX_SCHEMA = {
     fusionMerge: { role: 'charge', priority: 2, cooldownMs: 300 },
     fusionBurst: { role: 'burst', priority: 3, cooldownMs: 300 },
     fusionReveal: { role: 'reward', priority: 4, cooldownMs: 500 },
+  },
+  singularity: {
+    newGamePlusStart: { role: 'new-game-plus', priority: 5, cooldownMs: 1500 },
+    singularityCorrupt: { role: 'corruption', priority: 4, cooldownMs: 500 },
+    mirrorAdminSpawn: { role: 'boss-intro', priority: 5, cooldownMs: 1000 },
+  },
+  world: {
+    mapNodeReach: { role: 'map-arrival', priority: 1, cooldownMs: 100 },
+    dragonSelect: { role: 'selection', priority: 1, cooldownMs: 60 },
   },
 };
 
@@ -271,7 +282,8 @@ const MUSIC_SCHEMA = {
   openingTense: { role: 'opening-sequence', mood: 'tense', source: 'asset', path: '/assets/music/music_battle_intense.mp3' },
   hatchery: { role: 'home-base', mood: 'warm', source: 'asset', path: '/assets/music/music_hatchery.mp3' },
   select: { role: 'menu-selection', mood: 'focused', source: 'asset', path: '/assets/music/music_select.mp3' },
-  mapWander: { role: 'map-wandering', mood: 'wandering', source: 'asset', path: '/assets/music/music_select.mp3' },
+  mapWander: { role: 'map-wandering', mood: 'wandering', source: 'asset', path: '/assets/music/music_hatchery.mp3' },
+  singularity: { role: 'singularity-boss', mood: 'dread', source: 'asset', path: '/assets/music/music_battle_intense.mp3' },
   battle: { role: 'battle-standard', mood: 'active', source: 'asset', path: '/assets/music/music_battle.mp3' },
   battleTense: { role: 'battle-tense', mood: 'tense', source: 'asset', path: '/assets/music/music_battle_intense.mp3' },
   battleIntense: { role: 'battle-critical', mood: 'danger', source: 'asset', path: '/assets/music/music_battle_intense.mp3' },
@@ -490,8 +502,9 @@ const SFX = {
   },
 
   heartbeatThump: () => {
-    osc(80, 90, 'sine', 0.35);
-    osc(60, 120, 'triangle', 0.2);
+    osc(85, 75, 'square', 0.26);
+    noiseBurst(55, 260, 'lowpass', 0.34, 1.5);
+    osc(62, 105, 'triangle', 0.18);
   },
 
   resisted: () => {
@@ -500,8 +513,8 @@ const SFX = {
   },
 
   miss: () => {
-    bend(980, 420, 260, 260, 'sine', 0.18);
-    noiseBurst(170, 1600, 'bandpass', 0.12, 5);
+    bend(980, 420, 260, 260, 'sine', 0.45);
+    noiseBurst(170, 1600, 'bandpass', 0.28, 5);
   },
 
   defend: () => {
@@ -518,11 +531,15 @@ const SFX = {
   },
 
   victoryFanfare: () => {
-    arpeggio([523, 659, 784], 'square', 100, 0.5);
+    arpeggio([523, 659, 784, 1047], 'square', 95, 0.5);
     setTimeout(() => {
-      chord([1047, 1319, 1568], 400, 'sine', 0.4);
-      noise(100, 6000, 'highpass', 0.1);
-    }, 350);
+      chord([1047, 1319, 1568], 600, 'sine', 0.42);
+      noise(130, 6000, 'highpass', 0.12);
+    }, 400);
+    setTimeout(() => {
+      osc(2093, 350, 'triangle', 0.18);
+      noiseBurst(90, 8000, 'highpass', 0.1, 12);
+    }, 750);
   },
 
   defeatDrone: () => {
@@ -537,33 +554,41 @@ const SFX = {
   },
 
   levelUp: () => {
-    arpeggio([523, 659, 784, 1047], 'square', 70, 0.5);
+    arpeggio([659, 784, 880, 1047], 'square', 55, 0.48);
     setTimeout(() => {
-      chord([1047, 1319], 300, 'sine', 0.3);
-      noise(60, 6000, 'highpass', 0.1);
-    }, 300);
+      osc(1319, 250, 'triangle', 0.32);
+      noiseBurst(60, 6500, 'highpass', 0.12, 10);
+    }, 240);
   },
 
   scrapsEarned: () => {
-    osc(1400, 30, 'sine', 0.3);
-    setTimeout(() => osc(1600, 30, 'sine', 0.3), 50);
-    setTimeout(() => osc(1800, 40, 'sine', 0.25), 100);
+    noiseBurst(55, 4800, 'highpass', 0.16, 12);
+    osc(1400, 38, 'sine', 0.36);
+    setTimeout(() => osc(1600, 38, 'sine', 0.34), 58);
+    setTimeout(() => {
+      osc(1800, 48, 'sine', 0.28);
+      noiseBurst(40, 5500, 'highpass', 0.12, 14);
+    }, 116);
   },
 
   // --- Status Effects ---
-  statusApply: () => {
+  statusApply: (opts) => {
+    const p = ELEMENT_PITCH[opts?.element] || 0;
     noise(80, 2500, 'bandpass', 0.4);
-    sweep(500, 200, 120, 'sawtooth', 0.3);
-    osc(300, 100, 'triangle', 0.2);
+    sweep(500 + p * 0.15, Math.max(20, 200 + p * 0.08), 120, 'sawtooth', 0.3);
+    osc(Math.max(20, 300 + p * 0.4), 100, 'triangle', 0.2);
   },
 
-  statusTick: () => {
+  statusTick: (opts) => {
+    const p = ELEMENT_PITCH[opts?.element] || 0;
     noise(50, 2000, 'bandpass', 0.25);
-    osc(250, 40, 'sine', 0.15);
+    osc(Math.max(20, 250 + p * 0.3), 40, 'sine', 0.15);
   },
 
-  statusExpire: () => {
-    arpeggio([350, 450, 550, 700], 'sine', 50, 0.3);
+  statusExpire: (opts) => {
+    const p = ELEMENT_PITCH[opts?.element] || 0;
+    const shift = p * 0.15;
+    arpeggio([350 + shift, 450 + shift, 550 + shift, 700 + shift], 'sine', 50, 0.3);
     noise(40, 5000, 'highpass', 0.1);
   },
 
@@ -583,11 +608,92 @@ const SFX = {
   },
 
   fusionReveal: () => {
-    arpeggio([523, 659, 784, 1047], 'sine', 100, 0.5);
+    sweep(120, 520, 400, 'sawtooth', 0.32);
+    noiseBurst(280, 2500, 'bandpass', 0.22, 4);
     setTimeout(() => {
-      chord([1047, 1319, 1568], 500, 'sine', 0.35);
-      osc(1568, 300, 'triangle', 0.15);
-    }, 400);
+      bend(380, 960, 720, 220, 'square', 0.38);
+      osc(1200, 280, 'triangle', 0.24);
+      noiseBurst(100, 5500, 'highpass', 0.18, 8);
+    }, 300);
+    setTimeout(() => {
+      chord([659, 784, 1047, 1319], 500, 'sine', 0.38);
+      noise(80, 7000, 'highpass', 0.1);
+    }, 600);
+  },
+
+  // --- Singularity ---
+  newGamePlusStart: () => {
+    sweep(60, 320, 600, 'sawtooth', 0.32);
+    noise(450, 800, 'bandpass', 0.2);
+    setTimeout(() => {
+      arpeggio([262, 330, 415, 523, 659, 784, 1047], 'square', 62, 0.44);
+    }, 250);
+    setTimeout(() => {
+      chord([1047, 1319, 1568], 700, 'sine', 0.42);
+      noiseBurst(250, 5000, 'highpass', 0.22, 7);
+      osc(1568, 500, 'triangle', 0.18);
+    }, 690);
+  },
+
+  singularityCorrupt: () => {
+    sweep(400, 50, 500, 'sawtooth', 0.4);
+    noise(350, 250, 'lowpass', 0.4);
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => {
+        osc(Math.random() * 350 + 80, 55, 'sawtooth', 0.22);
+        noise(35, Math.random() * 800 + 200, 'bandpass', 0.14);
+      }, i * 58);
+    }
+    setTimeout(() => {
+      osc(55, 500, 'sawtooth', 0.28);
+      osc(52, 500, 'sawtooth', 0.22);
+    }, 180);
+  },
+
+  mirrorAdminSpawn: () => {
+    sweep(2200, 80, 800, 'sawtooth', 0.38);
+    osc(55, 900, 'sawtooth', 0.32);
+    setTimeout(() => {
+      osc(58, 900, 'sawtooth', 0.26);
+      noiseBurst(400, 480, 'lowpass', 0.28, 1.5);
+    }, 100);
+    setTimeout(() => {
+      bend(760, 180, 580, 450, 'square', 0.42);
+      noiseBurst(200, 700, 'lowpass', 0.22, 2);
+    }, 350);
+    setTimeout(() => osc(40, 400, 'sine', 0.18), 600);
+  },
+
+  // --- Shop ---
+  shopPurchase: () => {
+    osc(1200, 42, 'sine', 0.42);
+    setTimeout(() => osc(1500, 52, 'sine', 0.38), 48);
+    setTimeout(() => {
+      osc(1800, 62, 'sine', 0.30);
+      noiseBurst(45, 5800, 'highpass', 0.14, 11);
+    }, 96);
+  },
+
+  // --- Journal ---
+  journalUnlock: () => {
+    sweep(280, 860, 200, 'sine', 0.32);
+    setTimeout(() => {
+      arpeggio([659, 784, 1047], 'triangle', 72, 0.44);
+      noiseBurst(90, 5200, 'highpass', 0.14, 8);
+    }, 120);
+    setTimeout(() => osc(1047, 220, 'sine', 0.24), 340);
+  },
+
+  // --- World ---
+  mapNodeReach: () => {
+    sweep(380, 780, 130, 'sine', 0.28);
+    noiseBurst(65, 3200, 'highpass', 0.18, 6);
+    setTimeout(() => osc(780, 65, 'triangle', 0.20), 85);
+  },
+
+  dragonSelect: () => {
+    bend(680, 1080, 880, 58, 'square', 0.26);
+    setTimeout(() => osc(1080, 32, 'sine', 0.16), 42);
   },
 };
 
@@ -632,7 +738,8 @@ const MUSIC_TRACKS = {
   openingTense: '/assets/music/music_battle_intense.mp3',
   hatchery: '/assets/music/music_hatchery.mp3',
   select: '/assets/music/music_select.mp3',
-  mapWander: '/assets/music/music_select.mp3',
+  mapWander: '/assets/music/music_hatchery.mp3',
+  singularity: '/assets/music/music_battle_intense.mp3',
   battle: '/assets/music/music_battle.mp3',
   battleTense: '/assets/music/music_battle_intense.mp3',
   battleIntense: '/assets/music/music_battle_intense.mp3',

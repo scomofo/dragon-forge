@@ -49,6 +49,6 @@ describe('sound effect schema', () => {
 
   test('resolves music tracks through the Vite base path', () => {
     expect(getMusicTrackUrl('title')).toBe('/dragon-forge/assets/music/theme.mp3');
-    expect(getMusicTrackUrl('wandering')).toBe('/dragon-forge/assets/music/music_select.mp3');
+    expect(getMusicTrackUrl('wandering')).toBe('/dragon-forge/assets/music/music_hatchery.mp3');
   });
 });

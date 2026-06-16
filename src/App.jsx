@@ -94,7 +94,7 @@ export default function App() {
       playMusic('hatchery');
       setScreen(SCREENS.SETTINGS);
     } else if (target === 'singularity') {
-      playMusic('battle', true);
+      playMusic('singularity', true);
       setScreen(SCREENS.SINGULARITY);
     } else if (target === 'forge') {
       playMusic('hatchery');
@@ -122,8 +122,12 @@ export default function App() {
   }
 
   function handleEngageBoss(config) {
-    playSound('buttonClick');
-    playMusic('battleTense', true);
+    if (config.isMirrorAdmin) {
+      playSound('mirrorAdminSpawn');
+    } else {
+      playSound('buttonClick');
+    }
+    playMusic('singularity', true);
     const scaledBoss = scaleBossForPlayer(config.boss, save);
     setBattleConfig({
       dragonId: config.dragonId,
@@ -138,7 +142,7 @@ export default function App() {
 
   function handleEngageRemnant(config) {
     playSound('buttonClick');
-    playMusic('battleTense', true);
+    playMusic('singularity', true);
     const scaledBoss = scaleBossForPlayer(config.boss, save);
     setBattleConfig({
       dragonId: config.dragonId,
@@ -176,7 +180,7 @@ export default function App() {
       playSound('victoryFanfare');
       playMusic('title', true);
     } else {
-      playMusic('battle', true);
+      playMusic('singularity', true);
     }
     setBattleConfig(null);
     setScreen(wonMirrorAdmin ? SCREENS.CREDITS : SCREENS.SINGULARITY);

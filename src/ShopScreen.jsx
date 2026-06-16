@@ -20,7 +20,7 @@ export default function ShopScreen({ onNavigate, save, refreshSave }) {
 
     if (item.requiresTarget && !targetDragonId) return;
 
-    playSound('scrapsEarned');
+    playSound('shopPurchase');
     spendScraps(item.cost);
 
     switch (item.effect) {
@@ -71,7 +71,7 @@ export default function ShopScreen({ onNavigate, save, refreshSave }) {
   const handleForge = (recipe) => {
     if (!canForge(recipe, save)) return;
 
-    playSound('fusionBurst');
+    playSound('shopPurchase');
     spendScraps(recipe.scrapsCost);
 
     // Consume cores

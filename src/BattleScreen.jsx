@@ -184,6 +184,11 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     turnCount: 0,
     maxDamageDealt: 0,
     bench,
+    npcAtkBuff: null,
+    npcDefBuff: null,
+    npcChargedMove: null,
+    signatureMoveUsed: false,
+    playerMoveHistory: [],
   };
 }
 
@@ -245,6 +250,18 @@ function battleReducer(state, action) {
       };
     case 'SET_EPILOGUE':
       return { ...state, phase: PHASES.EPILOGUE, xpGained: action.xpGained, scrapsGained: action.scrapsGained, isMirrorAdmin: action.isMirrorAdmin || false };
+    case 'SET_NPC_ATK_BUFF':
+      return { ...state, npcAtkBuff: action.value };
+    case 'SET_NPC_DEF_BUFF':
+      return { ...state, npcDefBuff: action.value };
+    case 'SET_NPC_CHARGED_MOVE':
+      return { ...state, npcChargedMove: action.value };
+    case 'CLEAR_NPC_CHARGED_MOVE':
+      return { ...state, npcChargedMove: null };
+    case 'SET_SIGNATURE_USED':
+      return { ...state, signatureMoveUsed: true };
+    case 'APPEND_PLAYER_MOVE_HISTORY':
+      return { ...state, playerMoveHistory: [...(state.playerMoveHistory || []).slice(-4), action.moveKey] };
     case 'SWAP_DRAGON':
       // Manual tactical swap: exchange the active dragon with the reserve.
       return swapActiveAndBench(state);
@@ -324,6 +341,37 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       return;
     }
 
+    if (event.action === 'buff') {
+      const statLabel = event.buffStat === 'atk' ? 'ATTACK' : 'DEFENSE';
+      dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — ${statLabel} raised!` });
+      playSound('combatMessage');
+      playSound('statusApply', { element: isPlayer ? state.dragon.element : state.npc.element });
+      if (isPlayer) {
+        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
+      } else {
+        dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-telegraph' });
+      }
+      dispatch({ type: 'SET_BATTLE_CALLOUT', value: { text: 'FORTIFY', variant: 'buff' } });
+      setTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 700);
+      const dmgId = ++damageIdRef.current;
+      dispatch({
+        type: 'ADD_DAMAGE_NUMBER',
+        entry: {
+          id: dmgId, damage: 0, effectiveness: 1.0, hit: true,
+          target: isPlayer ? 'player' : 'npc',
+          variant: 'buff',
+          label: `${statLabel} UP`,
+          staggerIndex: 0,
+          position: { x: 30, y: -40 },
+        },
+      });
+      await wait(600);
+      dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: '' });
+      dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: '' });
+      await wait(200);
+      return;
+    }
+
     const move = moves[event.moveKey] || moves.basic_attack;
     const profile = getBattlePresentationProfile(event, move);
 
@@ -334,7 +382,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     } else {
       dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: profile.attackerClass });
     }
-    playSound('attackLaunch');
+    playSound('attackLaunch', { element: move.element });
     await wait(profile.anticipationMs);
 
     // VFX TRAVEL + IMPACT phase
@@ -499,7 +547,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     if (event.appliedStatus) {
       dispatch({ type: 'ADD_LOG', text: `${event.appliedStatus} applied!` });
       playSound('combatMessage');
-      playSound('statusApply');
+      playSound('statusApply', { element: isPlayer ? state.dragon.element : state.npc.element });
       const statusId = ++damageIdRef.current;
       dispatch({
         type: 'ADD_DAMAGE_NUMBER',
@@ -543,7 +591,13 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   useEffect(() => {
     if (autoBattle && autoBattleAllowed && state.phase === PHASES.PLAYER_TURN && !animatingRef.current) {
       const playerMoveKeys = [...state.dragon.moveKeys, 'basic_attack'];
-      const autoMove = pickNpcMove(playerMoveKeys, state.dragon.element, state.npc.element, state.npcStatus);
+      const autoBattleContext = {
+        playerMoveHistory: state.playerMoveHistory,
+        turnCount: state.turnCount,
+        playerHpRatio: state.playerHp / state.playerMaxHp,
+        enemyHpRatio: state.npcHp / state.npcMaxHp,
+      };
+      const autoMove = pickNpcMove(playerMoveKeys, state.dragon.element, state.npc.element, state.npcStatus, autoBattleContext);
       setTimeout(() => handleMoveSelect(autoMove), 500);
     }
   }, [autoBattle, state.phase]);
@@ -616,10 +670,74 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       spd: state.npc.stats.spd,
       defending: false,
       status: state.npcStatus,
+      atkBuff: state.npcAtkBuff,
+      defBuff: state.npcDefBuff,
     };
 
-    const npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, state.dragon.element, state.playerStatus);
-    let result = resolveTurn(playerState, npcState, moveKey, npcMoveKey, state.dragon.moveKeys, state.npc.moveKeys);
+    // Track this player move for adaptive AI counter-element logic
+    dispatch({ type: 'APPEND_PLAYER_MOVE_HISTORY', moveKey });
+
+    const battleContext = {
+      playerMoveHistory: state.playerMoveHistory,
+      turnCount: state.turnCount,
+      playerHpRatio: state.playerHp / state.playerMaxHp,
+      enemyHpRatio: state.npcHp / state.npcMaxHp,
+      npcAtkBuff: state.npcAtkBuff,
+      npcDefBuff: state.npcDefBuff,
+    };
+
+    // ---- Signature move check ----
+    const npcData = npcs[state.npc.id] || state.npc;
+    const sigKey = npcData.signatureMoveKey;
+    const sigCondition = npcData.signatureCondition;
+    const npcHpRatio = state.npcHp / state.npcMaxHp;
+    const shouldFireSignature = sigKey && sigCondition &&
+      !state.signatureMoveUsed && !state.npcChargedMove &&
+      npcHpRatio <= sigCondition.hpThreshold;
+
+    // ---- Charge / fire logic ----
+    const desperationMode = (state.npcHp / state.npcMaxHp) < 0.30;
+    let npcMoveKey;
+    let previouslyCharged = false;
+    let isCharging = false;
+
+    if (state.npcChargedMove) {
+      // Fire the stored charged move at 1.4× ATK
+      npcMoveKey = state.npcChargedMove;
+      previouslyCharged = true;
+      dispatch({ type: 'CLEAR_NPC_CHARGED_MOVE' });
+    } else if (shouldFireSignature) {
+      npcMoveKey = sigKey;
+      dispatch({ type: 'SET_SIGNATURE_USED' });
+    } else {
+      npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, state.dragon.element, state.playerStatus, battleContext);
+      const npcMoveData = moves[npcMoveKey];
+      if (npcMoveData?.canCharge && !desperationMode && Math.random() < (npcMoveData.chargeChance ?? 0.4)) {
+        isCharging = true;
+        dispatch({ type: 'SET_NPC_CHARGED_MOVE', value: npcMoveKey });
+      }
+    }
+
+    // Boost NPC ATK if firing a charged move
+    const chargedNpcState = previouslyCharged
+      ? { ...npcState, atk: Math.floor(npcState.atk * 1.4) }
+      : npcState;
+
+    // On charge turn: NPC defends (takes the player hit while winding up)
+    const effectiveNpcMoveKey = isCharging ? 'defend' : npcMoveKey;
+
+    let result = resolveTurn(playerState, chargedNpcState, moveKey, effectiveNpcMoveKey, state.dragon.moveKeys, state.npc.moveKeys);
+
+    // Tag signature events for presentation
+    const isSignature = shouldFireSignature && !previouslyCharged;
+    if (isSignature) {
+      result = {
+        ...result,
+        events: result.events.map(e =>
+          e.attacker === 'npc' && e.action === 'attack' ? { ...e, isSignature: true } : e
+        ),
+      };
+    }
 
     // hydra_cog: 20% chance for a follow-up hit after a successful player attack
     let chainDamage = 0;
@@ -645,6 +763,28 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       await wait(200);
     }
 
+    // Charge warning log — appears after the player's attack resolves this turn
+    if (isCharging) {
+      const chargeMoveName = moves[npcMoveKey]?.name || 'a powerful move';
+      dispatch({ type: 'ADD_LOG', text: `${state.npc.name} is winding up ${chargeMoveName}!` });
+      playSound('combatMessage');
+    }
+
+    // Signature callout
+    if (isSignature) {
+      dispatch({ type: 'SET_BATTLE_CALLOUT', value: { text: 'SIGNATURE', variant: 'signature' } });
+      setTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 900);
+    }
+
+    // Charged strike callout
+    if (previouslyCharged) {
+      dispatch({ type: 'ADD_LOG', text: `${state.npc.name} unleashes a CHARGED STRIKE!` });
+    }
+
+    // Sync NPC buff state from engine result
+    dispatch({ type: 'SET_NPC_ATK_BUFF', value: result.npc.atkBuff || null });
+    dispatch({ type: 'SET_NPC_DEF_BUFF', value: result.npc.defBuff || null });
+
     // coolant_core: extend status duration when player applies a NEW status to the NPC
     let finalNpcStatus = result.npc.status;
     if (relicMods.statusDurationBonus > 0 && result.npc.status &&
@@ -654,7 +794,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     // resonant_fork: status was cleared pre-turn via shouldCleanse; normalise to null
     const finalPlayerStatus = result.player.status || null;
-    if (shouldCleanse) playSound('statusExpire');
+    if (shouldCleanse) playSound('statusExpire', { element: state.dragon.element });
 
     // Sync status from engine
     dispatch({ type: 'SET_PLAYER_STATUS', value: finalPlayerStatus || null });
@@ -685,7 +825,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     for (const event of result.events) {
       if (event.attacker === 'status') {
         if (event.damage > 0) {
-          playSound('statusTick');
+          playSound('statusTick', { element: event.target === 'player' ? state.dragon.element : state.npc.element });
           const dmgId = ++damageIdRef.current;
           dispatch({
             type: 'ADD_DAMAGE_NUMBER',
@@ -699,7 +839,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           await wait(400);
         }
         if (event.expired) {
-          playSound('statusExpire');
+          playSound('statusExpire', { element: event.target === 'player' ? state.dragon.element : state.npc.element });
         }
       }
       if (event.action === 'statusSkip') {
@@ -967,8 +1107,16 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       atk: state.npc.stats.atk, def: state.npc.stats.def, spd: state.npc.stats.spd,
       defending: false, status: state.npcStatus,
     };
-    const npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, incoming.dragon.element, incoming.playerStatus);
-    const result = resolveTurn(incomingState, npcState, 'defend', npcMoveKey, incoming.dragon.moveKeys, state.npc.moveKeys);
+    const swapContext = {
+      turnCount: state.turnCount,
+      playerHpRatio: incoming.playerHp / incoming.playerMaxHp,
+      enemyHpRatio: state.npcHp / state.npcMaxHp,
+      npcAtkBuff: state.npcAtkBuff,
+      npcDefBuff: state.npcDefBuff,
+    };
+    const npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, incoming.dragon.element, incoming.playerStatus, swapContext);
+    const swapNpcState = { ...npcState, atkBuff: state.npcAtkBuff, defBuff: state.npcDefBuff };
+    const result = resolveTurn(incomingState, swapNpcState, 'defend', npcMoveKey, incoming.dragon.moveKeys, state.npc.moveKeys);
 
     for (const event of result.events) {
       if (event.attacker === 'npc' && shouldAnimateBattleEvent(event)) {
@@ -983,6 +1131,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     }
     dispatch({ type: 'SET_PLAYER_STATUS', value: result.player.status || null });
     dispatch({ type: 'SET_NPC_STATUS', value: result.npc.status || null });
+    dispatch({ type: 'SET_NPC_ATK_BUFF', value: result.npc.atkBuff || null });
+    dispatch({ type: 'SET_NPC_DEF_BUFF', value: result.npc.defBuff || null });
     await wait(350);
 
     if (result.player.hp <= 0) {
@@ -1131,12 +1281,27 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
               {STATUS_EFFECTS[state.npcStatus.effect]?.icon} {STATUS_EFFECTS[state.npcStatus.effect]?.name} {state.npcStatus.turnsLeft}t
             </div>
           )}
+          {state.npcAtkBuff && (
+            <div className="status-indicator buff-atk">
+              ⬆ ATK UP {state.npcAtkBuff.turnsLeft}t
+            </div>
+          )}
+          {state.npcDefBuff && (
+            <div className="status-indicator buff-def">
+              🛡 DEF UP {state.npcDefBuff.turnsLeft}t
+            </div>
+          )}
         </div>
 
         <div className="turn-chip">
           <span>{isResolvingTurn ? 'RESOLVING' : 'PLAYER TURN'}</span>
           <strong>TURN {state.turnCount + 1}</strong>
           <small>ENEMY: {getMoveProfileText(npc.moveKeys)}</small>
+          {state.npcChargedMove && (
+            <div className="charge-warning">
+              ⚡ CHARGING: {moves[state.npcChargedMove]?.name?.toUpperCase()}
+            </div>
+          )}
         </div>
 
         <div

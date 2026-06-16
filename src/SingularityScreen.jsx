@@ -18,7 +18,7 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, onEngageRe
   const [confirmingNg, setConfirmingNg] = useState(false);
 
   const handleNewGamePlus = () => {
-    playSound('screenTransition');
+    playSound('newGamePlusStart');
     startNewGamePlus();
     onNavigate('hatchery'); // re-locks the Singularity; onNavigate refreshes the save
   };
@@ -197,6 +197,7 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, onEngageRe
                 idleSprite={selectedBoss.idleSprite}
                 attackSprite={selectedBoss.attackSprite || selectedBoss.idleSprite}
                 isAttacking={false}
+                smooth={selectedBoss.bespokeArt}
                 style={{ filter: selectedBoss.spriteFilter || (selectedBoss.phases ? selectedBoss.phases[0].spriteFilter : '') }}
               />
 

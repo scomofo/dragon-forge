@@ -31,7 +31,7 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
       for (const m of toClaim) {
         claimMilestone(m.id, m.reward);
       }
-      playSound('superEffective');
+      playSound('journalUnlock');
       refreshSave();
       for (const m of toClaim) {
         showToast(`🏆 ${m.name} — +${m.reward} ◆`);
