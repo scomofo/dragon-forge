@@ -1,3 +1,6 @@
+import { dragons, stageMultipliers } from './gameData';
+import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
+
 const BASE_ELEMENTS = ['fire', 'ice', 'storm', 'stone', 'venom', 'shadow'];
 const BASE_NPC_IDS = ['firewall_sentinel', 'bit_wraith', 'glitch_hydra', 'recursive_golem'];
 
@@ -41,29 +44,65 @@ export function getRemnantProgress(save) {
   return { available, defeated, allDefeated };
 }
 
+// --- Post-game difficulty knobs (tunable; tweak after playtesting) ---
+// Player hits to clear ONE boss phase. Fewer for multi-phase bosses so the
+// total fight (player HP carries across phases) stays a reasonable length.
+const phasePlayerTtk = (phaseCount) => (phaseCount >= 3 ? 3 : phaseCount === 2 ? 4 : 6);
+// The boss needs ~this multiple of the player's total clear-turns to KO them,
+// so the player wins with a margin (>1 = player-favoured; lower = harder).
+const BOSS_SURVIVAL_MARGIN = 1.8;
+const REPLAY_STEP = 0.1; // each repeat clear adds this much HP+ATK ...
+const REPLAY_CAP = 0.5;  // ... capped here, so replays get harder, not free.
+
+// Fixed-TTK boss scaling: set boss HP and ATK from the player's ACTUAL damage
+// output and HP so the fight lasts ~the same number of turns at any player
+// level (the audit's "target a fixed TTK, decoupled from level" goal), instead
+// of inflating HP into a damage sponge the player one-shots anyway.
 export function scaleBossForPlayer(boss, save) {
-  const playerMaxLevel = Object.values(save.dragons)
-    .filter(d => d.owned)
-    .reduce((max, d) => Math.max(max, d.level), 1);
-  const replayCounts = save.singularityProgress?.replayCounts || {};
-  const replayBonus = (replayCounts[boss.id] || 0) * 5;
+  // Player baseline = their strongest (highest-level) owned dragon — the likely pick.
+  const owned = Object.entries(save.dragons || {}).filter(([, d]) => d.owned);
+  let pLevel = boss.level || 30;
+  let pStats;
+  if (owned.length) {
+    const [repId, repD] = owned.reduce((best, cur) => (cur[1].level > best[1].level ? cur : best));
+    pLevel = repD.level;
+    const base = repD.fusedBaseStats || dragons[repId]?.baseStats || { hp: 100, atk: 30, def: 20, spd: 20 };
+    pStats = calculateStatsForLevel(base, repD.level, repD.shiny);
+  } else {
+    pStats = calculateStatsForLevel({ hp: 100, atk: 30, def: 20, spd: 20 }, pLevel);
+  }
+  const pStageMult = stageMultipliers[getStageForLevel(pLevel)] ?? 1.0;
+  // Representative neutral player damage per hit (avg move power ~1.0; type/crit/def ignored).
+  const estPlayerDmg = Math.max(1, pStats.atk * pStageMult * 2);
 
-  const AGGRESSION = { 'Singularity': 1.3, 'FINAL': 1.5, 'TRUE FINAL': 1.5, 'Remnant': 1.8 };
-  const aggr = AGGRESSION[boss.difficulty] ?? 1.0;
+  const replays = save.singularityProgress?.replayCounts?.[boss.id] || 0;
+  const replayMult = 1 + Math.min(REPLAY_CAP, replays * REPLAY_STEP);
 
-  const scaleStats = (stats, factor) => Object.fromEntries(
-    Object.entries(stats).map(([k, v]) => [k, Math.floor(v * factor * (k === 'atk' ? aggr : 1))]));
+  const phaseCount = boss.phases ? boss.phases.length : 1;
+  const perPhaseTtk = phasePlayerTtk(phaseCount);
+  const bossTtk = perPhaseTtk * phaseCount * BOSS_SURVIVAL_MARGIN;
+  const targetBossDmg = pStats.hp / bossTtk;
+  // The boss attacks at stageMult 1.0 (no stage on the boss). Invert
+  // dmg = atk*1.0*1.0*2 - playerDef*0.5  for the ATK it needs to hit targetBossDmg.
+  const targetBossAtk = Math.max(1, (targetBossDmg + pStats.def * 0.5) / 2);
+
+  const buildStats = (stats, hpWeight, atkWeight) => ({
+    hp:  Math.max(1, Math.round(perPhaseTtk * estPlayerDmg * hpWeight * replayMult)),
+    atk: Math.max(1, Math.round(targetBossAtk * atkWeight * replayMult)),
+    def: stats.def,
+    spd: stats.spd,
+  });
 
   if (boss.phases) {
-    const scaledPhases = boss.phases.map((phase, i) => {
-      const scaledLevel = Math.max(phase.level, playerMaxLevel + i) + replayBonus;
-      const factor = scaledLevel / phase.level;
-      return { ...phase, level: scaledLevel, stats: scaleStats(phase.stats, factor) };
-    });
+    const avgHp = (boss.phases.reduce((s, p) => s + p.stats.hp, 0) / phaseCount) || 1;
+    const avgAtk = (boss.phases.reduce((s, p) => s + p.stats.atk, 0) / phaseCount) || 1;
+    const scaledPhases = boss.phases.map((phase) => ({
+      ...phase,
+      level: Math.max(phase.level, pLevel),
+      stats: buildStats(phase.stats, phase.stats.hp / avgHp, phase.stats.atk / avgAtk),
+    }));
     return { ...boss, phases: scaledPhases };
   }
 
-  const scaledLevel = Math.max(boss.level, playerMaxLevel) + replayBonus;
-  const factor = scaledLevel / boss.level;
-  return { ...boss, level: scaledLevel, stats: scaleStats(boss.stats, factor) };
+  return { ...boss, level: Math.max(boss.level, pLevel), stats: buildStats(boss.stats, 1, 1) };
 }
