@@ -40,16 +40,23 @@ export default function ShopScreen({ onNavigate, save, refreshSave }) {
         // Re-roll fused base stats — generate random variation
         if (targetDragonId) {
           const dragon = dragons[targetDragonId];
-          const base = save.dragons[targetDragonId].fusedBaseStats || dragon.baseStats;
-          const rerolled = {};
-          for (const stat of Object.keys(base)) {
-            const variance = Math.floor(base[stat] * 0.2);
-            rerolled[stat] = base[stat] + Math.floor(Math.random() * variance * 2) - variance;
+          const base = save.dragons[targetDragonId]?.fusedBaseStats || dragon?.baseStats;
+          if (base) {
+            const rerolled = {};
+            for (const stat of Object.keys(base)) {
+              const variance = Math.floor(base[stat] * 0.2);
+              rerolled[stat] = base[stat] + Math.floor(Math.random() * variance * 2) - variance;
+            }
+            // Write via persistence — guard against missing/cleared storage.
+            const raw = localStorage.getItem('dragonforge_save');
+            if (raw) {
+              const s = JSON.parse(raw);
+              if (s?.dragons?.[targetDragonId]) {
+                s.dragons[targetDragonId].fusedBaseStats = rerolled;
+                localStorage.setItem('dragonforge_save', JSON.stringify(s));
+              }
+            }
           }
-          // Write via persistence
-          const s = JSON.parse(localStorage.getItem('dragonforge_save'));
-          s.dragons[targetDragonId].fusedBaseStats = rerolled;
-          localStorage.setItem('dragonforge_save', JSON.stringify(s));
         }
         break;
       }

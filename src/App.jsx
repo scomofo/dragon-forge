@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Toast from './Toast';
 import TitleScreen from './TitleScreen';
 import BattleSelectScreen from './BattleSelectScreen';
@@ -47,9 +47,12 @@ export default function App() {
   }
   const stage = getSingularityStage(save);
   const [toasts, setToasts] = useState([]);
+  const toastIdRef = useRef(0);
 
   function showToast(message) {
-    const id = Date.now();
+    // Monotonic id — Date.now() collided when two toasts fired in the same ms
+    // (e.g. multiple milestones ready at once), producing duplicate React keys.
+    const id = ++toastIdRef.current;
     setToasts(prev => [...prev, { id, message }]);
   }
 

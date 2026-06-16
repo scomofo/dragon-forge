@@ -132,7 +132,7 @@ function initBattle(dragonId, npcId, save, battleConfig) {
   // bosses/Singularity stay single-dragon so their fixed-TTK balance holds.
   let bench = null;
   const benchId = battleConfig?.benchDragonId;
-  if (benchId && benchId !== dragonId && save.dragons[benchId]?.owned) {
+  if (benchId && benchId !== dragonId && save.dragons[benchId]?.owned && dragons[benchId]) {
     const bDragon = dragons[benchId];
     const bProg = save.dragons[benchId] || { level: 1, xp: 0 };
     const bStats = calculateStatsForLevel(bProg.fusedBaseStats || bDragon.baseStats, bProg.level, bProg.shiny);

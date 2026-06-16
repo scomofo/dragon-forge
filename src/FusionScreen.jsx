@@ -15,7 +15,7 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
   const [fusionResult, setFusionResult] = useState(null);
 
   const ownedDragons = Object.entries(save.dragons)
-    .filter(([, d]) => d.owned && d.level >= 10)
+    .filter(([id, d]) => d.owned && d.level >= 10 && dragons[id]) // drop ids absent from the data table (legacy saves)
     .map(([id, d]) => {
       const dragon = dragons[id];
       const stage = getStageForLevel(d.level);

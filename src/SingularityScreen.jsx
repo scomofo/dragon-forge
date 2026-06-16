@@ -15,7 +15,9 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, onEngageRe
     return firstOwned || 'fire';
   });
 
-  const selectedBoss = ALL_BOSSES.find(b => b.id === selectedBossId);
+  // Fall back to the first boss if the selected id ever fails to resolve, so the
+  // screen can never crash on selectedBoss.phases/stats (ALL_BOSSES is non-empty).
+  const selectedBoss = ALL_BOSSES.find(b => b.id === selectedBossId) || ALL_BOSSES[0];
   const bossStatus = getBossStatus(selectedBoss, save);
   const canEngage = bossStatus === 'available' || bossStatus === 'defeated';
   const ownedDragons = ELEMENTS.filter(el => save.dragons[el]?.owned);
