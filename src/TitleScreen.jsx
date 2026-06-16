@@ -5,6 +5,7 @@ import SoundToggle from './SoundToggle';
 import { getSingularityStage } from './singularityProgress';
 import { getTerminalDialogue } from './felixDialogue';
 import { OPENING_BOOT_LINES } from './loreCanon';
+import { markIntroSeen } from './persistence';
 
 export default function TitleScreen({ onStart, save }) {
   const [lines, setLines] = useState([]);
@@ -119,8 +120,19 @@ export default function TitleScreen({ onStart, save }) {
   useEffect(() => {
     if (hasBootedRef.current) return;
     hasBootedRef.current = true;
+    // Returning players have already seen the boot wall — render it instantly, skip the ~10s typing.
+    if (save?.introSeen) {
+      skippedRef.current = true;
+      setLines(OPENING_BOOT_LINES.map((l) => ({ text: l.text, status: l.status })));
+      setFelixLines([...getTerminalDialogue(getSingularityStage(save))]);
+      setFelixVisible(true);
+      setPhase('ready');
+      setShowButton(true);
+      setShowCursor(false);
+      return;
+    }
     runBootSequence();
-  }, [runBootSequence]);
+  }, [runBootSequence, save]);
 
   const handleClick = () => {
     // Retry music on first user interaction (autoplay policy requires click)
@@ -132,6 +144,7 @@ export default function TitleScreen({ onStart, save }) {
 
   const handleStart = () => {
     playSound('buttonClick');
+    markIntroSeen();
     onStart();
   };
 

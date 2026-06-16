@@ -229,6 +229,15 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const animatingRef = useRef(false);
   const damageIdRef = useRef(0);
   const [autoBattle, setAutoBattle] = useState(false);
+  // AUTO-battle is a farm convenience; it must never trivialize high-stakes fights.
+  // Disabled for bosses, the Singularity arc, the Mirror Admin, Corruption Remnants, and the Daily Challenge.
+  const autoBattleAllowed = !(
+    battleConfig?.boss ||
+    battleConfig?.isSingularity ||
+    battleConfig?.isMirrorAdmin ||
+    battleConfig?.isRemnant ||
+    battleConfig?.dailyNpc
+  );
   const [selectedMoveKey, setSelectedMoveKey] = useState(null);
   const [controllerFocusIndex, setControllerFocusIndex] = useState(0);
 
@@ -500,7 +509,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   }, [state]);
 
   useEffect(() => {
-    if (autoBattle && state.phase === PHASES.PLAYER_TURN && !animatingRef.current) {
+    if (autoBattle && autoBattleAllowed && state.phase === PHASES.PLAYER_TURN && !animatingRef.current) {
       const playerMoveKeys = [...state.dragon.moveKeys, 'basic_attack'];
       const autoMove = pickNpcMove(playerMoveKeys, state.dragon.element, state.npc.element, state.npcStatus);
       setTimeout(() => handleMoveSelect(autoMove), 500);
@@ -907,6 +916,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     },
     onButtonPress: (button) => {
       if (button === 'Y') {
+        if (!autoBattleAllowed) return;
         playSound('uiConfirm');
         setAutoBattle((enabled) => !enabled);
         setControllerFocusIndex(controllerCommandCount - 1);
@@ -923,7 +933,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           handleMoveSelect(playerMoves[controllerFocusIndex].key);
         } else if (controllerFocusIndex === playerMoves.length) {
           handleMoveSelect('defend');
-        } else {
+        } else if (autoBattleAllowed) {
           playSound('uiConfirm');
           setAutoBattle((enabled) => !enabled);
         }
@@ -1213,14 +1223,18 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             </span>
           </button>
           <button
-            className={`move-btn auto ${autoBattle ? 'selected' : ''} ${controllerFocusIndex === playerMoves.length + 1 ? 'controller-focus' : ''}`}
-            style={{ '--move-color': autoBattle ? '#44cc44' : '#666', '--move-glow': autoBattle ? '#44cc44' : '#888', borderColor: autoBattle ? '#44cc44' : '#666', color: autoBattle ? '#44cc44' : '#888' }}
-            onClick={() => setAutoBattle(!autoBattle)}
+            className={`move-btn auto ${autoBattle ? 'selected' : ''} ${!autoBattleAllowed ? 'disabled' : ''} ${controllerFocusIndex === playerMoves.length + 1 ? 'controller-focus' : ''}`}
+            style={autoBattleAllowed
+              ? { '--move-color': autoBattle ? '#44cc44' : '#666', '--move-glow': autoBattle ? '#44cc44' : '#888', borderColor: autoBattle ? '#44cc44' : '#666', color: autoBattle ? '#44cc44' : '#888' }
+              : { '--move-color': '#555', '--move-glow': '#555', borderColor: '#444', color: '#666', opacity: 0.55, cursor: 'not-allowed' }}
+            onClick={() => { if (autoBattleAllowed) setAutoBattle(!autoBattle); }}
+            disabled={!autoBattleAllowed}
+            title={autoBattleAllowed ? '' : 'AUTO is disabled for boss and challenge fights'}
           >
-            <strong>{autoBattle ? 'AUTO: ON' : 'AUTO: OFF'}</strong>
+            <strong>{!autoBattleAllowed ? 'AUTO: LOCKED' : autoBattle ? 'AUTO: ON' : 'AUTO: OFF'}</strong>
             <span className="move-meta">
               <i>AI LOOP</i>
-              <i>{autoBattle ? 'ARMED' : 'MANUAL'}</i>
+              <i>{!autoBattleAllowed ? 'BOSS' : autoBattle ? 'ARMED' : 'MANUAL'}</i>
             </span>
           </button>
         </div>

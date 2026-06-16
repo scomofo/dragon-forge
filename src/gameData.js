@@ -11,7 +11,7 @@ export const typeChart = {
   storm:  { fire: 1.0, ice: 0.5, storm: 0.5, stone: 2.0, venom: 1.0, shadow: 0.5, void: 2.0, light: 1.0 },
   stone:  { fire: 2.0, ice: 1.0, storm: 0.5, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 1.0 },
   venom:  { fire: 0.5, ice: 1.0, storm: 1.0, stone: 0.5, venom: 0.5, shadow: 2.0, void: 1.0, light: 2.0 },
-  shadow: { fire: 1.0, ice: 0.5, storm: 2.0, stone: 1.0, venom: 0.5, shadow: 0.5, void: 2.0, light: 0.5 },
+  shadow: { fire: 1.0, ice: 0.5, storm: 2.0, stone: 1.0, venom: 0.5, shadow: 0.5, void: 2.0, light: 2.0 },
   void:   { fire: 1.0, ice: 1.0, storm: 1.0, stone: 2.0, venom: 1.0, shadow: 0.5, void: 1.0, light: 2.0 },
   light:  { fire: 1.0, ice: 1.0, storm: 1.0, stone: 1.0, venom: 2.0, shadow: 2.0, void: 0.5, light: 1.0 },
 };
@@ -344,11 +344,11 @@ export const PITY_THRESHOLD = 10;
 
 // === STATUS EFFECTS ===
 export const STATUS_EFFECTS = {
-  fire:   { name: 'Burn',        icon: '🔥', duration: 2, type: 'dot',     value: 0.08 },
+  fire:   { name: 'Burn',        icon: '🔥', duration: 2, type: 'dot',     value: 0.15 },
   ice:    { name: 'Freeze',      icon: '❄️', duration: 1, type: 'skip',    value: 1.0 },
   storm:  { name: 'Paralyze',    icon: '⚡', duration: 2, type: 'maySkip', value: 0.5 },
   stone:  { name: 'Guard Break', icon: '🛡️', duration: 2, type: 'debuff',  value: 0.4 },
-  venom:  { name: 'Poison',      icon: '☠️', duration: 2, type: 'dot',     value: 0.06 },
+  venom:  { name: 'Poison',      icon: '☠️', duration: 2, type: 'dot',     value: 0.12 },
   shadow: { name: 'Blind',       icon: '👁️', duration: 2, type: 'debuff',  value: 0.3 },
   void:   { name: 'Glitch',      icon: '🌀', duration: 1, type: 'randomize', value: 1.0 },
   light:  { name: 'Dazzle',     icon: '✨', duration: 2, type: 'debuff',    value: 0.3 },

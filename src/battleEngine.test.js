@@ -265,22 +265,22 @@ describe('processStatusTick', () => {
   it('deals DOT damage for burn', () => {
     const state = { hp: 100, maxHp: 100, status: { effect: 'fire', turnsLeft: 2 } };
     const result = processStatusTick(state);
-    expect(result.hp).toBe(92);
+    expect(result.hp).toBe(85);
     expect(result.status.turnsLeft).toBe(1);
-    expect(result.statusEvent).toEqual({ type: 'dot', damage: 8, effectName: 'Burn', expired: false });
+    expect(result.statusEvent).toEqual({ type: 'dot', damage: 15, effectName: 'Burn', expired: false });
   });
 
   it('deals DOT damage for poison', () => {
     const state = { hp: 100, maxHp: 100, status: { effect: 'venom', turnsLeft: 2 } };
     const result = processStatusTick(state);
-    expect(result.hp).toBe(94);
+    expect(result.hp).toBe(88);
     expect(result.status.turnsLeft).toBe(1);
   });
 
   it('expires status when turnsLeft reaches 0', () => {
     const state = { hp: 100, maxHp: 100, status: { effect: 'fire', turnsLeft: 1 } };
     const result = processStatusTick(state);
-    expect(result.hp).toBe(92);
+    expect(result.hp).toBe(85);
     expect(result.status).toBe(null);
     expect(result.statusEvent.expired).toBe(true);
   });

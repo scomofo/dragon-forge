@@ -160,6 +160,58 @@ export const MILESTONES = [
       return { met: streak >= 5, progress: `${Math.min(streak, 5)}/5` };
     },
   },
+  // === Post-game milestones (the endgame chase) ===
+  {
+    id: 'singularity_contained',
+    name: 'Singularity Contained',
+    description: 'Stop the Singularity',
+    reward: 1000,
+    check: (save) => {
+      const done = !!save.singularityComplete;
+      return { met: done, progress: done ? '1/1' : '0/1' };
+    },
+  },
+  {
+    id: 'mirror_shattered',
+    name: 'Reflection Shattered',
+    description: 'Defeat the Mirror Admin',
+    reward: 1500,
+    check: (save) => {
+      const done = !!save.mirrorAdminDefeated;
+      return { met: done, progress: done ? '1/1' : '0/1' };
+    },
+  },
+  {
+    id: 'remnants_purged',
+    name: 'Remnants Purged',
+    description: 'Clear all 3 Corruption Remnants',
+    reward: 1000,
+    check: (save) => {
+      const cleared = (save.remnantDefeated || []).length;
+      return { met: cleared >= 3, progress: `${Math.min(cleared, 3)}/3` };
+    },
+  },
+  {
+    id: 'synthesis_born',
+    name: 'Synthesis Achieved',
+    description: 'Forge the Synthesis Dragon',
+    reward: 750,
+    check: (save) => {
+      const has = !!save.dragons.synthesis?.owned;
+      return { met: has, progress: has ? '1/1' : '0/1' };
+    },
+  },
+  {
+    id: 'apex_roster',
+    name: 'Apex Roster',
+    description: 'Raise all 9 dragons to Stage IV (Lv.50)',
+    reward: 2000,
+    check: (save) => {
+      const all = Object.values(save.dragons);
+      const maxed = all.filter(d => d.owned && d.level >= 50).length;
+      return { met: maxed >= all.length, progress: `${maxed}/${all.length}` };
+    },
+  },
 ];
 
 export function checkMilestones(save) {

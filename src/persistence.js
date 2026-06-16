@@ -27,6 +27,7 @@ const DEFAULT_SAVE = {
   stats: { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 },
   lastDailyCompleted: 0,
   dailyStreak: 0,
+  introSeen: false,
   records: { fastestWin: null, highestDamage: 0, longestStreak: 0, currentStreak: 0 },
   flags: {
     currentAct: 1,
@@ -83,6 +84,8 @@ function migrateSave(save) {
     save.singularityProgress.replayCounts = {};
   }
   if (save.dailyStreak === undefined) save.dailyStreak = 0;
+  // Returning players who have already owned a dragon have seen the boot sequence; skip the wall for them.
+  if (save.introSeen === undefined) save.introSeen = Object.values(save.dragons).some(d => d.owned);
   if (save.singularityComplete === undefined) save.singularityComplete = false;
   if (save.mirrorAdminDefeated === undefined) save.mirrorAdminDefeated = false;
   if (!Array.isArray(save.remnantDefeated)) save.remnantDefeated = [];
@@ -234,6 +237,13 @@ export function recordSingularityDefeat(bossId) {
 export function updateFinalBossPhase(phase) {
   const save = loadSave();
   save.singularityProgress.finalBossPhase = phase;
+  writeSave(save);
+}
+
+export function markIntroSeen() {
+  const save = loadSave();
+  if (save.introSeen) return;
+  save.introSeen = true;
   writeSave(save);
 }
 
