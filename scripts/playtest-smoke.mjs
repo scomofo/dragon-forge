@@ -67,26 +67,31 @@ async function smokeViewport(browser, viewport) {
 
   await boot(page);
 
-  for (const screen of ['HATCHERY', 'MAP', 'SHOP', 'BATTLES']) {
+  for (const screen of ['HATCHERY', 'JOURNAL', 'MAP', 'BATTLES']) {
     await page.getByRole('button', { name: screen, exact: true }).click({ timeout: 30000 });
     await page.waitForTimeout(250);
     await assertNoHorizontalOverflow(page, `${viewport.name} ${screen}`);
   }
 
-  await page.getByRole('button', { name: /FORGE/i }).click({ timeout: 30000 });
-  await page.locator('.forge-screen').waitFor({ timeout: 8000 });
-  await assertNoHorizontalOverflow(page, `${viewport.name} forge`);
+  // FORGE is gated behind defeating at least one NPC — skip on fresh save
+  const forgeButton = page.getByRole('button', { name: /FORGE/i });
+  const forgeVisible = await forgeButton.isVisible({ timeout: 1000 }).catch(() => false);
+  if (forgeVisible) {
+    await forgeButton.click();
+    await page.locator('.forge-screen').waitFor({ timeout: 8000 });
+    await assertNoHorizontalOverflow(page, `${viewport.name} forge`);
 
-  await page.locator('.forge-screen').click({ force: true });
-  // Read the inline style (the state React writes), not getComputedStyle —
-  // .forge-skye transitions `left`, so the computed value lags behind input.
-  const before = await page.locator('[data-testid="forge-skye"]').evaluate((el) => el.style.left);
-  await page.keyboard.press('ArrowRight');
-  await page.keyboard.press('ArrowRight');
-  await page.waitForTimeout(180);
-  const after = await page.locator('[data-testid="forge-skye"]').evaluate((el) => el.style.left);
-  if (before === after) {
-    throw new Error(`${viewport.name}: Forge movement did not change Skye position`);
+    await page.locator('.forge-screen').click({ force: true });
+    // Read the inline style (the state React writes), not getComputedStyle —
+    // .forge-skye transitions `left`, so the computed value lags behind input.
+    const before = await page.locator('[data-testid="forge-skye"]').evaluate((el) => el.style.left);
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(180);
+    const after = await page.locator('[data-testid="forge-skye"]').evaluate((el) => el.style.left);
+    if (before === after) {
+      throw new Error(`${viewport.name}: Forge movement did not change Skye position`);
+    }
   }
 
   await page.screenshot({ path: resolve(ARTIFACT_DIR, `${viewport.name}.png`), fullPage: true });
@@ -99,7 +104,11 @@ async function smokeViewport(browser, viewport) {
 
 await mkdir(ARTIFACT_DIR, { recursive: true });
 await ensureServer();
-const browser = await chromium.launch({ channel: process.env.PLAYTEST_CHANNEL || undefined });
+const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined;
+const browser = await chromium.launch({
+  executablePath,
+  channel: executablePath ? undefined : (process.env.PLAYTEST_CHANNEL || undefined),
+});
 try {
   for (const viewport of viewports) {
     await smokeViewport(browser, viewport);

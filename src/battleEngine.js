@@ -99,15 +99,66 @@ export function processStatusTick(combatantState) {
   };
 }
 
-export function pickNpcMove(npcMoveKeys, npcElement, playerElement, playerStatus) {
+export function pickNpcMove(npcMoveKeys, npcElement, playerElement, playerStatus, battleContext = {}) {
+  const {
+    playerMoveHistory = [],
+    turnCount = 0,
+    playerHpRatio = 1.0,
+    enemyHpRatio = 1.0,
+    npcAtkBuff = null,
+    npcDefBuff = null,
+  } = battleContext;
+
   const filteredKeys = npcMoveKeys.filter(key => {
     const move = allMoves[key];
     return !move?.isReflect;
   });
   const availableKeys = [...filteredKeys, 'basic_attack'];
 
-  // Find super-effective moves
-  const superEffective = availableKeys.filter((key) => {
+  const desperationMode = enemyHpRatio < 0.30;
+  const exploitMode = !desperationMode && enemyHpRatio > 0.70 && playerHpRatio < 0.40 && !playerStatus;
+
+  // Desperation: skip all buffs and status moves, just hit hardest
+  if (desperationMode) {
+    const offensiveKeys = filteredKeys.filter(k => !allMoves[k]?.actionType);
+    const pool = offensiveKeys.length > 0 ? offensiveKeys : availableKeys;
+    const sorted = [...pool].sort((a, b) => (allMoves[b]?.power || 0) - (allMoves[a]?.power || 0));
+    return sorted[0] || pool[0];
+  }
+
+  // Anti-stack: don't re-buff if buff is already active
+  const buffFiltered = filteredKeys.filter(k => {
+    if (k === 'npc_focus' && npcAtkBuff) return false;
+    if (k === 'npc_harden' && npcDefBuff) return false;
+    return true;
+  });
+
+  // Buff timing: prefer to buff on early turns
+  const buffMoves = buffFiltered.filter(k => allMoves[k]?.actionType === 'buff');
+  const offensiveMoves = buffFiltered.filter(k => !allMoves[k]?.actionType);
+  if (buffMoves.length > 0 && turnCount <= 2 && Math.random() < 0.45) {
+    return buffMoves[Math.floor(Math.random() * buffMoves.length)];
+  }
+
+  // Counter-element adaptation: if player spammed same element, counter it
+  const recentElements = playerMoveHistory.slice(-3)
+    .map(k => allMoves[k]?.element)
+    .filter(Boolean);
+  if (recentElements.length >= 2 && recentElements.every(e => e === recentElements[0])) {
+    const dominantElement = recentElements[0];
+    const counterMoves = offensiveMoves.filter(k => {
+      const m = allMoves[k];
+      return m && getTypeEffectiveness(m.element, dominantElement) > 1.0;
+    });
+    if (counterMoves.length > 0 && Math.random() < 0.75) {
+      return counterMoves[Math.floor(Math.random() * counterMoves.length)];
+    }
+  }
+
+  const offensivePool = offensiveMoves.length > 0 ? offensiveMoves : availableKeys.filter(k => !allMoves[k]?.actionType);
+
+  // Find super-effective moves (from offensive pool only)
+  const superEffective = offensivePool.filter(key => {
     const move = allMoves[key];
     return move && getTypeEffectiveness(move.element, playerElement) > 1.0;
   });
@@ -117,27 +168,25 @@ export function pickNpcMove(npcMoveKeys, npcElement, playerElement, playerStatus
     return superEffective[Math.floor(Math.random() * superEffective.length)];
   }
 
-  // If target has no status, prefer status-applying moves (40% chance)
-  if (!playerStatus && Math.random() < 0.4) {
-    const statusMoves = filteredKeys.filter(key => {
-      const move = allMoves[key];
-      return move?.canApplyStatus;
-    });
+  // Exploit wounded player: raise status move chance to 70%
+  const statusChance = exploitMode ? 0.70 : 0.40;
+  if (!playerStatus && Math.random() < statusChance) {
+    const statusMoves = offensivePool.filter(key => allMoves[key]?.canApplyStatus);
     if (statusMoves.length > 0) {
       return statusMoves[Math.floor(Math.random() * statusMoves.length)];
     }
   }
 
   // Prefer higher-power moves (60% chance to pick strongest)
-  if (filteredKeys.length > 1 && Math.random() < 0.6) {
-    const sorted = [...filteredKeys].sort((a, b) => (allMoves[b]?.power || 0) - (allMoves[a]?.power || 0));
+  if (offensivePool.length > 1 && Math.random() < 0.6) {
+    const sorted = [...offensivePool].sort((a, b) => (allMoves[b]?.power || 0) - (allMoves[a]?.power || 0));
     return sorted[0];
   }
 
-  // Otherwise random from themed moves
-  const preferred = filteredKeys.length > 0 && Math.random() < 0.7
-    ? filteredKeys
-    : availableKeys;
+  // Otherwise random from offensive moves
+  const preferred = offensivePool.length > 0 && Math.random() < 0.7
+    ? offensivePool
+    : [...offensivePool, 'basic_attack'];
   return preferred[Math.floor(Math.random() * preferred.length)];
 }
 
@@ -209,7 +258,20 @@ export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey, pl
   player = { ...player, reflecting: false };
   npc = { ...npc, reflecting: false };
 
+  // Decrement active buff durations
+  player = decrementBuff(decrementBuff(player, 'atkBuff'), 'defBuff');
+  npc    = decrementBuff(decrementBuff(npc,    'atkBuff'), 'defBuff');
+
   return { player, npc, events };
+}
+
+function decrementBuff(state, buffKey) {
+  const buff = state[buffKey];
+  if (!buff) return state;
+  const turnsLeft = buff.turnsLeft - 1;
+  return turnsLeft <= 0
+    ? { ...state, [buffKey]: null }
+    : { ...state, [buffKey]: { ...buff, turnsLeft } };
 }
 
 function resolveAction(actor, events, getTarget, setTarget, setSelf) {
@@ -267,12 +329,38 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
     return;
   }
 
+  // Buff action handler
+  if (moveData?.actionType === 'buff') {
+    const buffKey = moveData.buffStat === 'atk' ? 'atkBuff' : 'defBuff';
+    // +1 so the end-of-turn decrement still leaves turnsLeft > 0 on the application turn,
+    // making the buff active for the full intended number of subsequent attack turns.
+    setSelf({
+      ...actor.state,
+      [buffKey]: { multiplier: moveData.buffMultiplier, turnsLeft: moveData.buffDuration + 1 },
+    });
+    events.push({
+      attacker: actor.label,
+      action: 'buff',
+      moveName: move.name,
+      moveKey: actor.moveKey,
+      vfxKey: move.vfxKey,
+      buffStat: moveData.buffStat,
+      buffMultiplier: moveData.buffMultiplier,
+      buffDuration: moveData.buffDuration,
+    });
+    return;
+  }
+
   const target = getTarget();
 
   // Apply Guard Break debuff to effective DEF
   let effectiveDef = target.def;
   if (target.status?.effect === 'stone') {
     effectiveDef = Math.floor(effectiveDef * (1 - STATUS_EFFECTS.stone.value));
+  }
+  // Apply defender's defBuff
+  if (target.defBuff) {
+    effectiveDef = Math.floor(effectiveDef * target.defBuff.multiplier);
   }
 
   // Apply Blind debuff to effective accuracy
@@ -281,8 +369,13 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
     effectiveAccuracy = Math.max(0, effectiveAccuracy - STATUS_EFFECTS.shadow.value * 100);
   }
 
+  // Apply attacker's atkBuff
+  const effectiveAtk = actor.state.atkBuff
+    ? Math.floor(actor.state.atk * actor.state.atkBuff.multiplier)
+    : actor.state.atk;
+
   const result = calculateDamage(
-    { atk: actor.state.atk, element: actor.state.element, stage: actor.state.stage },
+    { atk: effectiveAtk, element: actor.state.element, stage: actor.state.stage },
     { def: effectiveDef, element: target.element, defending: target.defending },
     { ...move, accuracy: effectiveAccuracy }
   );

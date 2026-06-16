@@ -221,6 +221,23 @@
 .status-indicator.poison { color: #66ee66; border-color: rgba(102, 238, 102, 0.55); }
 .status-indicator.blind { color: #aa66cc; border-color: rgba(170, 102, 204, 0.55); }
 .status-indicator.glitch { color: #44eeee; border-color: rgba(68, 238, 238, 0.55); }
+.status-indicator.buff-atk { color: #ffcc44; border-color: rgba(255, 204, 68, 0.55); }
+.status-indicator.buff-def { color: #88aaff; border-color: rgba(136, 170, 255, 0.55); }
+
+.charge-warning {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffaa00;
+  letter-spacing: 0.08em;
+  animation: chargePulse 0.55s steps(2, end) infinite;
+}
+
+@keyframes chargePulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.35; }
+  100% { opacity: 1; }
+}
 
 .hp-bar-label {
   display: flex;

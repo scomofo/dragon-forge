@@ -118,12 +118,40 @@ const BASE_PROFILES = {
     damageVariant: 'status',
     sound: 'statusApply',
   },
+  buff: {
+    kind: 'buff',
+    anticipationMs: 200,
+    launchMs: 0,
+    impactPauseMs: 60,
+    recoveryMs: 300,
+    shake: 0,
+    flashColor: '#ffffaa',
+    attackerClass: 'sprite-telegraph',
+    defenderClass: '',
+    damageVariant: 'buff',
+    sound: 'statusApply',
+  },
+  charge: {
+    kind: 'charge',
+    anticipationMs: 400,
+    launchMs: 0,
+    impactPauseMs: 0,
+    recoveryMs: 200,
+    shake: 0,
+    flashColor: '#ffaa00',
+    attackerClass: 'sprite-telegraph-heavy',
+    defenderClass: '',
+    damageVariant: 'charge',
+    sound: 'attackLaunch',
+  },
 };
 
 export function classifyBattleEvent(event) {
   if (!event) return 'normalHit';
   if (event.action === 'defend') return 'defend';
   if (event.action === 'reflect') return 'reflect';
+  if (event.action === 'buff') return 'buff';
+  if (event.action === 'charge') return 'charge';
   if (event.action === 'statusSkip') return 'miss';
   if (event.attacker === 'status') return 'status';
   if (event.action !== 'attack') return 'normalHit';
@@ -162,6 +190,8 @@ export function getBattleResultCallout(event) {
     criticalHit: 'CRITICAL',
     reflect: 'REFLECT',
     ko: 'KO',
+    buff: 'FORTIFY',
+    charge: 'CHARGING',
   };
   const text = textByVariant[variant];
   return text ? { text, variant } : null;
@@ -171,7 +201,7 @@ export function shouldAnimateBattleEvent(event) {
   if (!event) return false;
   if (event.attacker === 'status') return false;
   if (event.action === 'statusSkip') return false;
-  return ['attack', 'defend', 'reflect'].includes(event.action);
+  return ['attack', 'defend', 'reflect', 'buff'].includes(event.action);
 }
 
 export function getStatusMoveSummary(move) {

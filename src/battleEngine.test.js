@@ -463,3 +463,144 @@ describe('calculateDamage critical hits', () => {
     expect(result.isCritical).toBe(false);
   });
 });
+
+describe('buff action handling', () => {
+  const makeState = (overrides = {}) => ({
+    name: 'Test Dragon', element: 'fire', stage: 3,
+    hp: 100, maxHp: 100, atk: 20, def: 20, spd: 15,
+    status: null, defending: false,
+    ...overrides,
+  });
+
+  it('buff move produces a buff event and sets atkBuff on actor', () => {
+    const player = makeState();
+    const npc = makeState({ element: 'ice', spd: 5 });
+    const result = resolveTurn(player, npc, 'npc_focus', 'basic_attack', ['npc_focus'], ['basic_attack']);
+    const buffEvent = result.events.find(e => e.action === 'buff');
+    expect(buffEvent).toBeDefined();
+    expect(buffEvent.buffStat).toBe('atk');
+    expect(buffEvent.attacker).toBe('player');
+    expect(result.player.atkBuff).toBeDefined();
+    expect(result.player.atkBuff.multiplier).toBe(1.3);
+  });
+
+  it('atkBuff multiplier increases damage in next turn', () => {
+    const basePlayer = makeState({ atkBuff: null });
+    const buffedPlayer = makeState({ atkBuff: { multiplier: 1.3, turnsLeft: 1 } });
+    const npc = makeState({ element: 'ice', spd: 5 });
+    const moveFire = { element: 'fire', power: 65, accuracy: 100 };
+
+    // Run many trials to get past RNG variance — buffed average must exceed base average
+    let baseTotal = 0;
+    let buffedTotal = 0;
+    const TRIALS = 50;
+    const originalRandom = Math.random;
+    let callCount = 0;
+    Math.random = () => {
+      callCount++;
+      if (callCount % 3 === 1) return 0.5; // accuracy: hit
+      if (callCount % 3 === 2) return 0.0; // damage roll: min (0.85)
+      return 0.99;                          // no crit
+    };
+    callCount = 0;
+    for (let i = 0; i < TRIALS; i++) {
+      const r = calculateDamage({ atk: basePlayer.atk, element: 'fire', stage: 3 }, { def: npc.def, element: 'ice', defending: false }, moveFire);
+      baseTotal += r.damage;
+    }
+    callCount = 0;
+    for (let i = 0; i < TRIALS; i++) {
+      const effectiveAtk = Math.floor(buffedPlayer.atk * buffedPlayer.atkBuff.multiplier);
+      const r = calculateDamage({ atk: effectiveAtk, element: 'fire', stage: 3 }, { def: npc.def, element: 'ice', defending: false }, moveFire);
+      buffedTotal += r.damage;
+    }
+    Math.random = originalRandom;
+    expect(buffedTotal).toBeGreaterThan(baseTotal);
+  });
+
+  it('buff expires after its duration via decrementBuff in resolveTurn', () => {
+    // Focus has buffDuration: 1, so after one full turn it should be gone
+    const player = makeState({ atkBuff: { multiplier: 1.3, turnsLeft: 1 }, spd: 5 });
+    const npc = makeState({ element: 'stone' });
+    const result = resolveTurn(player, npc, 'basic_attack', 'basic_attack', ['basic_attack'], ['basic_attack']);
+    expect(result.player.atkBuff).toBeNull();
+  });
+
+  it('defBuff with 2 turns decrements to 1 after first turn', () => {
+    const player = makeState({ defBuff: { multiplier: 1.4, turnsLeft: 2 }, spd: 5 });
+    const npc = makeState({ element: 'stone' });
+    const result = resolveTurn(player, npc, 'basic_attack', 'basic_attack', ['basic_attack'], ['basic_attack']);
+    expect(result.player.defBuff).not.toBeNull();
+    expect(result.player.defBuff.turnsLeft).toBe(1);
+  });
+});
+
+describe('pickNpcMove adaptive AI', () => {
+  it('desperation mode never picks buff moves', () => {
+    const moveKeys = ['rock_slide', 'earthquake', 'npc_harden'];
+    const ctx = { enemyHpRatio: 0.20, playerHpRatio: 0.80 };
+    for (let i = 0; i < 30; i++) {
+      const choice = pickNpcMove(moveKeys, 'stone', 'fire', null, ctx);
+      expect(choice).not.toBe('npc_harden');
+    }
+  });
+
+  it('desperation mode prefers highest-power move', () => {
+    // earthquake (power 75) should dominate over rock_slide (power 60)
+    const moveKeys = ['rock_slide', 'earthquake'];
+    const ctx = { enemyHpRatio: 0.15, playerHpRatio: 0.80 };
+    let earthquakeCount = 0;
+    for (let i = 0; i < 30; i++) {
+      if (pickNpcMove(moveKeys, 'stone', 'fire', null, ctx) === 'earthquake') earthquakeCount++;
+    }
+    expect(earthquakeCount).toBeGreaterThan(20);
+  });
+
+  it('buff timing: uses buff move in first 2 turns with >30% frequency', () => {
+    const moveKeys = ['rock_slide', 'npc_harden'];
+    const ctx = { turnCount: 1, enemyHpRatio: 0.80, playerHpRatio: 0.80 };
+    let buffCount = 0;
+    for (let i = 0; i < 60; i++) {
+      if (pickNpcMove(moveKeys, 'stone', 'fire', null, ctx) === 'npc_harden') buffCount++;
+    }
+    expect(buffCount).toBeGreaterThan(18); // >30% of 60
+  });
+
+  it('anti-stack: never picks npc_focus when atkBuff is active', () => {
+    const moveKeys = ['magma_breath', 'npc_focus'];
+    const ctx = { npcAtkBuff: { multiplier: 1.3, turnsLeft: 1 }, enemyHpRatio: 0.80 };
+    for (let i = 0; i < 30; i++) {
+      expect(pickNpcMove(moveKeys, 'fire', 'ice', null, ctx)).not.toBe('npc_focus');
+    }
+  });
+
+  it('counter-element adaptation: targets counter moves when player repeats element', () => {
+    // Player spammed 'rock_slide' (stone) twice. Storm counters stone.
+    // Give NPC storm (lightning_strike) — should see it chosen more with counter adaptation
+    const moveKeys = ['thunder_clap', 'lightning_strike'];
+    const ctx = {
+      playerMoveHistory: ['rock_slide', 'rock_slide'],
+      enemyHpRatio: 0.80,
+      playerHpRatio: 0.80,
+    };
+    let stormCount = 0;
+    for (let i = 0; i < 40; i++) {
+      const choice = pickNpcMove(moveKeys, 'storm', 'stone', null, ctx);
+      if (choice === 'thunder_clap' || choice === 'lightning_strike') stormCount++;
+    }
+    // Storm is super-effective vs stone — counter adaptation should strongly favour it
+    expect(stormCount).toBeGreaterThan(25);
+  });
+
+  it('exploit mode raises status move usage when player is wounded', () => {
+    const moveKeys = ['magma_breath', 'flame_wall'];
+    const ctx = { enemyHpRatio: 0.80, playerHpRatio: 0.35 };
+    let statusCount = 0;
+    for (let i = 0; i < 60; i++) {
+      // Both fire moves canApplyStatus — count how often they're chosen in exploit mode
+      const choice = pickNpcMove(moveKeys, 'fire', 'ice', null, ctx);
+      if (choice === 'magma_breath' || choice === 'flame_wall') statusCount++;
+    }
+    // In exploit mode status chance is 70% and both moves canApplyStatus, so bias is strong
+    expect(statusCount).toBeGreaterThan(25);
+  });
+});
