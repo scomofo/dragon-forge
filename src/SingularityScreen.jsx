@@ -3,6 +3,7 @@ import { playSound } from './soundEngine';
 import { dragons, elementColors, ELEMENTS } from './gameData';
 import { SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN, CORRUPTION_REMNANTS, getBossStatus } from './singularityBosses';
 import { getRemnantProgress } from './singularityProgress';
+import { startNewGamePlus } from './persistence';
 import NavBar from './NavBar';
 import NpcSprite from './NpcSprite';
 
@@ -14,6 +15,13 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, onEngageRe
     const firstOwned = ELEMENTS.find(el => save.dragons[el]?.owned);
     return firstOwned || 'fire';
   });
+  const [confirmingNg, setConfirmingNg] = useState(false);
+
+  const handleNewGamePlus = () => {
+    playSound('screenTransition');
+    startNewGamePlus();
+    onNavigate('hatchery'); // re-locks the Singularity; onNavigate refreshes the save
+  };
 
   // Fall back to the first boss if the selected id ever fails to resolve, so the
   // screen can never crash on selectedBoss.phases/stats (ALL_BOSSES is non-empty).
@@ -69,6 +77,27 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, onEngageRe
       <div className="singularity-layout">
         {/* Left panel — boss list */}
         <div className="singularity-boss-list">
+          {/* New Game+ — offered once the Mirror Admin (true final) has fallen */}
+          {save.mirrorAdminDefeated && (
+            <div className="singularity-boss-card" style={{ marginBottom: 8, borderColor: '#ffaa44', cursor: 'default', flexDirection: 'column', alignItems: 'stretch', background: 'rgba(40,24,8,0.4)' }}>
+              <div style={{ fontSize: 8, color: '#ffcc66', letterSpacing: 1, textTransform: 'uppercase' }}>
+                New Game+{save.ngPlus > 0 ? ` · Tier ${save.ngPlus}` : ''}
+              </div>
+              <div style={{ fontSize: 6, color: '#aa8844', margin: '3px 0 5px', lineHeight: 1.5 }}>
+                Replay the campaign &amp; Singularity. Enemies +25% / rewards +25% per tier. Keeps your dragons, scraps &amp; cores.
+              </div>
+              {confirmingNg ? (
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button className="singularity-engage-btn" style={{ fontSize: 6, padding: '3px 6px', flex: 1 }} onClick={handleNewGamePlus}>CONFIRM RESET</button>
+                  <button className="singularity-engage-btn" style={{ fontSize: 6, padding: '3px 6px', flex: 1, background: '#333', borderColor: '#555' }} onClick={() => { playSound('buttonClick'); setConfirmingNg(false); }}>CANCEL</button>
+                </div>
+              ) : (
+                <button className="singularity-engage-btn" style={{ fontSize: 6, padding: '3px 6px' }} onClick={() => { playSound('buttonClick'); setConfirmingNg(true); }}>
+                  START NEW GAME+
+                </button>
+              )}
+            </div>
+          )}
           {ALL_BOSSES.map((boss) => {
             const status = getBossStatus(boss, save);
             const isSelected = boss.id === selectedBossId;

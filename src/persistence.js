@@ -28,6 +28,7 @@ const DEFAULT_SAVE = {
   lastDailyCompleted: 0,
   dailyStreak: 0,
   introSeen: false,
+  ngPlus: 0,
   records: { fastestWin: null, highestDamage: 0, longestStreak: 0, currentStreak: 0 },
   flags: {
     currentAct: 1,
@@ -86,6 +87,7 @@ function migrateSave(save) {
   if (save.dailyStreak === undefined) save.dailyStreak = 0;
   // Returning players who have already owned a dragon have seen the boot sequence; skip the wall for them.
   if (save.introSeen === undefined) save.introSeen = Object.values(save.dragons).some(d => d.owned);
+  if (save.ngPlus === undefined) save.ngPlus = 0;
   if (save.singularityComplete === undefined) save.singularityComplete = false;
   if (save.mirrorAdminDefeated === undefined) save.mirrorAdminDefeated = false;
   if (!Array.isArray(save.remnantDefeated)) save.remnantDefeated = [];
@@ -390,6 +392,29 @@ export function completeDailyChallenge(seed) {
   save.dailyStreak = save.lastDailyCompleted === yesterdaySeed ? (save.dailyStreak || 0) + 1 : 1;
   save.lastDailyCompleted = seed;
   writeSave(save);
+}
+
+// New Game+: after a true-final clear, re-lock the campaign + Singularity for
+// another, harder run while KEEPING the collection (dragons, scraps, cores,
+// milestones, records, stats, skye). save.ngPlus scales enemies + rewards.
+// Pure so the reset semantics can be unit-tested.
+export function applyNewGamePlus(save) {
+  save.ngPlus = (save.ngPlus || 0) + 1;
+  save.defeatedNpcs = [];
+  save.singularityProgress = { defeated: [], finalBossPhase: 0, replayCounts: {} };
+  save.singularityComplete = false;
+  save.mirrorAdminDefeated = false;
+  save.remnantDefeated = [];
+  save.flags = { ...(save.flags || {}), currentAct: 1, fragmentsUnlocked: [] };
+  return save;
+}
+
+export function startNewGamePlus() {
+  const save = loadSave();
+  if (!save.mirrorAdminDefeated) return false; // only offered after a true-final clear
+  applyNewGamePlus(save);
+  writeSave(save);
+  return true;
 }
 
 export function resetSave() {

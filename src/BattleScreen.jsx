@@ -35,15 +35,17 @@ const PHASES = {
   EPILOGUE: 'epilogue',
 };
 
-function getScaledNpcStats(baseStats, baseLevel, playerLevel) {
-  // Scale NPC stats when player out-levels them. No scaling below base level.
-  if (playerLevel <= baseLevel) return { stats: baseStats, level: baseLevel };
-  const scale = 1 + (playerLevel - baseLevel) * 0.04; // +4% per level above NPC
+function getScaledNpcStats(baseStats, baseLevel, playerLevel, ngPlus = 0) {
+  // Scale NPC stats by how far the player out-levels them, plus +25% per New
+  // Game+ tier so re-runs stay a real fight against a maxed roster.
+  const levelScale = 1 + Math.max(0, playerLevel - baseLevel) * 0.04; // +4% per level above NPC
+  const scale = levelScale * (1 + ngPlus * 0.25);
+  if (scale === 1) return { stats: baseStats, level: baseLevel };
   const scaledStats = {};
   for (const key of Object.keys(baseStats)) {
     scaledStats[key] = Math.floor(baseStats[key] * scale);
   }
-  return { stats: scaledStats, level: Math.max(baseLevel, Math.floor(baseLevel + (playerLevel - baseLevel) * 0.5)) };
+  return { stats: scaledStats, level: Math.max(baseLevel, Math.floor(baseLevel + Math.max(0, playerLevel - baseLevel) * 0.5)) };
 }
 
 function getHpState(current, max) {
@@ -120,7 +122,7 @@ function initBattle(dragonId, npcId, save, battleConfig) {
   } else {
     const baseNpc = npcs[npcId];
     const progress = save.dragons[dragonId] || { level: 1, xp: 0 };
-    const scaled = getScaledNpcStats(baseNpc.stats, baseNpc.level, progress.level);
+    const scaled = getScaledNpcStats(baseNpc.stats, baseNpc.level, progress.level, save.ngPlus || 0);
     npc = { ...baseNpc, stats: scaled.stats, level: scaled.level };
   }
   const progress = save.dragons[dragonId] || { level: 1, xp: 0 };
@@ -788,6 +790,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           scrapsGained = Math.floor(rawScraps * streakMultiplier);
         } else {
           scrapsGained = rawScraps;
+        }
+        // New Game+ reward bonus: +25% XP & scraps per tier so re-runs pay off.
+        if (save.ngPlus) {
+          xpGained = Math.floor(xpGained * (1 + save.ngPlus * 0.25));
+          scrapsGained = Math.floor(scrapsGained * (1 + save.ngPlus * 0.25));
         }
         addDragonXp(state.dragonId, xpGained); // canonical XP curve (persistence.js) — no source-specific leveling
         if (state.bench?.dragonId) addDragonXp(state.bench.dragonId, Math.max(1, Math.floor(xpGained / 2))); // reserve trains at half rate
