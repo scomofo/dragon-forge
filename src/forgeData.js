@@ -128,6 +128,21 @@ export const FELIX_CONTEXTUAL = [
     line: FELIX_CONTEXT_LINES.firstVisit,
   },
   {
+    id: 'mirrorAdminDefeated',
+    when: (s) => s?.mirrorAdminDefeated === true,
+    line: FELIX_CONTEXT_LINES.mirrorAdminDefeated,
+  },
+  {
+    id: 'allElements',
+    when: (s) => ['fire', 'ice', 'storm', 'stone', 'venom', 'shadow', 'void', 'light'].every(el => s?.dragons?.[el]?.owned),
+    line: FELIX_CONTEXT_LINES.allElements,
+  },
+  {
+    id: 'remnantsAvailable',
+    when: (s) => s?.singularityComplete === true,
+    line: FELIX_CONTEXT_LINES.remnantsAvailable,
+  },
+  {
     id: 'irisFragmentUnlocked',
     when: (s) => s?.flags?.fragmentsUnlocked?.includes('007'),
     line: FELIX_CONTEXT_LINES.irisFragmentUnlocked,
@@ -141,6 +156,16 @@ export const FELIX_CONTEXTUAL = [
     id: 'wrenchTier3',
     when: (s) => (s?.skye?.wrenchTier || 1) >= 3,
     line: FELIX_CONTEXT_LINES.wrenchTier3,
+  },
+  {
+    id: 'firstShiny',
+    when: (s) => Object.values(s?.dragons || {}).some(d => d.owned && d.shiny),
+    line: FELIX_CONTEXT_LINES.firstShiny,
+  },
+  {
+    id: 'firstFusion',
+    when: (s) => Object.values(s?.dragons || {}).some(d => d.owned && d.fusedBaseStats),
+    line: FELIX_CONTEXT_LINES.firstFusion,
   },
   {
     id: 'tundraReturn',

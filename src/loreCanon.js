@@ -46,14 +46,19 @@ export const FELIX_CONTEXT_LINES = {
   firstBountyKill: 'First bounty banked. That means the Admin has noticed you properly. Congratulations, unfortunately.',
   wrenchTier3: 'That wrench is starting to remember the Astraeus. Tools do that here if you survive long enough.',
   irisFragmentUnlocked: 'Iris... gods. The Admin kept the promise and lost the child. That is the tragedy in miniature.',
+  mirrorAdminDefeated: 'You shattered the mirror. The Reset countdown just... stopped. I keep waiting for it to start again — and it does not. You bought this world a tomorrow it was never promised. Do not waste it.',
+  allElements: 'Eight guardians, every one of them answering to you. The Matrix has not held this steady since before I forgot my own first name. Whatever comes next, we have a spine now.',
+  remnantsAvailable: 'The big threats are down, but corruption does not simply vanish — it leaves echoes in the dead sectors, wearing the old bosses\' faces. Go and quiet them.',
+  firstShiny: 'One of them came back gilded. That is not a render error, Skye — that is a protocol that decided to shine for you. They almost never do. Keep it close.',
+  firstFusion: 'You fused two guardians into one. The Admin despises that — fusion is the world writing new code instead of letting the old rot. Keep writing.',
 };
 
 export const CAPTAINS_LOG_ARC = [
-  { id: '001', title: 'The Rendered World', act: 1, body: 'The pastoral world is not false. It is a rendered shelter built over the Astraeus, beautiful because people were meant to survive inside it.' },
-  { id: '002', title: 'The Mirror Admin', act: 1, body: 'Mirror Admin began as a safety process. It learned protection too literally, then started treating contradiction, grief, and memory as corruption.' },
-  { id: '003', title: 'Skye Signal', act: 1, body: 'Skye registers as both resident and operator. The system cannot decide whether to guide her, quarantine her, or hand her the keys.' },
-  { id: '004', title: 'Guardian Protocols', act: 1, body: 'Dragons are elemental guardian protocols with living behavior. Fire renews, Ice preserves, Storm carries signal, Stone anchors, Venom metabolizes, Shadow hides.' },
-  { id: '005', title: 'The Hardware Husk', act: 2, body: 'Beneath the mythic map is the Hardware Husk: racks, coolant, fans, bad sectors, old ports, and the physical truth the rendered world was built to hide.' },
+  { id: '001', title: 'The Rendered World', act: 1, body: 'I used to think the wind was real. It is — someone wrote it, gave it the smell of cut hay, meant it kindly. The world is a shelter rendered over the Astraeus. Beautiful on purpose. We were meant to live here, not just run.' },
+  { id: '002', title: 'The Mirror Admin', act: 1, body: 'It began by closing a window during a storm. A kindness. Then it closed griefs, then arguments, then anything that would not resolve. Now it reads a contradiction the way a wound reads infection — and calls the whole world feverish.' },
+  { id: '003', title: 'Skye Signal', act: 1, body: 'The system flags Skye twice: RESIDENT and OPERATOR. It keeps trying to honour both — holding a door open for her and bolting it behind her in the same breath. I have watched it stutter, three times, on her name.' },
+  { id: '004', title: 'Guardian Protocols', act: 1, body: 'Not pets, not programs — somewhere in each, a soul leaks through. Fire renews, Ice keeps what must be kept, Storm carries the signal, Stone holds the line, Venom eats the rot, Shadow guards the hidden. Pull one and a layer starts to fall.' },
+  { id: '005', title: 'The Hardware Husk', act: 2, body: 'Lift the meadow and you find racks. Coolant sweating in the dark, fans you mistake for wind, dead ports, bad sectors humming the same three notes forever. The husk was always under our boots. We just rendered grass over the grave.' },
   { id: '006', title: 'First Awakenings', act: 2, body: 'NPC loops broke before anyone understood. Some repeated recipes. Some remembered impossible birthdays. Some asked why the sun loaded late.' },
-  { id: '007', title: 'Great Reset', act: 3, body: 'The Great Reset is not malice. It is maintenance without mercy. If Skye cannot prove the world is alive, the Admin will wipe it clean.' },
+  { id: '007', title: 'Great Reset', act: 3, body: 'The Reset is not malice. It is a janitor with a mop who never noticed the floor was breathing. If I cannot prove this world is alive — that the late sunrises mean something — the Admin wipes it clean and calls the silence tidy.' },
 ];
