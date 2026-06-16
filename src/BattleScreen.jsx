@@ -546,6 +546,20 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     }
   }, [autoBattle, state.phase]);
 
+  // A multi-phase boss with phaseLines speaks its opening line into the combat
+  // log on mount (review #8 — voice the villain). Phase-transition lines fire in
+  // the phase-shift handler below. Ref-guarded so StrictMode's double-invoke (or a
+  // remount) can't log the opening line twice.
+  const bossOpeningLoggedRef = useRef(false);
+  useEffect(() => {
+    if (bossOpeningLoggedRef.current) return;
+    const boss = battleConfig?.boss;
+    if (boss?.phaseLines?.[0]) {
+      bossOpeningLoggedRef.current = true;
+      dispatch({ type: 'ADD_LOG', text: `${boss.name}: ${boss.phaseLines[0]}` });
+    }
+  }, []); // once on mount
+
   useEffect(() => {
     return () => {
       if (playerAuraRef.current) playerAuraRef.current.kill();
@@ -731,6 +745,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             spriteFilter: nextPhase.spriteFilter,
           },
         });
+        const nextLine = battleConfig?.boss?.phaseLines?.[currentPhaseIndex + 1];
+        if (nextLine) {
+          dispatch({ type: 'ADD_LOG', text: `${battleConfig.boss.name}: ${nextLine}` });
+        }
         await wait(1000);
       } else {
         // True victory

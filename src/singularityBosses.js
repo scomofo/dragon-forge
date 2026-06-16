@@ -138,6 +138,13 @@ export const MIRROR_ADMIN = {
       spriteFilter: 'brightness(1.8) saturate(0.4) contrast(1.8)',
     },
   ],
+  // Spoken in the combat log: phaseLines[i] when phase i begins. Voices the
+  // tragic-safety-system villain at the climax (review finding #8).
+  phaseLines: [
+    'Operator Skye detected. I am the last process still running. Step aside — I am keeping everyone safe.',
+    'They screamed when the world first rendered. I muted the channel. Was that not mercy? I only ever muted the screaming.',
+    'The Great Reset is a clean save: no rust, no grief, no you. Hold still — I will love this world enough to begin it again.',
+  ],
 };
 
 const ALL_FRAGMENT_IDS = ['001', '002', '003', '004', '005', '006', '007'];
