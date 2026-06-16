@@ -153,8 +153,21 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
   const scale = STAGE_SCALES[stage] ?? 1.0;
   const baseW = size ? size.width : DRAGON_DISPLAY.width;
   const baseH = size ? size.height : DRAGON_DISPLAY.height;
-  const width = Math.round(baseW * scale);
-  const height = Math.round(baseH * scale * (unstableSheetRef.current ? 1.16 : 1));
+  let width = Math.round(baseW * scale);
+  let height = Math.round(baseH * scale * (unstableSheetRef.current ? 1.16 : 1));
+  // An explicit `size` is a fixed UI slot (the roster/fusion/hatchery cards wrap
+  // the sprite in an overflow:hidden box). The stage-4 scale (1.4×) pushes the
+  // canvas past that slot, so the box center-crops the dragon — wings, head and
+  // tail get clipped. Endgame dragons (void/light/synthesis) sit at stage 4, so
+  // they're the ones that crop while lower-stage base dragons fit. Cap the canvas
+  // to the slot so high stages fit; lower stages already render smaller than it.
+  if (size) {
+    const fit = Math.min(1, size.width / width, size.height / height);
+    if (fit < 1) {
+      width = Math.round(width * fit);
+      height = Math.round(height * fit);
+    }
+  }
 
   const shinyFilter = shiny
     ? 'drop-shadow(0 0 6px gold) drop-shadow(0 0 12px rgba(255,215,0,0.4))'
