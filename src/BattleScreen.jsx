@@ -184,7 +184,7 @@ function battleReducer(state, action) {
     case 'SET_PHASE':
       return { ...state, phase: action.phase };
     case 'SET_VICTORY':
-      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1, relicDropped: action.relicDropped || null };
+      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1, relicDropped: action.relicDropped || null, wasRepeat: action.wasRepeat || false };
     case 'SET_DEFEAT':
       return { ...state, phase: PHASES.DEFEAT };
     case 'RESET_TURN':
@@ -826,7 +826,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           runFragmentUnlockPass();
           setLastZone(state.npc.zone ?? null);
           dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-celebrate' });
-          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped });
+          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped, wasRepeat: isRepeatDefeat || isSingularityRepeat });
           stopMusic();
           stopHeartbeat();
           playSound('victoryFanfare');
@@ -1193,7 +1193,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                 <strong>{move.name.toUpperCase()}</strong>
                 <span className="move-meta">
                   <i>{moveColor.icon} {move.element.toUpperCase()}</i>
-                  <i>PWR {move.power}</i>
+                  <i>PWR {move.power} · ACC {move.accuracy}%</i>
                   <i>{matchup}</i>
                   {statusSummary && <i>{statusSummary.label}</i>}
                 </span>
@@ -1250,6 +1250,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
               <div>
                 <span>SCRAPS</span>
                 <strong>{state.scrapsGained > 0 ? `+${state.scrapsGained}` : '0'}</strong>
+                {state.wasRepeat && (
+                  <em style={{ display: 'block', fontSize: 9, color: '#cc8844', fontStyle: 'normal', letterSpacing: '0.04em' }}>REPEAT ×0.25</em>
+                )}
               </div>
               <div>
                 <span>TURNS</span>

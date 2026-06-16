@@ -185,7 +185,7 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
       height={height}
       className={`dragon-sprite stage-${stage} ${className} ${shiny ? 'shiny-sprite' : ''} ${useVoidFilter ? 'void-sprite' : ''}`}
       style={{
-        imageRendering: 'pixelated',
+        imageRendering: 'auto',
         filter: shinyFilter,
         width: `${width}px`,
         height: `${height}px`,
