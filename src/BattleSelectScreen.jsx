@@ -12,7 +12,24 @@ const npcList = Object.values(npcs).sort((a, b) => a.level - b.level);
 
 export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, refreshSave }) {
   const [selectedDragon, setSelectedDragon] = useState(null);
+  const [selectedBench, setSelectedBench] = useState(null);
   const [selectedNpc, setSelectedNpc] = useState(null);
+
+  // First pick = primary, second (different) owned dragon = reserve/bench.
+  // Click the primary to clear it (the bench is promoted); click the bench to clear it.
+  function pickDragon(dragon) {
+    playSound('buttonClick');
+    if (selectedDragon?.id === dragon.id) {
+      setSelectedDragon(selectedBench);
+      setSelectedBench(null);
+    } else if (selectedBench?.id === dragon.id) {
+      setSelectedBench(null);
+    } else if (!selectedDragon) {
+      setSelectedDragon(dragon);
+    } else {
+      setSelectedBench(dragon);
+    }
+  }
 
   function getMatchup() {
     if (!selectedDragon || !selectedNpc) return null;
@@ -44,10 +61,11 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
   function handleBegin() {
     if (!selectedDragon || !selectedNpc) return;
     playSound('buttonClick');
+    const benchDragonId = selectedBench?.id || null;
     if (selectedNpc.id === 'daily_challenge') {
-      onBeginBattle({ dragonId: selectedDragon.id, npcId: 'daily_challenge', dailyNpc: selectedNpc });
+      onBeginBattle({ dragonId: selectedDragon.id, npcId: 'daily_challenge', dailyNpc: selectedNpc, benchDragonId });
     } else {
-      onBeginBattle({ dragonId: selectedDragon.id, npcId: selectedNpc.id });
+      onBeginBattle({ dragonId: selectedDragon.id, npcId: selectedNpc.id, benchDragonId });
     }
   }
 
@@ -59,6 +77,9 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
       <div className="battle-select-panels">
         <div className="select-panel">
           <h2>YOUR DRAGONS</h2>
+          <div style={{ fontSize: 8, color: '#888', marginBottom: 4, letterSpacing: '0.03em' }}>
+            Pick a PRIMARY, then optionally a 2nd as RESERVE — swap mid-fight, or it steps in if your primary falls.
+          </div>
           {dragonList.map((dragon) => {
             const progress = save.dragons[dragon.id] || { level: 1, xp: 0, owned: false, shiny: false };
             const isOwned = progress.owned;
@@ -84,12 +105,12 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
             return (
               <div
                 key={dragon.id}
-                className={`select-card ${selectedDragon?.id === dragon.id ? 'selected' : ''} ${progress.shiny ? 'shiny-card' : ''}`}
-                style={{ borderColor: selectedDragon?.id === dragon.id ? color.primary : undefined }}
-                onClick={() => { playSound('buttonClick'); setSelectedDragon(dragon); }}
+                className={`select-card ${selectedDragon?.id === dragon.id ? 'selected' : ''} ${selectedBench?.id === dragon.id ? 'selected' : ''} ${progress.shiny ? 'shiny-card' : ''}`}
+                style={{ borderColor: selectedDragon?.id === dragon.id ? color.primary : (selectedBench?.id === dragon.id ? '#44aaff' : undefined) }}
+                onClick={() => pickDragon(dragon)}
                 tabIndex={0}
                 role="button"
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playSound('buttonClick'); setSelectedDragon(dragon); } }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickDragon(dragon); } }}
               >
                 <div style={{ width: 130, height: 90, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <DragonSprite spriteSheet={dragon.stageSprites?.[stage] || dragon.spriteSheet} stage={stage} size={{ width: 130, height: 90 }} shiny={progress.shiny} element={dragon.element} />
@@ -97,6 +118,8 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                 <div className="select-card-info">
                   <div className="select-card-name" style={{ color: color.primary }}>
                     {color.icon} {progress.nickname || dragon.name}{progress.shiny && <span className="shiny-star">★</span>}
+                    {selectedDragon?.id === dragon.id && <span style={{ marginLeft: 6, fontSize: 8, color: color.primary }}>● PRIMARY</span>}
+                    {selectedBench?.id === dragon.id && <span style={{ marginLeft: 6, fontSize: 8, color: '#44aaff' }}>● RESERVE</span>}
                   </div>
                   <div className="select-card-stats">
                     Lv.{progress.level} | HP:{stats.hp} ATK:{stats.atk} DEF:{stats.def} SPD:{stats.spd}

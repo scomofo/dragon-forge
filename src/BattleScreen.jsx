@@ -11,6 +11,7 @@ import { getDailyStreakMultiplier } from './dailyChallenge';
 import { getAvailableCampaignNodes } from './campaignMap';
 import { FRAGMENT_TRIGGERS, RELIC_DROPS, getRelic, getRelicBattleModifiers } from './forgeData';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
+import { swapActiveAndBench, faintSwap } from './benchLogic';
 import { EPILOGUE_LINES, MIRROR_ADMIN_EPILOGUE_LINES } from './singularityBosses';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
@@ -126,6 +127,28 @@ function initBattle(dragonId, npcId, save, battleConfig) {
   const stage = getStageForLevel(progress.level);
   const stats = calculateStatsForLevel(progress.fusedBaseStats || dragon.baseStats, progress.level, progress.shiny);
 
+  // Optional reserve dragon (the "bench"): a second life + a tactical mid-fight
+  // swap. Only wired for standard battles (BattleSelectScreen passes benchDragonId);
+  // bosses/Singularity stay single-dragon so their fixed-TTK balance holds.
+  let bench = null;
+  const benchId = battleConfig?.benchDragonId;
+  if (benchId && benchId !== dragonId && save.dragons[benchId]?.owned) {
+    const bDragon = dragons[benchId];
+    const bProg = save.dragons[benchId] || { level: 1, xp: 0 };
+    const bStats = calculateStatsForLevel(bProg.fusedBaseStats || bDragon.baseStats, bProg.level, bProg.shiny);
+    bench = {
+      dragon: bDragon,
+      dragonId: benchId,
+      playerLevel: bProg.level,
+      playerXp: bProg.xp,
+      playerStage: getStageForLevel(bProg.level),
+      playerStats: bStats,
+      playerHp: bStats.hp,
+      playerMaxHp: bStats.hp,
+      playerStatus: null,
+    };
+  }
+
   return {
     phase: PHASES.PLAYER_TURN,
     dragon,
@@ -158,6 +181,7 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     battleLog: [],
     turnCount: 0,
     maxDamageDealt: 0,
+    bench,
   };
 }
 
@@ -219,6 +243,12 @@ function battleReducer(state, action) {
       };
     case 'SET_EPILOGUE':
       return { ...state, phase: PHASES.EPILOGUE, xpGained: action.xpGained, scrapsGained: action.scrapsGained, isMirrorAdmin: action.isMirrorAdmin || false };
+    case 'SWAP_DRAGON':
+      // Manual tactical swap: exchange the active dragon with the reserve.
+      return swapActiveAndBench(state);
+    case 'FAINT_SWAP':
+      // The active fell; the reserve steps in (its remaining HP) — the second life.
+      return faintSwap(state, PHASES.PLAYER_TURN);
     default:
       return state;
   }
@@ -742,6 +772,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           scrapsGained = rawScraps;
         }
         addDragonXp(state.dragonId, xpGained); // canonical XP curve (persistence.js) — no source-specific leveling
+        if (state.bench?.dragonId) addDragonXp(state.bench.dragonId, Math.max(1, Math.floor(xpGained / 2))); // reserve trains at half rate
         const newLevel = loadSave().dragons[state.dragonId].level;
         const leveledUp = newLevel > state.playerLevel;
         if (scrapsGained > 0) addScraps(scrapsGained);
@@ -848,13 +879,21 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-ko' });
         await wait(600);
       }
-      trackStat('battlesLost');
-      updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
-      dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-defeated' });
-      dispatch({ type: 'SET_DEFEAT' });
-      stopMusic();
-      stopHeartbeat();
-      playSound('defeatDrone');
+      if (state.bench && state.bench.playerHp > 0) {
+        // Reserve dragon steps in — the bench is a second life; fight continues.
+        dispatch({ type: 'ADD_LOG', text: `${state.dragon.name} fell — ${state.bench.dragon.name} steps in!` });
+        dispatch({ type: 'FAINT_SWAP' });
+        playSound('uiConfirm');
+        playMusic('battle');
+      } else {
+        trackStat('battlesLost');
+        updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
+        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-defeated' });
+        dispatch({ type: 'SET_DEFEAT' });
+        stopMusic();
+        stopHeartbeat();
+        playSound('defeatDrone');
+      }
     } else {
       const playerHpPct = result.player.hp / (result.player.maxHp || state.playerMaxHp);
       const npcHpPct = result.npc.hp / (result.npc.maxHp || state.npcMaxHp);
@@ -875,6 +914,74 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     animatingRef.current = false;
     setSelectedMoveKey(null);
   }, [state, animateEvent, save]);
+
+  // Manual tactical swap — costs the turn: swap the reserve in, then the enemy
+  // gets a free strike on the incoming dragon (which guards as it enters).
+  const handleSwap = useCallback(async () => {
+    if (state.phase !== PHASES.PLAYER_TURN || animatingRef.current) return;
+    if (!state.bench || state.bench.playerHp <= 0) return;
+    animatingRef.current = true;
+    setSelectedMoveKey(null);
+    dispatch({ type: 'START_ANIMATION' });
+
+    const incoming = state.bench; // becomes the active dragon after the swap
+    dispatch({ type: 'SWAP_DRAGON' });
+    dispatch({ type: 'ADD_LOG', text: `${state.dragon.name} swaps out — ${incoming.dragon.name} enters!` });
+    playSound('uiConfirm');
+    await wait(500);
+
+    const incomingState = {
+      name: incoming.dragon.name, element: incoming.dragon.element, stage: incoming.playerStage,
+      hp: incoming.playerHp, maxHp: incoming.playerMaxHp,
+      atk: incoming.playerStats.atk, def: incoming.playerStats.def, spd: incoming.playerStats.spd,
+      defending: true, status: incoming.playerStatus,
+    };
+    const npcState = {
+      name: state.npc.name, element: state.npc.element, stage: 3,
+      hp: state.npcHp, maxHp: state.npcMaxHp,
+      atk: state.npc.stats.atk, def: state.npc.stats.def, spd: state.npc.stats.spd,
+      defending: false, status: state.npcStatus,
+    };
+    const npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, incoming.dragon.element, incoming.playerStatus);
+    const result = resolveTurn(incomingState, npcState, 'defend', npcMoveKey, incoming.dragon.moveKeys, state.npc.moveKeys);
+
+    for (const event of result.events) {
+      if (event.attacker === 'npc' && shouldAnimateBattleEvent(event)) {
+        await animateEvent(event, dispatch);
+      }
+    }
+    const dmg = Math.max(0, incomingState.hp - result.player.hp);
+    if (dmg > 0) {
+      const dmgId = ++damageIdRef.current;
+      dispatch({ type: 'ADD_DAMAGE_NUMBER', entry: { id: dmgId, damage: dmg, effectiveness: 1.0, hit: true, target: 'player' } });
+      dispatch({ type: 'APPLY_DAMAGE_TO_PLAYER', damage: dmg });
+    }
+    dispatch({ type: 'SET_PLAYER_STATUS', value: result.player.status || null });
+    dispatch({ type: 'SET_NPC_STATUS', value: result.npc.status || null });
+    await wait(350);
+
+    if (result.player.hp <= 0) {
+      // Rare: the entering dragon is KO'd by the entry strike.
+      playSound('ko');
+      if (state.playerHp > 0) {
+        // The dragon swapped out (now the reserve) is still alive — it returns.
+        dispatch({ type: 'ADD_LOG', text: `${incoming.dragon.name} fell on entry!` });
+        dispatch({ type: 'FAINT_SWAP' });
+        playSound('uiConfirm');
+      } else {
+        trackStat('battlesLost');
+        updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
+        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-defeated' });
+        dispatch({ type: 'SET_DEFEAT' });
+        stopMusic();
+        stopHeartbeat();
+        playSound('defeatDrone');
+      }
+    } else {
+      dispatch({ type: 'RESET_TURN' });
+    }
+    animatingRef.current = false;
+  }, [state, animateEvent]);
 
   const dragon = state.dragon;
   const npc = state.npc;
@@ -1214,6 +1321,21 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
               <i>GUARD</i>
             </span>
           </button>
+          {state.bench && (
+            <button
+              className={`move-btn swap ${state.bench.playerHp <= 0 ? 'disabled' : ''}`}
+              style={{ '--move-color': '#44aaff', '--move-glow': '#66ccff', borderColor: '#44aaff', color: state.bench.playerHp > 0 ? '#66ccff' : '#555', opacity: state.bench.playerHp > 0 ? 1 : 0.5 }}
+              disabled={state.phase !== PHASES.PLAYER_TURN || state.bench.playerHp <= 0}
+              onClick={handleSwap}
+            >
+              <span className="tooltip">Swap in {state.bench.dragon.name} — costs a turn (enemy strikes as it enters)</span>
+              <strong>SWAP</strong>
+              <span className="move-meta">
+                <i>{state.bench.dragon.name}</i>
+                <i>HP {state.bench.playerHp}/{state.bench.playerMaxHp}</i>
+              </span>
+            </button>
+          )}
           <button
             className={`move-btn auto ${autoBattle ? 'selected' : ''} ${!autoBattleAllowed ? 'disabled' : ''} ${controllerFocusIndex === playerMoves.length + 1 ? 'controller-focus' : ''}`}
             style={autoBattleAllowed
