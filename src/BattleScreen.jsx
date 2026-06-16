@@ -885,6 +885,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             stats: nextPhase.stats,
             moveKeys: nextPhase.moveKeys,
             spriteFilter: nextPhase.spriteFilter,
+            // Bespoke per-phase art (e.g. The Singularity ignition->surge->void); fall back to the current sprite.
+            ...(nextPhase.idleSprite ? { idleSprite: nextPhase.idleSprite, attackSprite: nextPhase.attackSprite || nextPhase.idleSprite } : {}),
           },
         });
         const nextLine = battleConfig?.boss?.phaseLines?.[currentPhaseIndex + 1];
@@ -1357,6 +1359,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             isAttacking={state.npcAttacking}
             className={state.npcSpriteClass}
             flipX={npc.flipSprite}
+            smooth={battleConfig?.boss?.bespokeArt}
             style={{ filter: state.npc.spriteFilter || 'none' }}
           />
           {state.damageNumbers
