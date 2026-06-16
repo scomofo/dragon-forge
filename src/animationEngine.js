@@ -1,8 +1,17 @@
 import gsap from 'gsap';
 import { elementColors, STATUS_EFFECTS } from './gameData';
 
+// Respect the OS "reduce motion" preference for vestibular-heavy screen motion
+// (the battle shakes). Pairs with the CSS prefers-reduced-motion reset in base.css.
+export function prefersReducedMotion() {
+  return typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 // === SCREEN SHAKE (smooth, ambient) ===
 export function screenShake(container, intensity = 6, duration = 0.2) {
+  if (prefersReducedMotion()) return gsap.to(container, { x: 0, y: 0, duration: 0 });
   const cycles = Math.round(duration / 0.05);
   return gsap.to(container, {
     x: `random(-${intensity}, ${intensity})`,
@@ -21,6 +30,7 @@ export function screenShake(container, intensity = 6, duration = 0.2) {
 // Hard left/right integer-pixel snaps with no easing — crunchier impact feel
 // than smooth screenShake. Use on every hit; reserve screenShake for ambient.
 export function pixelShake(container, intensity = 5, duration = 0.18) {
+  if (prefersReducedMotion()) return gsap.to(container, { x: 0, y: 0, duration: 0 });
   const step = 0.04;
   const cycles = Math.max(2, Math.round(duration / step));
   const tl = gsap.timeline({
