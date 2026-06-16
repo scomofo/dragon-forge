@@ -66,6 +66,23 @@ body {
   image-rendering: crisp-edges;
 }
 
+/* === ACCESSIBILITY: REDUCED MOTION ===
+   Honour the OS "reduce motion" preference. Neutralizes CSS animations and
+   transitions app-wide — most importantly the always-on corruption glitch /
+   flicker at high Singularity stages, which is a real photosensitivity concern.
+   (The GSAP-driven battle screen-shake is JS; it needs a matchMedia hook in
+   animationEngine as a follow-up.) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* === PROFESSOR FELIX FRAME === */
 .felix-frame {
   border: 4px solid #ffffff;
