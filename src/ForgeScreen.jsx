@@ -124,6 +124,15 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
         return;
       }
 
+      // Esc with no overlay open leaves the Forge entirely (previously it did
+      // nothing, which could trap players who couldn't reach the exit bulkhead).
+      if (isForgeCancelKey(event.key)) {
+        event.preventDefault();
+        playSound('screenTransition');
+        onNavigate?.('map');
+        return;
+      }
+
       const direction = getMovementDirection(event.key);
       if (direction) {
         event.preventDefault();
@@ -139,7 +148,7 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [closeOverlay, interact, move, overlay]);
+  }, [closeOverlay, interact, move, overlay, onNavigate]);
 
   useGamepadController({
     onDirectionPress(direction) {
@@ -164,6 +173,26 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
       data-active-station={activeStation || ''}
     >
       <ForgeScene skyePos={skyePos} nearest={nearest} view={view} />
+
+      {/* Always-visible escape hatch: the Forge is a fullscreen keyboard scene
+          with no NavBar, so a clickable exit guarantees mouse/touch players can
+          never get trapped. Hidden while an overlay is open (overlays close themselves). */}
+      {!overlay && (
+        <button
+          type="button"
+          className="forge-exit-btn"
+          onClick={() => { playSound('screenTransition'); onNavigate?.('map'); }}
+          aria-label="Exit the Forge to the world map"
+          style={{
+            position: 'absolute', top: 12, right: 12, zIndex: 50,
+            padding: '8px 14px', background: 'rgba(8,12,18,0.88)', color: '#9fe7ff',
+            border: '1px solid #44aaff', borderRadius: 4, fontSize: 11,
+            letterSpacing: '0.08em', cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >
+          ✕ EXIT TO MAP
+        </button>
+      )}
 
       {overlay === 'anvil' && <AnvilOverlay save={save} onClose={closeOverlay} refreshSave={refreshSave} />}
       {overlay === 'console' && <ConsoleOverlay save={save} onClose={closeOverlay} onNavigate={onNavigate} />}
