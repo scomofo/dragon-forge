@@ -12,3 +12,7 @@ npm-debug.log
 # source of truth; dragon-forge-godot/assets/ is the tracked Godot copy. The
 # assets/ tree is local scratch for art generators.
 /assets/
+
+# Synthesis art drop — raw ChatGPT originals are scratch; shipped copies live
+# in public/assets/dragons/ + dragon-forge-godot/assets/dragons/.
+handoff/synthesis_incoming/*.png
