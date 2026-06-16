@@ -5,6 +5,7 @@ import { dragons, elementColors, eggSheets, PULL_COST } from './gameData';
 import { executePull, applyPullResult } from './hatcheryEngine';
 import { loadSave, writeSave, trackStat } from './persistence';
 import { assetUrl } from './utils';
+import { eggBurst } from './animationEngine';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
 import EggSprite from './EggSprite';
@@ -28,7 +29,7 @@ const HATCH_SEQUENCE = [
   { frame: 5, duration: 120, css: 'egg-shake-anim' },      // Shake R faster
   { frame: 4, duration: 80, css: 'egg-shake-intense' },    // Shake L intense
   { frame: 5, duration: 80, css: 'egg-shake-intense' },    // Shake R intense
-  { frame: 6, duration: 400, css: 'egg-burst-anim' },      // Burst! (skip frame 7 — bottom shell fragment)
+  { frame: 6, duration: 400, css: '' },                    // Burst! (eggBurst handles the VFX; skip frame 7 shell)
 ];
 
 export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
@@ -40,6 +41,16 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const [currentResult, setCurrentResult] = useState(null);
   const [gridResults, setGridResults] = useState([]);
   const skippedRef = useRef(false);
+  const eggContainerRef = useRef(null);
+  const currentElementRef = useRef('fire');
+  const burstFiredRef = useRef(false);
+
+  // Fire the shell-shatter / light burst exactly once per hatch.
+  const fireBurst = useCallback((element) => {
+    if (burstFiredRef.current) return;
+    burstFiredRef.current = true;
+    eggBurst(eggContainerRef.current, element);
+  }, []);
 
   const isFirstGame = Object.values(save.dragons).every(d => !d.owned);
   const canPull1 = isFirstGame || save.dataScraps >= PULL_COST;
@@ -48,6 +59,8 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
 
   const animateHatch = useCallback(async (element) => {
     skippedRef.current = false;
+    burstFiredRef.current = false;
+    currentElementRef.current = element;
     setEggSheet(eggSheets.generic);
     setEggFrame(0);
     setEggCss('');
@@ -68,10 +81,17 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
       else if (step.frame === 4 || step.frame === 5) playSound('eggShake');
       else if (step.frame === 6) { playSound('hatchBurst'); setTimeout(() => playSound('dragonReveal'), 200); }
 
-      await wait(step.duration);
+      if (step.frame === 6) {
+        await wait(60); // let the burst frame paint before slicing the canvas
+        if (skippedRef.current) return;
+        fireBurst(element);
+        await wait(Math.max(0, step.duration - 60));
+      } else {
+        await wait(step.duration);
+      }
     }
     setEggCss('');
-  }, []);
+  }, [fireBurst]);
 
   const handlePull1 = async () => {
     playSound('buttonClick');
@@ -135,7 +155,9 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     if (phase === PHASES.HATCHING) {
       skippedRef.current = true;
       setEggFrame(6);
-      setEggCss('egg-burst-anim');
+      setEggCss('');
+      // Let the jump-to-burst frame paint, then fire the shatter once.
+      setTimeout(() => fireBurst(currentElementRef.current), 60);
     }
   };
 
@@ -166,13 +188,18 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
       <div className="hatchery-content" onClick={handleContentClick}>
         <div className="hatchery-title">QUANTUM INCUBATION LAB</div>
 
-        <div className={`egg-container ${eggCss}`}>
+        <div className={`egg-container ${eggCss}`} ref={eggContainerRef}>
           {(phase === PHASES.IDLE || phase === PHASES.HATCHING) && (
             <EggSprite sheet={eggSheet} frame={eggFrame} />
           )}
 
           {phase === PHASES.REVEAL && currentResult && (
             <div className="reveal-result">
+              <span
+                className="reveal-rays"
+                style={{ '--ray-color': elementColors[currentResult.pull.element]?.glow || '#ffaa44' }}
+                aria-hidden="true"
+              />
               <DragonSprite
                 spriteSheet={dragons[currentResult.pull.element].spriteSheet}
                 stage={1}

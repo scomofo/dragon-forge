@@ -38,6 +38,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+/* Radiant light rays emitted by eggBurst() at the moment of hatching */
+.hatch-rays {
+  --ray-color: #ffaa44;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 260px;
+  height: 260px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 26;
+  background: repeating-conic-gradient(from 0deg,
+    color-mix(in srgb, var(--ray-color) 72%, transparent) 0deg 5deg,
+    transparent 5deg 22deg);
+  -webkit-mask: radial-gradient(circle, #000 8%, rgba(0, 0, 0, 0.55) 34%, transparent 70%);
+  mask: radial-gradient(circle, #000 8%, rgba(0, 0, 0, 0.55) 34%, transparent 70%);
+  mix-blend-mode: screen;
 }
 
 .egg-sprite-canvas {
@@ -164,6 +184,39 @@
 .reveal-result {
   animation: revealFadeIn 0.3s ease-out;
   text-align: center;
+  position: relative;
+  isolation: isolate;
+}
+
+/* Soft rotating light-ray backdrop behind a revealed dragon */
+.reveal-rays {
+  --ray-color: #ffaa44;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 220px;
+  height: 220px;
+  z-index: -1;
+  pointer-events: none;
+  background: repeating-conic-gradient(from 0deg,
+    color-mix(in srgb, var(--ray-color) 60%, transparent) 0deg 5deg,
+    transparent 5deg 24deg);
+  -webkit-mask: radial-gradient(circle, transparent 14%, #000 40%, transparent 72%);
+  mask: radial-gradient(circle, transparent 14%, #000 40%, transparent 72%);
+  mix-blend-mode: screen;
+  opacity: 0.5;
+  will-change: transform;
+  animation: revealRaySpin 16s linear infinite, revealRayFade 0.6s ease-out;
+}
+
+@keyframes revealRaySpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes revealRayFade {
+  from { opacity: 0; }
+  to { opacity: 0.5; }
 }
 
 .reveal-rarity {
