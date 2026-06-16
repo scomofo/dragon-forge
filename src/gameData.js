@@ -125,7 +125,7 @@ export const dragons = {
     element: 'light',
     baseStats: { hp: 100, atk: 26, def: 22, spd: 22 },
     moveKeys: ['radiant_beam', 'solar_flare'],
-    spriteSheet: assetUrl('/assets/dragons/light.png'),
+    spriteSheet: assetUrl('/assets/dragons/light_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/light_stage1.png'), 2: assetUrl('/assets/dragons/light_stage2.png'), 3: assetUrl('/assets/dragons/light_stage3.png'), 4: assetUrl('/assets/dragons/light_stage4.png') },
     unlockHint: 'Contain the Singularity',
   },
