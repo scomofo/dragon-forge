@@ -37,3 +37,22 @@
 - [x] Integrate sci-fi lab equipment art into fusion screen decoration
 - [x] Dragon Bounties RPG sheet — used as hatchery background decoration
 - [x] Improve hatching animation — 12-step sequence with glow, shake, burst, reveal CSS phases
+
+## Combat & Hatch VFX Overhaul
+- [x] Attack VFX now play animated 4-frame projectile sheets that travel across the
+      arena (VfxOverlay rAF travel + frame-step + impact pop). Replaced the old
+      single mis-cropped concept-art flash. Fixed the stale VFX_FRAMES sheet/crop
+      metadata bug (e.g. fire_effects.png is 1024×1024, not 1774×887).
+- [x] Procedural placeholder strips for all 15 attacks via tools/asset_gen/make_vfx_strips.py
+      → public/assets/vfx/vfx_<move>.png (covered by assetManifest.test.js).
+- [x] Defense: flat shield circle → layered energy aegis (dome + dashed rotating
+      ring + sweeping arc + deflect ripple), element-tinted.
+- [x] Hatching: egg-shell shatter on burst + light flash + radiant rays + sparkle
+      motes (eggBurst), plus a rotating light-ray backdrop behind the reveal.
+- [x] High-fidelity hand-art VFX sheets — all 15 generated via ChatGPT
+      (GPT-image, 4-frame transparent sheets) and keyed/normalized to 1024x256
+      with tools/asset_gen/process_vfx_download.py (white-background flood-fill
+      key + resize). These replaced the procedural placeholders in
+      public/assets/vfx/. Pipeline: prompt ChatGPT for a 4-frame sheet -> in-page
+      fetch+download the PNG -> process_vfx_download.py <file> <move>.
+      Alternative fal pipeline (gen_vfx_sheets.sh) remains available but unused.

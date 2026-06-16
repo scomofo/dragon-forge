@@ -16,3 +16,8 @@ npm-debug.log
 # Synthesis art drop — raw ChatGPT originals are scratch; shipped copies live
 # in public/assets/dragons/ + dragon-forge-godot/assets/dragons/.
 handoff/synthesis_incoming/*.png
+
+# Game Studios agents' per-agent scratch memory — working state, not game code.
+.claude/agent-memory/
+# Local preview-server config for the Claude Preview MCP tool.
+.claude/launch.json
