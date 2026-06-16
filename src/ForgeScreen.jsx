@@ -75,7 +75,6 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
   useEffect(() => {
     if (bootstrapForgeSave(save)) refreshSave?.();
     // Run once per Forge mount so first-visit migrations stay explicit.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const closeOverlay = useCallback(() => {

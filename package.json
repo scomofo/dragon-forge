@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "playtest:smoke": "node scripts/playtest-smoke.mjs",
+    "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -19,6 +20,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^10.5.0",
+    "globals": "^17.6.0",
     "playwright": "^1.59.1",
     "vite": "^6.0.0",
     "vitest": "^3.0.0"
