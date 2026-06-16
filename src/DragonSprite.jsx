@@ -17,10 +17,10 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
   const frameStartRef = useRef(0);
   const unstableSheetRef = useRef(false);
 
-  // The synthesis, void and light dragons are authored as a single pose, not a
+  // Every dragon is now authored as a single detailed pose (per-stage), not a
   // 3×4 animation sheet — the frame tiler would slice the one dragon into
   // fragments (renders as a blank/garbled box). Draw the whole image instead.
-  const singleFrame = /\/(?:synthesis|void|light)(?:_stage[1-4])?\.png/.test(String(spriteSheet));
+  const singleFrame = /\/dragons\/[a-z]+_stage[1-4]\.png/.test(String(spriteSheet));
 
   // Load sprite sheet image
   useEffect(() => {
