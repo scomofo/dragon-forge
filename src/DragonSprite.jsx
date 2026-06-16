@@ -17,10 +17,10 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
   const frameStartRef = useRef(0);
   const unstableSheetRef = useRef(false);
 
-  // Some dragons (synthesis) are authored as a single pose, not a 3×4 animation
-  // sheet — the frame tiler would slice the one dragon into fragments. Render
-  // the whole image as a single static frame instead.
-  const singleFrame = /synthesis(?:_stage[1-4])?\.png/.test(String(spriteSheet));
+  // The synthesis, void and light dragons are authored as a single pose, not a
+  // 3×4 animation sheet — the frame tiler would slice the one dragon into
+  // fragments (renders as a blank/garbled box). Draw the whole image instead.
+  const singleFrame = /\/(?:synthesis|void|light)(?:_stage[1-4])?\.png/.test(String(spriteSheet));
 
   // Load sprite sheet image
   useEffect(() => {
@@ -160,10 +160,10 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
     ? 'drop-shadow(0 0 6px gold) drop-shadow(0 0 12px rgba(255,215,0,0.4))'
     : (stage === 4 ? 'drop-shadow(0 0 8px gold)' : 'none');
 
-  // Synthesis reuses the 'void' element for type mechanics but is gold, not
-  // void-tinted — exclude it from the .void-sprite hue-rotate(180deg) filter,
-  // which would swing its gold to blue.
-  const useVoidFilter = element === 'void' && !String(spriteSheet).includes('synthesis');
+  // The void & synthesis sprites are now authored with their final colours
+  // (violet crystal / silver-gold), so the legacy .void-sprite hue-rotate(180deg)
+  // filter — which was a tint hack — would wreck them. It's retired.
+  const useVoidFilter = false;
 
   return (
     <canvas

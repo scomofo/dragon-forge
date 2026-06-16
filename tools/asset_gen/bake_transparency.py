@@ -29,8 +29,12 @@ DESTS = [
 MAX_SIDE = 1024
 THRESH = 38  # flood-fill colour tolerance (sum of per-channel diff)
 
-for stage in (1, 2, 3, 4):
-    name = f"synthesis_stage{stage}.png"
+# Stems to process come from argv (default: synthesis). e.g.
+#   uv run --with pillow python tools/asset_gen/bake_transparency.py void light
+STEMS = sys.argv[1:] or ["synthesis"]
+NAMES = [f"{stem}_stage{stage}.png" for stem in STEMS for stage in (1, 2, 3, 4)]
+
+for name in NAMES:
     src = SRC_DIR / name
     if not src.exists():
         sys.exit(f"ERROR: missing {src}")
