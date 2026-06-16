@@ -70,12 +70,14 @@ describe('calculateDamage', () => {
 
   it('applies stage multiplier', () => {
     const stage1Attacker = { ...attacker, stage: 1 };
-    // baseDamage = (28 * 0.5 * 2) - (20 * 0.5) = 28 - 10 = 18
-    // typedDamage = 18 * 2.0 = 36
-    // non-crit range: 30..36; crit (1.5x) range: 45..54
+    // stage-1 mult is now 0.6; power 65 => powerScale 1
+    // baseDamage = (28 * 0.6 * 1 * 2) - (20 * 0.5) = 33.6 - 10 = 23.6
+    // typedDamage = 23.6 * 2.0 = 47.2
+    // non-crit floor range: floor(47.2*0.85)=40 .. floor(47.2)=47
+    // crit (1.5x) up to floor(47*1.5)=70 (range allows 72 headroom)
     const result = calculateDamage(stage1Attacker, defender, move);
-    expect(result.damage).toBeGreaterThanOrEqual(30);
-    expect(result.damage).toBeLessThanOrEqual(54);
+    expect(result.damage).toBeGreaterThanOrEqual(40);
+    expect(result.damage).toBeLessThanOrEqual(72);
   });
 
   it('returns minimum 1 damage', () => {
@@ -94,23 +96,23 @@ describe('calculateDamage', () => {
 });
 
 describe('getStageForLevel', () => {
-  it('returns stage 1 for levels below 10', () => {
+  it('returns stage 1 for levels below 8', () => {
     expect(getStageForLevel(1)).toBe(1);
-    expect(getStageForLevel(9)).toBe(1);
+    expect(getStageForLevel(7)).toBe(1);
   });
 
-  it('returns stage 2 for levels 10-24', () => {
-    expect(getStageForLevel(10)).toBe(2);
-    expect(getStageForLevel(24)).toBe(2);
+  it('returns stage 2 for levels 8-19', () => {
+    expect(getStageForLevel(8)).toBe(2);
+    expect(getStageForLevel(19)).toBe(2);
   });
 
-  it('returns stage 3 for levels 25-49', () => {
-    expect(getStageForLevel(25)).toBe(3);
-    expect(getStageForLevel(49)).toBe(3);
+  it('returns stage 3 for levels 20-37', () => {
+    expect(getStageForLevel(20)).toBe(3);
+    expect(getStageForLevel(37)).toBe(3);
   });
 
-  it('returns stage 4 for level 50+', () => {
-    expect(getStageForLevel(50)).toBe(4);
+  it('returns stage 4 for level 38+', () => {
+    expect(getStageForLevel(38)).toBe(4);
     expect(getStageForLevel(99)).toBe(4);
   });
 });
@@ -143,11 +145,15 @@ describe('calculateStatsForLevel', () => {
     expect(result).toEqual({ hp: 110, atk: 28, def: 20, spd: 18 });
   });
 
-  it('adds 3 per stat per level above 1', () => {
+  it('distributes a +12/level budget by base-stat ratio', () => {
     const base = { hp: 110, atk: 28, def: 20, spd: 18 };
     const result = calculateStatsForLevel(base, 5);
-    // 4 levels above 1 => +12 to each stat
-    expect(result).toEqual({ hp: 122, atk: 40, def: 32, spd: 30 });
+    // totalBase = 176, budget = 4 * 12 = 48 (power-neutral vs old flat +12)
+    // hp:  floor(110 + 48*(110/176)) = floor(110 + 30)      = 140
+    // atk: floor(28  + 48*(28/176))  = floor(28 + 7.6363)   = 35
+    // def: floor(20  + 48*(20/176))  = floor(20 + 5.4545)   = 25
+    // spd: floor(18  + 48*(18/176))  = floor(18 + 4.9090)   = 22
+    expect(result).toEqual({ hp: 140, atk: 35, def: 25, spd: 22 });
   });
 });
 
@@ -161,7 +167,11 @@ describe('calculateStatsForLevel (shiny)', () => {
   it('applies shiny after level scaling', () => {
     const base = { hp: 100, atk: 20, def: 20, spd: 20 };
     const result = calculateStatsForLevel(base, 5, true);
-    expect(result).toEqual({ hp: 134, atk: 38, def: 38, spd: 38 });
+    // totalBase = 160, budget = 48, mult = 1.2
+    // hp:  floor((100 + 48*(100/160)) * 1.2) = floor(130 * 1.2) = 156
+    // atk: floor((20  + 48*(20/160))  * 1.2) = floor(26  * 1.2) = 31
+    // def/spd identical to atk = 31
+    expect(result).toEqual({ hp: 156, atk: 31, def: 31, spd: 31 });
   });
 
   it('no change when shiny is false', () => {

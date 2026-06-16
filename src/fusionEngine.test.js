@@ -74,7 +74,8 @@ describe('executeFusion', () => {
     expect(result.element).toBe('storm');
     expect(result.stabilityTier).toBe('unstable');
     expect(result.fusedBaseStats).toHaveProperty('hp');
-    expect(result.level).toBe(1);
+    // offspring level = min(30, max(1, round((12 + 10) / 2))) = round(11) = 11
+    expect(result.level).toBe(11);
     expect(result.shiny).toBe(false);
   });
 
@@ -85,18 +86,20 @@ describe('executeFusion', () => {
     expect(result.shiny).toBe(true);
   });
 
-  it('creates Stage IV Elder when both parents are Stage III', () => {
+  it('offspring level is the parents average, capped at 30', () => {
     const parentA = { id: 'fire', element: 'fire', stats: { hp: 200, atk: 50, def: 40, spd: 40 }, level: 30, shiny: false };
     const parentB = { id: 'fire', element: 'fire', stats: { hp: 200, atk: 50, def: 40, spd: 40 }, level: 25, shiny: false };
     const result = executeFusion(parentA, parentB);
-    expect(result.level).toBe(50);
+    // min(30, max(1, round((30 + 25) / 2))) = min(30, round(27.5)) = min(30, 28) = 28
+    expect(result.level).toBe(28);
   });
 
-  it('stays level 1 when parents are not both Stage III', () => {
+  it('scales offspring level smoothly with parent levels (no L50 cliff)', () => {
     const parentA = { id: 'fire', element: 'fire', stats: { hp: 100, atk: 20, def: 20, spd: 20 }, level: 24, shiny: false };
     const parentB = { id: 'fire', element: 'fire', stats: { hp: 100, atk: 20, def: 20, spd: 20 }, level: 25, shiny: false };
     const result = executeFusion(parentA, parentB);
-    expect(result.level).toBe(1);
+    // min(30, max(1, round((24 + 25) / 2))) = round(24.5) = 25
+    expect(result.level).toBe(25);
   });
 
   it('applies the stability boost to the fusion result', () => {

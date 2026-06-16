@@ -17,10 +17,10 @@ export const typeChart = {
 };
 
 // === STAGE MULTIPLIERS ===
-export const stageMultipliers = { 1: 0.5, 2: 0.75, 3: 1.0, 4: 1.4 };
+export const stageMultipliers = { 1: 0.6, 2: 0.8, 3: 1.0, 4: 1.2 };
 
 // === STAGE THRESHOLDS ===
-export const stageThresholds = { 2: 10, 3: 25, 4: 50 };
+export const stageThresholds = { 2: 8, 3: 20, 4: 38 };
 
 // === MOVES ===
 export const moves = {
@@ -85,7 +85,7 @@ export const dragons = {
     id: 'stone',
     name: 'Stone Dragon',
     element: 'stone',
-    baseStats: { hp: 120, atk: 22, def: 30, spd: 12 },
+    baseStats: { hp: 112, atk: 22, def: 30, spd: 12 },
     moveKeys: ['rock_slide', 'earthquake'],
     spriteSheet: assetUrl('/assets/dragons/stone.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/stone_stage1.png'), 2: assetUrl('/assets/dragons/stone_stage2.png'), 3: assetUrl('/assets/dragons/stone_stage3.png'), 4: assetUrl('/assets/dragons/stone_stage4.png') },
@@ -94,7 +94,7 @@ export const dragons = {
     id: 'venom',
     name: 'Venom Dragon',
     element: 'venom',
-    baseStats: { hp: 95, atk: 26, def: 18, spd: 24 },
+    baseStats: { hp: 95, atk: 26, def: 20, spd: 24 },
     moveKeys: ['acid_spit', 'toxic_cloud'],
     spriteSheet: assetUrl('/assets/dragons/venom.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/venom_stage1.png'), 2: assetUrl('/assets/dragons/venom_stage2.png'), 3: assetUrl('/assets/dragons/venom_stage3.png'), 4: assetUrl('/assets/dragons/venom_stage4.png') },
@@ -103,7 +103,7 @@ export const dragons = {
     id: 'shadow',
     name: 'Shadow Dragon',
     element: 'shadow',
-    baseStats: { hp: 85, atk: 32, def: 14, spd: 26 },
+    baseStats: { hp: 90, atk: 32, def: 18, spd: 26 },
     moveKeys: ['shadow_strike', 'void_pulse'],
     spriteSheet: assetUrl('/assets/dragons/shadow.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/shadow_stage1.png'), 2: assetUrl('/assets/dragons/shadow_stage2.png'), 3: assetUrl('/assets/dragons/shadow_stage3.png'), 4: assetUrl('/assets/dragons/shadow_stage4.png') },
@@ -113,7 +113,7 @@ export const dragons = {
     id: 'void',
     name: 'Void Dragon',
     element: 'void',
-    baseStats: { hp: 75, atk: 34, def: 12, spd: 30 },
+    baseStats: { hp: 88, atk: 34, def: 16, spd: 30 },
     moveKeys: ['void_rift', 'null_reflect'],
     spriteSheet: assetUrl('/assets/dragons/void_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/void_stage1.png'), 2: assetUrl('/assets/dragons/void_stage2.png'), 3: assetUrl('/assets/dragons/void_stage3.png'), 4: assetUrl('/assets/dragons/void_stage4.png') },
@@ -134,7 +134,7 @@ export const dragons = {
     name: 'Synthesis Dragon',
     element: 'void',
     description: 'Where void and light converge, all data resolves into a singular, perfect form — neither darkness nor radiance, but the living memory of every dragon that ever was.',
-    baseStats: { hp: 58, atk: 34, def: 30, spd: 28 },
+    baseStats: { hp: 95, atk: 30, def: 26, spd: 24 },
     moveKeys: ['void_rift', 'radiant_beam'],
     spriteSheet: assetUrl('/assets/dragons/synthesis_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/synthesis_stage1.png'), 2: assetUrl('/assets/dragons/synthesis_stage2.png'), 3: assetUrl('/assets/dragons/synthesis_stage3.png'), 4: assetUrl('/assets/dragons/synthesis_stage4.png') },

@@ -23,7 +23,8 @@ export function calculateDamage(attacker, defender, move) {
   }
 
   const stageMult = stageMultipliers[attacker.stage] ?? 1.0;
-  const baseDamage = (attacker.atk * stageMult * 2) - (defender.def * 0.5);
+  const powerScale = (move.power ?? 65) / 65;
+  const baseDamage = (attacker.atk * stageMult * powerScale * 2) - (defender.def * 0.5);
   const effectiveness = getTypeEffectiveness(move.element, defender.element);
   let typedDamage = baseDamage * effectiveness;
 
@@ -55,14 +56,12 @@ export function calculateXpGain(baseXP, playerLevel, enemyLevel) {
 }
 
 export function calculateStatsForLevel(baseStats, level, shiny = false) {
-  const bonus = (level - 1) * 3;
+  const levels = level - 1;
+  const totalBase = baseStats.hp + baseStats.atk + baseStats.def + baseStats.spd;
+  const budget = levels * 12; // identical total to the old flat +3 across 4 stats — power-neutral
   const mult = shiny ? 1.2 : 1.0;
-  return {
-    hp:  Math.floor((baseStats.hp + bonus) * mult),
-    atk: Math.floor((baseStats.atk + bonus) * mult),
-    def: Math.floor((baseStats.def + bonus) * mult),
-    spd: Math.floor((baseStats.spd + bonus) * mult),
-  };
+  const grow = (base) => Math.floor((base + budget * (base / totalBase)) * mult);
+  return { hp: grow(baseStats.hp), atk: grow(baseStats.atk), def: grow(baseStats.def), spd: grow(baseStats.spd) };
 }
 
 export function applyStatus(moveElement) {

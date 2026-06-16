@@ -706,12 +706,25 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         }
         const isRepeatDefeat = !battleConfig?.isSingularity && !battleConfig?.dailyNpc &&
           (save.defeatedNpcs || []).includes(npcId);
+        // Singularity/remnant/boss repeat penalty: first clear pays full, every
+        // subsequent clear pays ×0.25 — matching the normal-NPC repeat penalty.
+        // `save` is the pre-battle snapshot, so a true first clear reads as not-yet-defeated.
+        const sp = save.singularityProgress || {};
+        const isSingularityRepeat = battleConfig?.isSingularity && (
+          battleConfig?.isRemnant
+            ? (save.remnantDefeated || []).includes(battleConfig.remnantId)
+            : battleConfig?.isMirrorAdmin
+              ? save.mirrorAdminDefeated === true
+              : npcId === 'the_singularity'
+                ? (save.singularityComplete === true || (sp.replayCounts?.[npcId] || 0) > 0)
+                : ((sp.defeated || []).includes(npcId) || (sp.replayCounts?.[npcId] || 0) > 0)
+        );
         const rawScraps = state.npc.scrapsReward || 0;
         let scrapsGained;
         // Captured before completeDailyChallenge mutates the streak — the
         // overlay must show the multiplier that was actually applied.
         let streakMultiplier = 1.0;
-        if (isRepeatDefeat) {
+        if (isRepeatDefeat || isSingularityRepeat) {
           scrapsGained = Math.floor(rawScraps * 0.25);
         } else if (battleConfig?.dailyNpc) {
           streakMultiplier = getDailyStreakMultiplier(save);

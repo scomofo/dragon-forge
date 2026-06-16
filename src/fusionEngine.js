@@ -97,8 +97,7 @@ export function executeFusion(parentA, parentB, { stabilityBoost = false } = {})
   const fusedBaseStats = calculateFusionStats(parentA.stats, parentB.stats, stabilityTier);
   const shiny = parentA.shiny || parentB.shiny;
 
-  const bothStageIII = parentA.level >= 25 && parentB.level >= 25;
-  const level = bothStageIII ? 50 : 1;
+  const level = Math.min(30, Math.max(1, Math.round((parentA.level + parentB.level) / 2)));
 
   return {
     element,

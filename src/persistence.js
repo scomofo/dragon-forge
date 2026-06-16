@@ -168,14 +168,17 @@ export function unlockDragon(dragonId, shiny) {
   writeSave(save);
 }
 
+export function xpForLevel(level) { return 50 + (level - 1) * 5; }  // L1:50 .. L49:290, smooth ramp
+
 export function addDragonXp(dragonId, bonusXp) {
   const save = loadSave();
   const d = save.dragons[dragonId];
   d.xp += bonusXp;
-  const xpPerLevel = 100;
-  while (d.xp >= xpPerLevel && d.level < 50) {
-    d.xp -= xpPerLevel;
+  let need = xpForLevel(d.level);
+  while (d.xp >= need && d.level < 50) {
+    d.xp -= need;
     d.level++;
+    need = xpForLevel(d.level);
   }
   if (d.level >= 50) d.xp = 0;
   writeSave(save);
@@ -266,7 +269,7 @@ export function markSingularityComplete() {
 export function addCore(element, count = 1) {
   const save = loadSave();
   if (!save.inventory.cores[element]) save.inventory.cores[element] = 0;
-  save.inventory.cores[element] += count;
+  save.inventory.cores[element] = Math.min(99, (save.inventory.cores[element] || 0) + count);
   writeSave(save);
 }
 

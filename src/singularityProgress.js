@@ -48,8 +48,11 @@ export function scaleBossForPlayer(boss, save) {
   const replayCounts = save.singularityProgress?.replayCounts || {};
   const replayBonus = (replayCounts[boss.id] || 0) * 5;
 
-  const scaleStats = (stats, factor) =>
-    Object.fromEntries(Object.entries(stats).map(([k, v]) => [k, Math.floor(v * factor)]));
+  const AGGRESSION = { 'Singularity': 1.3, 'FINAL': 1.5, 'TRUE FINAL': 1.5, 'Remnant': 1.8 };
+  const aggr = AGGRESSION[boss.difficulty] ?? 1.0;
+
+  const scaleStats = (stats, factor) => Object.fromEntries(
+    Object.entries(stats).map(([k, v]) => [k, Math.floor(v * factor * (k === 'atk' ? aggr : 1))]));
 
   if (boss.phases) {
     const scaledPhases = boss.phases.map((phase, i) => {
