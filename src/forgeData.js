@@ -89,7 +89,7 @@ export const FORGE_STATIONS = [
     id: STATION_IDS.BULKHEAD,
     label: 'World Exit',
     hint: 'Return to world map',
-    pos: { x: 91, y: 50 },
+    pos: { x: 91, y: 42 },
     size: { w: 18, h: 80 },
     glow: FORGE_PALETTE.jungleDay,
     pulseMs: 0,
