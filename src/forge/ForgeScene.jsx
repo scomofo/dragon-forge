@@ -1,4 +1,5 @@
 import { FORGE_PALETTE, FORGE_STATIONS, STATION_IDS } from '../forgeData';
+import { assetUrl } from '../utils';
 
 export default function ForgeScene({ skyePos, nearest, view }) {
   return (
@@ -186,10 +187,17 @@ function SkyeSprite({ pos }) {
   return (
     <div
       className="forge-skye"
-      style={{ left: `${pos.x - 1.5}%`, top: `${pos.y - 3}%` }}
+      style={{ left: `${pos.x - 2}%`, top: `${pos.y - 10}%` }}
       aria-label="Skye"
       data-testid="forge-skye"
-    />
+    >
+      <img
+        src={assetUrl('/assets/characters/skye.png')}
+        className="forge-skye-sprite"
+        alt=""
+        draggable={false}
+      />
+    </div>
   );
 }
 
