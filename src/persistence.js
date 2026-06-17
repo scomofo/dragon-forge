@@ -3,16 +3,19 @@ import { canEquipRelic } from './forgeData';
 const STORAGE_KEY = 'dragonforge_save';
 
 const DEFAULT_SAVE = {
+  // `discovered` is a permanent codex flag: once a dragon has ever been owned it stays
+  // true even if fusion later consumes it (owned → false). Collection-count milestones
+  // count `discovered`, not `owned`, so fusing never reverts collection progress.
   dragons: {
-    fire:   { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
-    ice:    { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
-    storm:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
-    stone:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
-    venom:  { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
-    shadow: { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
-    void:      { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
-    light:     { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
-    synthesis: { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null },
+    fire:   { level: 1, xp: 0, owned: false, discovered: false, shiny: false, fusedBaseStats: null },
+    ice:    { level: 1, xp: 0, owned: false, discovered: false, shiny: false, fusedBaseStats: null },
+    storm:  { level: 1, xp: 0, owned: false, discovered: false, shiny: false, fusedBaseStats: null },
+    stone:  { level: 1, xp: 0, owned: false, discovered: false, shiny: false, fusedBaseStats: null },
+    venom:  { level: 1, xp: 0, owned: false, discovered: false, shiny: false, fusedBaseStats: null },
+    shadow: { level: 1, xp: 0, owned: false, discovered: false, shiny: false, fusedBaseStats: null },
+    void:      { level: 1, xp: 0, owned: false, discovered: false, shiny: false, fusedBaseStats: null },
+    light:     { level: 1, xp: 0, owned: false, discovered: false, shiny: false, fusedBaseStats: null },
+    synthesis: { level: 1, xp: 0, owned: false, discovered: false, shiny: false, fusedBaseStats: null },
   },
   dataScraps: 0,
   pityCounter: 0,
@@ -59,13 +62,27 @@ function migrateSave(save) {
     if (d.fusedBaseStats === undefined) {
       d.fusedBaseStats = null;
     }
+    // Backfill the codex flag: anything currently owned (or showing signs of past
+    // ownership) counts as discovered.
+    if (d.discovered === undefined) {
+      d.discovered = d.owned || d.level > 1 || d.xp > 0 || !!d.fusedBaseStats;
+    }
+  }
+  // Repair pre-`discovered` saves whose collection regressed: any dragon that was ever
+  // a fusion parent was genuinely discovered even if fusion since flipped it to unowned.
+  if (Array.isArray(save.fusionLineage)) {
+    for (const entry of save.fusionLineage) {
+      for (const id of [entry?.parentA, entry?.parentB, entry?.offspring]) {
+        if (id && save.dragons[id]) save.dragons[id].discovered = true;
+      }
+    }
   }
   if (save.dataScraps === undefined) save.dataScraps = 0;
   if (save.pityCounter === undefined) save.pityCounter = 0;
   if (save.milestones === undefined) save.milestones = [];
   // Retroactively grant full_roster for saves that met the old 6-dragon threshold before it was raised to 8.
   if (!save.milestones.includes('full_roster') &&
-      Object.values(save.dragons).filter(d => d.owned).length >= 8) {
+      Object.values(save.dragons).filter(d => d.discovered).length >= 8) {
     save.milestones.push('full_roster');
     save.dataScraps += 500;
   }
@@ -95,6 +112,7 @@ function migrateSave(save) {
   // Light Dragon is the Singularity completion reward; grant retroactively to finishers.
   if (save.singularityComplete && !save.dragons.light.owned) {
     save.dragons.light.owned = true;
+    save.dragons.light.discovered = true;
   }
   if (save.inventory === undefined) {
     save.inventory = { cores: {}, xpBoostBattles: 0, stabilityBoost: false };
@@ -162,7 +180,7 @@ export function updatePityCounter(newValue) {
 
 export function unlockDragon(dragonId, shiny) {
   const save = loadSave();
-  save.dragons[dragonId] = { ...save.dragons[dragonId], owned: true };
+  save.dragons[dragonId] = { ...save.dragons[dragonId], owned: true, discovered: true };
   if (shiny) save.dragons[dragonId].shiny = true;
   writeSave(save);
 }
@@ -296,6 +314,7 @@ export function markSingularityComplete() {
     (save.singularityProgress.replayCounts['the_singularity'] || 0) + 1;
   if (save.dragons.light && !save.dragons.light.owned) {
     save.dragons.light.owned = true;
+    save.dragons.light.discovered = true;
   }
   writeSave(save);
 }
@@ -340,12 +359,16 @@ export function fuseDragons(parentAId, parentBId, offspringElement, offspringLev
   const save = loadSave();
   if (save.dataScraps < 100) return null;
   offspringLevel = Math.min(offspringLevel, 50);
-  save.dragons[parentAId] = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
-  save.dragons[parentBId] = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
+  // Consume the parents but KEEP `discovered` — they were collected, so collection-count
+  // milestones must not regress when fusion flips them back to unowned.
+  save.dragons[parentAId] = { ...save.dragons[parentAId], level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null, discovered: true };
+  save.dragons[parentBId] = { ...save.dragons[parentBId], level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null, discovered: true };
   save.dragons[offspringElement] = {
+    ...save.dragons[offspringElement],
     level: offspringLevel,
     xp: offspringXp,
     owned: true,
+    discovered: true,
     shiny: offspringShiny,
     fusedBaseStats,
   };

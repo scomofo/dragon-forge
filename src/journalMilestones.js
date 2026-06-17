@@ -5,28 +5,29 @@ export const MILESTONES = [
     description: 'Discover any dragon',
     reward: 100,
     check: (save) => {
-      const owned = Object.values(save.dragons).filter(d => d.owned).length;
-      return { met: owned >= 1, progress: `${owned}/1` };
+      // Count discovered (ever-owned), not currently-owned, so fusion never reverts it.
+      const discovered = Object.values(save.dragons).filter(d => d.discovered).length;
+      return { met: discovered >= 1, progress: `${discovered}/1` };
     },
   },
   {
     id: 'elemental_trio',
     name: 'Elemental Trio',
-    description: 'Own 3 different dragons',
+    description: 'Discover 3 different dragons',
     reward: 200,
     check: (save) => {
-      const owned = Object.values(save.dragons).filter(d => d.owned).length;
-      return { met: owned >= 3, progress: `${owned}/3` };
+      const discovered = Object.values(save.dragons).filter(d => d.discovered).length;
+      return { met: discovered >= 3, progress: `${discovered}/3` };
     },
   },
   {
     id: 'full_roster',
     name: 'Full Roster',
-    description: 'Own all 8 dragons',
+    description: 'Discover all 8 dragons',
     reward: 500,
     check: (save) => {
-      const owned = Object.values(save.dragons).filter(d => d.owned).length;
-      return { met: owned >= 8, progress: `${owned}/8` };
+      const discovered = Object.values(save.dragons).filter(d => d.discovered).length;
+      return { met: discovered >= 8, progress: `${discovered}/8` };
     },
   },
   {

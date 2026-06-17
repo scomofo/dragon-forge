@@ -56,6 +56,7 @@ export function applyPullResult(save, pull) {
 
   if (!dragon.owned) {
     dragon.owned = true;
+    dragon.discovered = true;
     if (pull.shiny) dragon.shiny = true;
     isNew = true;
   } else {
