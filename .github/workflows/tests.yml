@@ -21,3 +21,36 @@ jobs:
       - run: npm ci
       - run: npm run lint   # catches undefined-identifier render crashes the build/tests miss
       - run: npm test
+
+  godot-smoke:
+    name: Godot sim smoke (headless)
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: 4.6.3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Godot ${{ env.GODOT_VERSION }} (headless, linux)
+        run: |
+          set -euo pipefail
+          BASE="Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+          URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/${BASE}.zip"
+          echo "Fetching $URL"
+          curl -fsSL "$URL" -o godot.zip
+          unzip -q godot.zip
+          chmod +x "$BASE"
+          echo "GODOT_BIN=$PWD/$BASE" >> "$GITHUB_ENV"
+
+      - name: Godot version
+        run: "$GODOT_BIN --version"
+
+      # First headless run imports resources into .godot/ (not committed). Allowed to
+      # surface import warnings without failing the job.
+      - name: Import project resources
+        run: "$GODOT_BIN --headless --path dragon-forge-godot --import || true"
+
+      # sim_smoke.gd quit(1) on any failed assertion, quit(0) when all pass — so the
+      # process exit code gates this job. Autoload SCRIPT ERRORs in --script mode are
+      # expected stderr noise and do not change the exit code.
+      - name: Run sim smoke test
+        run: "$GODOT_BIN --headless --path dragon-forge-godot --script res://scripts/tests/sim_smoke.gd"
