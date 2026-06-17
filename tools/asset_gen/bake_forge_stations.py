@@ -7,8 +7,9 @@ and dragon-forge-godot/assets/forge/.
 
 Three-pass pipeline:
   1. Flood-fill from all four corners (catches large connected BG regions)
-  2. Color-key pass: any remaining pixel that is "green-dominant" goes alpha
-  3. Despill pass: suppress residual green cast on surviving edge pixels
+  2. Difference-based color-key: transparent if G exceeds max(R,B) by >= DIFF_THRESH
+     — unlike ratio-based keying this works correctly on warm/bright sprite colors
+  3. Despill: cap G at max(R,B) on all surviving pixels to eliminate green tint
 
 Usage:  uv run --with pillow python tools/asset_gen/bake_forge_stations.py
         uv run --with pillow python tools/asset_gen/bake_forge_stations.py station_anvil
@@ -28,14 +29,9 @@ DESTS = [
     REPO / "dragon-forge-godot" / "assets" / "forge",
 ]
 
-# Flood-fill tolerance — how far from the seed colour a pixel can be and still
-# be considered background (sum of per-channel absolute differences).
-FLOOD_THRESH = 80
-
-# Color-key threshold: a pixel is green-screen if its green channel dominates
-# by at least this ratio over both red and blue.
-GREEN_RATIO = 1.6   # G must be > 1.6 × R  AND  > 1.6 × B
-GREEN_MIN   = 120   # G must also be at least this value (avoids dark neutrals)
+FLOOD_THRESH = 80   # flood-fill corner tolerance
+DIFF_THRESH  = 20   # G - max(R,B) must exceed this to be keyed transparent
+GREEN_MIN    = 60   # G must be at least this bright (avoids near-black neutrals)
 
 STATIONS = [
     "station_hatchery_ring",
@@ -64,28 +60,30 @@ for stem in names:
     for seed in [(0, 0), (W - 1, 0), (0, H - 1), (W - 1, H - 1)]:
         ImageDraw.floodfill(img, seed, (0, 0, 0, 0), thresh=FLOOD_THRESH)
 
-    # ── Pass 2: color-key — catch any green-ish pixel that flood-fill missed
+    # ── Pass 2: difference-based color-key ───────────────────────────────
+    # Key out any pixel where green dominates the other channels by DIFF_THRESH.
+    # This catches anti-aliased/blended edge pixels that flood-fill missed,
+    # and works correctly even when R is high (warm sprite colors).
     px = img.load()
     for y in range(H):
         for x in range(W):
             r, g, b, a = px[x, y]
             if a == 0:
                 continue
-            if (g >= GREEN_MIN
-                    and g > r * GREEN_RATIO
-                    and g > b * GREEN_RATIO):
+            if g >= GREEN_MIN and (g - max(r, b)) >= DIFF_THRESH:
                 px[x, y] = (0, 0, 0, 0)
 
-    # ── Pass 3: despill — reduce green cast on edge pixels that survived ──
-    # For each opaque pixel where G is noticeably higher than R or B,
-    # clamp G to max(R, B) to neutralise the green tint without going alpha.
+    # ── Pass 3: despill ───────────────────────────────────────────────────
+    # For every surviving opaque pixel where G still exceeds max(R,B),
+    # clamp G down to max(R,B). This removes residual green tint from
+    # edge pixels that are too mixed to fully key out.
     for y in range(H):
         for x in range(W):
             r, g, b, a = px[x, y]
             if a == 0:
                 continue
             cap = max(r, b)
-            if g > cap + 15:          # only correct significant green excess
+            if g > cap:
                 px[x, y] = (r, cap, b, a)
 
     # ── Autocrop to non-transparent bounding box ──────────────────────────
