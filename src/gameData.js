@@ -71,7 +71,6 @@ export const dragons = {
     moveKeys: ['magma_breath', 'flame_wall'],
     spriteSheet: assetUrl('/assets/dragons/fire_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/fire_stage1.png'), 2: assetUrl('/assets/dragons/fire_stage2.png'), 3: assetUrl('/assets/dragons/fire_stage3.png'), 4: assetUrl('/assets/dragons/fire_stage4.png') },
-    facesLeft: true,
   },
   ice: {
     id: 'ice',
