@@ -3,7 +3,7 @@ import { wait, assetUrl } from './utils';
 import { dragons, elementColors } from './gameData';
 import { getFusionElement, getStabilityTier, calculateFusionStats, executeFusion } from './fusionEngine';
 import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
-import { fuseDragons, trackStat, setStabilityBoost } from './persistence';
+import { fuseDragons, setStabilityBoost } from './persistence';
 import { playSound } from './soundEngine';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
@@ -62,7 +62,8 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
       result.shiny, result.fusedBaseStats
     );
     if (stabilityBoost && getStabilityTier(parentA.element, parentB.element) !== 'stable') setStabilityBoost(false);
-    trackStat('fusionsCompleted');
+    // NOTE: fusionsCompleted is incremented inside fuseDragons() (persistence.js) — the
+    // canonical fusion mutation. Counting it here too double-counted every fusion.
 
     playSound('fusionReveal');
     setFusionResult(result);
