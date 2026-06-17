@@ -6,23 +6,9 @@
 echo "=== SESSION STATE BEFORE COMPACTION ==="
 echo "Timestamp: $(date)"
 
-# --- Active session state file ---
-STATE_FILE="production/session-state/active.md"
-if [ -f "$STATE_FILE" ]; then
-    echo ""
-    echo "## Active Session State (from $STATE_FILE)"
-    STATE_LINES=$(wc -l < "$STATE_FILE" 2>/dev/null | tr -d ' ')
-    if [ "$STATE_LINES" -gt 100 ] 2>/dev/null; then
-        head -n 100 "$STATE_FILE"
-        echo "... (truncated — $STATE_LINES total lines, showing first 100)"
-    else
-        cat "$STATE_FILE"
-    fi
-else
-    echo ""
-    echo "## No active session state file found"
-    echo "Consider maintaining production/session-state/active.md for better recovery."
-fi
+# NOTE: the production/session-state/active.md recovery mechanism was retired and its
+# scaffold archived (commit 141416b). Compaction recovery now relies on the git working
+# tree and WIP design docs dumped below.
 
 # --- Files modified this session (unstaged + staged + untracked) ---
 echo ""
@@ -75,8 +61,8 @@ echo "Context compaction occurred at $(date)." \
 
 echo ""
 echo "## Recovery Instructions"
-echo "After compaction, read $STATE_FILE to recover full working context."
-echo "Then read any files listed above that are being actively worked on."
+echo "After compaction, re-read any files listed above that are being actively worked on,"
+echo "and run 'git diff' to recover the in-progress change set."
 echo "=== END SESSION STATE ==="
 
 exit 0

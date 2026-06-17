@@ -11,18 +11,9 @@ mkdir -p "$SESSION_LOG_DIR" 2>/dev/null
 RECENT_COMMITS=$(git log --oneline --since="8 hours ago" 2>/dev/null)
 MODIFIED_FILES=$(git diff --name-only 2>/dev/null)
 
-# --- Archive active session state on shutdown (do NOT delete) ---
-# active.md persists across clean exits so multi-session recovery works.
-# It is only valid to delete active.md manually or when explicitly superseded.
-STATE_FILE="production/session-state/active.md"
-if [ -f "$STATE_FILE" ]; then
-    {
-        echo "## Archived Session State: $TIMESTAMP"
-        cat "$STATE_FILE"
-        echo "---"
-        echo ""
-    } >> "$SESSION_LOG_DIR/session-log.md" 2>/dev/null
-fi
+# NOTE: the production/session-state/active.md recovery mechanism was retired and its
+# scaffold archived (commit 141416b). The hook no longer archives that path; it only
+# records git activity below.
 
 if [ -n "$RECENT_COMMITS" ] || [ -n "$MODIFIED_FILES" ]; then
     {
