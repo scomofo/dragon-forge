@@ -176,8 +176,7 @@
   left: 50%;
   bottom: -18px;
   transform: translateX(-50%);
-  max-width: min(160px, 28vw);
-  overflow-wrap: anywhere;
+  white-space: nowrap;
   font-size: 10px;
   color: #bbb;
   text-align: center;
