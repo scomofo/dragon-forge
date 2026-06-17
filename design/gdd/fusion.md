@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Dragon mastery through combinatorial discovery
+> **Implements Pillar**: P1 — Collection Is the Heartbeat
 
 ## Summary
 
@@ -280,7 +280,7 @@ N/A — turn-based browser game. There is no frame-data, hitbox timing, controll
 | Stability Matrix no-effect notice | Inside `fusion-preview` | Reactive | `stabilityBoost && !boostEffective` |
 | Cost warning ("⚠ Both parents will be consumed") | Inside `fusion-preview` | Static | Shown whenever preview is visible |
 | "FUSE — 100◆" button (enabled/disabled) | Bottom of select phase | On `canFuse` change | Always shown during select phase |
-| "Need 2+ Stage II dragons to fuse" hint | Below fuse button | Static | `ownedDragons.length < 2` |
+| "Need 2+ dragons at level 10+" hint | Below fuse button | Static | `ownedDragons.filter(d => d.level >= 10).length < 2` |
 | Result card (offspring sprite, name, stability badge, base stats, level) | Fullscreen result overlay | Static until dismissed | Shown in `result` phase |
 
 ---

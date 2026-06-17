@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Arcade Spectacle / Accessible by Default
+> **Implements Pillar**: P5 — Earned Mastery, Never Trivialized
 
 ## Summary
 

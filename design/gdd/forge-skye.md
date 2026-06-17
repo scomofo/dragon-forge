@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Player agency through persistent loadout customisation; narrative grounding through the Forge hub
+> **Implements Pillar**: P3 — The Myth Is Hardware
 
 ## Summary
 
@@ -284,7 +284,7 @@ This is stateless — `currentAct` is never written to the save; it is derived e
 
 | Parameter | Current Value | File:Line | Safe Range | Category | Effect of Increase | Effect of Decrease |
 |---|---|---|---|---|---|---|
-| `FORGE_STEP` | `2` (percentage units per keypress) | `forgeMovement.js:1` | 1–5 | Feel | Skye moves faster; harder to stop precisely at stations | Skye moves slower; more key presses needed to traverse the scene |
+| `FORGE_STEP` (owner) | `2` (percentage units per keypress) | `forgeMovement.js:1` | 1–5 | Feel | Skye moves faster; harder to stop precisely at stations | Skye moves slower; more key presses needed to traverse the scene |
 | `iron_knuckle` ATK bonus | `5` | `forgeData.js:347` | 0–20 | Feel | More impactful early-game reward | Iron Knuckle becomes the weakest possible option |
 | `phase_lens` DEF multiplier | `1.15` | `forgeData.js:348` | 1.0–2.0 | Feel | Greater survivability; may trivialise content | Negligible survivability gain |
 | `twin_forge` SPD bonus | `5` | `forgeData.js:349` | 0–20 | Feel | More reliable turn-order advantage | Turn-order advantage negligible |

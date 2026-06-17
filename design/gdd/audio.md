@@ -4,11 +4,11 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Juice and Feedback — every player action must land with weight and clarity
+> **Implements Pillar**: P5 — Earned Mastery, Never Trivialized
 
 ## Summary
 
-The audio system provides all sound effects and music for Dragon Forge through a single module (`src/soundEngine.js`). It synthesises all SFX procedurally at runtime using the Web Audio API — there are no pre-recorded SFX files. Music is streamed from MP3 assets. The module manages per-screen music routing, element-tinted combat SFX, a low-HP heartbeat tension pulse, per-sound cooldown gates, and a persist-to-localStorage mute/volume preference.
+The audio system provides all sound effects and music for Dragon Forge through a single module (`src/soundEngine.js`). It synthesises all SFX procedurally at runtime using the Web Audio API — there are no pre-recorded SFX files. Music is streamed from MP3 assets. The module manages per-screen music routing, element-tinted combat SFX, a low-HP heartbeat tension pulse, per-sound cooldown gates, and a persist-to-localStorage mute/volume preference. Sensation is a secondary aesthetic, serving the P5 readable-feedback commitment: every sound must make the consequence of a player action legible, not merely impressive.
 
 > **Quick reference** — Layer: `Presentation` · Priority: `MVP` · Key deps: `Battle System, Hatchery, Fusion, Singularity, Navigation`
 

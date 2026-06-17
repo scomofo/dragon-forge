@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Accessibility / Player Agency
+> **Implements Pillar**: P5 — Earned Mastery, Never Trivialized (accessibility sub-pillar)
 
 ## Summary
 
@@ -155,7 +155,7 @@ Candidates are filtered to only those on the correct side of the selected node (
 |-----------|--------------|------------|----------|-------------------|-------------------|
 | Axis deadzone | 0.45 | 0.1 – 0.7 | `gamepadInput.js:16` | Requires larger stick deflection to register; reduces drift noise | More sensitive to small stick movement; may cause drift on worn controllers |
 | Off-axis navigation penalty | 1.85 | 1.0 – 3.0 | `gamepadInput.js:68` | More strictly prefers nodes directly ahead; diagonal nodes harder to reach | More permissive diagonal navigation; may select unintended targets |
-| Forge movement step | 2 (percentage units) | 1 – 5 | `forge/forgeMovement.js:1` | Skye moves faster per press | Finer-grained positioning; slower traversal |
+> **Note**: Forge movement step (FORGE_STEP) is a tuning knob owned by design/gdd/forge-skye.md.
 | Forge bounds (min/max x, y) | x: 4–96, y: 20–92 | Fixed by art layout | `forge/forgeMovement.js:2–7` | Wider roaming area | Tighter containment |
 
 All knobs are feel-category tuning values. No external data file exists for these; they are constants in source files. If frequent tuning is expected, they should be moved to `assets/data/input-config.json`.

@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: World-as-Living-System — all player actions accumulate permanently; the world remembers everything the player has done.
+> **Implements Pillar**: P3 — The Myth Is Hardware (diegetic save); P5 — Earned Mastery, Never Trivialized
 
 ## Summary
 
@@ -51,6 +51,8 @@ Primary MDA aesthetics served: **Submission** (the player trusts the system enou
 9. **Core inventory cap**: Element cores are capped at 99 per element in both `addCore()` and `grantReplayReward()`. (`persistence.js` lines 325–327, 264)
 
 10. **New Game+**: `startNewGamePlus()` gates on `mirrorAdminDefeated === true`. `applyNewGamePlus()` increments `ngPlus`, clears `defeatedNpcs`, `singularityProgress`, `singularityComplete`, `mirrorAdminDefeated`, `remnantDefeated`, and resets `flags.currentAct` to 1 and `flags.fragmentsUnlocked` to `[]`. The collection (dragons, scraps, cores, milestones, records, stats, skye) is fully preserved. (`persistence.js` lines 424–441)
+
+    **NG+ reset vs. kept boundary** — fields explicitly reset: `defeatedNpcs`, `singularityProgress`, `singularityComplete`, `mirrorAdminDefeated`, `remnantDefeated`, `flags.currentAct`, `flags.fragmentsUnlocked`. Fields explicitly kept (not reset): `dragons`, `dataScraps`, `inventory.cores`, `milestones`, `stats`, `skye`, `ngPlus` (incremented), `fusionLineage`, `journalRecords`, **`pityCounter`**. `pityCounter` carries over intentionally: a player who reaches NG+ with an accumulated pity count is guaranteed a Rare+ on their first NG+ hatchery pull as a reward for the completed run. This is a deliberate design choice, not an oversight.
 
 11. **Daily Challenge streak**: `completeDailyChallenge(seed)` stores the seed of the last completed challenge as `lastDailyCompleted`. Streak increments only if `lastDailyCompleted` equals "yesterday's seed" (computed as `YYYY * 10000 + MM * 100 + DD` for the previous calendar day). Otherwise streak resets to 1. (`persistence.js` lines 406–418)
 
@@ -149,6 +151,7 @@ Source: `persistence.js` lines 253–265.
 | `full_roster` milestone retroactive grant | If `milestones` does not include `'full_roster'` and the player has ≥ 8 discovered dragons, `migrateSave()` pushes `'full_roster'` and adds 500 DataScraps. | The milestone threshold was raised from 6 to 8 dragons at some point; this compensates older saves that met the old threshold. |
 | Singularity complete, light dragon not owned | `migrateSave()` sets `dragons.light.owned = true` and `discovered = true`. Also enforced by `markSingularityComplete()` at the moment of completion. | Light Dragon is the Singularity completion reward; retroactive grant covers players who completed before the reward was introduced. |
 | `startNewGamePlus()` called when `mirrorAdminDefeated` is false | Returns `false` and writes nothing. | Gate prevents NG+ from being triggered by incomplete runs. |
+| `pityCounter` value after `applyNewGamePlus()` | `pityCounter` is NOT reset; it retains its pre-NG+ value. A player who enters NG+ with a high pity count will receive a guaranteed Rare+ on their first NG+ hatchery pull. This is intentional — the carry-over is a reward for completing the endgame arc. | Distinct from the full collection/economy fields that are also preserved: `pityCounter` carry-over has a direct mechanical effect on the player's first NG+ session.|
 | Core count exceeding cap | `addCore()` and `grantReplayReward()` both apply `Math.min(99, ...)`. Overflow is silently truncated. | Prevents unbounded inventory growth. |
 | `spendCores()` goes to zero or below | The key is deleted from `inventory.cores` entirely (`delete save.inventory.cores[el]`), leaving a clean sparse object. | Avoids accumulation of zero-valued keys. |
 | `claimMilestone()` called with already-claimed ID | Returns `false` immediately; no scraps are added and the array is not modified. | Idempotency guard — safe to call from any context. |

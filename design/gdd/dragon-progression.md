@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Mastery & Collection Growth
+> **Implements Pillar**: P1 — Collection Is the Heartbeat; P2 — Every Fight Is a Readable Type-Puzzle
 
 ## Summary
 
@@ -193,7 +193,7 @@ xpGained = 50 * rarityMultiplier
 | enemyLevel >> playerLevel | ratio is clamped at 2.0 so maximum award is `floor(baseXP * 2)` | Prevents runaway XP from extremely overlevelled enemies |
 | enemyLevel << playerLevel | ratio is clamped at 0.25 so minimum award is `max(1, floor(baseXP * 0.25))` | Low-level grinding still awards some XP |
 | Shiny flag set on duplicate pull | `dragon.shiny = true` applied by `applyPullResult`; next stat recalculation picks up the 1.2x | Upgrade is permanent; duplicate pulls can upgrade a non-shiny dragon |
-| Offspring from fusion exceeds level 50 | `fuseDragons` clamps: `offspringLevel = Math.min(offspringLevel, 50)` | Fusion cannot circumvent the level cap |
+| Offspring from fusion exceeds level cap | `fuseDragons` in `fusionEngine.js` applies a primary cap of 30 (`offspringLevel = Math.min(offspringLevel, 30)`). `fuseDragons` in `persistence.js` then applies a secondary safety cap of 50 (`offspringLevel = Math.min(offspringLevel, 50)`). In practice the secondary cap is never reached because the primary cap of 30 is always lower. Both caps must be kept in sync if either is changed. | Two-layer defence; the fusionEngine.js cap of 30 is the authoritative design constraint; the persistence.js cap of 50 is a safety net. |
 | baseStats all equal (totalBase = 4*N) | Each stat's share is 0.25; budget distributed evenly | Formula remains valid; no division by zero |
 | Dragon with fusedBaseStats | `calculateStatsForLevel` receives whatever `baseStats` the caller passes; if the caller passes `fusedBaseStats` this works identically | Fusion offspring with blended stats use the same growth formula |
 
@@ -219,7 +219,7 @@ All numeric constants live in source files — there are no external data files 
 | XP base (level 1) | 50 | 30–80 | Curve | Slower early levels | Faster early levels | `persistence.js` line 188 |
 | XP ramp per level | 5 | 3–10 | Curve | Slower late-game grind | Flatter curve | `persistence.js` line 188 |
 | Level cap | 50 | 30–99 | Gate | More content runway | Faster ceiling | `persistence.js` `applyDragonXp` |
-| Stat budget per level | 12 | 8–18 | Curve | Larger power differential between levels | Flatter growth | `battleEngine.js` line 77 |
+| Stat budget per level (owner) | 12 | 8–18 | Curve | Larger power differential between levels | Flatter growth | `battleEngine.js` line 77 |
 | Shiny multiplier | 1.2 | 1.05–1.5 | Curve | Shinies feel more premium; widens power gap | Shiny feels cosmetic only | `battleEngine.js` line 79 |
 | Stage 2 threshold | Level 8 | 5–12 | Gate | Longer Stage 1; later sprite reveal | Earlier first evolution | `gameData.js` line 23 |
 | Stage 3 threshold | Level 20 | 15–25 | Gate | Longer mid-game | Faster progression | `gameData.js` line 23 |

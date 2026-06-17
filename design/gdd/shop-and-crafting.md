@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Resource Loop / Player Investment
+> **Implements Pillar**: P1 — Collection Is the Heartbeat; P5 — Earned Mastery, Never Trivialized
 
 ## Summary
 
@@ -32,10 +32,13 @@ re-read/write `localStorage` atomically.
 
 ## Player Fantasy
 
-The player should feel like a resourceful alchemist who converts the spoils
-of battle into meaningful upgrades. Every core held in inventory represents
-potential energy; crafting them into a Stability Matrix or an Elder Shard
-should feel like a decisive commitment, not a routine click. The Buy tab
+The player should feel the weight of commitment: spending a finite pool of
+Element Cores on an irreversible upgrade is a one-way door, and the Shop
+is the place where that decision is made. Every core held in inventory
+represents stored potential; the moment of converting them into a Stability
+Matrix or an Elder Shard is the payoff — a decisive act, not a routine click.
+(The broader loop of accumulating those cores belongs to the economy GDD;
+this screen owns the moment you spend them.) The Buy tab
 serves immediate gratification ("I need XP now"); the Forge tab serves the
 satisfaction of long-term planning ("I've been saving six different cores
 for this Void Fragment pull").
@@ -236,8 +239,8 @@ Expected cores per battle win = 0.60 * (0.80 * 1 + 0.20 * 2) = 0.60 * 1.20 = 0.7
 
 | Parameter | Current Value | Safe Range | Category | File:Line | Effect of Increase | Effect of Decrease |
 |-----------|--------------|------------|----------|-----------|-------------------|-------------------|
-| `CORE_DROP_CHANCE` | 0.60 | 0.30–0.90 | Feel | `shopItems.js:3` | Cores flood more quickly; Forge unlocks earlier | Forge recipes become gated hard; endgame pull pacing slows |
-| `CORE_DOUBLE_CHANCE` | 0.20 | 0.05–0.40 | Feel | `shopItems.js:4` | Higher average cores per win | Lower average cores per win |
+CORE_DROP_CHANCE and CORE_DOUBLE_CHANCE are tuning knobs owned by design/gdd/economy.md.
+
 | Core cap per element | 99 | 20–99 | Gate | `persistence.js:325` | More inventory depth; later pressure to spend | Earlier pressure to spend cores; overflow waste if farming |
 | XP Booster cost | 100 scraps | 50–300 | Curve | `shopItems.js:9` | Higher bar for XP acceleration | XP Booster becomes default early spend |
 | XP Booster charges per purchase | 3 battles | 1–10 | Curve | `ShopScreen.jsx:28` | More value per purchase; less return trips | More granular purchasing |

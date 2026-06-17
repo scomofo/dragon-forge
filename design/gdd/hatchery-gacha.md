@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Collection Fantasy / Dragon Discovery
+> **Implements Pillar**: P1 — Collection Is the Heartbeat
 
 ## Summary
 
@@ -22,7 +22,7 @@ Players visit the Quantum Incubation Lab (the Hatchery screen) to pull new drago
 
 ## Player Fantasy
 
-The player should feel the anticipation of a lottery ticket combined with the satisfaction of building a personal bestiary. Every pull carries the possibility of something extraordinary — a gold-bordered Exotic, the rare shiny shimmer — even if most pulls land on Commons. Duplicate pulls should feel like progress, not waste, because XP immediately ticks up a level bar. The pity counter converts frustration into a countdown, turning a losing streak into mounting excitement rather than mounting disappointment.
+The player should feel the tension of instantiating an unknown guardian protocol — will this egg resolve as a Common spark or a rare Exotic presence? — combined with the satisfaction of building a personal bestiary. Every pull carries the possibility of something extraordinary — a gold-bordered Exotic, the rare shiny shimmer — even if most pulls land on Commons. Duplicate pulls should feel like progress, not waste, because XP immediately ticks up a level bar. The pity counter converts frustration into a countdown, turning a losing streak into mounting excitement rather than mounting disappointment.
 
 Primary MDA aesthetics served: **Collection** (Discovery + Expression). Secondary: **Challenge** (resource pressure from pull cost).
 
@@ -260,7 +260,7 @@ N/A — turn-based browser game. There is no frame-data, hitbox timing, input la
 | Void dragon (Exotic) is only gachable void-element dragon | `design/gdd/dragon-progression.md` | Exotic pool composition | Rule dependency |
 | Light and Synthesis dragons are excluded from pull pool | `design/gdd/dragon-progression.md` | Acquisition path definitions | Rule dependency |
 
-> Note: None of the above `design/gdd/` files exist yet — they are broken references flagged here for downstream authors.
+> All referenced GDD files exist as of the 2026-06-16 reverse-documentation sprint.
 
 ---
 

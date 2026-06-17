@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Mastery through Collection — the arc converts every dragon-collection and campaign milestone into visible stakes, then caps the power fantasy with a permanent narrative consequence.
+> **Implements Pillar**: P4 — The Endgame Escalates Into Corruption
 
 ## Summary
 
@@ -365,6 +365,7 @@ Standard `calculateXpGain` (`battleEngine.js:69–72`). Singularity bosses have 
 | `App.jsx` | Singularity depends on App router | `handleEngageBoss`, `handleEngageRemnant`, `handleSingularityBattleEnd` live in App; the Singularity screen receives them as props |
 | Sound Engine | Singularity depends on Sound | Music track `'singularity'` plays on screen entry; `'mirrorAdminSpawn'` and `'victoryFanfare'` on specific events |
 | Credits Screen | Credits depends on Singularity | Mirror Admin victory is the only path to `SCREENS.CREDITS` |
+| `economy.md` | Bidirectional | Economy owns `scrapsReward` disbursement via `addScraps` and the repeat-penalty detection for `replayCounts`; Singularity provides the replay state that triggers the penalty and the core-cache grant |
 
 ---
 
@@ -448,8 +449,6 @@ The intended sensation is environmental dread: the UI itself is corrupting, not 
 | Dragon base stats for scaling | `design/gdd/journal-milestones.md` | `dragons[id].baseStats`, `fusedBaseStats` | Data dependency |
 | `ngPlus` counter for enemy scaling | `design/gdd/campaign-map.md` | NG+ difficulty multiplier wiring | Rule dependency |
 
-> Note: as of 2026-06-16 no files exist under `design/gdd/` — all cross-reference GDDs are declared but not yet written.
-
 ---
 
 ## Acceptance Criteria
@@ -484,6 +483,6 @@ The intended sensation is environmental dread: the UI itself is corrupting, not 
 
 | Question | Owner | Deadline | Resolution |
 |----------|-------|----------|-----------|
-| Does `save.ngPlus` currently wire into any enemy scaling code in the campaign map or battle engine? The UI description promises "+25% per tier" but no scaling code reading `ngPlus` was found during this audit. | Lead Programmer | Before NG+ is advertised as functional | Unresolved — verify `ngPlus` consumer |
+| Does `save.ngPlus` currently wire into any enemy scaling code in the campaign map or battle engine? The UI description promises "+25% per tier" but no scaling code reading `ngPlus` was found during this audit. | Lead Programmer | Before NG+ is advertised as functional | Resolved — `BattleScreen.jsx:39-43` `getScaledNpcStats` applies ×(1 + ngPlus × 0.25) |
 | Should Mirror Admin replays (after `mirrorAdminDefeated = true`) also route to Credits, or only to the Singularity screen? Current code only routes to Credits when `won === true` per the `battleConfig.isMirrorAdmin` check, which means first win always goes to Credits regardless. | Game Designer | — | Implemented: all Mirror Admin wins route to Credits |
 | Corruption stage 1 (`ownedCount >= 2`) applies no CSS class. Should it have a subtle visual tell, or is stage 1 intentionally silent? | Game Designer | — | Unresolved — design intent unclear from code |

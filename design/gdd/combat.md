@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Core loop — every session of Dragon Forge passes through combat
+> **Implements Pillar**: P2 — Every Fight Is a Readable Type-Puzzle
 
 ## Summary
 
@@ -494,6 +494,10 @@ scaledStat = floor(baseStat × scale)
 | `design/gdd/forge-skye.md` | Combat reads relic modifiers | `getRelicBattleModifiers` applied to ATK, DEF, SPD, XP multiplier, status duration, chain hit chance |
 | `design/gdd/singularity-endgame.md` | Combat writes singularity state | Victory calls `recordSingularityDefeat`, `markSingularityComplete`, `unlockFragment` |
 | `design/gdd/daily-challenge.md` | Combat reads daily config | `battleConfig.dailyNpc` drives streak multiplier, scraps reward, and completion flag |
+| `design/gdd/audio.md` | audio.md depends on combat | Combat provides element strings, HP/maxHP ratio for music threshold, and turn-event sequence to audio system |
+| `design/gdd/campaign-map.md` | Bidirectional | Campaign provides `campaignNodeId` + NPC defs into `battleConfig`; combat calls `recordNpcDefeat` on win |
+| `design/gdd/vfx-animation-accessibility.md` | Combat provides to vfx-animation-accessibility | Combat provides the `resolveTurn {events}` object shape as the animation contract consumed by the presentation layer |
+| `design/gdd/hatchery-gacha.md` | Data dependency: hatchery writes, combat reads | Hatchery writes `dragon.shiny`; combat reads it in `calculateStatsForLevel` for the ×1.2 stat multiplier |
 
 ---
 
@@ -511,9 +515,8 @@ All live in source files, not external data files (existing implementation — i
 | Damage roll lower bound | 0.85 | `battleEngine.js:51` | feel | 0.75–0.90 | Higher variance; a bad roll hurts more | Lower variance; fights more consistent |
 | `stageMultipliers` | {1:0.6, 2:0.8, 3:1.0, 4:1.2} | `gameData.js:20` | curve | — | Wider stage spread amplifies early weakness and late power | Flatter curve; stage gates matter less |
 | `stageThresholds` | {2:8, 3:20, 4:38} | `gameData.js:23` | gate | — | Later thresholds slow progression | Earlier thresholds compress the power curve |
-| Stat budget per level | 12 | `battleEngine.js:77` | curve | 8–16 | Faster stat growth; players out-scale content more quickly | Slower growth; later-game fights remain challenging longer |
 | NPC over-level scale rate | 0.04 per level | `BattleScreen.jsx:43` | curve | 0.02–0.07 | NPCs become more dangerous as players level past them | Over-levelled players face weaker resistance |
-| NG+ scale bonus | 0.25 per tier | `BattleScreen.jsx:43` | gate | 0.15–0.40 | Harder NG+ runs; more reward incentive | NG+ barely changes difficulty |
+| NG+ scale bonus | 0.25 per tier | `BattleScreen.jsx:43` | curve | 0.15–0.40 | Harder NG+ runs; more reward incentive | NG+ barely changes difficulty |
 | `npc_focus` multiplier | 1.3× | `gameData.js:54` | curve | 1.1–1.5 | Focused NPC attacks hit harder | Focus feels negligible; anti-stack rule becomes moot |
 | `npc_harden` multiplier | 1.4× | `gameData.js:55` | curve | 1.2–1.6 | Hardened NPC is much tankier | Harden feels cosmetic |
 | `npc_harden` duration | 2 turns | `gameData.js:55` | gate | 1–3 | Extended defence window; harder to burst through | Harden expires quickly; less impact on pacing |
@@ -526,6 +529,8 @@ All live in source files, not external data files (existing implementation — i
 | Desperation threshold | 0.30 | `battleEngine.js:134` | gate | 0.20–0.40 | NPC goes all-out earlier | More turns before NPC panics |
 | Exploit mode min player HP | 0.40 | `battleEngine.js:135` | gate | 0.25–0.55 | NPC exploits even less-wounded players | Exploit only triggers when player is very low |
 | Repeat clear scraps ratio | 0.25× | `BattleScreen.jsx:~932` | gate | 0.1–0.5 | Repeat grinding pays more | Less incentive to farm previously-defeated NPCs |
+
+> Stat budget per level (12) is a tuning knob owned by design/gdd/dragon-progression.md.
 
 ---
 

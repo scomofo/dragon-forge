@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Structured Progression — a directed graph of encounters gives the player a clear goal ladder from first dragon to Singularity endgame.
+> **Implements Pillar**: P4 — The Endgame Escalates Into Corruption
 
 ## Summary
 
@@ -215,10 +215,10 @@ All values live in source files. None are currently in a dedicated external data
 | Parameter | Current Value | File:Line | Safe Range | Category | Effect of Increase | Effect of Decrease |
 |-----------|--------------|-----------|------------|----------|-------------------|-------------------|
 | NPC level scale per over-level | `0.04` (+4% per level above NPC) | `src/BattleScreen.jsx:42` | 0.01–0.10 | Feel | Harder catch-up fights; more incentive to level-match | Grinding levels provides less combat advantage; feels softer |
-| NG+ stat multiplier per tier | `0.25` (+25% per NG+ tier) | `src/BattleScreen.jsx:43` | 0.10–0.50 | Curve | Steeper NG+ difficulty; discourages casual re-runs | Easier NG+ re-runs; reduces replayability friction |
 | NG+ XP/scrap reward multiplier per tier | `0.25` (+25% per tier) | `src/BattleScreen.jsx:941–942` | 0.10–0.50 | Curve | Greater NG+ grind payoff; may over-inflate economy | Reduces NG+ reward incentive |
-| Core drop chance | `0.60` (60%) | `src/shopItems.js:3` | 0.30–0.85 | Curve | More cores drop; fusion materials less scarce | Cores scarcer; fusion gated more aggressively |
-| Core double chance | `0.20` (20%) | `src/shopItems.js:4` | 0.05–0.40 | Curve | More bulk core drops; flattens scarcity spikes | More consistent single-core drops |
+
+> **Note**: CORE_DROP_CHANCE/CORE_DOUBLE_CHANCE owned by design/gdd/economy.md
+> **Note**: NG+ scale is owned by design/gdd/combat.md
 | Stat display cap for stat bars | `130` | `src/CampaignMapScreen.jsx:30` | 100–200 | Feel | Bars compress at lower fill on high-stat enemies | Bars overflow at max for high-stat enemies |
 
 ---

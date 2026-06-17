@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: World-as-Living-System — every mechanic reinforces that the Rendered World is a real place worth saving
+> **Implements Pillar**: P3 — The Myth Is Hardware
 
 ## Summary
 

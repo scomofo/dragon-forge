@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Progression loop — every action must feel rewarded; every resource must have a clear purpose.
+> **Implements Pillar**: P5 — Earned Mastery, Never Trivialized
 
 ## Summary
 
@@ -275,8 +275,8 @@ if (clearCount % 5 === 0):
 |-----------|--------------|----------|------------|----------|-------------------|-------------------|
 | `PULL_COST` | 50 ◆ | `gameData.js` line 360 | 25–100 | Gate | Pulls feel more premium; scraps accumulate longer | Pulls become trivial; hatchery loses tension |
 | `PITY_THRESHOLD` | 10 | `gameData.js` line 362 | 5–20 | Gate | More pulls before guarantee; more frustration risk | Rare+ comes sooner; pity less meaningful as mechanic |
-| `CORE_DROP_CHANCE` | 0.60 | `shopItems.js` line 3 | 0.40–0.80 | Feel | Cores flow faster; forge recipes become cheaper time-wise | Cores feel scarcer; recipe grind extends |
-| `CORE_DOUBLE_CHANCE` | 0.20 | `shopItems.js` line 4 | 0.10–0.35 | Feel | Expected cores/win increases; inventory fills faster | Rarely get windfalls; steadier accumulation |
+| `CORE_DROP_CHANCE` (owner) | 0.60 | `shopItems.js` line 3 | 0.40–0.80 | Feel | Cores flow faster; forge recipes become cheaper time-wise | Cores feel scarcer; recipe grind extends |
+| `CORE_DOUBLE_CHANCE` (owner) | 0.20 | `shopItems.js` line 4 | 0.10–0.35 | Feel | Expected cores/win increases; inventory fills faster | Rarely get windfalls; steadier accumulation |
 | Repeat penalty multiplier | ×0.25 | `BattleScreen.jsx` line 932 | ×0.10–×0.50 | Curve | Repeat farming more rewarding; less pressure for fresh content | Near-zero reward for repeated fights; forces new content |
 | NG+ scraps bonus per tier | +25% | `BattleScreen.jsx` line 942 | +10%–+50% | Curve | NG+ loop more rewarding; may trivialize economy in later cycles | NG+ loop less rewarding; less incentive to restart |
 | Daily streak cap | ×1.5 | `dailyChallenge.js` line 72 | ×1.2–×2.0 | Gate | Veteran daily players earn significantly more; may widen wealth gap | Less incentive to maintain daily habit |
@@ -288,6 +288,8 @@ if (clearCount % 5 === 0):
 | Replay cache interval | every 5 clears | `persistence.js` line 255 | 3–10 | Gate | Caches arrive more often; more frequent endgame reward beats | Caches are rarer; replay feels drier between payoffs |
 | Core cap per element | 99 | `persistence.js` lines 264, 325 | 50–999 | Gate | Overflow protection triggers sooner; harder to stockpile | Less pressure to spend; crafting hoarding risk |
 | Milestone rewards | 100–2,000 ◆ | `journalMilestones.js` | — | Curve | More scraps from one-time grants; accelerates early access to hatchery | Fewer free pulls from milestone completion |
+
+> **Note**: `CORE_DROP_CHANCE` and `CORE_DOUBLE_CHANCE` are owned here; other GDDs cross-reference.
 
 ---
 

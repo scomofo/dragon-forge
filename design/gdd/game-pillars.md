@@ -72,7 +72,7 @@ Primary MDA aesthetics served, in order: **Discovery** (the world's true nature 
 - A 2-dragon bench with a half-rate reserve trains alongside the active dragon (`BattleScreen.jsx:944-945`) — adding a real switch/loadout decision layer to the puzzle without breaking legibility.
 - Status effects are distinct, readable verbs (Freeze = skip, Burn/Poison = DoT, Guard Break/Blind/Dazzle = debuff, Glitch = randomize — `gameData.js:365-373`), each with an icon, so the board state is always legible.
 
-**Anti-pillar (what we deliberately avoid):** *We do NOT hide the odds or reward reflex.* This is a turn-based puzzle, not an action game — there is no frame-data, no input timing, no twitch skill. We avoid "gotcha" combat where the right answer is unknowable until after you lose. (Open watch-item from review: move accuracy is not yet always surfaced on the card; the pillar demands it be shown — hidden accuracy is a violation of this pillar, not a feature.)
+**Anti-pillar (what we deliberately avoid):** *We do NOT hide the odds or reward reflex.* This is a turn-based puzzle, not an action game — there is no frame-data, no input timing, no twitch skill. We avoid "gotcha" combat where the right answer is unknowable until after you lose.
 
 **Design test:** *If we're debating between adding combat depth via a hidden mechanic versus a visible, learnable one, this pillar says we choose the visible one.* The test: "Could a thoughtful player, given the information on screen, deduce the right move? If not, the design fails this pillar."
 
@@ -176,7 +176,7 @@ Pillars are upstream of every system; this table records which GDDs declare each
 | P4 — The Endgame Escalates Into Corruption | `design/gdd/singularity-endgame.md`, `design/gdd/campaign-map.md` |
 | P5 — Earned Mastery, Never Trivialized | `design/gdd/vfx-animation-accessibility.md`, `design/gdd/economy.md`, `design/gdd/daily-challenge.md`, `design/gdd/audio.md` |
 
-> **Maintenance note**: several existing GDDs use legacy pillar names in their headers (e.g. "Collection Fantasy", "Mastery & Collection Growth", "World-as-Living-System", "Arcade Spectacle / Accessible by Default"). These map onto P1, P1/P5, P3, and P5 respectively. A future pass should align those headers to the canonical pillar names above.
+> **Maintenance note**: several existing GDDs used legacy pillar names in their headers (e.g. "Collection Fantasy", "Mastery & Collection Growth", "World-as-Living-System", "Arcade Spectacle / Accessible by Default"). These mapped onto P1, P1/P5, P3, and P5 respectively. Headers were aligned to the canonical P1–P5 names above on 2026-06-16.
 
 ## Tuning Knobs
 
@@ -221,5 +221,4 @@ A pillar is "working" when the game can be tested against it. These are the fals
 | Question | Owner | Deadline | Resolution |
 |----------|-------|----------|------------|
 | Align legacy "Implements Pillar" headers across existing GDDs to the canonical P1–P5 names | creative-director | Next GDD pass | Open — mapping recorded in Dependencies maintenance note |
-| Move accuracy not yet surfaced on every move card — currently a P2 violation | game-designer | — | Open — pillar demands odds be visible; flagged in GAME_REVIEW_2026-06-16 |
 | Confirm browser as sole canonical build and freeze Godot per anti-pillar #8 (strategic, user's call) | user / creative-director | — | Open — strongest single scope-discipline decision against the "one tight artifact" goal |

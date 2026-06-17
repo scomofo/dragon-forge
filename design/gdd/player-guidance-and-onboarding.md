@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Escalation Through Discovery — every hint surfaces the next meaningful system at the right moment; no content is pushed before the player is ready for it.
+> **Implements Pillar**: P2 — Every Fight Is a Readable Type-Puzzle (legibility/guidance)
 
 ## Summary
 

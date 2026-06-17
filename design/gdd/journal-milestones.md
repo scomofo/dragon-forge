@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Collection Completionism / Long-term Retention
+> **Implements Pillar**: P1 — Collection Is the Heartbeat
 
 ## Summary
 
@@ -152,13 +152,13 @@ Stage IV begins at level 38 but `elder_forged` requires `level >= 50` (the level
 
 | System | Direction | Nature of Dependency |
 |--------|-----------|---------------------|
-| `design/gdd/save-and-persistence.md` (TBD) | This depends on Persistence | Reads `save.dragons`, `save.milestones`, `save.stats`, `save.records`, `save.inventory`, `save.fusionLineage`; writes via `claimMilestone`, `setDragonNickname` |
-| `design/gdd/combat.md` (TBD) | This depends on Battle Engine | Uses `calculateStatsForLevel`, `getStageForLevel` to display live stats in detail panel; `save.stats.battlesWon`, `save.records.longestStreak` feed battle milestones |
-| `design/gdd/hatchery-gacha.md` (TBD) | Hatchery depends on this | Hatchery sets `discovered: true` on unlock; hatchery pull count (`save.stats.totalPulls`) feeds `pull_addict` milestone |
-| `design/gdd/fusion.md` (TBD) | Fusion depends on this | Fusion must preserve `discovered: true` on consumed parents to avoid milestone regression; fusion outcome feeds `fusion_master` milestone |
-| `design/gdd/economy.md` (TBD) | This depends on Economy | Milestone rewards are dispensed as DataScraps into `save.dataScraps`; `scraps_hoarder` reads `save.stats.totalScrapsEarned` |
-| `design/gdd/singularity-endgame.md` (TBD) | This depends on Singularity | `singularity_contained`, `mirror_shattered`, `remnants_purged`, `synthesis_born` read Singularity completion flags |
-| `design/gdd/dragon-progression.md` (TBD) | This depends on Dragon Data | Reads `dragons[id].name`, `element`, `spriteSheet`, `stageSprites`, `baseStats`; reads `dragonLore[element]` |
+| `design/gdd/save-and-persistence.md` | This depends on Persistence | Reads `save.dragons`, `save.milestones`, `save.stats`, `save.records`, `save.inventory`, `save.fusionLineage`; writes via `claimMilestone`, `setDragonNickname` |
+| `design/gdd/combat.md` | This depends on Battle Engine | Uses `calculateStatsForLevel`, `getStageForLevel` to display live stats in detail panel; `save.stats.battlesWon`, `save.records.longestStreak` feed battle milestones |
+| `design/gdd/hatchery-gacha.md` | Hatchery depends on this | Hatchery sets `discovered: true` on unlock; hatchery pull count (`save.stats.totalPulls`) feeds `pull_addict` milestone |
+| `design/gdd/fusion.md` | Fusion depends on this | Fusion must preserve `discovered: true` on consumed parents to avoid milestone regression; fusion outcome feeds `fusion_master` milestone |
+| `design/gdd/economy.md` | This depends on Economy | Milestone rewards are dispensed as DataScraps into `save.dataScraps`; `scraps_hoarder` reads `save.stats.totalScrapsEarned` |
+| `design/gdd/singularity-endgame.md` | This depends on Singularity | `singularity_contained`, `mirror_shattered`, `remnants_purged`, `synthesis_born` read Singularity completion flags |
+| `design/gdd/dragon-progression.md` | This depends on Dragon Data | Reads `dragons[id].name`, `element`, `spriteSheet`, `stageSprites`, `baseStats`; reads `dragonLore[element]` |
 
 ## Tuning Knobs
 
@@ -241,19 +241,19 @@ N/A — turn-based browser game. The Journal is a UI information screen, not a r
 
 | This Document References | Target GDD | Specific Element Referenced | Nature |
 |--------------------------|-----------|----------------------------|--------|
-| `discovered` flag permanence | `design/gdd/fusion.md` (TBD) | `fuseDragons` preserves `discovered: true` on parents | Rule dependency |
-| DataScraps reward disbursement | `design/gdd/economy.md` (TBD) | `save.dataScraps` increment via `claimMilestone` | Data dependency |
-| `save.stats.battlesWon` | `design/gdd/combat.md` (TBD) | Battle win counter tracked by `trackStat` | Data dependency |
-| `save.records.longestStreak` | `design/gdd/combat.md` (TBD) | Win streak record updated by `updateRecords` | Data dependency |
-| `getStageForLevel` | `design/gdd/combat.md` (TBD) | Stage IV threshold (level 38), level cap (50) | Rule dependency |
-| `calculateStatsForLevel` | `design/gdd/combat.md` (TBD) | Live stat computation for display in detail panel | Data dependency |
-| `save.singularityComplete` | `design/gdd/singularity-endgame.md` (TBD) | Completion flag set by `markSingularityComplete` | State trigger |
-| `save.mirrorAdminDefeated` | `design/gdd/singularity-endgame.md` (TBD) | True-final boss defeat flag | State trigger |
-| `save.remnantDefeated` | `design/gdd/singularity-endgame.md` (TBD) | Array of defeated remnant IDs; length checked against 3 | State trigger |
-| `save.dragons.synthesis.owned` | `design/gdd/fusion.md` (TBD) | Synthesis Dragon ownership flag | State trigger |
-| `save.stats.totalPulls` | `design/gdd/hatchery-gacha.md` (TBD) | Cumulative hatchery pull counter | Data dependency |
-| `save.stats.totalScrapsEarned` | `design/gdd/economy.md` (TBD) | Lifetime DataScraps earned counter | Data dependency |
-| `save.inventory.cores` | `design/gdd/economy.md` (TBD) | Core inventory map; values summed for `core_collector` | Data dependency |
+| `discovered` flag permanence | `design/gdd/fusion.md` | `fuseDragons` preserves `discovered: true` on parents | Rule dependency |
+| DataScraps reward disbursement | `design/gdd/economy.md` | `save.dataScraps` increment via `claimMilestone` | Data dependency |
+| `save.stats.battlesWon` | `design/gdd/combat.md` | Battle win counter tracked by `trackStat` | Data dependency |
+| `save.records.longestStreak` | `design/gdd/combat.md` | Win streak record updated by `updateRecords` | Data dependency |
+| `getStageForLevel` | `design/gdd/combat.md` | Stage IV threshold (level 38), level cap (50) | Rule dependency |
+| `calculateStatsForLevel` | `design/gdd/combat.md` | Live stat computation for display in detail panel | Data dependency |
+| `save.singularityComplete` | `design/gdd/singularity-endgame.md` | Completion flag set by `markSingularityComplete` | State trigger |
+| `save.mirrorAdminDefeated` | `design/gdd/singularity-endgame.md` | True-final boss defeat flag | State trigger |
+| `save.remnantDefeated` | `design/gdd/singularity-endgame.md` | Array of defeated remnant IDs; length checked against 3 | State trigger |
+| `save.dragons.synthesis.owned` | `design/gdd/fusion.md` | Synthesis Dragon ownership flag | State trigger |
+| `save.stats.totalPulls` | `design/gdd/hatchery-gacha.md` | Cumulative hatchery pull counter | Data dependency |
+| `save.stats.totalScrapsEarned` | `design/gdd/economy.md` | Lifetime DataScraps earned counter | Data dependency |
+| `save.inventory.cores` | `design/gdd/economy.md` | Core inventory map; values summed for `core_collector` | Data dependency |
 
 ## Acceptance Criteria
 
@@ -270,7 +270,7 @@ N/A — turn-based browser game. The Journal is a UI information screen, not a r
 - [ ] The Fusion Lineage panel shows a maximum of 5 entries, in reverse-chronological order.
 - [ ] `apex_roster` does not trigger until all dragons in `save.dragons` (including `synthesis`) are `owned && level >= 50`.
 - [ ] `shiny_completionist` counts only `owned && shiny` dragons; fusing away a shiny can un-meet the milestone (though already-claimed milestones are never revoked).
-- [ ] The discovery count label below the grid equals the count of currently-owned dragons (`owned === true`), not the `discovered` count. (Note: `JournalScreen.jsx:59` — `discoveredCount` is computed as `filter(d => d.owned).length`; the label is display-only and does not gate milestones.)
+- [ ] The discovery count label below the grid equals the count of currently-owned dragons (`owned === true`), not the `discovered` count. (Known Divergence (intended): `JournalScreen.jsx:59` — `discoveredCount` is computed as `filter(d => d.owned).length` so the grid shows current ownership for UX clarity; milestone logic uses `discovered` so collection progress never regresses when dragons are fused. QA should not file this as a defect.)
 
 **Experiential**
 

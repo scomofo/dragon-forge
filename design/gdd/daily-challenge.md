@@ -4,7 +4,7 @@
 > **Author**: reverse-document (Claude)
 > **Last Updated**: 2026-06-16
 > **Last Verified**: 2026-06-16
-> **Implements Pillar**: Daily Return Loop / Retention
+> **Implements Pillar**: P2 — Every Fight Is a Readable Type-Puzzle; P5 — Earned Mastery, Never Trivialized
 
 ## Summary
 
@@ -284,7 +284,19 @@ choice (ADR-0006). The daily challenge is the primary renewable scrap faucet for
 players who have completed the campaign (where all NPCs pay 0.25x on repeat).
 Without a 3x floor the daily would not provide meaningful economic momentum for
 post-campaign players. The cap of 1.5x on the streak prevents compound
-exponential growth from destabilizing the economy.
+exponential growth from destabilizing the economy — this property applies to the
+**streak component only**; the streak multiplier is hard-capped at 1.5 and cannot
+exceed it regardless of streak length. The NG+ multiplier (`1 + ngPlus * 0.25`)
+is applied on top of the fully-resolved streak reward and adds additional headroom
+not bounded by the streak cap. The combined daily scrap ceiling is therefore:
+
+```
+floor(maxNpc.scrapsReward * 3 * 1.5 * (1 + ngPlus * 0.25))
+```
+
+This NG+ scaling is an accepted veteran-reward trade-off: post-completion players
+who have re-entered NG+ earn proportionally more from the daily faucet, which is
+intentional compensation for the increased difficulty of the NG+ campaign.
 
 ## Visual/Audio Requirements
 
