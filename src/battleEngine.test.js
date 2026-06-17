@@ -2,9 +2,38 @@ import { describe, it, expect } from 'vitest';
 import {
   getTypeEffectiveness, calculateDamage, calculateXpGain,
   calculateStatsForLevel, getStageForLevel, pickNpcMove, resolveTurn,
-  applyStatus, processStatusTick, getTypeEffectivenessLabel
+  applyStatus, processStatusTick, getTypeEffectivenessLabel,
+  effectiveAttack, CHARGE_ATK_MULTIPLIER, MAX_ATK_MULTIPLIER,
 } from './battleEngine';
 import { moves, typeChart } from './gameData';
+
+describe('effectiveAttack (atk-up cap)', () => {
+  it('returns base atk with no buff and no charge', () => {
+    expect(effectiveAttack(100, null)).toBe(100);
+    expect(effectiveAttack(100, undefined, 1)).toBe(100);
+  });
+
+  it('applies a lone atkBuff multiplier', () => {
+    expect(effectiveAttack(100, { multiplier: 1.3 })).toBe(130);
+  });
+
+  it('applies a lone charge multiplier', () => {
+    expect(effectiveAttack(100, null, CHARGE_ATK_MULTIPLIER)).toBe(140);
+  });
+
+  it('caps the charge × atkBuff stack at MAX_ATK_MULTIPLIER instead of 1.82×', () => {
+    // charge 1.4 × focus 1.3 = 1.82 — must be clamped, not 182.
+    const uncapped = Math.floor(100 * CHARGE_ATK_MULTIPLIER * 1.3);
+    const result = effectiveAttack(100, { multiplier: 1.3 }, CHARGE_ATK_MULTIPLIER);
+    expect(result).toBe(Math.floor(100 * MAX_ATK_MULTIPLIER));
+    expect(result).toBeLessThan(uncapped);
+  });
+
+  it('never exceeds MAX_ATK_MULTIPLIER for any reachable buff/charge combo', () => {
+    const result = effectiveAttack(200, { multiplier: 1.4 }, CHARGE_ATK_MULTIPLIER);
+    expect(result).toBeLessThanOrEqual(Math.floor(200 * MAX_ATK_MULTIPLIER));
+  });
+});
 
 describe('getTypeEffectiveness', () => {
   it('returns 2.0 for fire attacking ice', () => {

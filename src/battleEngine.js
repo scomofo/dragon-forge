@@ -3,6 +3,22 @@ import { typeChart, stageMultipliers, stageThresholds, moves as allMoves, STATUS
 export const CRIT_CHANCE = 0.10;
 export const CRIT_MULTIPLIER = 1.5;
 
+// Charged moves hit at this attack multiplier when their windup resolves.
+export const CHARGE_ATK_MULTIPLIER = 1.4;
+// Ceiling on combined attack-up sources (timed atkBuff × charged-move boost) so they
+// can't multiply into a runaway spike — e.g. charge 1.4× × npc_focus 1.3× = 1.82×,
+// which is reachable on phishing_siren / protocol_vulture. Clamped here to 1.5×.
+export const MAX_ATK_MULTIPLIER = 1.5;
+
+// Combine every attack-up source under MAX_ATK_MULTIPLIER. Pure + exported so the
+// cap can be unit-tested directly (the effective-attack path is otherwise buried in
+// resolveAction behind RNG damage rolls).
+export function effectiveAttack(atk, atkBuff, chargeMultiplier = 1) {
+  const buffMult = atkBuff?.multiplier ?? 1;
+  const mult = Math.min(buffMult * chargeMultiplier, MAX_ATK_MULTIPLIER);
+  return Math.floor(atk * mult);
+}
+
 export function getTypeEffectiveness(attackerElement, defenderElement) {
   if (!typeChart[attackerElement]) return 1.0;
   return typeChart[attackerElement][defenderElement] ?? 1.0;
@@ -369,10 +385,8 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
     effectiveAccuracy = Math.max(0, effectiveAccuracy - STATUS_EFFECTS.shadow.value * 100);
   }
 
-  // Apply attacker's atkBuff
-  const effectiveAtk = actor.state.atkBuff
-    ? Math.floor(actor.state.atk * actor.state.atkBuff.multiplier)
-    : actor.state.atk;
+  // Apply attacker's atkBuff and any charged-move boost under one shared ceiling
+  const effectiveAtk = effectiveAttack(actor.state.atk, actor.state.atkBuff, actor.state.chargeMultiplier);
 
   const result = calculateDamage(
     { atk: effectiveAtk, element: actor.state.element, stage: actor.state.stage },

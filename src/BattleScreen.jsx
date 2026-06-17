@@ -5,6 +5,7 @@ import { dragons, npcs, moves, elementColors, STATUS_EFFECTS } from './gameData'
 import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain, getTypeEffectivenessLabel,
+  CHARGE_ATK_MULTIPLIER,
 } from './battleEngine';
 import { loadSave, addDragonXp, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, setLastZone, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
 import { getDailyStreakMultiplier } from './dailyChallenge';
@@ -718,9 +719,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       }
     }
 
-    // Boost NPC ATK if firing a charged move
+    // Boost NPC ATK if firing a charged move. Pass the multiplier through (rather than
+    // pre-multiplying atk) so the engine combines it with any active atkBuff under one
+    // ceiling — otherwise charge × focus would stack multiplicatively (see effectiveAttack).
     const chargedNpcState = previouslyCharged
-      ? { ...npcState, atk: Math.floor(npcState.atk * 1.4) }
+      ? { ...npcState, chargeMultiplier: CHARGE_ATK_MULTIPLIER }
       : npcState;
 
     // On charge turn: NPC defends (takes the player hit while winding up)
