@@ -80,7 +80,6 @@ export const dragons = {
     moveKeys: ['frost_bite', 'blizzard'],
     spriteSheet: assetUrl('/assets/dragons/ice_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/ice_stage1.png'), 2: assetUrl('/assets/dragons/ice_stage2.png'), 3: assetUrl('/assets/dragons/ice_stage3.png'), 4: assetUrl('/assets/dragons/ice_stage4.png') },
-    facesLeft: true,
   },
   storm: {
     id: 'storm',
@@ -90,7 +89,6 @@ export const dragons = {
     moveKeys: ['lightning_strike', 'thunder_clap'],
     spriteSheet: assetUrl('/assets/dragons/storm_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/storm_stage1.png'), 2: assetUrl('/assets/dragons/storm_stage2.png'), 3: assetUrl('/assets/dragons/storm_stage3.png'), 4: assetUrl('/assets/dragons/storm_stage4.png') },
-    facesLeft: true,
   },
   stone: {
     id: 'stone',
@@ -100,7 +98,6 @@ export const dragons = {
     moveKeys: ['rock_slide', 'earthquake'],
     spriteSheet: assetUrl('/assets/dragons/stone_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/stone_stage1.png'), 2: assetUrl('/assets/dragons/stone_stage2.png'), 3: assetUrl('/assets/dragons/stone_stage3.png'), 4: assetUrl('/assets/dragons/stone_stage4.png') },
-    facesLeft: true,
   },
   venom: {
     id: 'venom',
@@ -110,7 +107,6 @@ export const dragons = {
     moveKeys: ['acid_spit', 'toxic_cloud'],
     spriteSheet: assetUrl('/assets/dragons/venom_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/venom_stage1.png'), 2: assetUrl('/assets/dragons/venom_stage2.png'), 3: assetUrl('/assets/dragons/venom_stage3.png'), 4: assetUrl('/assets/dragons/venom_stage4.png') },
-    facesLeft: true,
   },
   shadow: {
     id: 'shadow',
@@ -120,7 +116,6 @@ export const dragons = {
     moveKeys: ['shadow_strike', 'void_pulse'],
     spriteSheet: assetUrl('/assets/dragons/shadow_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/shadow_stage1.png'), 2: assetUrl('/assets/dragons/shadow_stage2.png'), 3: assetUrl('/assets/dragons/shadow_stage3.png'), 4: assetUrl('/assets/dragons/shadow_stage4.png') },
-    facesLeft: true,
   },
   void: {
     id: 'void',
@@ -130,7 +125,6 @@ export const dragons = {
     moveKeys: ['void_rift', 'null_reflect'],
     spriteSheet: assetUrl('/assets/dragons/void_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/void_stage1.png'), 2: assetUrl('/assets/dragons/void_stage2.png'), 3: assetUrl('/assets/dragons/void_stage3.png'), 4: assetUrl('/assets/dragons/void_stage4.png') },
-    facesLeft: true,
   },
   light: {
     id: 'light',
@@ -152,7 +146,6 @@ export const dragons = {
     spriteSheet: assetUrl('/assets/dragons/synthesis_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/synthesis_stage1.png'), 2: assetUrl('/assets/dragons/synthesis_stage2.png'), 3: assetUrl('/assets/dragons/synthesis_stage3.png'), 4: assetUrl('/assets/dragons/synthesis_stage4.png') },
     unlockHint: 'Fuse Void Dragon and Light Dragon',
-    facesLeft: true,
   },
 };
 
