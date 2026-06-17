@@ -10,7 +10,6 @@ export default function ForgeScene({ skyePos, nearest, view }) {
       <BulkheadView view={view} />
       <ForgeFloorHorizon />
       <ForgeFloorZones />
-      <CablePaths />
       <FloorGrid />
       {FORGE_STATIONS.map((station) => (
         <Station key={station.id} station={station} highlighted={nearest?.id === station.id} />
