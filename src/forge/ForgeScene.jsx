@@ -164,17 +164,29 @@ function Station({ station, highlighted }) {
   );
 }
 
+const STATION_SPRITES = {
+  [STATION_IDS.HATCHERY_RING]: '/assets/forge/station_hatchery_ring.png',
+  [STATION_IDS.SAVE_LANTERN]:  '/assets/forge/station_save_lantern.png',
+  [STATION_IDS.ANVIL]:         '/assets/forge/station_anvil.png',
+  [STATION_IDS.CONSOLE]:       '/assets/forge/station_console.png',
+  [STATION_IDS.FELIX]:         '/assets/forge/station_felix.png',
+  [STATION_IDS.BULKHEAD]:      '/assets/forge/station_bulkhead.png',
+};
+
 function StationSilhouette({ type, glow, highlighted }) {
   const color = glow || '#c9a567';
   const style = { '--silhouette-color': color };
+  const spritePath = STATION_SPRITES[type];
 
-  if (type === STATION_IDS.HATCHERY_RING) {
+  if (spritePath) {
     return (
-      <div className={`forge-silhouette hatchery ${highlighted ? 'is-highlighted' : ''}`} style={style}>
-        <div className="ring" />
-        <div className="egg" />
-        <div className="h-line" />
-        <div className="v-line" />
+      <div className={`forge-silhouette ${type} ${highlighted ? 'is-highlighted' : ''}`} style={style}>
+        <img
+          src={assetUrl(spritePath)}
+          className="forge-station-sprite"
+          alt=""
+          draggable={false}
+        />
       </div>
     );
   }
