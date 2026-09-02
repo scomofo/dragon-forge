@@ -59,6 +59,10 @@ export function setSfxVolume(vol) {
 export function setMusicVolume(vol) {
   prefs.musicVolume = Math.max(0, Math.min(1, vol));
   savePrefs(prefs);
+  if (proc.master) {
+    const spec = PROCEDURAL_BEDS[proc.name];
+    proc.master.gain.value = getMusicVolume() * (spec?.gain || 0.22);
+  }
 }
 
 // === SYNTHESIS PRIMITIVES ===
@@ -282,11 +286,17 @@ const MUSIC_SCHEMA = {
   openingTense: { role: 'opening-sequence', mood: 'tense', source: 'asset', path: '/assets/music/music_battle_intense.mp3' },
   hatchery: { role: 'home-base', mood: 'warm', source: 'asset', path: '/assets/music/music_hatchery.mp3' },
   select: { role: 'menu-selection', mood: 'focused', source: 'asset', path: '/assets/music/music_select.mp3' },
-  mapWander: { role: 'map-wandering', mood: 'wandering', source: 'asset', path: '/assets/music/music_hatchery.mp3' },
-  singularity: { role: 'singularity-boss', mood: 'dread', source: 'asset', path: '/assets/music/music_battle_intense.mp3' },
+  mapWander: { role: 'map-wandering', mood: 'wandering', source: 'procedural' },
+  singularity: { role: 'singularity-boss', mood: 'dread', source: 'procedural' },
   battle: { role: 'battle-standard', mood: 'active', source: 'asset', path: '/assets/music/music_battle.mp3' },
   battleTense: { role: 'battle-tense', mood: 'tense', source: 'asset', path: '/assets/music/music_battle_intense.mp3' },
   battleIntense: { role: 'battle-critical', mood: 'danger', source: 'asset', path: '/assets/music/music_battle_intense.mp3' },
+  forge: { role: 'hub', mood: 'industrial', source: 'procedural' },
+  fusion: { role: 'fusion-lab', mood: 'crystalline', source: 'procedural' },
+  journal: { role: 'lore-calm', mood: 'reflective', source: 'procedural' },
+  shop: { role: 'shop', mood: 'brisk', source: 'procedural' },
+  credits: { role: 'credits', mood: 'resolute', source: 'procedural' },
+  mirrorAdmin: { role: 'true-final', mood: 'tragic', source: 'procedural' },
 };
 
 const MUSIC_ALIASES = {
@@ -740,20 +750,26 @@ const MUSIC_TRACKS = {
   openingTense: '/assets/music/music_battle_intense.mp3',
   hatchery: '/assets/music/music_hatchery.mp3',
   select: '/assets/music/music_select.mp3',
-  mapWander: '/assets/music/music_hatchery.mp3',
-  singularity: '/assets/music/music_battle_intense.mp3',
   battle: '/assets/music/music_battle.mp3',
   battleTense: '/assets/music/music_battle_intense.mp3',
   battleIntense: '/assets/music/music_battle_intense.mp3',
-  forge: '/assets/music/music_select.mp3',
-  fusion: '/assets/music/music_select.mp3',
-  journal: '/assets/music/music_hatchery.mp3',
-  shop: '/assets/music/music_select.mp3',
-  credits: '/assets/music/theme.mp3',
-  mirrorAdmin: '/assets/music/music_battle_intense.mp3',
+};
+
+// Screens that used to share the 5 mp3s get their own 8-bit beds instead.
+const PROCEDURAL_BEDS = {
+  forge:       { bpm: 88,  pad: [55, 82],     arp: [110, 165, 220, 165], wave: 'square',   filterFreq: 900,  gain: 0.20 },
+  fusion:      { bpm: 76,  pad: [98, 147],    arp: [392, 494, 588, 392], wave: 'triangle', filterFreq: 1800, gain: 0.18 },
+  journal:     { bpm: 52,  pad: [110, 165],   arp: [330, 392, 494, 392], wave: 'sine',     filterFreq: 1400, gain: 0.16 },
+  mapWander:   { bpm: 64,  pad: [73, 110],    arp: [220, 247, 294, 247], wave: 'triangle', filterFreq: 1200, gain: 0.16 },
+  shop:        { bpm: 100, pad: [98, 147],    arp: [294, 330, 392, 330], wave: 'square',   filterFreq: 1600, gain: 0.18 },
+  credits:     { bpm: 72,  pad: [87, 130],    arp: [349, 440, 523, 440], wave: 'sine',     filterFreq: 2000, gain: 0.18 },
+  singularity: { bpm: 96,  pad: [41, 61],     arp: [82, 98, 61, 123],    wave: 'sawtooth', filterFreq: 700,  gain: 0.20 },
+  mirrorAdmin: { bpm: 108, pad: [49, 73.5],   arp: [147, 156, 196, 185], wave: 'sawtooth', filterFreq: 560,  gain: 0.22 },
 };
 
 const musicCache = new Map();
+const proc = { master: null, nodes: [], timer: null, name: null };
+
 function getCachedAudio(src) {
   let audio = musicCache.get(src);
   if (!audio) {
@@ -763,6 +779,75 @@ function getCachedAudio(src) {
     musicCache.set(src, audio);
   }
   return audio;
+}
+
+function stopProceduralBed() {
+  if (proc.timer) {
+    clearInterval(proc.timer);
+    proc.timer = null;
+  }
+  proc.nodes.forEach((node) => {
+    try { node.stop?.(); } catch { /* already stopped */ }
+    try { node.disconnect?.(); } catch { /* already disconnected */ }
+  });
+  proc.nodes = [];
+  proc.master = null;
+  proc.name = null;
+}
+
+function startProceduralBed(name) {
+  stopProceduralBed();
+  const spec = PROCEDURAL_BEDS[name];
+  if (!spec || typeof window === 'undefined') return;
+
+  const ctx = getCtx();
+  const master = ctx.createGain();
+  master.gain.value = getMusicVolume() * (spec.gain || 0.22);
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = spec.filterFreq || 1200;
+  filter.Q.value = 0.85;
+  master.connect(filter);
+  filter.connect(ctx.destination);
+
+  proc.master = master;
+  proc.nodes.push(master, filter);
+  proc.name = name;
+
+  (spec.pad || []).forEach((freq, i) => {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = spec.wave || 'sine';
+    o.frequency.value = freq;
+    o.detune.value = i ? 8 : -6;
+    g.gain.value = 0.32;
+    o.connect(g);
+    g.connect(master);
+    o.start();
+    proc.nodes.push(o, g);
+  });
+
+  const stepMs = (60 / spec.bpm) * 1000;
+  let i = 0;
+  const tick = () => {
+    if (prefs.muted || !proc.master) return;
+    const freq = spec.arp[i % spec.arp.length];
+    i += 1;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = spec.wave || 'triangle';
+    o.frequency.value = freq;
+    const now = ctx.currentTime;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.42, now + 0.018);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + (stepMs / 1000) * 0.82);
+    o.connect(g);
+    g.connect(master);
+    o.start();
+    o.stop(now + stepMs / 1000);
+  };
+  tick();
+  proc.timer = setInterval(tick, stepMs);
 }
 
 export function getMusicTrackUrl(trackName) {
@@ -815,9 +900,29 @@ function fadeIn(audio, targetVol, duration = 350) {
 }
 
 export function playMusic(trackName, immediate = false) {
-  if (prefs.muted) return;
+  if (prefs.muted) {
+    stopMusic();
+    return;
+  }
   const resolvedTrackName = resolveMusicName(trackName);
-  if (currentTrackName === resolvedTrackName && currentMusic && !currentMusic.paused) return;
+  const isProc = !!PROCEDURAL_BEDS[resolvedTrackName];
+  if (resolvedTrackName === currentTrackName) {
+    if (isProc && proc.name === resolvedTrackName) return;
+    if (!isProc && currentMusic && !currentMusic.paused) return;
+  }
+
+  stopProceduralBed();
+  if (currentMusic && !currentMusic.paused) {
+    if (immediate) currentMusic.pause();
+    else fadeOut(currentMusic);
+  }
+  currentMusic = null;
+
+  if (isProc) {
+    currentTrackName = resolvedTrackName;
+    startProceduralBed(resolvedTrackName);
+    return;
+  }
 
   const src = getMusicTrackUrl(resolvedTrackName);
   if (!src) return;
@@ -828,36 +933,23 @@ export function playMusic(trackName, immediate = false) {
   newAudio.loop = true;
   newAudio.volume = immediate ? vol : 0;
 
-  if (currentMusic && !currentMusic.paused) {
-    if (immediate) {
-      currentMusic.pause();
-      currentMusic = newAudio;
-      currentTrackName = resolvedTrackName;
-      newAudio.play().catch(() => {});
-    } else {
-      const oldMusic = currentMusic;
-      currentMusic = newAudio;
-      currentTrackName = resolvedTrackName;
-      fadeOut(oldMusic);
-      fadeIn(newAudio, vol);
-    }
+  currentMusic = newAudio;
+  currentTrackName = resolvedTrackName;
+  if (immediate) {
+    newAudio.volume = vol;
+    newAudio.play().catch(() => {});
   } else {
-    currentMusic = newAudio;
-    currentTrackName = resolvedTrackName;
-    if (immediate) {
-      newAudio.volume = vol;
-      newAudio.play().catch(() => {});
-    } else {
-      fadeIn(newAudio, vol);
-    }
+    fadeIn(newAudio, vol);
   }
 }
 
 export function stopMusic() {
+  stopProceduralBed();
   if (currentMusic) {
     fadeOut(currentMusic);
-    currentTrackName = null;
+    currentMusic = null;
   }
+  currentTrackName = null;
 }
 
 export function getCurrentTrack() {
