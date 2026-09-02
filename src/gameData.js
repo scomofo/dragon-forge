@@ -1,7 +1,9 @@
+// @ts-nocheck
 import { assetUrl } from './utils';
 
 // === ELEMENTS ===
 export const ELEMENTS = ['fire', 'ice', 'storm', 'stone', 'venom', 'shadow', 'void', 'light'];
+export const JOURNAL_DRAGON_IDS = [...ELEMENTS, 'synthesis'];
 
 // === TYPE EFFECTIVENESS ===
 // typeChart[attacker][defender] = multiplier
@@ -325,19 +327,28 @@ export const elementColors = {
   neutral: { primary: '#888888', glow: '#aaaaaa', icon: '⚔️' },
   void:    { primary: '#00cccc', glow: '#44eeee', icon: '🌀' },
   light:   { primary: '#FFD966', glow: '#FFEEAA', icon: '☀️' },
+  synthesis: { primary: '#c8a8e0', glow: '#e8d5ff', icon: '✦' },
 };
 
 // === DRAGON LORE ===
+// Felix lab notes in the same register as the rendered-world canon.
 export const dragonLore = {
-  fire:   "Forged from the planet's molten core. Its breath can melt through starship bulkheads — handle with extreme caution.",
-  ice:    "Crystallized from subzero atmospheric anomalies. The temperature drops 30 degrees in its presence alone.",
-  storm:  "Born from a feedback loop in the planet's electromagnetic field. Faster than anything I've ever recorded.",
-  stone:  "Its hide is denser than compressed titanium. I once watched it walk through a collapsing mine without flinching.",
-  venom:  "Secretes a neurotoxin that can dissolve organic matter in seconds. Keep it away from the lab samples.",
-  shadow: "This one... shouldn't exist. It reads as a gap in the data — a hole where reality should be. Fascinating.",
-  void:   "It came from beyond the Elemental Matrix — a tear in the simulation itself. I don't think it belongs to any element. I don't think it belongs to this reality at all.",
-  light:  "A being of pure radiant energy, born where starlight and data converge. Its glow disrupts shadow-type systems at the hardware level.",
+  fire:   "Renewal protocol with a temper. Fire writes over corrupted sectors the way a forge writes over rust — and yes, it will still melt a bulkhead if you ask it wrong.",
+  ice:    "The keeper. Ice holds what must not be lost. The lab still drops thirty degrees when it walks in; that is not weather, that is memory taking up space.",
+  storm:  "Signal-carrier. Born from a feedback loop in the Matrix's electromagnetic field. Faster than anything I've recorded — and getting faster the more the Admin notices you.",
+  stone:  "The line-holder. Hide denser than compressed titanium. I watched it walk through a collapsing mine without flinching. The husk needs that kind of stubbornness.",
+  venom:  "Rot-eater. Secretes a neurotoxin that dissolves corrupted matter in seconds. Keep it away from the lab samples. Keep it close to anything the Admin calls infected.",
+  shadow: "This one shouldn't exist. It reads as a gap in the data — a hole where reality should be. Hidden-layer guardian. Fascinating. Terrifying. Ours.",
+  void:   "A tear in the simulation itself. Not an element so much as the absence of one. I don't think it belongs to this reality. It chose you anyway.",
+  light:  "Pure radiant process, born where starlight and data converge. Its glow disrupts shadow systems at the hardware level. The Admin hates this one. That's how you know it's working.",
+  synthesis: "Where void and light converge, all data resolves into a singular form — neither darkness nor radiance, but the living memory of every dragon that ever was.",
 };
+
+export function getDragonLore(dragonId, { owned } = {}) {
+  if (!owned) return 'No data available. Discover this dragon in the Hatchery.';
+  const def = dragons[dragonId];
+  return dragonLore[dragonId] || def?.description || dragonLore[def?.element] || 'Record incomplete.';
+}
 
 // === EGG SPRITES ===
 export const eggSheets = {

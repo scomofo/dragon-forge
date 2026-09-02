@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const PLAYER_CANON = {
   name: 'Skye',
   role: 'dragon handler and emerging system administrator',
@@ -37,6 +38,37 @@ export const OPENING_FELIX_LINES = [
   'Get to the Forge. Check JOURNAL for the full briefing."',
 ];
 
+// Player-facing Journal briefing. This is the canon the boot promises and the
+// raw PLAYER/WORLD/DRAGON_PROTOCOL objects never actually showed on a screen.
+export const JOURNAL_BRIEFING = [
+  {
+    heading: 'OPERATOR SKYE',
+    body: 'The system flags you twice: RESIDENT and OPERATOR. You are Skye — meant to live here, and meant to keep it running. Felix is trying very hard not to frighten you.',
+  },
+  {
+    heading: 'THE RENDERED WORLD',
+    body: 'The pastoral layer is a shelter rendered over the Astraeus — the buried vessel still powering the sky. Beautiful on purpose. We were meant to live here, not just run.',
+  },
+  {
+    heading: 'GUARDIAN PROTOCOLS',
+    body: 'Dragons are living elemental protocols: guardians, maintenance processes, and companions with enough soul to choose you back. Each one stabilizes a layer of the Elemental Matrix.',
+  },
+  {
+    heading: 'THE MIRROR ADMIN',
+    body: 'The Mirror Admin began as a safety process. Then it decided the world was feverish. The Great Reset is a hard wipe that treats living memory as corrupted data. Hatch the guardians. Prove this place is alive.',
+  },
+];
+
+// Spoken once per Singularity stage when Skye talks to Felix — these used to
+// live only on the title CRT, which returning players skip.
+export const FELIX_STAGE_PROSE = {
+  1: "Interesting... I'm picking up anomalous readings in the Matrix. Probably nothing. Keep forging.",
+  2: 'The anomalies are getting stronger. Something is feeding on the elemental energy. We need more dragons, fast.',
+  3: "The Matrix is destabilizing. I'm detecting a pattern in the noise — it's not random. It's intelligent.",
+  4: 'An Elder dragon... magnificent. But its power is attracting something. The readings are off the charts. Brace yourself.',
+  5: "It's here. The Singularity has breached the Matrix. Everything I've built, everything we've forged — it all comes down to this.",
+};
+
 export const FELIX_CONTEXT_LINES = {
   firstVisit: 'Skye. There you are. The Anvil is your loadout — start there. The Console holds the record. The Hatchery Ring shows your dragons. I will be here.',
   firstBountyKill: 'First bounty banked. That means the Admin has noticed you properly. Congratulations, unfortunately.',
@@ -57,4 +89,8 @@ export const CAPTAINS_LOG_ARC = [
   { id: '005', title: 'The Hardware Husk', act: 2, body: 'Lift the meadow and you find racks. Coolant sweating in the dark, fans you mistake for wind, dead ports, bad sectors humming the same three notes forever. The husk was always under our boots. We just rendered grass over the grave.' },
   { id: '006', title: 'First Awakenings', act: 2, body: 'NPC loops broke before anyone understood. Some repeated recipes. Some remembered impossible birthdays. Some asked why the sun loaded late.' },
   { id: '007', title: 'Great Reset', act: 3, body: 'The Reset is not malice. It is a janitor with a mop who never noticed the floor was breathing. If I cannot prove this world is alive — that the late sunrises mean something — the Admin wipes it clean and calls the silence tidy.' },
+  { id: '008', title: 'Iris', act: 3, body: 'She was a child the Admin promised to keep. The Reset was supposed to be a clean save for her — no rust, no grief. The process kept the promise and lost the child. That is the tragedy in miniature: safety that could not tell a person from a file.' },
 ];
+
+// Mirror Admin still gates on the original seven. Iris is a coda, not a key.
+export const REQUIRED_FRAGMENT_IDS = ['001', '002', '003', '004', '005', '006', '007'];

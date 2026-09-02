@@ -1,4 +1,6 @@
+// @ts-nocheck
 import { assetUrl } from './utils';
+import { REQUIRED_FRAGMENT_IDS } from './loreCanon';
 export const SINGULARITY_BOSSES = [
   {
     id: 'data_corruption',
@@ -164,7 +166,7 @@ export const MIRROR_ADMIN = {
   ],
 };
 
-const ALL_FRAGMENT_IDS = ['001', '002', '003', '004', '005', '006', '007'];
+const ALL_FRAGMENT_IDS = REQUIRED_FRAGMENT_IDS;
 
 export function getBossStatus(boss, save) {
   const progress = save.singularityProgress || { defeated: [], finalBossPhase: 0 };

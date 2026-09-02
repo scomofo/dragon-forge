@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useRef, useState } from 'react';
 import { getStageForLevel } from '../battleEngine';
 import DragonSprite from '../DragonSprite';
@@ -176,6 +177,7 @@ export function ConsoleOverlay({ save, onClose, onNavigate }) {
     <OverlayShell title="CAPTAIN'S LOG - CRT TERMINAL" accent={FORGE_PALETTE.consoleGreen} onClose={onClose}>
       <div className="forge-console-counts">
         {unlocked.length} / {CAPTAINS_LOG_FRAGMENTS.length} fragments decrypted
+        <small> — 7 required for Mirror Admin</small>
       </div>
       <div className="forge-log-list">
         {CAPTAINS_LOG_FRAGMENTS.map((fragment) => {

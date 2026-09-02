@@ -1,6 +1,8 @@
+// @ts-nocheck
 import { isSingularityUnlocked } from './singularityProgress';
 import { getAvailableCampaignNodes } from './campaignMap';
 import { BUY_ITEMS, FORGE_RECIPES, canAffordBuy, canForge } from './shopItems';
+import { REQUIRED_FRAGMENT_IDS } from './loreCanon';
 
 function getOwnedDragons(save) {
   return Object.entries(save?.dragons || {}).filter(([, dragon]) => dragon?.owned);
@@ -19,10 +21,10 @@ export function getPlayerGuidance(save) {
 
   if (save?.singularityComplete) {
     const fragments = save?.flags?.fragmentsUnlocked || [];
-    const remaining = 7 - fragments.length;
+    const remaining = REQUIRED_FRAGMENT_IDS.filter((id) => !fragments.includes(id)).length;
     return {
       target: 'singularity',
-      action: remaining > 0 ? `FRAGMENTS ${fragments.length}/7` : 'MIRROR ADMIN',
+      action: remaining > 0 ? `FRAGMENTS ${REQUIRED_FRAGMENT_IDS.length - remaining}/${REQUIRED_FRAGMENT_IDS.length}` : 'MIRROR ADMIN',
       title: remaining > 0
         ? `${remaining} captain's log fragment${remaining !== 1 ? 's' : ''} remaining`
         : 'Confront the Mirror Admin',

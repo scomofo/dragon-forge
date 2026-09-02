@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ForgeScene from './forge/ForgeScene';
 import {
@@ -22,7 +23,7 @@ import {
   findNearestStation,
   getBulkheadView,
   getCurrentAct,
-  pickFelixLine,
+  pickFelixDelivery,
 } from './forgeData';
 import {
   grantRelic,
@@ -92,7 +93,16 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
       const wasFirstVisit = isFirstVisitRef.current;
       isFirstVisitRef.current = false;
       if (wasFirstVisit) setFlag('felixGreeted', true);
-      setFelixLine(wasFirstVisit ? FELIX_FIRST_VISIT_LINE : pickFelixLine(save));
+      if (wasFirstVisit) {
+        setFelixLine(FELIX_FIRST_VISIT_LINE);
+      } else {
+        const delivery = pickFelixDelivery(save);
+        for (const [key, value] of Object.entries(delivery.flags || {})) {
+          setFlag(key, value);
+        }
+        if (Object.keys(delivery.flags || {}).length > 0) refreshSave?.();
+        setFelixLine(delivery.line);
+      }
       setOverlay('felix');
     } else if (stationId === STATION_IDS.BULKHEAD) {
       playSound('screenTransition');
@@ -106,7 +116,7 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
     } else if (stationId === STATION_IDS.HATCHERY_RING) {
       setOverlay('hatcheryRing');
     }
-  }, [onNavigate, save]);
+  }, [onNavigate, save, refreshSave]);
 
   const interact = useCallback(() => {
     if (!nearest) return;

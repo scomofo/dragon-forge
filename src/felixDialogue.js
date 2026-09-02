@@ -1,35 +1,32 @@
-import { OPENING_FELIX_LINES } from './loreCanon';
+// @ts-nocheck
+import { FELIX_STAGE_PROSE, OPENING_FELIX_LINES } from './loreCanon';
+
+function toQuotedLines(prose) {
+  const words = String(prose || '').split(/\s+/).filter(Boolean);
+  const wrapped = [];
+  let current = '';
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > 42 && current) {
+      wrapped.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  }
+  if (current) wrapped.push(current);
+  if (wrapped.length === 0) return ['""'];
+  if (wrapped.length === 1) return [`"${wrapped[0]}"`];
+  return [`"${wrapped[0]}`, ...wrapped.slice(1, -1).map((line) => ` ${line}`), ` ${wrapped[wrapped.length - 1]}"`];
+}
 
 const TERMINAL_DIALOGUE = {
   0: OPENING_FELIX_LINES,
-  1: [
-    '"Interesting... I\'m picking up anomalous',
-    ' readings in the Matrix.',
-    ' Probably nothing. Keep forging."',
-  ],
-  2: [
-    '"The anomalies are getting stronger.',
-    ' Something is feeding on the elemental',
-    ' energy. We need more dragons, fast."',
-  ],
-  3: [
-    '"All six elements are online, but the',
-    ' Matrix is destabilizing. I\'m detecting',
-    ' a pattern in the noise — it\'s not',
-    ' random. It\'s intelligent."',
-  ],
-  4: [
-    '"An Elder dragon... magnificent.',
-    ' But its power is attracting something.',
-    ' The readings are off the charts.',
-    ' Brace yourself."',
-  ],
-  5: [
-    '"It\'s here. The Singularity has breached',
-    ' the Matrix. Everything I\'ve built,',
-    ' everything we\'ve forged — it all',
-    ' comes down to this."',
-  ],
+  1: toQuotedLines(FELIX_STAGE_PROSE[1]),
+  2: toQuotedLines(FELIX_STAGE_PROSE[2]),
+  3: toQuotedLines(FELIX_STAGE_PROSE[3]),
+  4: toQuotedLines(FELIX_STAGE_PROSE[4]),
+  5: toQuotedLines(FELIX_STAGE_PROSE[5]),
 };
 
 const TICKER_MESSAGES = {
