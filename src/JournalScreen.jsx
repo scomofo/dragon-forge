@@ -234,11 +234,11 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
             <div className="journal-detail-meta">
               {owned ? (
                 <>
-                  {selectedId === 'synthesis' ? 'SYNTHESIS' : dragon.element.toUpperCase()} · Lv.{progress.level} · Stage {stageToRoman(stage)}
+                  {dragon.element.toUpperCase()} · Lv.{progress.level} · Stage {stageToRoman(stage)}
                   {progress.fusedBaseStats && <span className="journal-detail-fused" style={{ marginLeft: 8 }}>FUSED</span>}
                 </>
               ) : (
-                'ELEMENT UNKNOWN'
+                'PROTOCOL UNKNOWN'
               )}
             </div>
 

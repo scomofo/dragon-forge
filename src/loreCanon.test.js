@@ -151,6 +151,9 @@ test('Felix speaks the Matrix stage line once, then Iris when her log decrypts',
 
 test('owned Synthesis uses its own lore instead of Void', () => {
   expect(getDragonLore('synthesis', { owned: true })).toMatch(/living memory/i);
-  expect(getDragonLore('synthesis', { owned: false })).toMatch(/No data available/);
+  expect(getDragonLore('synthesis', { owned: true })).toMatch(/perfect form/i);
+  expect(getDragonLore('synthesis', { owned: false })).toMatch(/Fuse Void Dragon and Light Dragon/);
+  expect(getDragonLore('light', { owned: false })).toMatch(/Contain the Singularity/);
+  expect(getDragonLore('fire', { owned: false })).toMatch(/Hatchery/);
   expect(getDragonLore('fire', { owned: true })).toMatch(/protocol/i);
 });

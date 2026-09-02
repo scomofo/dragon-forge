@@ -8,14 +8,15 @@ export const JOURNAL_DRAGON_IDS = [...ELEMENTS, 'synthesis'];
 // === TYPE EFFECTIVENESS ===
 // typeChart[attacker][defender] = multiplier
 export const typeChart = {
-  fire:   { fire: 0.5, ice: 2.0, storm: 1.0, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 1.0 },
-  ice:    { fire: 0.5, ice: 0.5, storm: 2.0, stone: 1.0, venom: 1.0, shadow: 2.0, void: 1.0, light: 1.0 },
-  storm:  { fire: 1.0, ice: 0.5, storm: 0.5, stone: 2.0, venom: 1.0, shadow: 0.5, void: 2.0, light: 1.0 },
-  stone:  { fire: 2.0, ice: 1.0, storm: 0.5, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 1.0 },
-  venom:  { fire: 0.5, ice: 1.0, storm: 1.0, stone: 0.5, venom: 0.5, shadow: 2.0, void: 1.0, light: 2.0 },
-  shadow: { fire: 1.0, ice: 0.5, storm: 2.0, stone: 1.0, venom: 0.5, shadow: 0.5, void: 2.0, light: 2.0 },
-  void:   { fire: 1.0, ice: 1.0, storm: 1.0, stone: 2.0, venom: 1.0, shadow: 0.5, void: 1.0, light: 2.0 },
-  light:  { fire: 1.0, ice: 1.0, storm: 1.0, stone: 1.0, venom: 2.0, shadow: 2.0, void: 0.5, light: 1.0 },
+  fire:   { fire: 0.5, ice: 2.0, storm: 1.0, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 1.0, synthesis: 1.0 },
+  ice:    { fire: 0.5, ice: 0.5, storm: 2.0, stone: 1.0, venom: 1.0, shadow: 2.0, void: 1.0, light: 1.0, synthesis: 1.0 },
+  storm:  { fire: 1.0, ice: 0.5, storm: 0.5, stone: 2.0, venom: 1.0, shadow: 0.5, void: 2.0, light: 1.0, synthesis: 1.0 },
+  stone:  { fire: 2.0, ice: 1.0, storm: 0.5, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 1.0, synthesis: 1.0 },
+  venom:  { fire: 0.5, ice: 1.0, storm: 1.0, stone: 0.5, venom: 0.5, shadow: 2.0, void: 1.0, light: 2.0, synthesis: 1.0 },
+  shadow: { fire: 1.0, ice: 0.5, storm: 2.0, stone: 1.0, venom: 0.5, shadow: 0.5, void: 2.0, light: 2.0, synthesis: 2.0 },
+  void:   { fire: 1.0, ice: 1.0, storm: 1.0, stone: 2.0, venom: 1.0, shadow: 0.5, void: 1.0, light: 2.0, synthesis: 0.5 },
+  light:  { fire: 1.0, ice: 1.0, storm: 1.0, stone: 1.0, venom: 2.0, shadow: 2.0, void: 0.5, light: 1.0, synthesis: 0.5 },
+  synthesis: { fire: 1.0, ice: 1.0, storm: 1.0, stone: 1.0, venom: 1.0, shadow: 1.0, void: 2.0, light: 2.0, synthesis: 1.0 },
 };
 
 // === STAGE MULTIPLIERS ===
@@ -62,7 +63,7 @@ export const moves = {
   phase_strike:     { name: 'Phase Strike',   element: 'shadow', power: 55, accuracy: 100, vfxKey: 'SHADOW_STRIKE',    ignoreDefend: true, canApplyStatus: false, isSignature: true },
   siphon_rift:      { name: 'Siphon Rift',    element: 'void',   power: 60, accuracy: 90,  vfxKey: 'VOID_RIFT',        lifesteal: 0.4, canApplyStatus: true, isSignature: true },
   restoration:      { name: 'Restoration',    element: 'light',  power: 0,  accuracy: 100, vfxKey: 'SOLAR_FLARE',      actionType: 'heal', healPercent: 0.25, cleanse: true, isSignature: true },
-  recompile:        { name: 'Recompile',      element: 'void',   power: 70, accuracy: 90,  vfxKey: 'VOID_RIFT',        copyAdvantage: true, canApplyStatus: true, isSignature: true },
+  recompile:        { name: 'Recompile',      element: 'synthesis', power: 70, accuracy: 90,  vfxKey: 'VOID_RIFT',        copyAdvantage: true, canApplyStatus: true, isSignature: true },
   // NPC-only buff moves
   npc_focus:   { name: 'Focus',   actionType: 'buff', buffStat: 'atk', buffMultiplier: 1.3, buffDuration: 1, vfxKey: 'BASIC_ATTACK', accuracy: 100, power: 0, canApplyStatus: false },
   npc_harden:  { name: 'Harden',  actionType: 'buff', buffStat: 'def', buffMultiplier: 1.4, buffDuration: 2, vfxKey: 'BASIC_ATTACK', accuracy: 100, power: 0, canApplyStatus: false },
@@ -152,8 +153,7 @@ export const dragons = {
   synthesis: {
     id: 'synthesis',
     name: 'Synthesis Dragon',
-    element: 'void',
-    description: 'Where void and light converge, all data resolves into a singular, perfect form — neither darkness nor radiance, but the living memory of every dragon that ever was.',
+    element: 'synthesis',
     baseStats: { hp: 95, atk: 30, def: 26, spd: 24 },
     moveKeys: ['void_rift', 'radiant_beam', 'recompile'],
     spriteSheet: assetUrl('/assets/dragons/synthesis_stage1.png'),
@@ -341,13 +341,17 @@ export const dragonLore = {
   shadow: "This one shouldn't exist. It reads as a gap in the data — a hole where reality should be. Hidden-layer guardian. Fascinating. Terrifying. Ours.",
   void:   "A tear in the simulation itself. Not an element so much as the absence of one. I don't think it belongs to this reality. It chose you anyway.",
   light:  "Pure radiant process, born where starlight and data converge. Its glow disrupts shadow systems at the hardware level. The Admin hates this one. That's how you know it's working.",
-  synthesis: "Where void and light converge, all data resolves into a singular form — neither darkness nor radiance, but the living memory of every dragon that ever was.",
+  synthesis: "Where void and light converge, all data resolves into a singular, perfect form — neither darkness nor radiance, but the living memory of every dragon that ever was.",
 };
 
 export function getDragonLore(dragonId, { owned } = {}) {
-  if (!owned) return 'No data available. Discover this dragon in the Hatchery.';
   const def = dragons[dragonId];
-  return dragonLore[dragonId] || def?.description || dragonLore[def?.element] || 'Record incomplete.';
+  if (!owned) {
+    return def?.unlockHint
+      ? def.unlockHint
+      : 'No data available. Discover this dragon in the Hatchery.';
+  }
+  return dragonLore[dragonId] || dragonLore[def?.element] || 'Record incomplete.';
 }
 
 // === EGG SPRITES ===

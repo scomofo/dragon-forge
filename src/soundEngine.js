@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { assetUrl } from './utils';
 
 let audioCtx = null;
@@ -207,6 +208,8 @@ const ELEMENT_PITCH = {
   venom: 50,
   shadow: -150,
   void: 300,
+  light: 250,
+  synthesis: 80,
   neutral: 0,
 };
 

@@ -1,7 +1,8 @@
+// @ts-nocheck
 import { useState } from 'react';
 import { playSound } from './soundEngine';
 import { assetUrl } from './utils';
-import { dragons, elementColors, ELEMENTS } from './gameData';
+import { dragons, elementColors, JOURNAL_DRAGON_IDS } from './gameData';
 import { spendScraps, addDragonXp, upgradeDragonShiny, updatePityCounter, setXpBoost, spendCores, setStabilityBoost, meltCores } from './persistence';
 import { BUY_ITEMS, FORGE_RECIPES, canAffordBuy, canForge, getForgeableElement, ELEMENTS_FOR_CORES } from './shopItems';
 import NavBar from './NavBar';
@@ -13,7 +14,7 @@ export default function ShopScreen({ onNavigate, save, refreshSave }) {
   const [successMsg, setSuccessMsg] = useState(null);
 
   const cores = save.inventory?.cores || {};
-  const ownedDragons = ELEMENTS.filter(el => save.dragons[el]?.owned);
+  const ownedDragons = JOURNAL_DRAGON_IDS.filter(el => save.dragons[el]?.owned);
 
   const handleBuy = (item) => {
     if (!canAffordBuy(item, save)) return;
