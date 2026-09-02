@@ -1626,3 +1626,9 @@
   color: #ffcc00;
   animation: targetingPulse 0.7s steps(2, end) infinite;
 }
+
+.move-btn.signature strong::after {
+  content: ' ★';
+  color: #ffcc00;
+  font-size: 0.7em;
+}

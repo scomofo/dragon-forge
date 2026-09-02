@@ -44,7 +44,7 @@ export function calculateDamage(attacker, defender, move) {
   const effectiveness = getTypeEffectiveness(move.element, defender.element);
   let typedDamage = baseDamage * effectiveness;
 
-  if (defender.defending) {
+  if (defender.defending && !move.ignoreDefend) {
     typedDamage *= 0.5;
   }
 
@@ -206,7 +206,7 @@ export function pickNpcMove(npcMoveKeys, npcElement, playerElement, playerStatus
   return preferred[Math.floor(Math.random() * preferred.length)];
 }
 
-export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey, playerMoveKeys, npcMoveKeys) {
+export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey, playerMoveKeys, npcMoveKeys, options = {}) {
   let player = { ...playerState, defending: false };
   let npc = { ...npcState, defending: false };
   const events = [];
@@ -239,7 +239,8 @@ export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey, pl
   resolveAction(first, events,
     () => first.label === 'player' ? npc : player,
     (t) => { if (first.label === 'player') npc = t; else player = t; },
-    (s) => { if (first.label === 'player') player = s; else npc = s; }
+    (s) => { if (first.label === 'player') player = s; else npc = s; },
+    options
   );
 
   // Check if target is KO'd
@@ -250,7 +251,8 @@ export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey, pl
     resolveAction(second, events,
       () => second.label === 'player' ? npc : player,
       (t) => { if (second.label === 'player') npc = t; else player = t; },
-      (s) => { if (second.label === 'player') player = s; else npc = s; }
+      (s) => { if (second.label === 'player') player = s; else npc = s; },
+      options
     );
   }
 
@@ -290,7 +292,7 @@ function decrementBuff(state, buffKey) {
     : { ...state, [buffKey]: { ...buff, turnsLeft } };
 }
 
-function resolveAction(actor, events, getTarget, setTarget, setSelf) {
+function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {}) {
   // Check for Freeze — skip entirely
   if (actor.state.status?.effect === 'ice') {
     events.push({
@@ -345,6 +347,51 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
     return;
   }
 
+  // Heal / cleanse signature
+  if (moveData?.actionType === 'heal') {
+    const maxHp = actor.state.maxHp || actor.state.hp;
+    const prevHp = actor.state.hp;
+    const healAmt = Math.max(1, Math.floor(maxHp * (moveData.healPercent || 0.25)));
+    const newHp = Math.min(maxHp, prevHp + healAmt);
+    setSelf({
+      ...actor.state,
+      hp: newHp,
+      status: moveData.cleanse ? null : actor.state.status,
+    });
+    events.push({
+      attacker: actor.label,
+      action: 'heal',
+      moveName: move.name,
+      moveKey: actor.moveKey,
+      vfxKey: move.vfxKey,
+      healAmount: newHp - prevHp,
+      hit: true,
+      isSignature: !!moveData.isSignature,
+    });
+    return;
+  }
+
+  // Bastion: defend this turn AND raise DEF for follow-up turns
+  if (moveData?.actionType === 'defendPlus') {
+    setSelf({
+      ...actor.state,
+      defending: true,
+      defBuff: { multiplier: moveData.defBuff || 1.4, turnsLeft: (moveData.defDuration || 2) + 1 },
+    });
+    events.push({
+      attacker: actor.label,
+      action: 'defend',
+      moveName: move.name,
+      moveKey: actor.moveKey,
+      vfxKey: move.vfxKey,
+      damage: 0,
+      effectiveness: 1.0,
+      hit: true,
+      isSignature: true,
+    });
+    return;
+  }
+
   // Buff action handler
   if (moveData?.actionType === 'buff') {
     const buffKey = moveData.buffStat === 'atk' ? 'atkBuff' : 'defBuff';
@@ -363,11 +410,21 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
       buffStat: moveData.buffStat,
       buffMultiplier: moveData.buffMultiplier,
       buffDuration: moveData.buffDuration,
+      isSignature: !!moveData.isSignature,
     });
     return;
   }
 
   const target = getTarget();
+
+  let resolvedMove = { ...move };
+  if (actor.label === 'player' && options.playerAccuracyFloor) {
+    resolvedMove.accuracy = Math.max(resolvedMove.accuracy ?? 0, options.playerAccuracyFloor);
+  }
+  if (resolvedMove.copyAdvantage) {
+    const best = Object.keys(typeChart).find((el) => (typeChart[el]?.[target.element] || 1) >= 2) || resolvedMove.element;
+    resolvedMove = { ...resolvedMove, element: best };
+  }
 
   // Apply Guard Break debuff to effective DEF
   let effectiveDef = target.def;
@@ -380,7 +437,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
   }
 
   // Apply Blind debuff to effective accuracy
-  let effectiveAccuracy = move.accuracy;
+  let effectiveAccuracy = resolvedMove.accuracy;
   if (actor.state.status?.effect === 'shadow') {
     effectiveAccuracy = Math.max(0, effectiveAccuracy - STATUS_EFFECTS.shadow.value * 100);
   }
@@ -391,7 +448,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
   const result = calculateDamage(
     { atk: effectiveAtk, element: actor.state.element, stage: actor.state.stage },
     { def: effectiveDef, element: target.element, defending: target.defending },
-    { ...move, accuracy: effectiveAccuracy }
+    { ...resolvedMove, accuracy: effectiveAccuracy }
   );
 
   // Check if target is reflecting
@@ -437,10 +494,18 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
   const newTargetHp = Math.max(0, target.hp - result.damage);
   setTarget({ ...target, hp: newTargetHp });
 
+  let lifestealHeal = 0;
+  if (result.hit && resolvedMove.lifesteal && result.damage > 0) {
+    const maxHp = actor.state.maxHp || actor.state.hp;
+    lifestealHeal = Math.max(1, Math.floor(result.damage * resolvedMove.lifesteal));
+    setSelf({ ...actor.state, hp: Math.min(maxHp, actor.state.hp + lifestealHeal) });
+  }
+
   // Status application roll
   let appliedStatus = null;
-  if (result.hit && move.canApplyStatus && Math.random() < STATUS_APPLY_CHANCE) {
-    appliedStatus = applyStatus(move.element);
+  const applyChance = resolvedMove.applyChance ?? STATUS_APPLY_CHANCE;
+  if (result.hit && resolvedMove.canApplyStatus && Math.random() < applyChance) {
+    appliedStatus = applyStatus(resolvedMove.element);
     if (appliedStatus) {
       const updatedTarget = getTarget();
       setTarget({ ...updatedTarget, status: appliedStatus });
@@ -450,14 +515,16 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf) {
   events.push({
     attacker: actor.label,
     action: 'attack',
-    moveName: move.name,
+    moveName: resolvedMove.name,
     moveKey: actor.moveKey,
-    vfxKey: move.vfxKey,
+    vfxKey: resolvedMove.vfxKey,
     damage: result.damage,
     effectiveness: result.effectiveness,
     hit: result.hit,
     isCritical: result.isCritical,
     targetHp: newTargetHp,
     appliedStatus: appliedStatus ? STATUS_EFFECTS[appliedStatus.effect].name : null,
+    lifesteal: lifestealHeal || undefined,
+    isSignature: !!resolvedMove.isSignature,
   });
 }

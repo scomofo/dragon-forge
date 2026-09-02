@@ -131,6 +131,19 @@ const BASE_PROFILES = {
     damageVariant: 'buff',
     sound: 'statusApply',
   },
+  heal: {
+    kind: 'heal',
+    anticipationMs: 180,
+    launchMs: 0,
+    impactPauseMs: 40,
+    recoveryMs: 280,
+    shake: 0,
+    flashColor: '#88ffcc',
+    attackerClass: 'sprite-telegraph',
+    defenderClass: '',
+    damageVariant: 'buff',
+    sound: 'statusApply',
+  },
   charge: {
     kind: 'charge',
     anticipationMs: 400,
@@ -151,6 +164,7 @@ export function classifyBattleEvent(event) {
   if (event.action === 'defend') return 'defend';
   if (event.action === 'reflect') return 'reflect';
   if (event.action === 'buff') return 'buff';
+  if (event.action === 'heal') return 'heal';
   if (event.action === 'charge') return 'charge';
   if (event.action === 'statusSkip') return 'miss';
   if (event.attacker === 'status') return 'status';
@@ -192,6 +206,7 @@ export function getBattleResultCallout(event) {
     ko: 'KO',
     buff: 'FORTIFY',
     charge: 'CHARGING',
+    heal: 'RESTORE',
   };
   const text = textByVariant[variant];
   return text ? { text, variant } : null;
@@ -201,7 +216,7 @@ export function shouldAnimateBattleEvent(event) {
   if (!event) return false;
   if (event.attacker === 'status') return false;
   if (event.action === 'statusSkip') return false;
-  return ['attack', 'defend', 'reflect', 'buff'].includes(event.action);
+  return ['attack', 'defend', 'reflect', 'buff', 'heal'].includes(event.action);
 }
 
 export function getStatusMoveSummary(move) {
@@ -217,10 +232,40 @@ export function getStatusMoveSummary(move) {
     randomize: 'Scrambles the next action',
   };
 
+  const applyPct = Math.round((move.applyChance ?? STATUS_APPLY_CHANCE) * 100);
   return {
-    label: `${effect.name.toUpperCase()} ${Math.round(STATUS_APPLY_CHANCE * 100)}%`,
+    label: `${effect.name.toUpperCase()} ${applyPct}%`,
     title: effect.name,
     duration: `${effect.duration} ${effect.duration === 1 ? 'turn' : 'turns'}`,
     summary: summaryByType[effect.type] || 'Applies a status effect',
   };
+}
+
+export function getSignatureSummary(move) {
+  if (!move?.isSignature) return null;
+  if (move.actionType === 'heal') {
+    return { label: `HEAL ${Math.round((move.healPercent || 0.25) * 100)}%`, title: 'Heal and cleanse' };
+  }
+  if (move.actionType === 'buff') {
+    const stat = (move.buffStat || 'atk').toUpperCase();
+    const pct = Math.round(((move.buffMultiplier || 1) - 1) * 100);
+    return { label: `${stat} +${pct}%`, title: 'Once per battle' };
+  }
+  if (move.actionType === 'defendPlus') {
+    const pct = Math.round(((move.defBuff || 1.4) - 1) * 100);
+    return { label: `GUARD +${pct}%`, title: 'Defend and fortify' };
+  }
+  if (move.lifesteal) {
+    return { label: `DRAIN ${Math.round(move.lifesteal * 100)}%`, title: 'Lifesteal' };
+  }
+  if (move.ignoreDefend) {
+    return { label: 'PIERCE', title: 'Ignores Defend' };
+  }
+  if (move.copyAdvantage) {
+    return { label: 'ADAPT', title: 'Copies type advantage' };
+  }
+  if ((move.applyChance ?? 0) >= 1) {
+    return { label: 'LOCK 100%', title: 'Guaranteed status' };
+  }
+  return { label: 'SIG', title: 'Once per battle' };
 }

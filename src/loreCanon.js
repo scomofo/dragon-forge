@@ -25,13 +25,9 @@ export const DRAGON_PROTOCOL_CANON = {
 };
 
 export const OPENING_BOOT_LINES = [
-  { text: '> ASTRAEUS EMERGENCY WAKE SEQUENCE', status: null, delay: 600 },
-  { text: '> OPERATOR SIGNAL FOUND: SKYE', status: 'OK', delay: 800 },
-  { text: '> RENDERED WORLD LAYER: UNSTABLE', status: 'WARNING', delay: 950 },
-  { text: '> ELEMENTAL GUARDIAN PROTOCOLS: DORMANT', status: 'WARNING', delay: 950 },
-  { text: '> MIRROR ADMIN OVERRIDE: ACTIVE', status: 'FAIL', delay: 900 },
-  { text: '> DRAGON FORGE SAFEHOUSE LINK: PARTIAL', status: 'OK', delay: 800 },
-  { text: '> GREAT RESET COUNTDOWN: SIGNAL LOST', status: 'FAIL', delay: 900 },
+  { text: '> OPERATOR SKYE — AWAKE', status: 'OK', delay: 500 },
+  { text: '> THE RENDERED WORLD IS FAILING', status: 'WARNING', delay: 650 },
+  { text: '> HATCH THE GUARDIANS. SAVE THIS PLACE.', status: 'FAIL', delay: 700 },
 ];
 
 export const OPENING_FELIX_LINES = [

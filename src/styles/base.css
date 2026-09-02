@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
 :root {
   --bg-primary: #111118;
   --bg-panel: #1a1a24;
@@ -26,7 +24,7 @@ body {
   background: #111118;
   color: #e0e0e0;
   font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
+  font-size: 11px;
   overflow: hidden;
   height: 100vh;
   width: 100vw;

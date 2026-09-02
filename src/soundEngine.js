@@ -294,6 +294,8 @@ const MUSIC_ALIASES = {
   wandering: 'mapWander',
   tenseBattle: 'battleTense',
   opening: 'openingTense',
+  stats: 'hatchery',
+  settings: 'hatchery',
 };
 
 const SOUND_DEFINITIONS = Object.entries(SFX_SCHEMA).reduce((defs, [category, entries]) => {
@@ -743,7 +745,25 @@ const MUSIC_TRACKS = {
   battle: '/assets/music/music_battle.mp3',
   battleTense: '/assets/music/music_battle_intense.mp3',
   battleIntense: '/assets/music/music_battle_intense.mp3',
+  forge: '/assets/music/music_select.mp3',
+  fusion: '/assets/music/music_select.mp3',
+  journal: '/assets/music/music_hatchery.mp3',
+  shop: '/assets/music/music_select.mp3',
+  credits: '/assets/music/theme.mp3',
+  mirrorAdmin: '/assets/music/music_battle_intense.mp3',
 };
+
+const musicCache = new Map();
+function getCachedAudio(src) {
+  let audio = musicCache.get(src);
+  if (!audio) {
+    audio = new Audio(src);
+    audio.loop = true;
+    audio.preload = 'auto';
+    musicCache.set(src, audio);
+  }
+  return audio;
+}
 
 export function getMusicTrackUrl(trackName) {
   const resolvedTrackName = resolveMusicName(trackName);
@@ -803,7 +823,8 @@ export function playMusic(trackName, immediate = false) {
   if (!src) return;
 
   const vol = getMusicVolume();
-  const newAudio = new Audio(src);
+  const newAudio = getCachedAudio(src);
+  if (newAudio !== currentMusic) newAudio.currentTime = 0;
   newAudio.loop = true;
   newAudio.volume = immediate ? vol : 0;
 

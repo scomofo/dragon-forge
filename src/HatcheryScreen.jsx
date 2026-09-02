@@ -280,15 +280,11 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
       {showTutorial && (
         <div className="tutorial-overlay" onClick={() => setShowTutorial(false)}>
           <div className="tutorial-card">
-            <div style={{ fontSize: 12, color: '#ff6622', marginBottom: 12 }}>WELCOME, DRAGON FORGER!</div>
+            <div style={{ fontSize: 12, color: '#ff6622', marginBottom: 12 }}>WELCOME, SKYE</div>
             <div className="tutorial-steps">
-              <div className="tutorial-step">1. Pull dragons from the Hatchery (your first pull is free!)</div>
-              <div className="tutorial-step">2. Build your collection in the Journal</div>
-              <div className="tutorial-step">3. Battle NPCs to earn XP and DataScraps</div>
-              <div className="tutorial-step">4. Fuse dragons to create powerful Elders</div>
-              <div className="tutorial-step">5. Stop The Singularity and save the Matrix!</div>
+              <div className="tutorial-step">Your first hatch is free. Pull a guardian, then take it into battle.</div>
             </div>
-            <div style={{ fontSize: 8, color: '#555', marginTop: 12 }}>Click anywhere to begin</div>
+            <div style={{ fontSize: 8, color: '#555', marginTop: 12 }}>Tap anywhere to begin</div>
           </div>
         </div>
       )}

@@ -54,6 +54,27 @@ export const BUY_ITEMS = [
     stackable: false,
     requiresTarget: true,
   },
+  {
+    id: 'prestige_hatch',
+    name: 'Prestige Hatch',
+    description: 'Next pull is guaranteed Rare+. Endgame sink.',
+    cost: 800,
+    icon: '🌀',
+    effect: 'exoticPull',
+    stackable: false,
+    requiresPostgame: true,
+  },
+  {
+    id: 'core_melt',
+    name: 'Core Melt',
+    description: 'Convert 10 cores into 250 DataScraps',
+    cost: 0,
+    icon: '♻️',
+    effect: 'meltCores',
+    coresRequired: 10,
+    scrapsGranted: 250,
+    stackable: true,
+  },
 ];
 
 export const FORGE_RECIPES = [
@@ -98,6 +119,12 @@ export const FORGE_RECIPES = [
 ];
 
 export function canAffordBuy(item, save) {
+  if (item.requiresPostgame && !save.mirrorAdminDefeated) return false;
+  if (item.effect === 'meltCores') {
+    const cores = save.inventory?.cores || {};
+    const total = Object.values(cores).reduce((sum, n) => sum + n, 0);
+    return total >= (item.coresRequired || 10);
+  }
   return save.dataScraps >= item.cost;
 }
 

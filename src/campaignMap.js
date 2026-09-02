@@ -2,7 +2,7 @@ export const CAMPAIGN_NODES = [
   {
     id: 'signal-breach',
     label: 'Signal Breach',
-    description: 'A corrupted firewall blinks at the edge of the matrix.',
+    description: 'A corrupted firewall blinks at the edge of the matrix. Stone resists Fire — Ice or Storm fare better.',
     npcId: 'firewall_sentinel',
     type: 'normal',
     element: 'stone',

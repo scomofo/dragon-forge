@@ -83,30 +83,35 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
     playSound('navSwitch');
   }, []);
 
-  const interact = useCallback(() => {
-    if (!nearest) return;
+  const openStation = useCallback((stationId) => {
+    if (!stationId) return;
     playSound('buttonClick');
-    setActiveStation(nearest.id);
+    setActiveStation(stationId);
 
-    if (nearest.id === STATION_IDS.FELIX) {
+    if (stationId === STATION_IDS.FELIX) {
       const wasFirstVisit = isFirstVisitRef.current;
       isFirstVisitRef.current = false;
       if (wasFirstVisit) setFlag('felixGreeted', true);
       setFelixLine(wasFirstVisit ? FELIX_FIRST_VISIT_LINE : pickFelixLine(save));
       setOverlay('felix');
-    } else if (nearest.id === STATION_IDS.BULKHEAD) {
+    } else if (stationId === STATION_IDS.BULKHEAD) {
       playSound('screenTransition');
       onNavigate?.('map');
-    } else if (nearest.id === STATION_IDS.SAVE_LANTERN) {
+    } else if (stationId === STATION_IDS.SAVE_LANTERN) {
       setOverlay('lantern');
-    } else if (nearest.id === STATION_IDS.ANVIL) {
+    } else if (stationId === STATION_IDS.ANVIL) {
       setOverlay('anvil');
-    } else if (nearest.id === STATION_IDS.CONSOLE) {
+    } else if (stationId === STATION_IDS.CONSOLE) {
       setOverlay('console');
-    } else if (nearest.id === STATION_IDS.HATCHERY_RING) {
+    } else if (stationId === STATION_IDS.HATCHERY_RING) {
       setOverlay('hatcheryRing');
     }
-  }, [nearest, onNavigate, save]);
+  }, [onNavigate, save]);
+
+  const interact = useCallback(() => {
+    if (!nearest) return;
+    openStation(nearest.id);
+  }, [nearest, openStation]);
 
   const move = useCallback((direction) => {
     if (overlay) return;
@@ -171,7 +176,7 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
       }}
       data-active-station={activeStation || ''}
     >
-      <ForgeScene skyePos={skyePos} nearest={nearest} view={view} />
+      <ForgeScene onStationClick={openStation} onExit={() => { playSound('screenTransition'); onNavigate?.('map'); }} skyePos={skyePos} nearest={nearest} view={view} />
 
       {/* Always-visible escape hatch: the Forge is a fullscreen keyboard scene
           with no NavBar, so a clickable exit guarantees mouse/touch players can

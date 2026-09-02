@@ -55,13 +55,14 @@ export default function TitleScreen({ onStart, save }) {
       }
 
       setLines((prev) => [...prev, { text: line.text, status: statusEl }]);
-      await wait(line.delay);
+      if (!skippedRef.current) await wait(line.delay);
       scrollToBottom();
     }
 
     if (skippedRef.current) {
       setLines(OPENING_BOOT_LINES.map((l) => ({ text: l.text, status: l.status })));
       setTypingText('');
+      return;
     }
 
     setPhase('glitch');
@@ -137,9 +138,16 @@ export default function TitleScreen({ onStart, save }) {
   const handleClick = () => {
     // Retry music on first user interaction (autoplay policy requires click)
     playMusic('opening');
-    if (phase === 'boot' || phase === 'glitch' || phase === 'felix') {
-      skippedRef.current = true;
-    }
+    if (phase === 'ready') return;
+    skippedRef.current = true;
+    setLines(OPENING_BOOT_LINES.map((l) => ({ text: l.text, status: l.status })));
+    setFelixLines([...getTerminalDialogue(getSingularityStage(save))]);
+    setFelixVisible(true);
+    setTypingText('');
+    setPhase('ready');
+    setShowButton(true);
+    setShowCursor(false);
+    setGlitching(false);
   };
 
   const handleStart = () => {
@@ -153,7 +161,7 @@ export default function TitleScreen({ onStart, save }) {
       className={`terminal-screen ${glitching ? 'terminal-glitch' : ''}`}
       onClick={handleClick}
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); }}
+      onKeyDown={(e) => { handleClick(); if (e.key === 'Enter' && phase === 'ready') handleStart(); }}
     >
       <div className="terminal-sound-toggle">
         <SoundToggle />

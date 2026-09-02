@@ -146,6 +146,9 @@ function migrateSave(save) {
 
 export function loadSave() {
   try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return structuredClone(DEFAULT_SAVE);
+    }
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return structuredClone(DEFAULT_SAVE);
     return migrateSave(JSON.parse(raw));
@@ -155,7 +158,27 @@ export function loadSave() {
 }
 
 export function writeSave(save) {
+  if (typeof window === 'undefined' || !window.localStorage) return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
+}
+
+export function meltCores(count = 10, scraps = 250) {
+  const save = loadSave();
+  const cores = save.inventory?.cores || {};
+  let remaining = count;
+  for (const el of Object.keys(cores)) {
+    if (remaining <= 0) break;
+    const take = Math.min(cores[el] || 0, remaining);
+    if (take > 0) {
+      cores[el] -= take;
+      remaining -= take;
+    }
+  }
+  if (remaining > 0) return false;
+  save.inventory.cores = cores;
+  save.dataScraps += scraps;
+  writeSave(save);
+  return true;
 }
 
 export function addScraps(amount) {
