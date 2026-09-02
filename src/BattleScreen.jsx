@@ -18,7 +18,7 @@ import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
 import VfxOverlay from './VfxOverlay';
-import { getBattlePresentationProfile, getBattleResultCallout, getStatusMoveSummary, shouldAnimateBattleEvent } from './battlePresentation';
+import { getBattlePresentationProfile, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, shouldAnimateBattleEvent } from './battlePresentation';
 import useGamepadController from './useGamepadController';
 import {
   screenShake, hitFlash, criticalHit, shatterKO,
@@ -111,8 +111,8 @@ function initBattle(dragonId, npcId, save, battleConfig) {
       difficulty: boss.difficulty,
       baseXP: boss.baseXP,
       scrapsReward: boss.scrapsReward,
-      idleSprite: boss.idleSprite,
-      attackSprite: boss.attackSprite,
+      idleSprite: phase?.idleSprite || boss.idleSprite,
+      attackSprite: phase?.attackSprite || boss.attackSprite,
       arena: boss.arena,
       arenaFilter: boss.arenaFilter || null,
       spriteFilter: phase ? phase.spriteFilter : (boss.spriteFilter || null),
@@ -189,6 +189,9 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     npcDefBuff: null,
     npcChargedMove: null,
     signatureMoveUsed: false,
+    playerSignatureUsed: {},
+    playerAtkBuff: null,
+    playerDefBuff: null,
     playerMoveHistory: [],
   };
 }
@@ -255,6 +258,14 @@ function battleReducer(state, action) {
       return { ...state, npcAtkBuff: action.value };
     case 'SET_NPC_DEF_BUFF':
       return { ...state, npcDefBuff: action.value };
+    case 'SET_PLAYER_ATK_BUFF':
+      return { ...state, playerAtkBuff: action.value };
+    case 'SET_PLAYER_DEF_BUFF':
+      return { ...state, playerDefBuff: action.value };
+    case 'SET_PLAYER_SIGNATURE_USED':
+      return { ...state, playerSignatureUsed: { ...(state.playerSignatureUsed || {}), [action.dragonId]: true } };
+    case 'APPLY_HEAL_TO_PLAYER':
+      return { ...state, playerHp: Math.min(state.playerMaxHp, state.playerHp + action.amount) };
     case 'SET_NPC_CHARGED_MOVE':
       return { ...state, npcChargedMove: action.value };
     case 'CLEAR_NPC_CHARGED_MOVE':
@@ -373,6 +384,37 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       return;
     }
 
+    if (event.action === 'heal') {
+      const healed = event.healAmount || 0;
+      dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — restored ${healed} HP.` });
+      playSound('combatMessage');
+      playSound('statusApply', { element: isPlayer ? state.dragon.element : state.npc.element });
+      if (isPlayer) {
+        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
+      } else {
+        dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-telegraph' });
+      }
+      dispatch({ type: 'SET_BATTLE_CALLOUT', value: { text: 'RESTORE', variant: 'heal' } });
+      setTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 700);
+      const healId = ++damageIdRef.current;
+      dispatch({
+        type: 'ADD_DAMAGE_NUMBER',
+        entry: {
+          id: healId, damage: healed, effectiveness: 1.0, hit: true,
+          target: isPlayer ? 'player' : 'npc',
+          variant: 'heal',
+          label: `+${healed}`,
+          staggerIndex: 0,
+          position: { x: 30, y: -40 },
+        },
+      });
+      await wait(600);
+      dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: '' });
+      dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: '' });
+      await wait(200);
+      return;
+    }
+
     const move = moves[event.moveKey] || moves.basic_attack;
     const profile = getBattlePresentationProfile(event, move);
 
@@ -406,7 +448,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         },
       },
     });
-    await vfxPromise;
+    await Promise.race([vfxPromise, wait(1400)]);
 
     // IMPACT phase
     if (isPlayer) {
@@ -591,7 +633,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
   useEffect(() => {
     if (autoBattle && autoBattleAllowed && state.phase === PHASES.PLAYER_TURN && !animatingRef.current) {
-      const playerMoveKeys = [...state.dragon.moveKeys, 'basic_attack'];
+      const playerMoveKeys = [...state.dragon.moveKeys.filter((k) => !moves[k]?.isSignature || !state.playerSignatureUsed?.[state.dragonId]), 'basic_attack'];
       const autoBattleContext = {
         playerMoveHistory: state.playerMoveHistory,
         turnCount: state.turnCount,
@@ -634,6 +676,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
   const handleMoveSelect = useCallback(async (moveKey) => {
     if (animatingRef.current) return;
+    if (moves[moveKey]?.isSignature && state.playerSignatureUsed?.[state.dragonId]) return;
     playSound('commandSelect', { element: moves[moveKey]?.element });
     setSelectedMoveKey(moveKey);
     animatingRef.current = true;
@@ -658,6 +701,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       spd: state.playerStats.spd + relicMods.spdBonus,
       defending: false,
       status: shouldCleanse ? null : state.playerStatus,
+      atkBuff: state.playerAtkBuff,
+      defBuff: state.playerDefBuff,
     };
 
     const npcState = {
@@ -677,6 +722,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     // Track this player move for adaptive AI counter-element logic
     dispatch({ type: 'APPEND_PLAYER_MOVE_HISTORY', moveKey });
+    if (moves[moveKey]?.isSignature) {
+      dispatch({ type: 'SET_PLAYER_SIGNATURE_USED', dragonId: state.dragonId });
+    }
 
     const battleContext = {
       playerMoveHistory: state.playerMoveHistory,
@@ -729,7 +777,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     // On charge turn: NPC defends (takes the player hit while winding up)
     const effectiveNpcMoveKey = isCharging ? 'defend' : npcMoveKey;
 
-    let result = resolveTurn(playerState, chargedNpcState, moveKey, effectiveNpcMoveKey, state.dragon.moveKeys, state.npc.moveKeys);
+    let result = resolveTurn(playerState, chargedNpcState, moveKey, effectiveNpcMoveKey, state.dragon.moveKeys, state.npc.moveKeys, {
+      playerAccuracyFloor: (state.npc.difficulty === 'Easy' && !(save.defeatedNpcs || []).length) ? 95 : 0,
+    });
 
     // Tag signature events for presentation
     const isSignature = shouldFireSignature && !previouslyCharged;
@@ -773,8 +823,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       playSound('combatMessage');
     }
 
-    // Signature callout
-    if (isSignature) {
+    // Signature callout (player or NPC)
+    if (isSignature || moves[moveKey]?.isSignature) {
       dispatch({ type: 'SET_BATTLE_CALLOUT', value: { text: 'SIGNATURE', variant: 'signature' } });
       setTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 900);
     }
@@ -787,6 +837,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     // Sync NPC buff state from engine result
     dispatch({ type: 'SET_NPC_ATK_BUFF', value: result.npc.atkBuff || null });
     dispatch({ type: 'SET_NPC_DEF_BUFF', value: result.npc.defBuff || null });
+    dispatch({ type: 'SET_PLAYER_ATK_BUFF', value: result.player.atkBuff || null });
+    dispatch({ type: 'SET_PLAYER_DEF_BUFF', value: result.player.defBuff || null });
+    if (result.player.hp > state.playerHp) {
+      dispatch({ type: 'APPLY_HEAL_TO_PLAYER', amount: result.player.hp - state.playerHp });
+    }
 
     // coolant_core: extend status duration when player applies a NEW status to the NPC
     let finalNpcStatus = result.npc.status;
@@ -929,7 +984,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         // overlay must show the multiplier that was actually applied.
         let streakMultiplier = 1.0;
         if (isRepeatDefeat || isSingularityRepeat) {
-          scrapsGained = Math.floor(rawScraps * 0.25);
+          scrapsGained = Math.max(12, Math.floor(rawScraps * 0.45));
         } else if (battleConfig?.dailyNpc) {
           streakMultiplier = getDailyStreakMultiplier(save);
           scrapsGained = Math.floor(rawScraps * streakMultiplier);
@@ -1232,7 +1287,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       }}
     >
       {/* Arena background */}
-      <div className="arena pixelated" style={{ backgroundImage: `url(${npc.arena})`, filter: state.npc.arenaFilter || 'none' }} />
+      <div className="arena" style={{ backgroundImage: `url(${npc.arena})`, filter: state.npc.arenaFilter || 'none' }} />
       <div className="arena-overlay" aria-hidden="true" />
       <div className="battle-telemetry-grid" aria-hidden="true">
         <span className="telemetry-node node-a" />
@@ -1482,22 +1537,25 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             const isSelected = selectedMoveKey === move.key;
             const matchup = getTypeEffectivenessLabel(move.element, npc.element);
             const statusSummary = getStatusMoveSummary(move);
+            const signatureSummary = getSignatureSummary(move);
+            const signatureSpent = !!(move.isSignature && state.playerSignatureUsed?.[state.dragonId]);
             return (
               <button
                 key={move.key}
-                className={`move-btn ${isSelected ? 'selected' : ''} ${controllerFocusIndex === index ? 'controller-focus' : ''} ${isResolving && !isSelected ? 'dimmed' : ''} ${matchup.toLowerCase()}`}
-                style={{ '--move-color': moveColor.primary, '--move-glow': moveColor.glow, borderColor: moveColor.primary, color: moveColor.glow }}
-                disabled={isResolving}
+                className={`move-btn ${isSelected ? 'selected' : ''} ${controllerFocusIndex === index ? 'controller-focus' : ''} ${isResolving && !isSelected ? 'dimmed' : ''} ${matchup.toLowerCase()} ${move.isSignature ? 'signature' : ''}`}
+                style={{ '--move-color': moveColor.primary, '--move-glow': moveColor.glow, borderColor: moveColor.primary, color: moveColor.glow, opacity: signatureSpent ? 0.45 : 1 }}
+                disabled={isResolving || signatureSpent}
+                title={signatureSpent ? 'Signature already spent this battle' : signatureSummary ? `SIGNATURE — ${signatureSummary.title}` : ''}
                 onClick={() => handleMoveSelect(move.key)}
               >
                 <span className="tooltip">
-                  PWR:{move.power} ACC:{move.accuracy}%{statusSummary ? ` | ${statusSummary.title}: ${statusSummary.summary}, ${statusSummary.duration}` : ''}
+                  PWR:{move.power} ACC:{move.accuracy}%{statusSummary ? ` | ${statusSummary.title}: ${statusSummary.summary}, ${statusSummary.duration}` : ''}{signatureSummary ? ` | ${signatureSummary.title}` : ''}
                 </span>
                 <strong>{move.name.toUpperCase()}</strong>
                 <span className="move-meta">
                   <i>{moveColor.icon} {move.element.toUpperCase()}</i>
-                  <i>PWR {move.power} · ACC {move.accuracy}%</i>
-                  <i>{matchup}</i>
+                  <i>{move.power > 0 ? `PWR ${move.power} · ACC ${move.accuracy}%` : signatureSummary?.title || 'SUPPORT'}</i>
+                  <i>{move.isSignature ? (signatureSpent ? 'SPENT' : (signatureSummary?.label || 'SIG')) : matchup}</i>
                   {statusSummary && <i>{statusSummary.label}</i>}
                 </span>
               </button>

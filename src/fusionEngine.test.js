@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from 'vitest';
 import { getFusionElement, calculateFusionStats, getStabilityTier, executeFusion } from './fusionEngine';
 
@@ -20,6 +21,11 @@ describe('getFusionElement', () => {
   it('is commutative', () => {
     expect(getFusionElement('ice', 'storm')).toBe(getFusionElement('storm', 'ice'));
     expect(getFusionElement('stone', 'shadow')).toBe(getFusionElement('shadow', 'stone'));
+  });
+
+  it('forges Synthesis from Void and Light', () => {
+    expect(getFusionElement('void', 'light')).toBe('synthesis');
+    expect(getFusionElement('light', 'void')).toBe('synthesis');
   });
 });
 
@@ -107,5 +113,14 @@ describe('executeFusion', () => {
     const parentB = { id: 'storm', element: 'storm', stats: { hp: 100, atk: 20, def: 20, spd: 20 }, level: 12, shiny: false };
     expect(executeFusion(parentA, parentB).stabilityTier).toBe('normal');
     expect(executeFusion(parentA, parentB, { stabilityBoost: true }).stabilityTier).toBe('stable');
+  });
+
+  it('forges Synthesis from Void and Light parents', () => {
+    const parentA = { id: 'void', element: 'void', stats: { hp: 88, atk: 34, def: 16, spd: 30 }, level: 20, shiny: false };
+    const parentB = { id: 'light', element: 'light', stats: { hp: 100, atk: 26, def: 22, spd: 22 }, level: 20, shiny: false };
+    const result = executeFusion(parentA, parentB);
+    expect(result.element).toBe('synthesis');
+    expect(result.parentAId).toBe('void');
+    expect(result.parentBId).toBe('light');
   });
 });

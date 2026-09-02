@@ -1,7 +1,7 @@
 import { FORGE_PALETTE, FORGE_STATIONS, STATION_IDS } from '../forgeData';
 import { assetUrl } from '../utils';
 
-export default function ForgeScene({ skyePos, nearest, view }) {
+export default function ForgeScene({ skyePos, nearest, view, onStationClick, onExit }) {
   return (
     <>
       <WallTexture />
@@ -12,12 +12,12 @@ export default function ForgeScene({ skyePos, nearest, view }) {
       <ForgeFloorZones />
       <FloorGrid />
       {FORGE_STATIONS.map((station) => (
-        <Station key={station.id} station={station} highlighted={nearest?.id === station.id} />
+        <Station key={station.id} station={station} highlighted={nearest?.id === station.id} onSelect={onStationClick} />
       ))}
       <SkyeSprite pos={skyePos} />
-      <StationIndex nearest={nearest} />
-      <ProximityHud nearest={nearest} />
-      <ControlsHint />
+      <StationIndex nearest={nearest} onStationClick={onStationClick} />
+      <ProximityHud nearest={nearest} onInteract={() => nearest && onStationClick?.(nearest.id)} />
+      <ControlsHint onExit={onExit} />
       <ForgeScanlines />
     </>
   );
@@ -141,7 +141,7 @@ function FloorGrid() {
   return <div className="forge-floor-grid" aria-hidden />;
 }
 
-function Station({ station, highlighted }) {
+function Station({ station, highlighted, onSelect }) {
   const { pos, size, glow, label, pulseMs } = station;
   const isRing = station.id === STATION_IDS.HATCHERY_RING;
 
@@ -149,6 +149,10 @@ function Station({ station, highlighted }) {
     <div
       className={`forge-station ${highlighted ? 'is-highlighted' : ''} ${isRing ? 'is-ring' : ''}`}
       data-station-id={station.id}
+      role="button"
+      tabIndex={0}
+      onClick={(e) => { e.stopPropagation(); onSelect?.(station.id); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.(station.id); } }}
       style={{
         left: `${pos.x - size.w / 2}%`,
         top: `${pos.y - size.h / 2}%`,
@@ -212,36 +216,43 @@ function SkyeSprite({ pos }) {
   );
 }
 
-function ProximityHud({ nearest }) {
+function ProximityHud({ nearest, onInteract }) {
   if (!nearest) return null;
   return (
-    <div className="forge-proximity-hud" data-testid="forge-proximity">
-      <span>[E]</span> <strong>{nearest.label}</strong>{' '}
+    <button type="button" className="forge-proximity-hud" data-testid="forge-proximity" onClick={onInteract}>
+      <span>[E / TAP]</span> <strong>{nearest.label}</strong>{' '}
       <small>{nearest.description}</small>
-    </div>
+    </button>
   );
 }
 
-function StationIndex({ nearest }) {
+function StationIndex({ nearest, onStationClick }) {
   return (
     <div className="forge-station-index" aria-label="Station guide">
       {FORGE_STATIONS.map((station) => (
-        <div
+        <button
+          type="button"
           key={station.id}
           className={`forge-index-row ${nearest?.id === station.id ? 'is-active' : ''}`}
           style={{ '--index-color': station.glow || '#c9a567' }}
+          onClick={() => onStationClick?.(station.id)}
         >
           <span className="forge-index-pip" aria-hidden="true" />
           <div className="forge-index-copy">
             <strong>{station.label}</strong>
             <small>{station.hint}</small>
           </div>
-        </div>
+        </button>
       ))}
     </div>
   );
 }
 
-function ControlsHint() {
-  return <div className="forge-controls-hint">WASD / arrows to walk &nbsp;|&nbsp; E to interact &nbsp;|&nbsp; Esc to close</div>;
+function ControlsHint({ onExit }) {
+  return (
+    <div className="forge-controls-hint">
+      WASD / arrows to walk &nbsp;|&nbsp; tap a station or E to interact
+      <button type="button" className="forge-exit-btn" onClick={onExit}>EXIT FORGE</button>
+    </div>
+  );
 }

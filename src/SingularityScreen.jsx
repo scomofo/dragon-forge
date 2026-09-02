@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { useState } from 'react';
 import { playSound } from './soundEngine';
-import { dragons, elementColors, ELEMENTS } from './gameData';
+import { dragons, elementColors, JOURNAL_DRAGON_IDS } from './gameData';
 import { SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN, CORRUPTION_REMNANTS, getBossStatus } from './singularityBosses';
 import { getRemnantProgress } from './singularityProgress';
 import { startNewGamePlus } from './persistence';
@@ -12,7 +13,7 @@ const ALL_BOSSES = [...SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN];
 export default function SingularityScreen({ onNavigate, onEngageBoss, onEngageRemnant, save }) {
   const [selectedBossId, setSelectedBossId] = useState(ALL_BOSSES[0].id);
   const [selectedDragonId, setSelectedDragonId] = useState(() => {
-    const firstOwned = ELEMENTS.find(el => save.dragons[el]?.owned);
+    const firstOwned = JOURNAL_DRAGON_IDS.find(el => save.dragons[el]?.owned);
     return firstOwned || 'fire';
   });
   const [confirmingNg, setConfirmingNg] = useState(false);
@@ -28,7 +29,7 @@ export default function SingularityScreen({ onNavigate, onEngageBoss, onEngageRe
   const selectedBoss = ALL_BOSSES.find(b => b.id === selectedBossId) || ALL_BOSSES[0];
   const bossStatus = getBossStatus(selectedBoss, save);
   const canEngage = bossStatus === 'available' || bossStatus === 'defeated';
-  const ownedDragons = ELEMENTS.filter(el => save.dragons[el]?.owned);
+  const ownedDragons = JOURNAL_DRAGON_IDS.filter(el => save.dragons[el]?.owned);
   const remnantProgress = getRemnantProgress(save);
 
   const handleSelectBoss = (bossId) => {

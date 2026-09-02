@@ -76,13 +76,13 @@ export default function App() {
       playMusic('select');
       setScreen(SCREENS.BATTLE_SELECT);
     } else if (target === 'fusion') {
-      playMusic('hatchery');
+      playMusic('fusion');
       setScreen(SCREENS.FUSION);
     } else if (target === 'journal') {
-      playMusic('hatchery');
+      playMusic('journal');
       setScreen(SCREENS.JOURNAL);
     } else if (target === 'shop') {
-      playMusic('hatchery');
+      playMusic('shop');
       setScreen(SCREENS.SHOP);
     } else if (target === 'map') {
       playMusic('mapWander');
@@ -97,7 +97,7 @@ export default function App() {
       playMusic('singularity', true);
       setScreen(SCREENS.SINGULARITY);
     } else if (target === 'forge') {
-      playMusic('hatchery');
+      playMusic('forge');
       setScreen(SCREENS.FORGE);
     }
   }
@@ -124,10 +124,11 @@ export default function App() {
   function handleEngageBoss(config) {
     if (config.isMirrorAdmin) {
       playSound('mirrorAdminSpawn');
+      playMusic('mirrorAdmin', true);
     } else {
       playSound('buttonClick');
+      playMusic('singularity', true);
     }
-    playMusic('singularity', true);
     const scaledBoss = scaleBossForPlayer(config.boss, save);
     setBattleConfig({
       dragonId: config.dragonId,
@@ -178,7 +179,7 @@ export default function App() {
     refreshSave();
     if (wonMirrorAdmin) {
       playSound('victoryFanfare');
-      playMusic('title', true);
+      playMusic('credits', true);
     } else {
       playMusic('singularity', true);
     }

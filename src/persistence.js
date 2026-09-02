@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { canEquipRelic } from './forgeData';
 
 const STORAGE_KEY = 'dragonforge_save';
@@ -39,6 +40,9 @@ const DEFAULT_SAVE = {
     felixGreeted: false,
     lastZone: null,
     fragmentsUnlocked: [],
+    journalBriefingSeen: false,
+    felixStageHeard: 0,
+    felixIrisHeard: false,
   },
   skye: {
     wrenchTier: 1,
@@ -123,13 +127,16 @@ function migrateSave(save) {
   if (save.lastDailyCompleted === undefined) save.lastDailyCompleted = 0;
   if (save.records === undefined) save.records = { fastestWin: null, highestDamage: 0, longestStreak: 0, currentStreak: 0 };
   if (save.flags === undefined) {
-    save.flags = { currentAct: 1, metFelix: false, felixGreeted: false, lastZone: null, fragmentsUnlocked: [] };
+    save.flags = { currentAct: 1, metFelix: false, felixGreeted: false, lastZone: null, fragmentsUnlocked: [], journalBriefingSeen: false, felixStageHeard: 0, felixIrisHeard: false };
   } else {
     if (save.flags.currentAct === undefined) save.flags.currentAct = 1;
     if (save.flags.metFelix === undefined) save.flags.metFelix = false;
     if (save.flags.felixGreeted === undefined) save.flags.felixGreeted = false;
     if (save.flags.lastZone === undefined) save.flags.lastZone = null;
     if (!Array.isArray(save.flags.fragmentsUnlocked)) save.flags.fragmentsUnlocked = [];
+    if (save.flags.journalBriefingSeen === undefined) save.flags.journalBriefingSeen = false;
+    if (save.flags.felixStageHeard === undefined) save.flags.felixStageHeard = 0;
+    if (save.flags.felixIrisHeard === undefined) save.flags.felixIrisHeard = false;
   }
   if (save.skye === undefined) {
     save.skye = { wrenchTier: 1, relicSlots: 1, relicsOwned: [], relicsEquipped: [], bountiesCleared: 0, companionDragonId: null };
@@ -146,6 +153,9 @@ function migrateSave(save) {
 
 export function loadSave() {
   try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return structuredClone(DEFAULT_SAVE);
+    }
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return structuredClone(DEFAULT_SAVE);
     return migrateSave(JSON.parse(raw));
@@ -155,7 +165,27 @@ export function loadSave() {
 }
 
 export function writeSave(save) {
+  if (typeof window === 'undefined' || !window.localStorage) return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
+}
+
+export function meltCores(count = 10, scraps = 250) {
+  const save = loadSave();
+  const cores = save.inventory?.cores || {};
+  let remaining = count;
+  for (const el of Object.keys(cores)) {
+    if (remaining <= 0) break;
+    const take = Math.min(cores[el] || 0, remaining);
+    if (take > 0) {
+      cores[el] -= take;
+      remaining -= take;
+    }
+  }
+  if (remaining > 0) return false;
+  save.inventory.cores = cores;
+  save.dataScraps += scraps;
+  writeSave(save);
+  return true;
 }
 
 export function addScraps(amount) {

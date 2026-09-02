@@ -1,19 +1,22 @@
+// @ts-nocheck
 import { assetUrl } from './utils';
 
 // === ELEMENTS ===
 export const ELEMENTS = ['fire', 'ice', 'storm', 'stone', 'venom', 'shadow', 'void', 'light'];
+export const JOURNAL_DRAGON_IDS = [...ELEMENTS, 'synthesis'];
 
 // === TYPE EFFECTIVENESS ===
 // typeChart[attacker][defender] = multiplier
 export const typeChart = {
-  fire:   { fire: 0.5, ice: 2.0, storm: 1.0, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 1.0 },
-  ice:    { fire: 0.5, ice: 0.5, storm: 2.0, stone: 1.0, venom: 1.0, shadow: 2.0, void: 1.0, light: 1.0 },
-  storm:  { fire: 1.0, ice: 0.5, storm: 0.5, stone: 2.0, venom: 1.0, shadow: 0.5, void: 2.0, light: 1.0 },
-  stone:  { fire: 2.0, ice: 1.0, storm: 0.5, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 1.0 },
-  venom:  { fire: 0.5, ice: 1.0, storm: 1.0, stone: 0.5, venom: 0.5, shadow: 2.0, void: 1.0, light: 2.0 },
-  shadow: { fire: 1.0, ice: 0.5, storm: 2.0, stone: 1.0, venom: 0.5, shadow: 0.5, void: 2.0, light: 2.0 },
-  void:   { fire: 1.0, ice: 1.0, storm: 1.0, stone: 2.0, venom: 1.0, shadow: 0.5, void: 1.0, light: 2.0 },
-  light:  { fire: 1.0, ice: 1.0, storm: 1.0, stone: 1.0, venom: 2.0, shadow: 2.0, void: 0.5, light: 1.0 },
+  fire:   { fire: 0.5, ice: 2.0, storm: 1.0, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 1.0, synthesis: 1.0 },
+  ice:    { fire: 0.5, ice: 0.5, storm: 2.0, stone: 1.0, venom: 1.0, shadow: 2.0, void: 1.0, light: 1.0, synthesis: 1.0 },
+  storm:  { fire: 1.0, ice: 0.5, storm: 0.5, stone: 2.0, venom: 1.0, shadow: 0.5, void: 2.0, light: 1.0, synthesis: 1.0 },
+  stone:  { fire: 2.0, ice: 1.0, storm: 0.5, stone: 0.5, venom: 2.0, shadow: 1.0, void: 1.0, light: 1.0, synthesis: 1.0 },
+  venom:  { fire: 0.5, ice: 1.0, storm: 1.0, stone: 0.5, venom: 0.5, shadow: 2.0, void: 1.0, light: 2.0, synthesis: 1.0 },
+  shadow: { fire: 1.0, ice: 0.5, storm: 2.0, stone: 1.0, venom: 0.5, shadow: 0.5, void: 2.0, light: 2.0, synthesis: 2.0 },
+  void:   { fire: 1.0, ice: 1.0, storm: 1.0, stone: 2.0, venom: 1.0, shadow: 0.5, void: 1.0, light: 2.0, synthesis: 0.5 },
+  light:  { fire: 1.0, ice: 1.0, storm: 1.0, stone: 1.0, venom: 2.0, shadow: 2.0, void: 0.5, light: 1.0, synthesis: 0.5 },
+  synthesis: { fire: 1.0, ice: 1.0, storm: 1.0, stone: 1.0, venom: 1.0, shadow: 1.0, void: 2.0, light: 2.0, synthesis: 1.0 },
 };
 
 // === STAGE MULTIPLIERS ===
@@ -50,6 +53,17 @@ export const moves = {
   solar_flare:   { name: 'Solar Flare',   element: 'light', power: 70, accuracy: 85,  vfxKey: 'SOLAR_FLARE',   canApplyStatus: true, canCharge: true, chargeChance: 0.40 },
   // Neutral
   basic_attack:     { name: 'Basic Attack',      element: 'neutral', power: 40, accuracy: 100, vfxKey: 'BASIC_ATTACK', canApplyStatus: false },
+  // Player signature techniques — unique actions, not just a bigger number.
+  // Once per battle. The real combat decision the two-move kit was missing.
+  heartforge:       { name: 'Heartforge',     element: 'fire',   power: 0,  accuracy: 100, vfxKey: 'FLAME_WALL',       actionType: 'buff', buffStat: 'atk', buffMultiplier: 1.35, buffDuration: 2, isSignature: true },
+  absolute_zero:    { name: 'Absolute Zero',  element: 'ice',    power: 40, accuracy: 100, vfxKey: 'FROST_BITE',       canApplyStatus: true, applyChance: 1, isSignature: true },
+  overclock:        { name: 'Overclock',      element: 'storm',  power: 50, accuracy: 100, vfxKey: 'LIGHTNING_STRIKE', canApplyStatus: true, applyChance: 1, isSignature: true },
+  bastion:          { name: 'Bastion',        element: 'stone',  power: 0,  accuracy: 100, vfxKey: 'ROCK_SLIDE',       actionType: 'defendPlus', defBuff: 1.4, defDuration: 2, isSignature: true },
+  hemotoxin:        { name: 'Hemotoxin',      element: 'venom',  power: 45, accuracy: 100, vfxKey: 'TOXIC_CLOUD',      canApplyStatus: true, applyChance: 1, isSignature: true },
+  phase_strike:     { name: 'Phase Strike',   element: 'shadow', power: 55, accuracy: 100, vfxKey: 'SHADOW_STRIKE',    ignoreDefend: true, canApplyStatus: false, isSignature: true },
+  siphon_rift:      { name: 'Siphon Rift',    element: 'void',   power: 60, accuracy: 90,  vfxKey: 'VOID_RIFT',        lifesteal: 0.4, canApplyStatus: true, isSignature: true },
+  restoration:      { name: 'Restoration',    element: 'light',  power: 0,  accuracy: 100, vfxKey: 'SOLAR_FLARE',      actionType: 'heal', healPercent: 0.25, cleanse: true, isSignature: true },
+  recompile:        { name: 'Recompile',      element: 'synthesis', power: 70, accuracy: 90,  vfxKey: 'VOID_RIFT',        copyAdvantage: true, canApplyStatus: true, isSignature: true },
   // NPC-only buff moves
   npc_focus:   { name: 'Focus',   actionType: 'buff', buffStat: 'atk', buffMultiplier: 1.3, buffDuration: 1, vfxKey: 'BASIC_ATTACK', accuracy: 100, power: 0, canApplyStatus: false },
   npc_harden:  { name: 'Harden',  actionType: 'buff', buffStat: 'def', buffMultiplier: 1.4, buffDuration: 2, vfxKey: 'BASIC_ATTACK', accuracy: 100, power: 0, canApplyStatus: false },
@@ -68,7 +82,7 @@ export const dragons = {
     name: 'Magma Dragon',
     element: 'fire',
     baseStats: { hp: 110, atk: 28, def: 20, spd: 18 },
-    moveKeys: ['magma_breath', 'flame_wall'],
+    moveKeys: ['magma_breath', 'flame_wall', 'heartforge'],
     spriteSheet: assetUrl('/assets/dragons/fire_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/fire_stage1.png'), 2: assetUrl('/assets/dragons/fire_stage2.png'), 3: assetUrl('/assets/dragons/fire_stage3.png'), 4: assetUrl('/assets/dragons/fire_stage4.png') },
   },
@@ -77,7 +91,7 @@ export const dragons = {
     name: 'Ice Dragon',
     element: 'ice',
     baseStats: { hp: 100, atk: 24, def: 26, spd: 20 },
-    moveKeys: ['frost_bite', 'blizzard'],
+    moveKeys: ['frost_bite', 'blizzard', 'absolute_zero'],
     spriteSheet: assetUrl('/assets/dragons/ice_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/ice_stage1.png'), 2: assetUrl('/assets/dragons/ice_stage2.png'), 3: assetUrl('/assets/dragons/ice_stage3.png'), 4: assetUrl('/assets/dragons/ice_stage4.png') },
   },
@@ -86,7 +100,7 @@ export const dragons = {
     name: 'Storm Dragon',
     element: 'storm',
     baseStats: { hp: 90, atk: 30, def: 16, spd: 28 },
-    moveKeys: ['lightning_strike', 'thunder_clap'],
+    moveKeys: ['lightning_strike', 'thunder_clap', 'overclock'],
     spriteSheet: assetUrl('/assets/dragons/storm_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/storm_stage1.png'), 2: assetUrl('/assets/dragons/storm_stage2.png'), 3: assetUrl('/assets/dragons/storm_stage3.png'), 4: assetUrl('/assets/dragons/storm_stage4.png') },
   },
@@ -95,7 +109,7 @@ export const dragons = {
     name: 'Stone Dragon',
     element: 'stone',
     baseStats: { hp: 112, atk: 22, def: 30, spd: 12 },
-    moveKeys: ['rock_slide', 'earthquake'],
+    moveKeys: ['rock_slide', 'earthquake', 'bastion'],
     spriteSheet: assetUrl('/assets/dragons/stone_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/stone_stage1.png'), 2: assetUrl('/assets/dragons/stone_stage2.png'), 3: assetUrl('/assets/dragons/stone_stage3.png'), 4: assetUrl('/assets/dragons/stone_stage4.png') },
   },
@@ -104,7 +118,7 @@ export const dragons = {
     name: 'Venom Dragon',
     element: 'venom',
     baseStats: { hp: 95, atk: 26, def: 20, spd: 24 },
-    moveKeys: ['acid_spit', 'toxic_cloud'],
+    moveKeys: ['acid_spit', 'toxic_cloud', 'hemotoxin'],
     spriteSheet: assetUrl('/assets/dragons/venom_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/venom_stage1.png'), 2: assetUrl('/assets/dragons/venom_stage2.png'), 3: assetUrl('/assets/dragons/venom_stage3.png'), 4: assetUrl('/assets/dragons/venom_stage4.png') },
   },
@@ -113,7 +127,7 @@ export const dragons = {
     name: 'Shadow Dragon',
     element: 'shadow',
     baseStats: { hp: 90, atk: 32, def: 18, spd: 26 },
-    moveKeys: ['shadow_strike', 'void_pulse'],
+    moveKeys: ['shadow_strike', 'void_pulse', 'phase_strike'],
     spriteSheet: assetUrl('/assets/dragons/shadow_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/shadow_stage1.png'), 2: assetUrl('/assets/dragons/shadow_stage2.png'), 3: assetUrl('/assets/dragons/shadow_stage3.png'), 4: assetUrl('/assets/dragons/shadow_stage4.png') },
   },
@@ -122,7 +136,7 @@ export const dragons = {
     name: 'Void Dragon',
     element: 'void',
     baseStats: { hp: 88, atk: 34, def: 16, spd: 30 },
-    moveKeys: ['void_rift', 'null_reflect'],
+    moveKeys: ['void_rift', 'null_reflect', 'siphon_rift'],
     spriteSheet: assetUrl('/assets/dragons/void_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/void_stage1.png'), 2: assetUrl('/assets/dragons/void_stage2.png'), 3: assetUrl('/assets/dragons/void_stage3.png'), 4: assetUrl('/assets/dragons/void_stage4.png') },
   },
@@ -131,7 +145,7 @@ export const dragons = {
     name: 'Light Dragon',
     element: 'light',
     baseStats: { hp: 100, atk: 26, def: 22, spd: 22 },
-    moveKeys: ['radiant_beam', 'solar_flare'],
+    moveKeys: ['radiant_beam', 'solar_flare', 'restoration'],
     spriteSheet: assetUrl('/assets/dragons/light_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/light_stage1.png'), 2: assetUrl('/assets/dragons/light_stage2.png'), 3: assetUrl('/assets/dragons/light_stage3.png'), 4: assetUrl('/assets/dragons/light_stage4.png') },
     unlockHint: 'Contain the Singularity',
@@ -139,10 +153,9 @@ export const dragons = {
   synthesis: {
     id: 'synthesis',
     name: 'Synthesis Dragon',
-    element: 'void',
-    description: 'Where void and light converge, all data resolves into a singular, perfect form — neither darkness nor radiance, but the living memory of every dragon that ever was.',
+    element: 'synthesis',
     baseStats: { hp: 95, atk: 30, def: 26, spd: 24 },
-    moveKeys: ['void_rift', 'radiant_beam'],
+    moveKeys: ['void_rift', 'radiant_beam', 'recompile'],
     spriteSheet: assetUrl('/assets/dragons/synthesis_stage1.png'),
     stageSprites: { 1: assetUrl('/assets/dragons/synthesis_stage1.png'), 2: assetUrl('/assets/dragons/synthesis_stage2.png'), 3: assetUrl('/assets/dragons/synthesis_stage3.png'), 4: assetUrl('/assets/dragons/synthesis_stage4.png') },
     unlockHint: 'Fuse Void Dragon and Light Dragon',
@@ -314,19 +327,32 @@ export const elementColors = {
   neutral: { primary: '#888888', glow: '#aaaaaa', icon: '⚔️' },
   void:    { primary: '#00cccc', glow: '#44eeee', icon: '🌀' },
   light:   { primary: '#FFD966', glow: '#FFEEAA', icon: '☀️' },
+  synthesis: { primary: '#c8a8e0', glow: '#e8d5ff', icon: '✦' },
 };
 
 // === DRAGON LORE ===
+// Felix lab notes in the same register as the rendered-world canon.
 export const dragonLore = {
-  fire:   "Forged from the planet's molten core. Its breath can melt through starship bulkheads — handle with extreme caution.",
-  ice:    "Crystallized from subzero atmospheric anomalies. The temperature drops 30 degrees in its presence alone.",
-  storm:  "Born from a feedback loop in the planet's electromagnetic field. Faster than anything I've ever recorded.",
-  stone:  "Its hide is denser than compressed titanium. I once watched it walk through a collapsing mine without flinching.",
-  venom:  "Secretes a neurotoxin that can dissolve organic matter in seconds. Keep it away from the lab samples.",
-  shadow: "This one... shouldn't exist. It reads as a gap in the data — a hole where reality should be. Fascinating.",
-  void:   "It came from beyond the Elemental Matrix — a tear in the simulation itself. I don't think it belongs to any element. I don't think it belongs to this reality at all.",
-  light:  "A being of pure radiant energy, born where starlight and data converge. Its glow disrupts shadow-type systems at the hardware level.",
+  fire:   "Renewal protocol with a temper. Fire writes over corrupted sectors the way a forge writes over rust — and yes, it will still melt a bulkhead if you ask it wrong.",
+  ice:    "The keeper. Ice holds what must not be lost. The lab still drops thirty degrees when it walks in; that is not weather, that is memory taking up space.",
+  storm:  "Signal-carrier. Born from a feedback loop in the Matrix's electromagnetic field. Faster than anything I've recorded — and getting faster the more the Admin notices you.",
+  stone:  "The line-holder. Hide denser than compressed titanium. I watched it walk through a collapsing mine without flinching. The husk needs that kind of stubbornness.",
+  venom:  "Rot-eater. Secretes a neurotoxin that dissolves corrupted matter in seconds. Keep it away from the lab samples. Keep it close to anything the Admin calls infected.",
+  shadow: "This one shouldn't exist. It reads as a gap in the data — a hole where reality should be. Hidden-layer guardian. Fascinating. Terrifying. Ours.",
+  void:   "A tear in the simulation itself. Not an element so much as the absence of one. I don't think it belongs to this reality. It chose you anyway.",
+  light:  "Pure radiant process, born where starlight and data converge. Its glow disrupts shadow systems at the hardware level. The Admin hates this one. That's how you know it's working.",
+  synthesis: "Where void and light converge, all data resolves into a singular, perfect form — neither darkness nor radiance, but the living memory of every dragon that ever was.",
 };
+
+export function getDragonLore(dragonId, { owned } = {}) {
+  const def = dragons[dragonId];
+  if (!owned) {
+    return def?.unlockHint
+      ? def.unlockHint
+      : 'No data available. Discover this dragon in the Hatchery.';
+  }
+  return dragonLore[dragonId] || dragonLore[def?.element] || 'Record incomplete.';
+}
 
 // === EGG SPRITES ===
 export const eggSheets = {

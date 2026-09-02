@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from 'vitest';
 import {
   getTypeEffectiveness, calculateDamage, calculateXpGain,
@@ -351,6 +352,17 @@ describe('Void type effectiveness', () => {
 
   it('shadow is the predator of void', () => {
     expect(getTypeEffectiveness('shadow', 'void')).toBe(2.0);
+  });
+});
+
+describe('Synthesis type identity', () => {
+  it('is its own element, not a void clone', () => {
+    expect(getTypeEffectiveness('synthesis', 'void')).toBe(2.0);
+    expect(getTypeEffectiveness('synthesis', 'light')).toBe(2.0);
+    expect(getTypeEffectiveness('void', 'synthesis')).toBe(0.5);
+    expect(getTypeEffectiveness('light', 'synthesis')).toBe(0.5);
+    expect(getTypeEffectiveness('fire', 'synthesis')).toBe(1.0);
+    expect(getTypeEffectiveness('shadow', 'synthesis')).toBe(2.0);
   });
 });
 

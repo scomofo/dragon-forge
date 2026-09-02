@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
-import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
+import { calculateStatsForLevel, getStageForLevel, getTypeEffectiveness } from './battleEngine';
 import { CAMPAIGN_NODES, getCampaignNodeState, getCampaignNodeStates } from './campaignMap';
 import { dragons, elementColors, npcs } from './gameData';
 import { playSound } from './soundEngine';
@@ -405,6 +405,8 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
               const stage = getStageForLevel(progress.level);
               const stats = calculateStatsForLevel(progress.fusedBaseStats || data.baseStats, progress.level, progress.shiny);
               const color = elementColors[data.element];
+              const matchup = getTypeEffectiveness(data.element, selectedNode.element);
+              const matchupLabel = matchup > 1 ? 'EDGE' : matchup < 1 ? 'RESIST' : 'EVEN';
               return (
                 <button
                   key={id}
@@ -421,7 +423,7 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
                   />
                   <span>
                     <strong>{color.icon} {progress.nickname || data.name}</strong>
-                    <small>Lv.{progress.level} · HP {stats.hp} · ATK {stats.atk}</small>
+                    <small>Lv.{progress.level} · HP {stats.hp} · {matchupLabel}</small>
                   </span>
                 </button>
               );

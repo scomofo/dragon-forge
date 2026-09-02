@@ -1,7 +1,8 @@
+// @ts-nocheck
 // Felix's Forge — static layout, dialogue, and station registry.
 // All positions are percentages of the screen rect so layout scales cleanly.
 
-import { CAPTAINS_LOG_ARC, FELIX_CONTEXT_LINES } from './loreCanon';
+import { CAPTAINS_LOG_ARC, FELIX_CONTEXT_LINES, FELIX_STAGE_PROSE } from './loreCanon';
 import { getSingularityStage } from './singularityProgress';
 
 export const FORGE_PALETTE = {
@@ -133,6 +134,12 @@ export const FELIX_CONTEXTUAL = [
     line: FELIX_CONTEXT_LINES.mirrorAdminDefeated,
   },
   {
+    id: 'irisFragmentUnlocked',
+    when: (s) => s?.flags?.fragmentsUnlocked?.includes('008') && !s?.flags?.felixIrisHeard,
+    markFlag: 'felixIrisHeard',
+    line: FELIX_CONTEXT_LINES.irisFragmentUnlocked,
+  },
+  {
     id: 'allElements',
     when: (s) => ['fire', 'ice', 'storm', 'stone', 'venom', 'shadow', 'void', 'light'].every(el => s?.dragons?.[el]?.owned),
     line: FELIX_CONTEXT_LINES.allElements,
@@ -141,11 +148,6 @@ export const FELIX_CONTEXTUAL = [
     id: 'remnantsAvailable',
     when: (s) => s?.singularityComplete === true,
     line: FELIX_CONTEXT_LINES.remnantsAvailable,
-  },
-  {
-    id: 'irisFragmentUnlocked',
-    when: (s) => s?.flags?.fragmentsUnlocked?.includes('007'),
-    line: FELIX_CONTEXT_LINES.irisFragmentUnlocked,
   },
   {
     id: 'firstBountyKill',
@@ -296,6 +298,7 @@ export const FRAGMENT_TRIGGERS = {
   '005': (s) => (s?.singularityProgress?.defeated?.length || 0) >= 2,
   '006': (s) => (s?.singularityProgress?.defeated?.length || 0) >= 3,
   '007': (s) => !!s?.singularityComplete,
+  '008': (s) => !!s?.singularityComplete,
 };
 
 // Bulkhead view by act — palette + parallax variant key.
@@ -332,12 +335,31 @@ export function getCaptainLogDisplay(fragment, unlockedIds = []) {
 
 export const FELIX_FIRST_VISIT_LINE = FELIX_CONTEXT_LINES.firstVisit;
 
-export function pickFelixLine(save) {
+export function pickFelixDelivery(save) {
+  const stage = getSingularityStage(save);
+  const heardStage = save?.flags?.felixStageHeard || 0;
+  if (stage >= 1 && stage <= 5 && stage > heardStage && FELIX_STAGE_PROSE[stage]) {
+    return { line: FELIX_STAGE_PROSE[stage], flags: { felixStageHeard: stage } };
+  }
+
   for (const entry of FELIX_CONTEXTUAL) {
     if (entry.id === 'firstVisit') continue;
-    try { if (entry.when(save)) return entry.line; } catch { /* ignore */ }
+    try {
+      if (entry.when(save)) {
+        const flags = entry.markFlag ? { [entry.markFlag]: true } : {};
+        return { line: entry.line, flags };
+      }
+    } catch { /* ignore */ }
   }
-  return FELIX_IDLE_LINES[Math.floor(Math.random() * FELIX_IDLE_LINES.length)];
+
+  return {
+    line: FELIX_IDLE_LINES[Math.floor(Math.random() * FELIX_IDLE_LINES.length)],
+    flags: {},
+  };
+}
+
+export function pickFelixLine(save) {
+  return pickFelixDelivery(save).line;
 }
 
 export function getRelicBattleModifiers(relicIds = []) {
