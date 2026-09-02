@@ -20,7 +20,7 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
   // Every dragon is now authored as a single detailed pose (per-stage), not a
   // 3×4 animation sheet — the frame tiler would slice the one dragon into
   // fragments (renders as a blank/garbled box). Draw the whole image instead.
-  const singleFrame = /\/dragons\/[a-z]+_stage[1-4]\.png/.test(String(spriteSheet));
+  const singleFrame = /\/dragons\/[a-z]+_stage[1-4]\.(png|webp)/.test(String(spriteSheet));
 
   // Load sprite sheet image
   useEffect(() => {

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Convert public/assets PNG sprites to same-dimension WebP (~8× smaller)."""
+"""Convert public/assets PNG sprites to same-dimension WebP (~8× smaller).
+
+Pair this with the assetUrl PNG→WebP rewrite in src/utils.js. After conversion,
+delete the PNGs from the cart (`git rm public/assets/**/*.png`) so Pages only
+serves the compressed files. Quality 78 keeps silhouette edges; do not resize.
+"""
 from pathlib import Path
 from PIL import Image
 

@@ -9,8 +9,9 @@ export function wait(ms) {
 // Resolve asset paths with Vite's base URL for production deployment
 const BASE = import.meta.env.BASE_URL || '/';
 export function assetUrl(path) {
-  // If path already starts with the base, return as-is
-  if (path.startsWith(BASE)) return path;
-  // Strip leading slash and prepend base
-  return BASE + path.replace(/^\//, '');
+  let resolved = path;
+  if (!resolved.startsWith(BASE)) {
+    resolved = BASE + resolved.replace(/^\//, '');
+  }
+  return resolved.replace(/\.png$/i, '.webp');
 }
