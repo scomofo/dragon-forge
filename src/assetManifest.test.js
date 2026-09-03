@@ -20,6 +20,9 @@ function collectAssetUrls() {
   for (const dragon of Object.values(dragons)) {
     urls.add(dragon.spriteSheet);
     Object.values(dragon.stageSprites || {}).forEach((url) => urls.add(url));
+    if (dragon.battleSheet && existsSync(publicPath(dragon.battleSheet))) {
+      urls.add(dragon.battleSheet);
+    }
   }
   Object.values(eggSheets).forEach((url) => urls.add(url));
   for (const npc of Object.values(npcs)) {
@@ -48,6 +51,11 @@ function collectAssetUrls() {
 describe('runtime asset manifest', () => {
   it('uses the dedicated shadow stage one sprite', () => {
     expect(dragons.shadow.stageSprites[1]).toContain('/assets/dragons/shadow_stage1.webp');
+  });
+
+  it('declares P1 battle sheets for fire and ice', () => {
+    expect(dragons.fire.battleSheet).toMatch(/fire_stage3_battle\.webp$/);
+    expect(dragons.ice.battleSheet).toMatch(/ice_stage3_battle\.webp$/);
   });
 
   it('rewrites painted sprites to webp', () => {
