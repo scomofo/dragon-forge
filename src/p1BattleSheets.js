@@ -6,4 +6,5 @@ export const P1_BATTLE_SHEETS = {
   fire: assetUrl('/assets/dragons/fire_stage3_battle.png'),
   ice: assetUrl('/assets/dragons/ice_stage3_battle.png'),
   storm: assetUrl('/assets/dragons/storm_stage3_battle.png'),
+  stone: assetUrl('/assets/dragons/stone_stage3_battle.png'),
 };
