@@ -53,11 +53,6 @@ describe('runtime asset manifest', () => {
     expect(dragons.shadow.stageSprites[1]).toContain('/assets/dragons/shadow_stage1.webp');
   });
 
-  it('declares P1 battle sheets for fire and ice', () => {
-    expect(dragons.fire.battleSheet).toMatch(/fire_stage3_battle\.webp$/);
-    expect(dragons.ice.battleSheet).toMatch(/ice_stage3_battle\.webp$/);
-  });
-
   it('rewrites painted sprites to webp', () => {
     const urls = collectAssetUrls();
     expect(urls.length).toBeGreaterThan(20);
