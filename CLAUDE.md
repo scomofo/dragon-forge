@@ -1,16 +1,16 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with this repository.
 
 ## Project Overview
 
-**Dragon Forge** — a dragon-collecting/fusion/battle game shipped in two parallel implementations:
+**Dragon Forge** — a dragon-collecting/fusion/battle game. **The 1.0 cartridge is the browser build.** See `docs/architecture/adr-0011-browser-is-the-cartridge.md`.
 
-1. **Browser build (`src/`, `index.html`, `vite.config.js`)** — the live React 18 + Vite design lab. This is what is currently deployed (`base: '/dragon-forge/'`). Treat this as the source of truth for game systems, balance, and content.
-2. **Godot runtime (`dragon-forge-godot/`)** — Godot 4.6 production spine being grown into the longer-term RPG overworld + authored battle scenes. It re-implements the same simulation in GDScript and reuses art from the browser build.
+1. **Browser build (`src/`, `index.html`, `vite.config.js`)** — React 18 + Vite. Deployed at `base: '/dragon-forge/'`. Source of truth for systems, balance, content, art law, and music identity. This is what we ship.
+2. **Godot runtime (`dragon-forge-godot/`)** — Godot 4.6 **2.0 research slice** (overworld prototype). Frozen for new gameplay systems. Ports flow browser → Godot, never the reverse, until a future ADR promotes it.
 3. **`dragon-forge-reborn/`** — built artifacts only (no source); ignore unless explicitly working on it.
 
-The browser game is feature-complete and deployed; outstanding work is mostly art generation (see `TODO.md`).
+Outstanding work is the SNES-AAA quality pass in priority order (`design/gdd/snes-aaa-roadmap.md`): identity lock (P0, landed) → battle frames (P1) → twelve tracks (P2) → four zones (P3) → boss scripts (P4) → roster growth (P5). Do not add engines or species before P1 has real frames. Art rejects live in `design/gdd/art-bible.md` and `src/artBible.js`.
 
 ## Browser build (`src/`)
 
@@ -38,7 +38,7 @@ Engine vs. presentation separation:
 - `*Screen.jsx` files are React shells that compose engines + sprites + VFX.
 - `battlePresentation.js` separates what the battle looks like (camera, timing) from what it does (`battleEngine.js`).
 
-Content/data modules (no logic, just tables): `gameData`, `forgeData`, `shopItems`, `singularityBosses`, `loreCanon`, `felixDialogue`, `journalMilestones`, `sprites`. New content usually means editing these, not the engines.
+Content/data modules (no logic, just tables): `gameData`, `forgeData`, `shopItems`, `singularityBosses`, `loreCanon`, `felixDialogue`, `journalMilestones`, `sprites`, `artBible`, `worldZones`, `bossPatterns`. New content usually means editing these, not the engines.
 
 The Singularity is the endgame arc and has its own progression file (`singularityProgress.js`) plus a corruption-stage CSS class applied at the root (`corruption-stage-N`). Stage drives visual filters and music.
 
@@ -48,33 +48,25 @@ CSS is split into per-screen modules under `src/styles/` (mentioned in TODO).
 
 ## Godot runtime (`dragon-forge-godot/`)
 
-Godot 4.6 project. Not driven by npm — launch with the local Godot binary:
+Godot 4.6 project. Frozen for new gameplay systems (ADR-0011). Launch with the local Godot binary only when prototyping the future overworld:
 
 ```powershell
 .\run-godot.ps1
-# or
-& 'C:\Users\ScottMorley\Downloads\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe' --path 'C:\dev\dragon-forge\dragon-forge-godot'
-```
-
-Headless smoke test:
-```powershell
-& '...\Godot_v4.6.3-stable_win64.exe' --headless --path '...\dragon-forge-godot' --script res://scripts/tests/sim_smoke.gd
 ```
 
 Layout:
-- `scripts/sim/` — pure simulation modules (dragon data, combat rules, BattleEngine, DragonProgression, TechniqueData, etc.). The GDScript counterpart to `src/*Engine.js`. No scene state.
-- `scripts/world/` — one-zone overworld slice: `world_screen.gd` (procedural 2D map builder, screen controller), `player_dragon.gd` (CharacterBody2D walk/fly), `encounter_zone.gd` (Area2D trigger), `boss_gate.gd` (gated StaticBody2D). Entry point for the Godot build's gameplay differentiator.
-- `scripts/screens/` — UI screen controllers (hatchery, battle, fusion, shop, etc.), each `extends Control` and used by `scripts/main.gd`'s screen router.
-- `scripts/components/` — reusable UI nodes (DragonSpriteComponent, etc.).
-- `scripts/tests/` — headless smoke tests (`sim_smoke.gd`).
-- `scenes/main.tscn` is the entry; `scripts/main.gd` is the top-level screen router (analogous to `App.jsx`). `scenes/world/world.tscn` is the overworld entry.
+- `scripts/sim/` — pure simulation modules. GDScript counterpart to `src/*Engine.js`.
+- `scripts/world/` — 20×10 two-zone slice. Do not add content here that `src/worldZones.js` does not already name.
+- `scripts/screens/` — UI screen controllers.
+- `scripts/components/` — reusable UI nodes.
+- `scripts/tests/` — headless smoke tests.
 
 When porting a system from web → Godot: data/rules go into `scripts/sim/` as a stateless module; screen controllers go into `scripts/screens/`; world-specific nodes go into `scripts/world/`.
 
 ## Cross-build notes
 
-- Art is tracked per-build: **`public/assets/` is the source of truth for the browser build** — Vite serves `public/` at the deploy base, so anything referenced via `assetUrl('/assets/...')` MUST exist here or it 404s in production. `dragon-forge-godot/assets/` is the Godot copy, kept as its own tracked tree because Godot's `.import` UID sidecars must travel with it. The repo-root **`assets/` master is no longer tracked** (gitignored); art generators may write there as scratch, but new web art must be placed in `public/assets/` to ship. When a sprite is used by both builds, add it to `public/assets/` and `dragon-forge-godot/assets/`.
-- `handoff/` contains art briefs and reference material for outstanding generation work — see `TODO.md` "Needs Art Generation".
+- Art is tracked per-build: **`public/assets/` is the source of truth for the browser build**. New web art must be placed in `public/assets/` to ship and must pass `design/gdd/art-bible.md`.
+- `handoff/` contains art briefs. P1 work starts there only if the brief names a body plan from `src/artBible.js`.
 - `docs/superpowers/` is workflow scaffolding, not game code.
 
 ## Platform

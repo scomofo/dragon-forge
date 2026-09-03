@@ -1,4 +1,7 @@
 import { assetUrl } from './utils';
+
+// Historical 3×4 sheet math. Live stage portraits are single painted frames
+// (see ACTOR_CONTRACT). Do not slice *_stage[1-4] images with these numbers.
 export const DRAGON_SHEET = {
   cols: 3,
   rows: 4,
@@ -7,6 +10,11 @@ export const DRAGON_SHEET = {
   totalFrames: 12,
   lungeFrame: 3,
   frameDuration: 200,
+};
+
+export const ACTOR_CONTRACT = {
+  stagePortraitsAreSingleFrame: true,
+  battleSetWhenShipped: { idle: 4, attack: 6, hurt: 2, faint: 3 },
 };
 
 export const STAGE_SCALES = {
@@ -21,19 +29,22 @@ export const DRAGON_DISPLAY = {
   height: 250,
 };
 
-// === VFX PROJECTILE SHEETS ===
-// Each vfxKey maps to an animated 4-frame projectile strip (1024x256, four
-// 256x256 frames laid out horizontally: launch -> travel -> peak -> impact).
-// VfxOverlay plays the strip while translating it from attacker to target,
-// stepping frames as it flies and holding the impact frame on contact.
-//
-// Art lives in public/assets/vfx/vfx_<move>.png. Placeholder strips are baked
-// by tools/asset_gen/make_vfx_strips.py; high-fidelity hand-art from
-// tools/asset_gen/gen_vfx_sheets.sh (fal pipeline) drops in over the same
-// filenames. Strips face right; VfxOverlay mirrors them for right-to-left flight.
 const strip = (move, frames = 4) => ({
   strip: { src: assetUrl(`/assets/vfx/vfx_${move}.png`), frames },
 });
+
+// Signature keys that still share another move's strip. P1 clears this map.
+export const VFX_PLACEHOLDERS = {
+  HEARTFORGE: 'flame_wall',
+  ABSOLUTE_ZERO: 'frost_bite',
+  OVERCLOCK: 'lightning_strike',
+  BASTION: 'rock_slide',
+  HEMOTOXIN: 'toxic_cloud',
+  PHASE_STRIKE: 'shadow_strike',
+  SIPHON_RIFT: 'void_rift',
+  RESTORATION: 'solar_flare',
+  RECOMPILE: 'void_rift',
+};
 
 export const VFX_FRAMES = {
   MAGMA_BREATH:     strip('magma_breath'),
@@ -51,6 +62,15 @@ export const VFX_FRAMES = {
   VOID_RIFT:        strip('void_rift'),
   RADIANT_BEAM:     strip('radiant_beam'),
   SOLAR_FLARE:      strip('solar_flare'),
-  NULL_REFLECT: null, // CSS-only reflect shield effect
-  BASIC_ATTACK: null, // CSS-only melee slash, no projectile
+  HEARTFORGE:       strip('flame_wall'),
+  ABSOLUTE_ZERO:    strip('frost_bite'),
+  OVERCLOCK:        strip('lightning_strike'),
+  BASTION:          strip('rock_slide'),
+  HEMOTOXIN:        strip('toxic_cloud'),
+  PHASE_STRIKE:     strip('shadow_strike'),
+  SIPHON_RIFT:      strip('void_rift'),
+  RESTORATION:      strip('solar_flare'),
+  RECOMPILE:        strip('void_rift'),
+  NULL_REFLECT: null,
+  BASIC_ATTACK: null,
 };
