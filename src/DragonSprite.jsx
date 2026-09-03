@@ -1,14 +1,23 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { DRAGON_SHEET, STAGE_SCALES, DRAGON_DISPLAY } from './sprites';
+import BattleSetSprite from './BattleSetSprite';
+import { resolveBattleSprite } from './battleSets';
 
-const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, flipX = false, forcedFrame = null, className = '', size = null, shiny = false, element = '' }, ref) {
+const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, flipX = false, forcedFrame = null, className = '', size = null, shiny = false, element = '', actorId = null, pose = 'idle' }, ref) {
   const canvasRef = useRef(null);
+  const sheetCanvasRef = useRef(null);
   const imageRef = useRef(null);
   const [frame, setFrame] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  // P1 battle-set pipeline: when this actor's sheets ship, the strip player
+  // takes over and the painted portrait below goes quiet. Until then this
+  // resolves to `portrait` and nothing changes.
+  const battleSprite = actorId ? resolveBattleSprite(actorId, pose) : { kind: 'portrait' };
+  const sheetLive = battleSprite.kind === 'sheet';
+
   useImperativeHandle(ref, () => ({
-    getCanvas: () => canvasRef.current,
+    getCanvas: () => (sheetLive ? sheetCanvasRef.current : canvasRef.current),
   }));
 
   const actualFramesRef = useRef(DRAGON_SHEET.totalFrames);
@@ -24,6 +33,7 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
 
   // Load sprite sheet image
   useEffect(() => {
+    if (sheetLive) return;
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -51,10 +61,11 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
       setImageLoaded(true);
     };
     img.src = spriteSheet;
-  }, [spriteSheet]);
+  }, [spriteSheet, sheetLive]);
 
   // Animate frames
   useEffect(() => {
+    if (sheetLive) return;
     if (singleFrame) {
       setFrame(0);
       return;
@@ -70,7 +81,7 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
     }, DRAGON_SHEET.frameDuration);
 
     return () => clearInterval(interval);
-  }, [forcedFrame, singleFrame]);
+  }, [forcedFrame, singleFrame, sheetLive]);
 
   // Draw frame to canvas with chroma key
   const drawFrame = useCallback(() => {
@@ -177,6 +188,22 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
   // (violet crystal / silver-gold), so the legacy .void-sprite hue-rotate(180deg)
   // filter — which was a tint hack — would wreck them. It's retired.
   const useVoidFilter = false;
+
+  if (sheetLive) {
+    return (
+      <BattleSetSprite
+        ref={sheetCanvasRef}
+        src={battleSprite.src}
+        cell={battleSprite.cell}
+        frames={battleSprite.frames}
+        pose={battleSprite.pose}
+        flipX={flipX}
+        width={width}
+        height={height}
+        className={`dragon-sprite stage-${stage} ${className} ${shiny ? 'shiny-sprite' : ''}`}
+      />
+    );
+  }
 
   return (
     <canvas

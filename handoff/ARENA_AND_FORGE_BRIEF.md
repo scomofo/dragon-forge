@@ -12,7 +12,7 @@
 | stone arena | ⚠️ 352×150 placeholder | — | `assets/arenas/stone.png` |
 | storm arena | ⚠️ 352×150 placeholder | — | `assets/arenas/storm.png` |
 | venom arena | ⚠️ 352×150 placeholder | — | `assets/arenas/venom.png` |
-| npc_firewall_sentinel | ⚠️ 352×150 placeholder | Stone dungeon, 404 terminal, blue electric arcs | `assets/arenas/npc_firewall_sentinel.png` |
+| npc_firewall_sentinel | ⚠️ 352×150 placeholder | Stone dungeon, blank terminal, blue electric arcs | `assets/arenas/npc_firewall_sentinel.png` |
 | npc_bit_wraith | ⚠️ 352×150 placeholder | Matrix void, green cascading code, DELete cubes | `assets/arenas/npc_bit_wraith.png` |
 | npc_glitch_hydra | ⚠️ 352×150 placeholder | Corrupted stone temple, venom-green glow | `assets/arenas/npc_glitch_hydra.png` |
 | npc_recursive_golem | ⚠️ 352×150 placeholder | Stone dungeon with circuit floor and lightning | `assets/arenas/npc_recursive_golem.png` |
@@ -63,9 +63,9 @@
 ## NPC Arenas (preserve the theme of the current placeholder)
 
 ### Firewall Sentinel — `assets/arenas/npc_firewall_sentinel.png`
-*Theme: Stone dungeon hallway, 404 error terminal, electric blue arcs — the firewall's last checkpoint*
+*Theme: Stone dungeon hallway, blank terminal, electric blue arcs — the firewall's last checkpoint*
 
-> 1024×1024 pixel art battle arena. A stone dungeon corridor, the last checkpoint of a crashed firewall. The floor is rough flagstone with electric-blue circuit traces glowing in the cracks. The rear wall has a large embedded terminal screen displaying "404 ERROR" in blocky pixel font, framed by flickering blue electricity. Stone archway columns line the sides with blue energy conduits running up them. Particle sparks fall from the ceiling where the firewall is burning out. Colour palette: #181818 (dungeon black), #2a2a2a (stone grey), #1a2a40 (deep blue), #3366ff (arc blue), #88aaff (spark blue), #ffffff (electric white). 16-bit pixel art style. No characters, no text except "404 ERROR" on the terminal screen.
+> 1024×1024 pixel art battle arena. A stone dungeon corridor, the last checkpoint of a crashed firewall. The floor is rough flagstone with electric-blue circuit traces glowing in the cracks. The rear wall has a large embedded terminal screen, dark and blank, framed by flickering blue electricity. No text on the screen. Stone archway columns line the sides with blue energy conduits running up them. Particle sparks fall from the ceiling where the firewall is burning out. Colour palette: #181818 (dungeon black), #2a2a2a (stone grey), #1a2a40 (deep blue), #3366ff (arc blue), #88aaff (spark blue), #ffffff (electric white). 16-bit pixel art style. No characters, no text.
 
 ### Bit Wraith — `assets/arenas/npc_bit_wraith.png`
 *Theme: Matrix void — digital cyberspace with cascading green code rain, floating corrupted cubes*

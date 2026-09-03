@@ -49,6 +49,9 @@ describe('sound effect schema', () => {
 
   test('resolves music tracks through the Vite base path', () => {
     expect(getMusicTrackUrl('title')).toBe('/dragon-forge/assets/music/theme.mp3');
-    expect(getMusicTrackUrl('wandering')).toBe('/dragon-forge/assets/music/music_hatchery.mp3');
+    expect(getMusicTrackUrl('hatchery')).toBe('/dragon-forge/assets/music/music_hatchery.mp3');
+    // Procedural beds have no mp3 — they resolve to null and play via WebAudio.
+    expect(getMusicTrackUrl('wandering')).toBe(null);
+    expect(getMusicTrackUrl('mapWander')).toBe(null);
   });
 });

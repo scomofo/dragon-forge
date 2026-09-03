@@ -2,9 +2,11 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { dragons, eggSheets, npcs } from './gameData';
+import { dragons, eggSheets, moves, npcs } from './gameData';
 import { SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN, CORRUPTION_REMNANTS } from './singularityBosses';
-import { VFX_FRAMES } from './sprites';
+import { SIGNATURE_VFX, VFX_FRAMES } from './sprites';
+import { DRAGON_BATTLE_SETS, NPC_BATTLE_SETS } from './artBible';
+import { BATTLE_POSES, getBattleSetSheetUrl, isBattleSetSheetLive } from './battleSets';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -42,6 +44,12 @@ function collectAssetUrls() {
   for (const frame of Object.values(VFX_FRAMES)) {
     if (frame?.strip?.src) urls.add(frame.strip.src);
   }
+  // Shipped battle-set sheets must resolve on disk. Nothing is shipped yet,
+  // so this is a no-op today and a gate the moment the first sheets land.
+  for (const id of [...Object.keys(DRAGON_BATTLE_SETS), ...Object.keys(NPC_BATTLE_SETS)]) {
+    if (!isBattleSetSheetLive(id)) continue;
+    for (const pose of BATTLE_POSES) urls.add(getBattleSetSheetUrl(id, pose));
+  }
   return [...urls].filter(Boolean);
 }
 
@@ -69,6 +77,35 @@ describe('runtime asset manifest', () => {
 
   it('references files that exist under public assets', () => {
     const missing = collectAssetUrls().filter((url) => !existsSync(publicPath(url)));
+    expect(missing).toEqual([]);
+  });
+
+  it('gives every signature move a dedicated non-shared VFX identity', () => {
+    const signatures = Object.values(moves).filter((move) => move.isSignature);
+    expect(signatures.length).toBeGreaterThanOrEqual(9);
+    const seenStrips = new Set();
+    for (const move of signatures) {
+      const entry = VFX_FRAMES[move.vfxKey];
+      expect(entry, move.name).toBeTruthy();
+      if (entry?.strip?.src) {
+        expect(seenStrips.has(entry.strip.src), move.name).toBe(false);
+        seenStrips.add(entry.strip.src);
+      } else {
+        expect(entry?.signature, move.name).toBeTruthy();
+        expect(SIGNATURE_VFX[move.vfxKey], move.name).toBeTruthy();
+      }
+    }
+  });
+
+  it('gives every boss phase resolvable sprite files', () => {
+    const missing = [];
+    for (const boss of [FINAL_BOSS, MIRROR_ADMIN, ...CORRUPTION_REMNANTS]) {
+      for (const phase of boss.phases || []) {
+        for (const url of [phase.idleSprite, phase.attackSprite]) {
+          if (url && !existsSync(publicPath(url))) missing.push(`${boss.id} ${phase.name} ${url}`);
+        }
+      }
+    }
     expect(missing).toEqual([]);
   });
 });

@@ -33,18 +33,29 @@ const strip = (move, frames = 4) => ({
   strip: { src: assetUrl(`/assets/vfx/vfx_${move}.png`), frames },
 });
 
-// Signature keys that still share another move's strip. P1 clears this map.
-export const VFX_PLACEHOLDERS = {
-  HEARTFORGE: 'flame_wall',
-  ABSOLUTE_ZERO: 'frost_bite',
-  OVERCLOCK: 'lightning_strike',
-  BASTION: 'rock_slide',
-  HEMOTOXIN: 'toxic_cloud',
-  PHASE_STRIKE: 'shadow_strike',
-  SIPHON_RIFT: 'void_rift',
-  RESTORATION: 'solar_flare',
-  RECOMPILE: 'void_rift',
+// P1.2 — every signature ships its own authored VFX identity. These are
+// procedural contracts (palette + motif + motion) so no two signatures share
+// another move's strip. When 1024×256 signature strips land in
+// public/assets/vfx/, add `strip:` alongside `signature:` — the overlay
+// prefers the strip and keeps the procedural look as fallback.
+const signature = (label, palette, motif, motion) => ({
+  signature: { label, palette, motif, motion },
+});
+
+export const SIGNATURE_VFX = {
+  HEARTFORGE:   signature('Heartforge',   ['#ff5a1f', '#ffaa00', '#7a1e00'], 'anvil-ring',         'rise'),
+  ABSOLUTE_ZERO: signature('Absolute Zero', ['#ccf4ff', '#44aaff', '#0a2a4a'], 'snowflake-collapse', 'implode'),
+  OVERCLOCK:    signature('Overclock',    ['#e8dcff', '#7b5fff', '#1a1040'], 'gear-spark',          'zigzag'),
+  BASTION:      signature('Bastion',      ['#e8d5a8', '#aa8844', '#3a2a18'], 'wall-brick',          'fortify'),
+  HEMOTOXIN:    signature('Hemotoxin',    ['#baff5c', '#33cc44', '#0a2a10'], 'fang-drip',           'drip'),
+  PHASE_STRIKE: signature('Phase Strike', ['#d5a8ff', '#6633aa', '#08000f'], 'rift-slash',          'blink'),
+  SIPHON_RIFT:  signature('Siphon Rift',  ['#66ffff', '#0099aa', '#001a20'], 'vortex-drain',        'spiral'),
+  RESTORATION:  signature('Restoration',  ['#fff6cc', '#FFD966', '#7a5c00'], 'pane-bloom',          'bloom'),
+  RECOMPILE:    signature('Recompile',    ['#f0e0ff', '#c8a8e0', '#2a1a40'], 'diamond-weave',       'weave'),
 };
+
+// P1.2 clears this map: no signature shares another move's strip.
+export const VFX_PLACEHOLDERS = {};
 
 export const VFX_FRAMES = {
   MAGMA_BREATH:     strip('magma_breath'),
@@ -62,15 +73,31 @@ export const VFX_FRAMES = {
   VOID_RIFT:        strip('void_rift'),
   RADIANT_BEAM:     strip('radiant_beam'),
   SOLAR_FLARE:      strip('solar_flare'),
-  HEARTFORGE:       strip('flame_wall'),
-  ABSOLUTE_ZERO:    strip('frost_bite'),
-  OVERCLOCK:        strip('lightning_strike'),
-  BASTION:          strip('rock_slide'),
-  HEMOTOXIN:        strip('toxic_cloud'),
-  PHASE_STRIKE:     strip('shadow_strike'),
-  SIPHON_RIFT:      strip('void_rift'),
-  RESTORATION:      strip('solar_flare'),
-  RECOMPILE:        strip('void_rift'),
+  HEARTFORGE:       { ...SIGNATURE_VFX.HEARTFORGE },
+  ABSOLUTE_ZERO:    { ...SIGNATURE_VFX.ABSOLUTE_ZERO },
+  OVERCLOCK:        { ...SIGNATURE_VFX.OVERCLOCK },
+  BASTION:          { ...SIGNATURE_VFX.BASTION },
+  HEMOTOXIN:        { ...SIGNATURE_VFX.HEMOTOXIN },
+  PHASE_STRIKE:     { ...SIGNATURE_VFX.PHASE_STRIKE },
+  SIPHON_RIFT:      { ...SIGNATURE_VFX.SIPHON_RIFT },
+  RESTORATION:      { ...SIGNATURE_VFX.RESTORATION },
+  RECOMPILE:        { ...SIGNATURE_VFX.RECOMPILE },
   NULL_REFLECT: null,
   BASIC_ATTACK: null,
 };
+
+export function isSignatureVfxKey(key) {
+  return Object.prototype.hasOwnProperty.call(SIGNATURE_VFX, key);
+}
+
+export function getVfxKind(key) {
+  const entry = VFX_FRAMES[key];
+  if (!entry) return 'legacy';
+  if (entry.strip) return 'strip';
+  if (entry.signature) return 'signature';
+  return 'legacy';
+}
+
+export function listSignatureVfxKeys() {
+  return Object.keys(SIGNATURE_VFX);
+}

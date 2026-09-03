@@ -19,6 +19,7 @@ import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
 import VfxOverlay from './VfxOverlay';
 import { getBattlePresentationProfile, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, shouldAnimateBattleEvent } from './battlePresentation';
+import { resolveBattlePose } from './battleSets';
 import useGamepadController from './useGamepadController';
 import {
   screenShake, hitFlash, criticalHit, shatterKO,
@@ -1231,6 +1232,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const isResolvingTurn = state.phase !== PHASES.PLAYER_TURN;
   const battleEdge = getBattleEdge(playerHpPercent, npcHpPercent, playerHpState, npcHpState);
   const battleRank = getBattleRank(state.turnCount + 1, state.maxDamageDealt, playerHpPercent);
+  // P1 battle-set poses: derived from live sprite classes so shipped sheets
+  // animate (idle/attack/hurt/faint) while portraits render unchanged.
+  const playerPose = resolveBattlePose({ spriteClass: state.playerSpriteClass, fainted: state.playerHp <= 0 });
+  const npcPose = resolveBattlePose({ spriteClass: state.npcSpriteClass, isAttacking: state.npcAttacking, fainted: state.npcHp <= 0 });
 
   useEffect(() => {
     setControllerFocusIndex((index) => Math.min(index, controllerCommandCount - 1));
@@ -1279,6 +1284,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     <div
       ref={battleContainerRef}
       className={`battle-screen ${isResolvingTurn ? 'resolving' : 'awaiting'} player-${playerHpState} npc-${npcHpState}`}
+      data-player-pose={playerPose}
+      data-npc-pose={npcPose}
       style={{
         position: 'relative', width: '100%', height: '100%', overflow: 'hidden',
         '--arena-npc-glow': npcColor.glow,
@@ -1419,6 +1426,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             flipX={npc.flipSprite}
             smooth={battleConfig?.boss?.bespokeArt}
             style={{ filter: state.npc.spriteFilter || 'none' }}
+            actorId={npc.id || null}
+            pose={npcPose}
           />
           {state.damageNumbers
             .filter((d) => d.target === 'npc')
@@ -1458,6 +1467,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             forcedFrame={state.playerForcedFrame}
             className={state.playerSpriteClass}
             element={dragon.element}
+            actorId={dragonId}
+            pose={playerPose}
           />
           {state.damageNumbers
             .filter((d) => d.target === 'player')

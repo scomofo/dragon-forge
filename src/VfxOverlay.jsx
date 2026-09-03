@@ -19,6 +19,9 @@ export default function VfxOverlay({ vfxKey, element, direction, onComplete, tar
   if (config?.strip) {
     return <StripVfx config={config} targetSide={targetSide} onComplete={onComplete} />;
   }
+  if (config?.signature) {
+    return <SignatureVfx config={config} targetSide={targetSide} onComplete={onComplete} />;
+  }
   return (
     <LegacyVfx
       vfxKey={vfxKey}
@@ -105,6 +108,101 @@ function StripVfx({ config, targetSide, onComplete }) {
         height: `${STRIP_DISPLAY}px`,
       }}
     />
+  );
+}
+
+// === Dedicated signature VFX (P1.2) ===
+// Procedural contract: each signature owns a palette + motif + motion so no
+// two signatures read the same. When 1024×256 signature strips ship, they
+// attach as `strip` on the same entry and take over automatically.
+const SIGNATURE_GLYPHS = {
+  'anvil-ring': '◉',
+  'snowflake-collapse': '❄',
+  'gear-spark': '⚙',
+  'wall-brick': '▣',
+  'fang-drip': '☠',
+  'rift-slash': '✕',
+  'vortex-drain': '🌀',
+  'pane-bloom': '☀',
+  'diamond-weave': '✦',
+};
+
+function SignatureVfx({ config, targetSide, onComplete }) {
+  const ref = useRef(null);
+  const doneRef = useRef(false);
+  const sig = config.signature;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) {
+      onComplete();
+      return undefined;
+    }
+    const toLeft = targetSide === 'left';
+    const startX = toLeft ? FAR_EDGE : NEAR_EDGE;
+    const endX = toLeft ? NEAR_EDGE : FAR_EDGE;
+    const total = TRAVEL_MS + IMPACT_MS;
+    const travelEnd = TRAVEL_MS / total;
+    let raf = 0;
+    let startTs = null;
+
+    const tick = (ts) => {
+      if (startTs == null) startTs = ts;
+      const t = Math.min(1, (ts - startTs) / total);
+      let x;
+      let scale;
+      let opacity;
+      if (t < travelEnd) {
+        const tt = t / travelEnd;
+        x = startX + (endX - startX) * tt;
+        scale = 0.7 + 0.35 * tt;
+        opacity = Math.min(1, tt * 5);
+      } else {
+        const tt = (t - travelEnd) / (1 - travelEnd);
+        x = endX;
+        scale = 1.1 + 0.4 * Math.sin(Math.min(1, tt) * Math.PI);
+        opacity = 1 - Math.max(0, (tt - 0.45) / 0.55);
+      }
+      el.style.left = `${x}%`;
+      el.style.opacity = String(opacity);
+      el.style.transform = `translate(-50%, -50%) scale(${scale}, ${scale})`;
+      if (t >= 1) {
+        if (!doneRef.current) {
+          doneRef.current = true;
+          onComplete();
+        }
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [targetSide, onComplete]);
+
+  const [hi, mid, deep] = sig.palette;
+  return (
+    <div
+      ref={ref}
+      className={`vfx-strip vfx-signature vfx-signature-${sig.motion}`}
+      role="presentation"
+      aria-label={sig.label}
+      title={sig.label}
+      style={{
+        background: `radial-gradient(circle, ${hi} 0%, ${mid} 55%, transparent 78%)`,
+        boxShadow: `0 0 28px ${mid}, 0 0 64px ${deep}`,
+        width: `${STRIP_DISPLAY}px`,
+        height: `${STRIP_DISPLAY}px`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '72px',
+        color: hi,
+        textShadow: `0 0 12px ${mid}, 0 2px 0 ${deep}`,
+      }}
+    >
+      {SIGNATURE_GLYPHS[sig.motif] || '✦'}
+    </div>
   );
 }
 
