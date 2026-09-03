@@ -20,6 +20,7 @@ import DamageNumber from './DamageNumber';
 import VfxOverlay from './VfxOverlay';
 import { getBattlePresentationProfile, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, shouldAnimateBattleEvent } from './battlePresentation';
 import { resolveBattlePose } from './battleSets';
+import { resolveBattleArena } from './arenas';
 import useGamepadController from './useGamepadController';
 import {
   screenShake, hitFlash, criticalHit, shatterKO,
@@ -1236,6 +1237,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   // animate (idle/attack/hurt/faint) while portraits render unchanged.
   const playerPose = resolveBattlePose({ spriteClass: state.playerSpriteClass, fainted: state.playerHp <= 0 });
   const npcPose = resolveBattlePose({ spriteClass: state.npcSpriteClass, isAttacking: state.npcAttacking, fainted: state.npcHp <= 0 });
+  // P1.1 arena registry: identical rendering today; flags expose placeholder
+  // and content-filter debt to tests and debug attributes.
+  const battleArena = resolveBattleArena({ arena: npc.arena, arenaFilter: state.npc.arenaFilter });
 
   useEffect(() => {
     setControllerFocusIndex((index) => Math.min(index, controllerCommandCount - 1));
@@ -1294,7 +1298,12 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       }}
     >
       {/* Arena background */}
-      <div className="arena" style={{ backgroundImage: `url(${npc.arena})`, filter: state.npc.arenaFilter || 'none' }} />
+      <div
+        className="arena"
+        data-arena-placeholder={battleArena.placeholder}
+        data-arena-content-filter={battleArena.contentFilter}
+        style={{ backgroundImage: `url(${battleArena.src})`, filter: battleArena.filter }}
+      />
       <div className="arena-overlay" aria-hidden="true" />
       <div className="battle-telemetry-grid" aria-hidden="true">
         <span className="telemetry-node node-a" />
