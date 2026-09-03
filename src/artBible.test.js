@@ -41,6 +41,15 @@ describe('art bible', () => {
     }
   });
 
+  it('wires Heartforge and Absolute Zero to their authored strips', () => {
+    expect(moves.heartforge.vfxKey).toBe('HEARTFORGE');
+    expect(moves.absolute_zero.vfxKey).toBe('ABSOLUTE_ZERO');
+    expect(VFX_PLACEHOLDERS).not.toHaveProperty('HEARTFORGE');
+    expect(VFX_PLACEHOLDERS).not.toHaveProperty('ABSOLUTE_ZERO');
+    expect(VFX_FRAMES.HEARTFORGE.strip.src).toMatch(/vfx_heartforge\.(png|webp)$/);
+    expect(VFX_FRAMES.ABSOLUTE_ZERO.strip.src).toMatch(/vfx_absolute_zero\.(png|webp)$/);
+  });
+
   it('bans printed-error and watermark language in actor paths', () => {
     const urls = [];
     for (const dragon of Object.values(dragons)) {
@@ -77,7 +86,7 @@ describe('boss pattern authorship', () => {
     for (const pattern of Object.values(BOSS_PATTERNS)) {
       expect(pattern.tell).toBeTruthy();
       expect(pattern.rule).toBeTruthy();
-      expect(pattern.executedByBattleEngine).toBe(false);
+      expect(pattern.executedByBattleEngine).toBe(pattern.id === 'firewall_sentinel');
     }
   });
 });
