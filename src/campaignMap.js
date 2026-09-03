@@ -1,6 +1,7 @@
 export const CAMPAIGN_NODES = [
   {
     id: 'signal-breach',
+    zoneId: 'outer_grid',
     label: 'Signal Breach',
     description: 'A corrupted firewall blinks at the edge of the matrix. Stone resists Fire — Ice or Storm fare better.',
     npcId: 'firewall_sentinel',
@@ -13,6 +14,7 @@ export const CAMPAIGN_NODES = [
   },
   {
     id: 'overflow-vent',
+    zoneId: 'outer_grid',
     label: 'Overflow Vent',
     description: 'Heat vents spit unstable packets into the forge route.',
     npcId: 'buffer_overflow',
@@ -25,6 +27,7 @@ export const CAMPAIGN_NODES = [
   },
   {
     id: 'wraith-cache',
+    zoneId: 'frozen_cache',
     label: 'Wraith Cache',
     description: 'A shadow process guards a forgotten memory cache.',
     npcId: 'bit_wraith',
@@ -37,6 +40,7 @@ export const CAMPAIGN_NODES = [
   },
   {
     id: 'crypto-lock',
+    zoneId: 'frozen_cache',
     label: 'Crypto Lock',
     description: 'Frozen ciphers seal the route toward the inner gates.',
     npcId: 'crypto_crab',
@@ -49,6 +53,7 @@ export const CAMPAIGN_NODES = [
   },
   {
     id: 'siren-loop',
+    zoneId: 'frozen_cache',
     label: 'Siren Loop',
     description: 'A venomous lure repeats through the damaged signal lanes.',
     npcId: 'phishing_siren',
@@ -61,6 +66,7 @@ export const CAMPAIGN_NODES = [
   },
   {
     id: 'hydra-spine',
+    zoneId: 'storm_spine',
     label: 'Hydra Spine',
     description: 'Storm forks crawl through a three-headed glitch spine.',
     npcId: 'glitch_hydra',
@@ -73,6 +79,7 @@ export const CAMPAIGN_NODES = [
   },
   {
     id: 'logic-core',
+    zoneId: 'storm_spine',
     label: 'Logic Core',
     description: 'An armed logic bomb pulses inside a cracked processor vault.',
     npcId: 'logic_bomb',
@@ -85,6 +92,7 @@ export const CAMPAIGN_NODES = [
   },
   {
     id: 'recursive-gate',
+    zoneId: 'admin_core',
     label: 'Recursive Gate',
     description: 'A stone recursion locks the first boss gate in place.',
     npcId: 'recursive_golem',
@@ -97,6 +105,7 @@ export const CAMPAIGN_NODES = [
   },
   {
     id: 'protocol-perch',
+    zoneId: 'admin_core',
     label: 'Protocol Perch',
     description: 'The route ends beneath a shadow protocol watching from above.',
     npcId: 'protocol_vulture',
@@ -139,4 +148,9 @@ export function getAvailableCampaignNodes(save) {
 
 export function getCampaignNodeById(nodeId) {
   return CAMPAIGN_NODES.find((node) => node.id === nodeId) || null;
+}
+
+export function getZoneIdForNode(nodeId) {
+  const node = CAMPAIGN_NODES.find((candidate) => candidate.id === nodeId);
+  return node?.zoneId || null;
 }
