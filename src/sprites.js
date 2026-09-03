@@ -1,7 +1,6 @@
 import { assetUrl } from './utils';
 
-// Historical 3×4 sheet math. Live stage portraits are single painted frames
-// (see ACTOR_CONTRACT). Do not slice *_stage[1-4] images with these numbers.
+// Historical 3×4 sheet math. Live stage portraits are single painted frames.
 export const DRAGON_SHEET = {
   cols: 3,
   rows: 4,
@@ -16,6 +15,27 @@ export const ACTOR_CONTRACT = {
   stagePortraitsAreSingleFrame: true,
   battleSetWhenShipped: { idle: 4, attack: 6, hurt: 2, faint: 3 },
 };
+
+// P1 battle actors: 15 frames × 96px in one row.
+// 0-3 idle, 4-9 attack, 10-11 hurt, 12-14 faint.
+export const BATTLE_SHEET = {
+  frameWidth: 96,
+  frameHeight: 96,
+  cols: 15,
+  rows: 1,
+  totalFrames: 15,
+  frameDuration: 140,
+  poses: {
+    idle: { start: 0, count: 4 },
+    attack: { start: 4, count: 6 },
+    hurt: { start: 10, count: 2 },
+    faint: { start: 12, count: 3 },
+  },
+};
+
+export function isBattleSheet(src) {
+  return /_battle\.(png|webp)/i.test(String(src || ''));
+}
 
 export const STAGE_SCALES = {
   1: 0.6,
@@ -33,10 +53,8 @@ const strip = (move, frames = 4) => ({
   strip: { src: assetUrl(`/assets/vfx/vfx_${move}.png`), frames },
 });
 
-// Signature keys that still share another move's strip. P1 clears this map.
+// HEARTFORGE and ABSOLUTE_ZERO have authored strips. The rest still copy pixels.
 export const VFX_PLACEHOLDERS = {
-  HEARTFORGE: 'flame_wall',
-  ABSOLUTE_ZERO: 'frost_bite',
   OVERCLOCK: 'lightning_strike',
   BASTION: 'rock_slide',
   HEMOTOXIN: 'toxic_cloud',
@@ -62,15 +80,15 @@ export const VFX_FRAMES = {
   VOID_RIFT:        strip('void_rift'),
   RADIANT_BEAM:     strip('radiant_beam'),
   SOLAR_FLARE:      strip('solar_flare'),
-  HEARTFORGE:       strip('flame_wall'),
-  ABSOLUTE_ZERO:    strip('frost_bite'),
-  OVERCLOCK:        strip('lightning_strike'),
-  BASTION:          strip('rock_slide'),
-  HEMOTOXIN:        strip('toxic_cloud'),
-  PHASE_STRIKE:     strip('shadow_strike'),
-  SIPHON_RIFT:      strip('void_rift'),
-  RESTORATION:      strip('solar_flare'),
-  RECOMPILE:        strip('void_rift'),
+  HEARTFORGE:       strip('heartforge'),
+  ABSOLUTE_ZERO:    strip('absolute_zero'),
+  OVERCLOCK:        strip('overclock'),
+  BASTION:          strip('bastion'),
+  HEMOTOXIN:        strip('hemotoxin'),
+  PHASE_STRIKE:     strip('phase_strike'),
+  SIPHON_RIFT:      strip('siphon_rift'),
+  RESTORATION:      strip('restoration'),
+  RECOMPILE:        strip('recompile'),
   NULL_REFLECT: null,
   BASIC_ATTACK: null,
 };

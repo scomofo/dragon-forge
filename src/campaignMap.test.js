@@ -6,6 +6,7 @@ import {
   getCampaignNodeStates,
   isCampaignNodeCleared,
 } from './campaignMap';
+import { getZone } from './worldZones';
 
 function saveWith(defeatedNpcs = []) {
   return {
@@ -58,5 +59,16 @@ describe('campaign map progression', () => {
 
     expect(states[CAMPAIGN_NODES[0].id]).toBe('available');
     expect(available.map((node) => node.id)).toContain(CAMPAIGN_NODES[0].id);
+  });
+});
+
+describe('zone kickers', () => {
+  test('every campaign node resolves to a sector kicker', () => {
+    for (const node of CAMPAIGN_NODES) {
+      const zone = getZone(node.zoneId);
+      expect(zone, node.id).toBeTruthy();
+      expect(zone.kicker).toMatch(/^SECTOR 0[1-4] — /);
+    }
+    expect(getZone(CAMPAIGN_NODES[0].zoneId).kicker).toBe('SECTOR 01 — OUTER GRID');
   });
 });

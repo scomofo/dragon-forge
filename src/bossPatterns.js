@@ -1,5 +1,5 @@
-// Authored encounter scripts. P4 will execute these from battleEngine.
-// Until then executedByBattleEngine is false — data + tells only.
+// Authored encounter scripts. executedByBattleEngine is false until the engine
+// actually runs the rule. Firewall Sentinel is the first live pattern.
 // Docs: design/gdd/snes-aaa-roadmap.md
 
 export const BOSS_PATTERNS = {
@@ -7,7 +7,7 @@ export const BOSS_PATTERNS = {
     id: 'firewall_sentinel',
     tell: 'Raises a packet-shield for two turns. EDGE reads BLOCKED.',
     rule: 'Incoming damage is 0 unless the hit is Phase Strike or the player Defended last turn (wait out the cycle).',
-    executedByBattleEngine: false,
+    executedByBattleEngine: true,
   },
   buffer_overflow: {
     id: 'buffer_overflow',
@@ -85,4 +85,14 @@ export const BOSS_PATTERNS = {
 
 export function getBossPattern(id) {
   return BOSS_PATTERNS[id] || null;
+}
+
+// Shield cycle is 4 turns: up on 1–2, down on 3–4, repeat.
+// BattleScreen.turnCount is 0-indexed (HUD shows turnCount + 1).
+export function isFirewallShieldUp(turnIndex = 0) {
+  return (Number(turnIndex) % 4) < 2;
+}
+
+export function isBossPatternLive(id) {
+  return getBossPattern(id)?.executedByBattleEngine === true;
 }

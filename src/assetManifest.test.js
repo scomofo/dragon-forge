@@ -20,6 +20,9 @@ function collectAssetUrls() {
   for (const dragon of Object.values(dragons)) {
     urls.add(dragon.spriteSheet);
     Object.values(dragon.stageSprites || {}).forEach((url) => urls.add(url));
+    if (dragon.battleSheet && existsSync(publicPath(dragon.battleSheet))) {
+      urls.add(dragon.battleSheet);
+    }
   }
   Object.values(eggSheets).forEach((url) => urls.add(url));
   for (const npc of Object.values(npcs)) {
