@@ -1,6 +1,7 @@
 # P1 Battle Frames
 
 > **Status**: In progress — 2026-09-02
+> **Asset specs / copy-paste prompts**: `design/gdd/p1-asset-handoff.md`
 
 ## Landed
 
@@ -25,6 +26,8 @@ Storm battle sheet matches the bible (legless S-curve). Journal portrait remains
 Stone battle sheet matches the bible (block golem, square stack). Journal portrait remains a winged sandstone western dragon — portrait-register mismatch, not a battle-register failure. Art drop keeps `stone_golem_ref.jpg`. Last faint cell is a dimmed collapse hold. Hurt-sheet frame 6 (edge-touch burst) was dropped.
 
 Binaries live in the project art drop `snes-aaa-p1/` and must be copied into `public/assets/`.
+
+Generate new cells from `design/gdd/p1-asset-handoff.md`. Identity still first. Do not spend 1min.ai Image Generator credits — Retro Diffusion is not in that dropdown.
 
 ## Remaining
 
