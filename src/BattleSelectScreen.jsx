@@ -303,6 +303,15 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                 <div className="select-card-info">
                   <div className="select-card-name" style={{ color: color.primary }}>
                     {color.icon} {npc.name}
+                    {save.bestRanks?.[npc.id] && (
+                      <span
+                        className={`node-rank-badge rank-${save.bestRanks[npc.id].toLowerCase()}`}
+                        style={{ marginLeft: 6, position: 'static' }}
+                        title={`Best battle rank: ${save.bestRanks[npc.id]}`}
+                      >
+                        {save.bestRanks[npc.id]}
+                      </span>
+                    )}
                     {npc.id === recommendedNpcId && <span style={{ fontSize: 8, color: '#ffcc00', marginLeft: 5 }}>★ REC.</span>}
                   </div>
                   <div className="select-card-stats">

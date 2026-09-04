@@ -214,12 +214,12 @@ export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey, pl
   const playerFirst = player.spd >= npc.spd;
 
   const first = playerFirst
-    ? { state: player, moveKey: playerMoveKey, label: 'player' }
+    ? { state: player, moveKey: playerMoveKey, move: options.playerMoveOverride, label: 'player' }
     : { state: npc, moveKey: npcMoveKey, label: 'npc' };
 
   const second = playerFirst
     ? { state: npc, moveKey: npcMoveKey, label: 'npc' }
-    : { state: player, moveKey: playerMoveKey, label: 'player' };
+    : { state: player, moveKey: playerMoveKey, move: options.playerMoveOverride, label: 'player' };
 
   // Glitch randomization
   if (first.state.status?.effect === 'void') {
@@ -276,6 +276,12 @@ export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey, pl
   player = { ...player, reflecting: false };
   npc = { ...npc, reflecting: false };
 
+  // stack_overflow: the option-driven ×2 SPD effect decrements at end of turn
+  // (screen tracks turnsLeft; this just clears the multiplier if it was applied).
+  if (options.stackOverflowDoubler && npc.spdDoubleTurnsLeft !== undefined) {
+    npc = { ...npc, spd: npcState.spd };
+  }
+
   // Decrement active buff durations
   player = decrementBuff(decrementBuff(player, 'atkBuff'), 'defBuff');
   npc    = decrementBuff(decrementBuff(npc,    'atkBuff'), 'defBuff');
@@ -328,7 +334,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
     return;
   }
 
-  const moveData = allMoves[actor.moveKey];
+  const moveData = actor.move || allMoves[actor.moveKey];
   const move = moveData || allMoves.basic_attack;
 
   // Reflect handler
@@ -434,6 +440,25 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
     packetBlocked = !(options.playerDefendedLastTurn || resolvedMove.ignoreDefend);
   }
 
+  // P4 — crypto_crab encryption: until you repeat the same element twice in a
+  // row, all player damage is absorbed (the crab's cipher holds).
+  if (options.cryptoEncrypted && actor.label === 'player') {
+    packetBlocked = true;
+  }
+
+  // P4 — bit_wraith pierce: after a wraith miss, its next hit ignores Defend.
+  let bitWraithPierce = false;
+  if (options.bitWraithPierce && actor.label === 'npc') {
+    bitWraithPierce = true;
+  }
+
+  // P4 — glitch_hydra head-lock: until three distinct elements have landed
+  // super-effective hits, the hydra's HP cannot drop below 30%.
+  let hydraFloor = 0;
+  if (options.hydraFloor && actor.label === 'player') {
+    hydraFloor = options.hydraFloor;
+  }
+
   // Apply Guard Break debuff to effective DEF
   let effectiveDef = target.def;
   if (target.status?.effect === 'stone') {
@@ -453,13 +478,28 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
   // Apply attacker's atkBuff and any charged-move boost under one shared ceiling
   const effectiveAtk = effectiveAttack(actor.state.atk, actor.state.atkBuff, actor.state.chargeMultiplier);
 
-  const result = packetBlocked
+  // bit_wraith pierce: the NPC's hit ignores the player's Defend.
+  const defendPierced = bitWraithPierce ? false : target.defending;
+
+  let result = packetBlocked
     ? { damage: 0, effectiveness: getTypeEffectiveness(resolvedMove.element, target.element), hit: true, isCritical: false }
     : calculateDamage(
         { atk: effectiveAtk, element: actor.state.element, stage: actor.state.stage },
-        { def: effectiveDef, element: target.element, defending: target.defending },
+        { def: effectiveDef, element: target.element, defending: defendPierced },
         { ...resolvedMove, accuracy: effectiveAccuracy }
       );
+
+  // glitch_hydra head-lock: HP cannot drop below the floor until three
+  // distinct elements have landed super-effective hits (tracked in screen state).
+  if (hydraFloor > 0 && actor.label === 'player' && result.hit) {
+    const maxHp = target.maxHp || target.hp;
+    const floorHp = Math.ceil(maxHp * hydraFloor);
+    const newTargetHp = Math.max(0, target.hp - result.damage);
+    if (newTargetHp < floorHp) {
+      const allowed = Math.max(0, target.hp - floorHp);
+      result = { ...result, damage: allowed, isCritical: false };
+    }
+  }
 
   // Check if target is reflecting
   if (target.reflecting) {
@@ -534,6 +574,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
     isCritical: result.isCritical,
     targetHp: newTargetHp,
     blocked: packetBlocked || undefined,
+    capped: hydraFloor > 0 && actor.label === 'player' && target.hp - result.damage <= 0 ? true : undefined,
     appliedStatus: appliedStatus ? STATUS_EFFECTS[appliedStatus.effect].name : null,
     lifesteal: lifestealHeal || undefined,
     isSignature: !!resolvedMove.isSignature,

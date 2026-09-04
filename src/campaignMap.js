@@ -120,9 +120,8 @@ export const CAMPAIGN_NODES = [
 
 export function isCampaignNodeCleared(node, save) {
   if (!node) return false;
-  const clearedNodeIds = save?.campaign?.clearedNodeIds || [];
   const defeatedNpcs = save?.defeatedNpcs || [];
-  return clearedNodeIds.includes(node.id) || defeatedNpcs.includes(node.npcId);
+  return defeatedNpcs.includes(node.npcId);
 }
 
 export function getCampaignNodeState(node, save) {

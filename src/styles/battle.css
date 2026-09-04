@@ -1851,3 +1851,24 @@
   .battle-intro-nameplate { font-size: 8px; padding: 6px 10px; }
   .battle-intro-vs { font-size: 22px; }
 }
+
+/* === DUAL TECH (P4 field-2 depth axis) === */
+.move-btn.dual-tech {
+  background: linear-gradient(135deg, rgba(255, 200, 60, 0.18), rgba(255, 100, 30, 0.08));
+  border-style: double;
+  border-width: 3px;
+}
+
+.move-btn.dual-tech strong::before {
+  content: '⊕ ';
+  font-size: 9px;
+}
+
+@keyframes dualTechGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 200, 60, 0.25); }
+  50% { box-shadow: 0 0 18px rgba(255, 200, 60, 0.55); }
+}
+
+.move-btn.dual-tech:not([disabled]) {
+  animation: dualTechGlow 1.6s ease-in-out infinite;
+}

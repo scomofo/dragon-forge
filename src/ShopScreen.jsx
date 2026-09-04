@@ -213,6 +213,29 @@ export default function ShopScreen({ onNavigate, save, refreshSave }) {
                 <div className="shop-detail-name">{selectedItem.name}</div>
                 <div className="shop-detail-desc">{selectedItem.description}</div>
 
+                {/* Void Egg blocker display: every element core × req + scraps */}
+                {selectedItem.cores?.allSixCount && (
+                  <div className="void-egg-blockers">
+                    {ELEMENTS_FOR_CORES.map(el => {
+                      const have = cores[el] || 0;
+                      const need = selectedItem.cores.allSixCount;
+                      const color = elementColors[el];
+                      return (
+                        <span
+                          key={el}
+                          style={{ color: have >= need ? color.glow : '#555', fontSize: 8 }}
+                          title={`${el}: ${have}/${need}`}
+                        >
+                          {color.icon} {have}/{need}
+                        </span>
+                      );
+                    })}
+                    <span style={{ color: save.dataScraps >= selectedItem.scrapsCost ? '#ffcc00' : '#555', fontSize: 8 }}>
+                      ◆ {save.dataScraps}/{selectedItem.scrapsCost}
+                    </span>
+                  </div>
+                )}
+
                 {/* Target picker for items that need it */}
                 {selectedItem.requiresTarget && (
                   <div className="shop-target-picker">

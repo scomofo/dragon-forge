@@ -367,7 +367,29 @@ export const eggSheets = {
   light:   assetUrl('/assets/eggs/egg_light_sheet.png'),
 };
 
-// === RARITY CONFIG ===
+// === DUAL TECHS (P4 depth axis: field-2) ===
+// When the reserve dragon's element pairs with the active's in an authored
+// pairing, a once-per-battle combo move unlocks. Resolve via sorted element key
+// so bench/active order doesn't matter.
+export const DUAL_TECHS = {
+  fire_ice:   { key: 'steam_burst',     name: 'Steam Burst',    element: 'storm',  power: 105, accuracy: 90,  vfxKey: 'BLIZZARD',        move1: 'fire',  move2: 'ice' },
+  fire_storm: { key: 'dynamo_charge',   name: 'Dynamo Charge',  element: 'fire',   power: 100, accuracy: 92,  vfxKey: 'THUNDER_CLAP',    move1: 'fire',  move2: 'storm' },
+  fire_shadow:{ key: 'shadow_flame',    name: 'Shadow Flame',   element: 'shadow', power: 105, accuracy: 90,  vfxKey: 'MAGMA_BREATH',    move1: 'fire',  move2: 'shadow' },
+  ice_shadow: { key: 'frost_lantern',   name: 'Frost Lantern',  element: 'ice',    power: 100, accuracy: 95,  vfxKey: 'VOID_PULSE',      move1: 'ice',   move2: 'shadow' },
+  storm_stone:{ key: 'tectonic_arc',    name: 'Tectonic Arc',   element: 'stone',  power: 110, accuracy: 88,  vfxKey: 'EARTHQUAKE',      move1: 'storm', move2: 'stone' },
+  venom_shadow:{ key: 'toxic_mire',     name: 'Toxic Mire',     element: 'venom',  power: 100, accuracy: 92,  vfxKey: 'TOXIC_CLOUD',     move1: 'venom', move2: 'shadow' },
+};
+
+const dualTechKey = (a, b) => [a, b].sort().join('_');
+
+export function resolveDualTech(activeElement, benchElement) {
+  if (!activeElement || !benchElement || activeElement === benchElement) return null;
+  return DUAL_TECHS[dualTechKey(activeElement, benchElement)] || null;
+}
+
+export function listDualTechPairings() {
+  return Object.values(DUAL_TECHS).map(t => `${t.move1}+${t.move2}`);
+}
 export const rarityTiers = [
   { name: 'Common',   chance: 0.50, elements: ['fire', 'ice'], multiplier: 1 },
   { name: 'Uncommon', chance: 0.30, elements: ['storm', 'venom', 'stone'], multiplier: 2 },
