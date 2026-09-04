@@ -200,6 +200,38 @@
   text-align: center;
 }
 
+/* Silhouette suspense: the fused dragon hangs unlit between the burst and the
+   reveal. The sprite is crushed to black with a tier-colored rim glow. */
+.fusion-silhouette-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: revealFadeIn 0.25s ease-out;
+}
+
+.fusion-silhouette {
+  filter: brightness(0) drop-shadow(0 0 18px currentColor);
+  animation: silhouetteBreathe 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes silhouetteBreathe {
+  0% { transform: scale(0.96); opacity: 0.85; }
+  100% { transform: scale(1.02); opacity: 1; }
+}
+
+.fusion-silhouette-label {
+  font-size: 8px;
+  letter-spacing: 0.3em;
+  color: #888;
+  animation: silhouetteBlink 0.7s steps(2) infinite;
+}
+
+@keyframes silhouetteBlink {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
 @media (max-width: 768px) {
   .fusion-parents { flex-direction: column; gap: 8px; }
   .fusion-dragon-picker { grid-template-columns: repeat(2, 1fr); }

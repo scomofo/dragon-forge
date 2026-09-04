@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { wait, assetUrl } from './utils';
+import gsap from 'gsap';
 import { dragons, elementColors } from './gameData';
-import { getFusionElement, getStabilityTier, calculateFusionStats, executeFusion } from './fusionEngine';
+import { getStabilityTier, executeFusion } from './fusionEngine';
 import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
 import { fuseDragons, setStabilityBoost } from './persistence';
 import { playSound } from './soundEngine';
@@ -13,6 +14,9 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
   const [parentB, setParentB] = useState(null);
   const [phase, setPhase] = useState('select');
   const [fusionResult, setFusionResult] = useState(null);
+  const slotARef = useRef(null);
+  const slotBRef = useRef(null);
+  const ceremonyRef = useRef(null);
 
   const ownedDragons = Object.entries(save.dragons)
     .filter(([id, d]) => d.owned && d.level >= 10 && dragons[id]) // drop ids absent from the data table (legacy saves)
@@ -28,13 +32,14 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
   const stabilityBoost = !!save.inventory?.stabilityBoost;
   const boostEffective = stabilityBoost && !!parentA && !!parentB && getStabilityTier(parentA.element, parentB.element) !== 'stable';
 
+  // Mystery preview: the alchemy table is hidden knowledge, so the preview
+  // only reads out stability (the one thing a forger could judge) — the result
+  // element, stats, and level stay unknown until the reveal. Discovery is the
+  // point of the system.
   function getPreview() {
     if (!parentA || !parentB) return null;
-    const element = getFusionElement(parentA.element, parentB.element);
     const stability = getStabilityTier(parentA.element, parentB.element, stabilityBoost);
-    const fusedStats = calculateFusionStats(parentA.stats, parentB.stats, stability);
-    const color = elementColors[element];
-    return { element, stability, fusedStats, color, dragonName: dragons[element].name };
+    return { stability };
   }
 
   const preview = getPreview();
@@ -45,8 +50,32 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
     playSound('buttonClick');
     setPhase('animating');
 
+    // Convergence ceremony: the parents fly together, dissolve into element
+    // motes, and the result hangs as a silhouette before the reveal — the
+    // forge fantasy hatching already delivers.
     playSound('fusionMerge');
-    await wait(600);
+    const aEl = slotARef.current;
+    const bEl = slotBRef.current;
+    const ceremonyEl = ceremonyRef.current;
+    if (aEl && bEl && ceremonyEl) {
+      const ceremonyRect = ceremonyEl.getBoundingClientRect();
+      const cx = ceremonyRect.left + ceremonyRect.width / 2;
+      const cy = ceremonyRect.top + ceremonyRect.height / 2;
+      const moveToCenter = (el) => {
+        const r = el.getBoundingClientRect();
+        return {
+          x: cx - (r.left + r.width / 2),
+          y: cy - (r.top + r.height / 2),
+        };
+      };
+      const tl = gsap.timeline();
+      tl.to(aEl, { ...moveToCenter(aEl), scale: 0.35, opacity: 0, duration: 0.7, ease: 'power2.in' }, 0)
+        .to(bEl, { ...moveToCenter(bEl), scale: 0.35, opacity: 0, duration: 0.7, ease: 'power2.in' }, 0);
+      await tl.then();
+    } else {
+      await wait(700);
+    }
+
     playSound('fusionBurst');
     await wait(400);
 
@@ -65,8 +94,12 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
     // NOTE: fusionsCompleted is incremented inside fuseDragons() (persistence.js) — the
     // canonical fusion mutation. Counting it here too double-counted every fusion.
 
-    playSound('fusionReveal');
+    // Silhouette suspense beat: the result hangs unlit before the reveal.
     setFusionResult(result);
+    setPhase('silhouette');
+    await wait(700);
+
+    playSound('fusionReveal');
     setPhase('result');
     refreshSave();
   }, [canFuse, phase, parentA, parentB, stabilityBoost]);
@@ -101,6 +134,7 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
           <>
             <div className="fusion-parents">
               <div
+                ref={slotARef}
                 className={`fusion-slot ${parentA ? 'filled' : ''}`}
                 onClick={() => parentA && setParentA(null)}
                 tabIndex={0}
@@ -122,6 +156,7 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
               <div className="fusion-arrow">+</div>
 
               <div
+                ref={slotBRef}
                 className={`fusion-slot ${parentB ? 'filled' : ''}`}
                 onClick={() => parentB && setParentB(null)}
                 tabIndex={0}
@@ -143,12 +178,12 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
 
             {preview && (
               <div className="fusion-preview">
-                <h3>RESULT PREVIEW</h3>
-                <div className="fusion-preview-element" style={{ color: preview.color?.glow }}>
-                  {preview.dragonName}
+                <h3>FORGE READING</h3>
+                <div className="fusion-preview-element" style={{ color: '#888' }}>
+                  OUTCOME UNKNOWN
                 </div>
                 <div className={`fusion-preview-stability ${preview.stability}`}>
-                  {preview.stability.toUpperCase()}
+                  {preview.stability.toUpperCase()} PAIRING
                 </div>
                 {stabilityBoost && !boostEffective && (
                   <div style={{ fontSize: 8, color: '#888' }}>🔮 STABILITY MATRIX — NO EFFECT (pair already stable)</div>
@@ -157,7 +192,7 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
                   <div style={{ fontSize: 8, color: '#cc88ff' }}>🔮 STABILITY MATRIX ACTIVE — +1 TIER</div>
                 )}
                 <div className="fusion-preview-stats">
-                  HP:{preview.fusedStats.hp} ATK:{preview.fusedStats.atk} DEF:{preview.fusedStats.def} SPD:{preview.fusedStats.spd}
+                  Stable pairs harden · unstable pairs hit harder but stay fragile
                 </div>
                 <div className="fusion-warning">⚠ Both parents will be consumed</div>
               </div>
@@ -207,8 +242,23 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
         )}
 
         {phase === 'animating' && (
-          <div className="fusion-animation-overlay">
+          <div className="fusion-animation-overlay" ref={ceremonyRef}>
             <div className="fusion-flash" style={{ background: 'radial-gradient(circle, #fff, transparent)' }} />
+          </div>
+        )}
+
+        {phase === 'silhouette' && fusionResult && (
+          <div className="fusion-silhouette-stage">
+            <div className="fusion-silhouette" style={{ color: elementColors[fusionResult.element]?.glow || '#ffaa44' }}>
+              <DragonSprite
+                spriteSheet={dragons[fusionResult.element].spriteSheet}
+                stage={getStageForLevel(fusionResult.level)}
+                size={{ width: 180, height: 140 }}
+                shiny={false}
+                element={fusionResult.element}
+              />
+            </div>
+            <div className="fusion-silhouette-label">SIGNAL COALESCING…</div>
           </div>
         )}
 

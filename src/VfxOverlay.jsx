@@ -3,9 +3,11 @@ import { elementColors } from './gameData';
 import { VFX_FRAMES } from './sprites';
 
 // Strip playback timing. Travel = projectile flying across the arena (frames
-// 0..n-2), impact = the burst frame held on the target (frame n-1).
-const TRAVEL_MS = 330;
-const IMPACT_MS = 220;
+// 0..n-2), impact = the burst frame held on the target (frame n-1). The
+// profile (battlePresentation) passes per-move timing — heavy attacks fly
+// slower, light attacks snap, and 2x battle speed halves both.
+const DEFAULT_TRAVEL_MS = 330;
+const DEFAULT_IMPACT_MS = 220;
 const STRIP_DISPLAY = 200; // px the projectile renders at on screen
 
 // Arena anchor positions (% of the .arena-sprites width). targetSide is the
@@ -13,14 +15,16 @@ const STRIP_DISPLAY = 200; // px the projectile renders at on screen
 const NEAR_EDGE = 18;
 const FAR_EDGE = 78;
 
-export default function VfxOverlay({ vfxKey, element, direction, onComplete, targetSide }) {
+export default function VfxOverlay({ vfxKey, element, direction, onComplete, targetSide, travelMs, impactMs }) {
   const config = VFX_FRAMES[vfxKey];
+  const travel = travelMs || DEFAULT_TRAVEL_MS;
+  const impact = impactMs || DEFAULT_IMPACT_MS;
 
   if (config?.strip) {
-    return <StripVfx config={config} targetSide={targetSide} onComplete={onComplete} />;
+    return <StripVfx config={config} targetSide={targetSide} onComplete={onComplete} travelMs={travel} impactMs={impact} />;
   }
   if (config?.signature) {
-    return <SignatureVfx config={config} targetSide={targetSide} onComplete={onComplete} />;
+    return <SignatureVfx config={config} targetSide={targetSide} onComplete={onComplete} travelMs={travel} impactMs={impact} />;
   }
   return (
     <LegacyVfx
@@ -34,7 +38,7 @@ export default function VfxOverlay({ vfxKey, element, direction, onComplete, tar
 }
 
 // === Animated projectile strip ===
-function StripVfx({ config, targetSide, onComplete }) {
+function StripVfx({ config, targetSide, onComplete, travelMs, impactMs }) {
   const ref = useRef(null);
   const doneRef = useRef(false);
 
@@ -50,8 +54,8 @@ function StripVfx({ config, targetSide, onComplete }) {
     const startX = toLeft ? FAR_EDGE : NEAR_EDGE;
     const endX = toLeft ? NEAR_EDGE : FAR_EDGE;
     const flip = toLeft ? -1 : 1; // strips face right; mirror for leftward flight
-    const total = TRAVEL_MS + IMPACT_MS;
-    const travelEnd = TRAVEL_MS / total;
+    const total = travelMs + impactMs;
+    const travelEnd = travelMs / total;
 
     let raf = 0;
     let startTs = null;
@@ -95,7 +99,7 @@ function StripVfx({ config, targetSide, onComplete }) {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [config, targetSide, onComplete]);
+  }, [config, targetSide, onComplete, travelMs, impactMs]);
 
   return (
     <div
@@ -127,7 +131,7 @@ const SIGNATURE_GLYPHS = {
   'diamond-weave': '✦',
 };
 
-function SignatureVfx({ config, targetSide, onComplete }) {
+function SignatureVfx({ config, targetSide, onComplete, travelMs, impactMs }) {
   const ref = useRef(null);
   const doneRef = useRef(false);
   const sig = config.signature;
@@ -141,8 +145,8 @@ function SignatureVfx({ config, targetSide, onComplete }) {
     const toLeft = targetSide === 'left';
     const startX = toLeft ? FAR_EDGE : NEAR_EDGE;
     const endX = toLeft ? NEAR_EDGE : FAR_EDGE;
-    const total = TRAVEL_MS + IMPACT_MS;
-    const travelEnd = TRAVEL_MS / total;
+    const total = travelMs + impactMs;
+    const travelEnd = travelMs / total;
     let raf = 0;
     let startTs = null;
 
@@ -178,7 +182,7 @@ function SignatureVfx({ config, targetSide, onComplete }) {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [targetSide, onComplete]);
+  }, [targetSide, onComplete, travelMs, impactMs]);
 
   const [hi, mid, deep] = sig.palette;
   return (

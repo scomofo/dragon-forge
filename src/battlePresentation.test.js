@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, afterEach } from 'vitest';
 import {
   classifyBattleEvent,
   getBattlePresentationProfile,
@@ -6,6 +6,9 @@ import {
   getStatusMoveSummary,
   shouldAnimateBattleEvent,
 } from './battlePresentation';
+import { setBattleSpeed } from './battleSpeed';
+
+afterEach(() => setBattleSpeed(1));
 
 describe('battle presentation profiles', () => {
   test('classifies a missed attack as a miss profile', () => {
@@ -63,6 +66,25 @@ describe('battle presentation profiles', () => {
     expect(shouldAnimateBattleEvent({ attacker: 'status', damage: 2, target: 'npc' })).toBe(false);
     expect(shouldAnimateBattleEvent({ attacker: 'npc', action: 'statusSkip', statusName: 'Freeze' })).toBe(false);
     expect(shouldAnimateBattleEvent({ attacker: 'player', action: 'attack', hit: true })).toBe(true);
+  });
+
+  test('heavy moves telegraph longer and fly slower than light moves', () => {
+    const event = { action: 'attack', hit: true, damage: 20, effectiveness: 1, targetHp: 40 };
+    const heavy = getBattlePresentationProfile(event, { power: 80 });
+    const light = getBattlePresentationProfile(event, { power: 40 });
+    expect(heavy.anticipationMs).toBeGreaterThan(light.anticipationMs);
+    expect(heavy.vfxTravelMs).toBeGreaterThan(light.vfxTravelMs);
+  });
+
+  test('2x battle speed halves every pacing beat', () => {
+    const event = { action: 'attack', hit: true, damage: 20, effectiveness: 1, targetHp: 40 };
+    const normal = getBattlePresentationProfile(event, { power: 40 });
+    setBattleSpeed(2);
+    const fast = getBattlePresentationProfile(event, { power: 40 });
+    expect(fast.anticipationMs).toBeLessThan(normal.anticipationMs);
+    expect(fast.recoveryMs).toBeLessThan(normal.recoveryMs);
+    expect(fast.vfxTravelMs).toBeLessThan(normal.vfxTravelMs);
+    expect(fast.impactPauseMs).toBeLessThan(normal.impactPauseMs);
   });
 });
 

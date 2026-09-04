@@ -1,4 +1,5 @@
 import { STATUS_APPLY_CHANCE, STATUS_EFFECTS } from './gameData';
+import { getBattleSpeed } from './battleSpeed';
 
 const BASE_PROFILES = {
   defend: {
@@ -182,12 +183,23 @@ export function getBattlePresentationProfile(event, move = null) {
   const kind = classifyBattleEvent(event);
   const profile = BASE_PROFILES[kind] || BASE_PROFILES.normalHit;
   const isHeavyMove = (move?.power || 0) >= 70;
+  const speed = getBattleSpeed();
+
+  // C3: recovery tails are trimmed from the old fixed 200ms-class beats —
+  // the next telegraph overlaps them, so a turn no longer ends in dead air.
+  // C4: the whole table scales down at 2x battle speed.
+  const scale = (ms) => Math.max(40, Math.round(ms * 0.6 / speed));
 
   return {
     ...profile,
     kind,
-    anticipationMs: isHeavyMove ? profile.anticipationMs + 60 : profile.anticipationMs,
-    launchMs: isHeavyMove ? profile.launchMs + 40 : profile.launchMs,
+    anticipationMs: scale(isHeavyMove ? profile.anticipationMs + 60 : profile.anticipationMs),
+    launchMs: scale(isHeavyMove ? profile.launchMs + 40 : profile.launchMs),
+    recoveryMs: scale(profile.recoveryMs),
+    impactPauseMs: Math.max(30, Math.round(profile.impactPauseMs / speed)),
+    // Move weight: heavy attacks fly slower, light attacks snap across.
+    vfxTravelMs: Math.round(((move?.power || 0) >= 70 ? 400 : 270) / speed),
+    vfxImpactMs: Math.round(220 / speed),
     flashColor: move?.element && move.element !== 'neutral'
       ? profile.flashColor
       : profile.flashColor,

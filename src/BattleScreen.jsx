@@ -1,5 +1,5 @@
 import { useState, useReducer, useCallback, useEffect, useRef } from 'react';
-import { wait } from './utils';
+import { battleWait, getBattleSpeed, setBattleSpeed } from './battleSpeed';
 import { playSound, playMusic, stopMusic, startHeartbeat, stopHeartbeat } from './soundEngine';
 import { dragons, npcs, moves, elementColors, STATUS_EFFECTS } from './gameData';
 import {
@@ -292,6 +292,12 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const animatingRef = useRef(false);
   const damageIdRef = useRef(0);
   const [autoBattle, setAutoBattle] = useState(false);
+  // C4: 1x/2x battle speed — retimes waits, presentation tables, and GSAP.
+  const [speed, setSpeed] = useState(() => getBattleSpeed());
+  const toggleSpeed = useCallback(() => {
+    playSound('uiConfirm');
+    setSpeed(setBattleSpeed(getBattleSpeed() === 1 ? 2 : 1));
+  }, []);
   // AUTO-battle is a farm convenience; it must never trivialize high-stakes fights.
   // Disabled for bosses, the Singularity arc, the Mirror Admin, Corruption Remnants, and the Daily Challenge.
   const autoBattleAllowed = !(
@@ -303,6 +309,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   );
   const [selectedMoveKey, setSelectedMoveKey] = useState(null);
   const [controllerFocusIndex, setControllerFocusIndex] = useState(0);
+  const [signatureFocus, setSignatureFocus] = useState(false);
 
   const battleContainerRef = useRef(null);
   const playerSpriteContainerRef = useRef(null);
@@ -331,7 +338,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       }
       if (isPlayer) {
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
-        await wait(400);
+        await battleWait(400);
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: '' });
       }
       return;
@@ -346,7 +353,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       } else {
         dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-telegraph' });
       }
-      await wait(500);
+      await battleWait(500);
       if (isPlayer) {
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: '' });
       } else {
@@ -379,10 +386,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           position: { x: 30, y: -40 },
         },
       });
-      await wait(600);
+      await battleWait(600);
       dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: '' });
       dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: '' });
-      await wait(200);
+      await battleWait(200);
       return;
     }
 
@@ -410,10 +417,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           position: { x: 30, y: -40 },
         },
       });
-      await wait(600);
+      await battleWait(600);
       dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: '' });
       dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: '' });
-      await wait(200);
+      await battleWait(200);
       return;
     }
 
@@ -428,7 +435,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: profile.attackerClass });
     }
     playSound('attackLaunch', { element: move.element });
-    await wait(profile.anticipationMs);
+    await battleWait(profile.anticipationMs);
 
     // VFX TRAVEL + IMPACT phase
     const vfxElement = move.element === 'neutral' ? 'neutral' : move.element;
@@ -444,13 +451,15 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         element: vfxElement,
         direction: vfxDirection,
         targetSide: isPlayer ? 'left' : 'right',
+        travelMs: profile.vfxTravelMs,
+        impactMs: profile.vfxImpactMs,
         onComplete: () => {
           dispatch({ type: 'CLEAR_VFX' });
           vfxResolve();
         },
       },
     });
-    await Promise.race([vfxPromise, wait(1400)]);
+    await Promise.race([vfxPromise, battleWait(1400)]);
 
     // IMPACT phase
     if (isPlayer) {
@@ -609,16 +618,19 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         },
       });
     }
-    await wait(profile.recoveryMs);
+    await battleWait(profile.recoveryMs);
 
     damageStaggerRef.current = 0;
 
+    // C3: recoil and cleanup run inside ONE overlapped beat instead of three
+    // sequential 200ms waits — the next telegraph starts as the target settles,
+    // which removes the dead air at the end of every event.
     if (isPlayer) {
       dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: profile.defenderClass || 'sprite-recoil' });
     } else {
       dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: profile.defenderClass || 'sprite-recoil' });
     }
-    await wait(200);
+    await battleWait(140);
 
     dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: '' });
     dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: '' });
@@ -629,8 +641,6 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       shieldDismiss(shieldRef.current.element, shieldRef.current.timeline);
       shieldRef.current = null;
     }
-
-    await wait(200);
   }, [state]);
 
   useEffect(() => {
@@ -794,6 +804,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       };
     }
 
+    // C6: a signature firing dims the arena so the once-per-battle climax
+    // reads as an event (player or NPC). Cleared when the turn settles.
+    const signatureInFlight = isSignature || !!moves[moveKey]?.isSignature;
+    if (signatureInFlight) setSignatureFocus(true);
+
     // hydra_cog: 20% chance for a follow-up hit after a successful player attack
     let chainDamage = 0;
     if (relicMods.chainHitChance > 0 && result.npc.hp > 0) {
@@ -815,7 +830,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       const chainId = ++damageIdRef.current;
       dispatch({ type: 'ADD_DAMAGE_NUMBER', entry: { id: chainId, damage: chainDamage, effectiveness: 1.0, hit: true, target: 'npc', isCritical: false } });
       dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: chainDamage });
-      await wait(200);
+      await battleWait(200);
     }
 
     // Charge warning log — appears after the player's attack resolves this turn
@@ -896,7 +911,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           } else {
             dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: event.damage });
           }
-          await wait(400);
+          await battleWait(400);
         }
         if (event.expired) {
           playSound('statusExpire', { element: event.target === 'player' ? state.dragon.element : state.npc.element });
@@ -911,7 +926,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           type: 'ADD_DAMAGE_NUMBER',
           entry: { id: dmgId, damage: 0, effectiveness: 1.0, hit: false, target: event.attacker === 'player' ? 'player' : 'npc' },
         });
-        await wait(300);
+        await battleWait(300);
       }
     }
 
@@ -932,7 +947,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           });
         } else {
           dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
-          await wait(600);
+          await battleWait(600);
         }
 
         playSound('terminalGlitch');
@@ -953,7 +968,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         if (nextLine) {
           dispatch({ type: 'ADD_LOG', text: `${battleConfig.boss.name}: ${nextLine}` });
         }
-        await wait(1000);
+        await battleWait(1000);
       } else {
         // True victory
         let xpGained = calculateXpGain(state.npc.baseXP || 50, state.playerLevel, state.npc.level);
@@ -1054,7 +1069,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           });
         } else {
           dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-ko' });
-          await wait(600);
+          await battleWait(600);
         }
 
         if (battleConfig?.isMirrorAdmin && phases) {
@@ -1115,7 +1130,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         });
       } else {
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-ko' });
-        await wait(600);
+        await battleWait(600);
       }
       if (state.bench && state.bench.playerHp > 0) {
         // Reserve dragon steps in — the bench is a second life; fight continues.
@@ -1157,6 +1172,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     animatingRef.current = false;
     setSelectedMoveKey(null);
+    setSignatureFocus(false);
   }, [state, animateEvent, save]);
 
   // Manual tactical swap — costs the turn: swap the reserve in, then the enemy
@@ -1172,7 +1188,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     dispatch({ type: 'SWAP_DRAGON' });
     dispatch({ type: 'ADD_LOG', text: `${state.dragon.name} swaps out — ${incoming.dragon.name} enters!` });
     playSound('uiConfirm');
-    await wait(500);
+    await battleWait(500);
 
     const incomingState = {
       name: incoming.dragon.name, element: incoming.dragon.element, stage: incoming.playerStage,
@@ -1212,7 +1228,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     dispatch({ type: 'SET_NPC_STATUS', value: result.npc.status || null });
     dispatch({ type: 'SET_NPC_ATK_BUFF', value: result.npc.atkBuff || null });
     dispatch({ type: 'SET_NPC_DEF_BUFF', value: result.npc.defBuff || null });
-    await wait(350);
+    await battleWait(350);
 
     if (result.player.hp <= 0) {
       // Rare: the entering dragon is KO'd by the entry strike.
@@ -1240,7 +1256,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const dragon = state.dragon;
   const npc = state.npc;
   const playerMoves = [...dragon.moveKeys.map((k) => ({ key: k, ...moves[k] })), { key: 'basic_attack', ...moves.basic_attack }];
-  const controllerCommandCount = playerMoves.length + 2;
+  const controllerCommandCount = playerMoves.length + 3; // moves + defend + speed + auto
   const playerColor = elementColors[dragon.element];
   const npcColor = elementColors[npc.element];
   const playerHpState = getHpState(state.playerHp, state.playerMaxHp);
@@ -1293,6 +1309,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           handleMoveSelect(playerMoves[controllerFocusIndex].key);
         } else if (controllerFocusIndex === playerMoves.length) {
           handleMoveSelect('defend');
+        } else if (controllerFocusIndex === playerMoves.length + 1) {
+          toggleSpeed();
         } else if (autoBattleAllowed) {
           playSound('uiConfirm');
           setAutoBattle((enabled) => !enabled);
@@ -1304,7 +1322,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   return (
     <div
       ref={battleContainerRef}
-      className={`battle-screen ${isResolvingTurn ? 'resolving' : 'awaiting'} player-${playerHpState} npc-${npcHpState}`}
+      className={`battle-screen ${isResolvingTurn ? 'resolving' : 'awaiting'} player-${playerHpState} npc-${npcHpState} ${signatureFocus ? 'signature-focus' : ''}`}
       data-player-pose={playerPose}
       data-npc-pose={npcPose}
       style={{
@@ -1322,6 +1340,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         style={{ backgroundImage: `url(${battleArena.src})`, filter: battleArena.filter }}
       />
       <div className="arena-overlay" aria-hidden="true" />
+      <div className="signature-dim" aria-hidden="true" />
       <div className="battle-telemetry-grid" aria-hidden="true">
         <span className="telemetry-node node-a" />
         <span className="telemetry-node node-b" />
@@ -1628,7 +1647,19 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             </button>
           )}
           <button
-            className={`move-btn auto ${autoBattle ? 'selected' : ''} ${!autoBattleAllowed ? 'disabled' : ''} ${controllerFocusIndex === playerMoves.length + 1 ? 'controller-focus' : ''}`}
+            className={`move-btn speed ${speed === 2 ? 'selected' : ''} ${controllerFocusIndex === playerMoves.length + 1 ? 'controller-focus' : ''}`}
+            style={{ '--move-color': speed === 2 ? '#ffcc00' : '#666', '--move-glow': speed === 2 ? '#ffcc00' : '#888', borderColor: speed === 2 ? '#ffcc00' : '#666', color: speed === 2 ? '#ffcc00' : '#888' }}
+            onClick={toggleSpeed}
+            title="Toggle battle animation speed"
+          >
+            <strong>{speed === 2 ? '2× SPEED' : '1× SPEED'}</strong>
+            <span className="move-meta">
+              <i>TEMPO</i>
+              <i>{speed === 2 ? 'FAST' : 'NORMAL'}</i>
+            </span>
+          </button>
+          <button
+            className={`move-btn auto ${autoBattle ? 'selected' : ''} ${!autoBattleAllowed ? 'disabled' : ''} ${controllerFocusIndex === playerMoves.length + 2 ? 'controller-focus' : ''}`}
             style={autoBattleAllowed
               ? { '--move-color': autoBattle ? '#44cc44' : '#666', '--move-glow': autoBattle ? '#44cc44' : '#888', borderColor: autoBattle ? '#44cc44' : '#666', color: autoBattle ? '#44cc44' : '#888' }
               : { '--move-color': '#555', '--move-glow': '#555', borderColor: '#444', color: '#666', opacity: 0.55, cursor: 'not-allowed' }}
