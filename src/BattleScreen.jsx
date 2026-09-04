@@ -21,7 +21,6 @@ import VfxOverlay from './VfxOverlay';
 import { getBattlePresentationProfile, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, shouldAnimateBattleEvent } from './battlePresentation';
 import { resolveBattlePose } from './battleSets';
 import { resolveBattleArena } from './arenas';
-import { getBossPattern } from './bossPatterns';
 import useGamepadController from './useGamepadController';
 import {
   screenShake, hitFlash, criticalHit, shatterKO,
@@ -155,6 +154,21 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     };
   }
 
+  // Per-boss pattern state init is per-pattern (only the fields a given boss needs).
+  const bossPatternId = npc.id;
+  const bossState = {
+    heatStacks: 0,                       // buffer_overflow
+    pierceNext: false,                   // bit_wraith
+    prevElement: null, decrypted: false, // crypto_crab
+    elementsHit: [],                     // glitch_hydra
+    fuseTurns: 6,                        // logic_bomb
+    hardenStacks: 0,                     // recursive_golem
+    perchUsed: false,                    // protocol_vulture
+    garbledMoveKey: null, garbledTurnsLeft: 0, // data_corruption
+    leakPips: 0,                         // memory_leak
+    spdDoubleTurnsLeft: 0, surgeUsed: false, crashTurnsLeft: 0, // stack_overflow
+  };
+
   return {
     phase: PHASES.PLAYER_TURN,
     dragon,
@@ -196,6 +210,8 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     playerAtkBuff: null,
     playerDefBuff: null,
     playerMoveHistory: [],
+    bossPatternId,
+    bossState,
   };
 }
 
@@ -277,6 +293,8 @@ function battleReducer(state, action) {
       return { ...state, signatureMoveUsed: true };
     case 'APPEND_PLAYER_MOVE_HISTORY':
       return { ...state, playerMoveHistory: [...(state.playerMoveHistory || []).slice(-4), action.moveKey] };
+    case 'SET_BOSS_STATE':
+      return { ...state, bossState: { ...state.bossState, ...action.value } };
     case 'SWAP_DRAGON':
       // Manual tactical swap: exchange the active dragon with the reserve.
       return swapActiveAndBench(state);
@@ -731,6 +749,39 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       defBuff: state.playerDefBuff,
     };
 
+    // phishing_siren: on turns 2 and 5 it forces a bench swap (if a reserve
+    // exists) and fires a free Toxic Cloud before the player's action lands.
+    const currentTurn = state.turnCount + 1;
+    if (state.bossPatternId === 'phishing_siren' && [2, 5].includes(currentTurn) && state.bench?.playerHp > 0) {
+      dispatch({ type: 'ADD_LOG', text: `${state.npc.name} lures your ${state.dragon.name} out — the reserve is forced in!` });
+      dispatch({ type: 'FAINT_SWAP' });
+      // Free Toxic Cloud fires at the incoming dragon (engine handles targeting).
+      const freeCloud = resolveTurn(
+        { ...playerState, hp: state.bench.playerHp, maxHp: state.bench.playerMaxHp },
+        { name: state.npc.name, element: state.npc.element, stage: 3, hp: state.npcHp, maxHp: state.npcMaxHp, atk: state.npc.stats.atk, def: state.npc.stats.def, spd: state.npc.stats.spd, defending: false, status: state.npcStatus },
+        'defend', 'toxic_cloud', ['defend'], ['toxic_cloud']
+      );
+      for (const event of freeCloud.events) {
+        if (event.attacker === 'npc' && shouldAnimateBattleEvent(event)) {
+          await animateEvent(event, dispatch);
+        }
+      }
+      dispatch({ type: 'SET_PLAYER_STATUS', value: freeCloud.player.status || null });
+      playSound('combatMessage');
+    }
+
+    // data_corruption: on turn 1 a random non-signature move garbles into
+    // basic_attack for 2 turns. Also re-arms whenever Burn applies.
+    if (state.bossPatternId === 'data_corruption' && state.bossState.garbledTurnsLeft === 0 && state.bossState.garbledMoveKey == null && currentTurn === 1) {
+      const nonSig = state.dragon.moveKeys.filter(k => !moves[k]?.isSignature);
+      if (nonSig.length > 0) {
+        const garbled = nonSig[Math.floor(Math.random() * nonSig.length)];
+        dispatch({ type: 'SET_BOSS_STATE', value: { garbledMoveKey: garbled, garbledTurnsLeft: 2 } });
+        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} corrupts a slot — ${moves[garbled]?.name} garbles into BASIC for 2 turns!` });
+      }
+    }
+    const activeGarble = state.bossPatternId === 'data_corruption' && state.bossState.garbledTurnsLeft > 0 ? state.bossState.garbledMoveKey : null;
+
     const npcState = {
       name: state.npc.name,
       element: state.npc.element,
@@ -746,7 +797,18 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       defBuff: state.npcDefBuff,
     };
 
-    // Track this player move for adaptive AI counter-element logic
+    // data_corruption: if the garbled slot was picked, it fires as basic_attack
+    // and the garble ticks down one turn (expires after 2 player turns).
+    let effectivePlayerMoveKey = moveKey;
+    if (activeGarble && moveKey === activeGarble) {
+      effectivePlayerMoveKey = 'basic_attack';
+      const turnsLeft = state.bossState.garbledTurnsLeft - 1;
+      dispatch({ type: 'SET_BOSS_STATE', value: { garbledTurnsLeft: turnsLeft, garbledMoveKey: turnsLeft > 0 ? activeGarble : null } });
+      dispatch({ type: 'ADD_LOG', text: `${state.npc.name}'s corruption holds — your move fires as BASIC.` });
+    }
+
+    // Track this player move for adaptive AI counter-element logic (pre-garble
+    // key — the AI adapts to what you MEANT, not what the corruption let through).
     dispatch({ type: 'APPEND_PLAYER_MOVE_HISTORY', moveKey });
     if (moves[moveKey]?.isSignature) {
       dispatch({ type: 'SET_PLAYER_SIGNATURE_USED', dragonId: state.dragonId });
@@ -786,6 +848,57 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       dispatch({ type: 'SET_SIGNATURE_USED' });
     } else {
       npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, state.dragon.element, state.playerStatus, battleContext);
+
+      // === P4 AUTHORED PATTERNS (per-boss scripts; mirror by id) ===
+      const patternId = state.bossPatternId;
+      const bs = state.bossState;
+
+      // buffer_overflow: 4 heat stacks → Magma Breath is FORCED and burns the
+      // user for 10% max HP. The stack counter ticks in the combat feed.
+      if (patternId === 'buffer_overflow' && bs.heatStacks >= 4) {
+        npcMoveKey = 'magma_breath';
+        const burnDamage = Math.max(1, Math.floor(state.npcMaxHp * 0.1));
+        dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: burnDamage });
+        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} overheats — the heat stack burns it for ${burnDamage}!` });
+        dispatch({ type: 'SET_BOSS_STATE', value: { heatStacks: 0 } });
+        playSound('statusTick', { element: 'fire' });
+      } else if (patternId === 'buffer_overflow') {
+        const stacks = bs.heatStacks + 1;
+        dispatch({ type: 'SET_BOSS_STATE', value: { heatStacks: stacks } });
+        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} heat stack ${stacks}/4 — Magma Breath forced at 4.` });
+      }
+
+      // protocol_vulture: at half HP it perches and forces Soul Drain (heals
+      // 40% of damage dealt, guaranteed Blind on hit).
+      if (patternId === 'protocol_vulture' && !bs.perchUsed && state.npcHp / state.npcMaxHp <= 0.5) {
+        npcMoveKey = 'vulture_drain';
+        dispatch({ type: 'SET_BOSS_STATE', value: { perchUsed: true } });
+        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} perches — Soul Drain is next!` });
+      }
+
+      // recursive_golem: at 3 harden stacks Tectonic Rupture is FORCED and
+      // the stacks clear.
+      if (patternId === 'recursive_golem' && bs.hardenStacks >= 3) {
+        npcMoveKey = npcData.signatureMoveKey || 'golem_rupture';
+        dispatch({ type: 'SET_BOSS_STATE', value: { hardenStacks: 0 } });
+        dispatch({ type: 'ADD_LOG', text: `${state.npc.name}'s harden loop ruptures!` });
+      }
+
+      // stack_overflow: after the doublers run out it crashes — skip this turn.
+      if (patternId === 'stack_overflow' && bs.spdDoubleTurnsLeft === 0 && bs.crashTurnsLeft > 0) {
+        npcMoveKey = 'defend';
+        dispatch({ type: 'SET_BOSS_STATE', value: { crashTurnsLeft: bs.crashTurnsLeft - 1 } });
+        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} crashes — it skips the turn recovering.` });
+      }
+
+      // logic_bomb: at fuse 0 Final Detonation is FORCED (screen ticks the
+      // fuse down after each player turn; the signature threshold is irrelevant).
+      if (patternId === 'logic_bomb' && bs.fuseTurns <= 0 && npcData.signatureMoveKey) {
+        npcMoveKey = npcData.signatureMoveKey;
+        dispatch({ type: 'SET_SIGNATURE_USED' });
+        dispatch({ type: 'ADD_LOG', text: `${state.npc.name}'s fuse hits zero — FINAL DETONATION!` });
+      }
+
       const npcMoveData = moves[npcMoveKey];
       if (npcMoveData?.canCharge && !desperationMode && Math.random() < (npcMoveData.chargeChance ?? 0.4)) {
         isCharging = true;
@@ -796,23 +909,123 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     // Boost NPC ATK if firing a charged move. Pass the multiplier through (rather than
     // pre-multiplying atk) so the engine combines it with any active atkBuff under one
     // ceiling — otherwise charge × focus would stack multiplicatively (see effectiveAttack).
-    const chargedNpcState = previouslyCharged
+    let finalNpcState = previouslyCharged
       ? { ...npcState, chargeMultiplier: CHARGE_ATK_MULTIPLIER }
       : npcState;
+
+    // P4 pattern-side npcState mutations:
+    // protocol_vulture drain heals 40% of damage and Blinds on hit.
+    if (state.bossPatternId === 'protocol_vulture' && npcMoveKey === 'vulture_drain') {
+      finalNpcState = { ...finalNpcState, lifesteal: 0.4, applyChance: 1 };
+    }
+    // stack_overflow: ×2 SPD expires at end of this turn (option-decremented).
+    if (state.bossPatternId === 'stack_overflow' && state.bossState.spdDoubleTurnsLeft > 0) {
+      finalNpcState = { ...finalNpcState, spd: state.npc.stats.spd * 2 };
+    }
+    // recursive_golem harden pip + bit_wraith pierce + memory_leak pips +
+    // logic_bomb fuse tick read via options below.
+    const bs = state.bossState;
+    const engineOptions = {
+      playerAccuracyFloor: (state.npc.difficulty === 'Easy' && !(save.defeatedNpcs || []).length) ? 95 : 0,
+
+      // firewall_sentinel packet-shield (pilot)
+      packetShield: state.bossPatternId === 'firewall_sentinel' && moveKey !== 'defend',
+      playerDefendedLastTurn: playerDefendedLastTurn.current,
+
+      // crypto_crab: encrypted until you repeat your last element
+      cryptoEncrypted: state.bossPatternId === 'crypto_crab' && !bs.decrypted,
+
+      // bit_wraith: miss primes pierce → next hit ignores Defend
+      bitWraithPierce: state.bossPatternId === 'bit_wraith' && bs.pierceNext,
+
+      // glitch_hydra: HP floor until 3 distinct elements land super-effective
+      hydraFloor: state.bossPatternId === 'glitch_hydra' && bs.elementsHit.length < 3 ? 0.3 : 0,
+    };
+    // memory_leak: DEF climbs one pip per turn until an ice SE hit resets it.
+    if (state.bossPatternId === 'memory_leak') {
+      const pips = Math.min(5, (bs.leakPips || 0) + 1);
+      finalNpcState = { ...finalNpcState, def: Math.floor(finalNpcState.def * (1 + pips * 0.1)) };
+      dispatch({ type: 'SET_BOSS_STATE', value: { leakPips: pips } });
+      dispatch({ type: 'ADD_LOG', text: `${state.npc.name} leak pip ${pips}/5 — DEF +${pips * 10}%.` });
+    }
 
     // On charge turn: NPC defends (takes the player hit while winding up)
     const effectiveNpcMoveKey = isCharging ? 'defend' : npcMoveKey;
 
-    // P4: execute the authored firewall_sentinel packet-shield pattern. It
-    // blocks all player damage unless the player Defended last turn or uses
-    // Phase Strike — the tell up top ("EDGE reads BLOCKED") explains why.
-    const bossPattern = getBossPattern(state.npc.id);
-    let result = resolveTurn(playerState, chargedNpcState, moveKey, effectiveNpcMoveKey, state.dragon.moveKeys, state.npc.moveKeys, {
-      playerAccuracyFloor: (state.npc.difficulty === 'Easy' && !(save.defeatedNpcs || []).length) ? 95 : 0,
-      packetShield: bossPattern?.id === 'firewall_sentinel' && moveKey !== 'defend',
-      playerDefendedLastTurn: playerDefendedLastTurn.current,
-    });
+    let result = resolveTurn(playerState, finalNpcState, effectivePlayerMoveKey, effectiveNpcMoveKey, state.dragon.moveKeys, state.npc.moveKeys, engineOptions);
     playerDefendedLastTurn.current = moveKey === 'defend';
+
+    // === Post-resolve pattern hooks ===
+    const playerAttackEvent = result.events.find(e => e.attacker === 'player' && e.action === 'attack');
+
+    // crypto_crab encryption: hide type until you repeat the previous element
+    // (same-element back-to-back → reveal → damage gates open).
+    if (state.bossPatternId === 'crypto_crab' && playerAttackEvent?.hit) {
+      const el = moves[playerAttackEvent.moveKey]?.element;
+      if (el === bs.prevElement && !bs.decrypted) {
+        dispatch({ type: 'SET_BOSS_STATE', value: { decrypted: true, prevElement: el } });
+        dispatch({ type: 'ADD_LOG', text: `Encryption cracked — ${state.npc.name}'s type is exposed!` });
+      } else if (!bs.decrypted) {
+        dispatch({ type: 'SET_BOSS_STATE', value: { prevElement: el } });
+        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} reads ENCRYPTED — repeat your last element to crack it.` });
+      }
+    }
+
+    // bit_wraith: any NPC miss primes a one-turn pierce (next hit ignores Defend).
+    const npcAttackEvent = result.events.find(e => e.attacker === 'npc' && e.action === 'attack');
+    if (state.bossPatternId === 'bit_wraith') {
+      if (npcAttackEvent && !npcAttackEvent.hit) {
+        dispatch({ type: 'SET_BOSS_STATE', value: { pierceNext: true } });
+        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} phases — its next hit ignores Defend!` });
+      } else if (npcAttackEvent?.hit) {
+        dispatch({ type: 'SET_BOSS_STATE', value: { pierceNext: false } });
+      }
+    }
+
+    // glitch_hydra: three super-effective hits of three distinct elements
+    // unlock the sub-30% threshold (per-head tracking).
+    if (state.bossPatternId === 'glitch_hydra' && playerAttackEvent?.hit && playerAttackEvent.effectiveness > 1) {
+      const el = moves[playerAttackEvent.moveKey]?.element;
+      if (el && !bs.elementsHit.includes(el)) {
+        const elementsHit = [...bs.elementsHit, el];
+        dispatch({ type: 'SET_BOSS_STATE', value: { elementsHit } });
+        dispatch({ type: 'ADD_LOG', text: `Head down (${elementsHit.length}/3 elements): ${el.toUpperCase()}` });
+      }
+    }
+
+    // logic_bomb: the fuse ticks down one per player turn; at 0 the bomb can
+    // force Final Detonation (handled via the signature threshold below).
+    if (state.bossPatternId === 'logic_bomb' && bs.fuseTurns > 0 && npcMoveKey !== 'bomb_detonation') {
+      dispatch({ type: 'SET_BOSS_STATE', value: { fuseTurns: bs.fuseTurns - 1 } });
+      dispatch({ type: 'ADD_LOG', text: `Fuse ${Math.max(0, bs.fuseTurns - 1)} — Final Detonation at zero.` });
+    }
+
+    // memory_leak: ice super-effective hits disarm the leak back to zero.
+    if (state.bossPatternId === 'memory_leak' && playerAttackEvent?.hit &&
+        moves[playerAttackEvent.moveKey]?.element === 'ice' && playerAttackEvent.effectiveness > 1) {
+      dispatch({ type: 'SET_BOSS_STATE', value: { leakPips: 0 } });
+      dispatch({ type: 'ADD_LOG', text: `Ice strike resets the ${state.npc.name} leak — DEF climb cleared.` });
+    }
+
+    // recursive_golem: every harden move builds a stack (the forced rupture
+    // at 3 is handled pre-pick). Buff actions don't produce attack events, so
+    // count by NPC action type.
+    if (state.bossPatternId === 'recursive_golem') {
+      const hardenUsed = result.events.some(e => e.attacker === 'npc' && (e.action === 'buff' || e.action === 'defend'));
+      if (hardenUsed && bs.hardenStacks < 3) {
+        dispatch({ type: 'SET_BOSS_STATE', value: { hardenStacks: bs.hardenStacks + 1 } });
+        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} harden stack ${bs.hardenStacks + 1}/3 — rupture at 3.` });
+      }
+    }
+
+    // stack_overflow: once per battle, a Thunder Clap hit arms ×2 SPD for 2t,
+    // then the crash lands (skip turn).
+    if (state.bossPatternId === 'stack_overflow' && npcAttackEvent?.hit && npcAttackEvent.moveKey === 'thunder_clap' && !bs.surgeUsed) {
+      dispatch({ type: 'SET_BOSS_STATE', value: { spdDoubleTurnsLeft: 2, surgeUsed: true, crashTurnsLeft: 2 } });
+      dispatch({ type: 'ADD_LOG', text: `${state.npc.name} surges — its speed doubles for two turns!` });
+    } else if (state.bossPatternId === 'stack_overflow' && bs.spdDoubleTurnsLeft > 0) {
+      dispatch({ type: 'SET_BOSS_STATE', value: { spdDoubleTurnsLeft: bs.spdDoubleTurnsLeft - 1 } });
+    }
 
     // Tag signature events for presentation
     const isSignature = shouldFireSignature && !previouslyCharged;

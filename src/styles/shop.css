@@ -235,3 +235,16 @@
   .shop-detail { width: 100%; }
   .shop-items { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* === VOID EGG BLOCKERS === */
+.void-egg-blockers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 4px;
+  padding: 8px 10px;
+  background: #0a0a14;
+  border: 1px solid #333;
+  border-radius: 4px;
+  justify-content: center;
+}

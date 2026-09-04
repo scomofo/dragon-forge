@@ -701,3 +701,59 @@ describe('P4 firewall_sentinel packet shield (executedByBattleEngine pilot)', ()
     });
   });
 });
+
+describe('P4 additional authored-pattern option mechanics', () => {
+  const player = {
+    name: 'Test', element: 'storm', stage: 1, hp: 100, maxHp: 100,
+    atk: 200, def: 20, spd: 50, defending: false, status: null,
+  };
+  const crab = {
+    name: 'Crypto Crab', element: 'ice', stage: 3, hp: 100, maxHp: 100,
+    atk: 10, def: 20, spd: 10, defending: false, status: null,
+  };
+  const wraith = {
+    name: 'Bit Wraith', element: 'shadow', stage: 3, hp: 100, maxHp: 100,
+    atk: 200, def: 20, spd: 200, defending: false, status: null,
+  };
+  const hydra = {
+    name: 'Glitch Hydra', element: 'storm', stage: 3, hp: 100, maxHp: 100,
+    atk: 10, def: 20, spd: 10, defending: false, status: null,
+  };
+
+  it('crypto_crab encryption blocks player damage while active', () => {
+    const { npc, events } = resolveTurn(player, crab, 'basic_attack', 'defend', ['basic_attack'], ['defend'], {
+      cryptoEncrypted: true,
+    });
+    expect(npc.hp).toBe(100);
+    expect(events.find(e => e.attacker === 'player').blocked).toBe(true);
+  });
+
+  it('bit_wraith pierce ignores the player Defend', () => {
+    const { player: after } = resolveTurn(
+      { ...player, def: 400 },
+      wraith,
+      'defend', 'basic_attack', ['defend'], ['basic_attack'], {
+      bitWraithPierce: true,
+    });
+    // 400 DEF would halve to ~1 damage if Defend applied; pierce → real damage
+    expect(after.hp).toBeLessThan(100);
+  });
+
+  it('glitch_hydra floors HP at 30% until three heads unlock', () => {
+    // Ice move is super-effective vs storm (2.0 per the type chart) — would
+    // normally do far more than 70 damage, but the floor caps it at 30.
+    const { npc } = resolveTurn(
+      { ...player, element: 'ice' }, hydra,
+      'blizzard', 'defend', ['blizzard'], ['defend'],
+      { hydraFloor: 0.3 },
+    );
+    expect(npc.hp).toBe(30); // Math.ceil(100 * 0.3)
+  });
+
+  it('glitch_hydra unlocks fully once the floor is removed', () => {
+    const { npc } = resolveTurn(player, hydra, 'basic_attack', 'defend', ['basic_attack'], ['defend'], {
+      hydraFloor: 0,
+    });
+    expect(npc.hp).toBeLessThan(100);
+  });
+});
