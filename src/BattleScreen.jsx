@@ -1,7 +1,8 @@
 import { useState, useReducer, useCallback, useEffect, useRef } from 'react';
 import { battleWait, getBattleSpeed, setBattleSpeed } from './battleSpeed';
 import { playSound, playMusic, stopMusic, startHeartbeat, stopHeartbeat } from './soundEngine';
-import { dragons, npcs, moves, elementColors, STATUS_EFFECTS } from './gameData';
+import { dragons, npcs, moves, elementColors, STATUS_EFFECTS, DUAL_TECHS } from './gameData';
+import { resolveDualTech } from './gameData';
 import {
   resolveTurn, pickNpcMove, calculateStatsForLevel,
   getStageForLevel, calculateXpGain, getTypeEffectivenessLabel,
@@ -211,6 +212,7 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     npcChargedMove: null,
     signatureMoveUsed: false,
     playerSignatureUsed: {},
+    dualTechUsed: false,
     playerAtkBuff: null,
     playerDefBuff: null,
     playerMoveHistory: [],
@@ -290,6 +292,8 @@ function battleReducer(state, action) {
       return { ...state, playerDefBuff: action.value };
     case 'SET_PLAYER_SIGNATURE_USED':
       return { ...state, playerSignatureUsed: { ...(state.playerSignatureUsed || {}), [action.dragonId]: true } };
+    case 'SET_DUAL_TECH_USED':
+      return { ...state, dualTechUsed: true };
     case 'APPLY_HEAL_TO_PLAYER':
       return { ...state, playerHp: Math.min(state.playerMaxHp, state.playerHp + action.amount) };
     case 'SET_NPC_CHARGED_MOVE':
@@ -827,6 +831,12 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       dispatch({ type: 'SET_PLAYER_SIGNATURE_USED', dragonId: state.dragonId });
     }
 
+    // Dual techs: once-per-battle combo moves mark their use on fire.
+    if (moveKey.startsWith('dual_')) {
+      // Dispatch after the resolve so the combo still fires this turn.
+      setTimeout(() => dispatch({ type: 'SET_DUAL_TECH_USED' }), 0);
+    }
+
     const battleContext = {
       playerMoveHistory: state.playerMoveHistory,
       turnCount: state.turnCount,
@@ -938,8 +948,15 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     // recursive_golem harden pip + bit_wraith pierce + memory_leak pips +
     // logic_bomb fuse tick read via options below.
     const bs = state.bossState;
+    // Dual techs resolve via a move override (constructed from the pairing —
+    // the moves table never sees the combo keys).
+    const dualTechKey = moveKey.startsWith('dual_') ? moveKey.slice(5) : null;
+    const dualTechMove = dualTechKey
+      ? Object.values(DUAL_TECHS).find(t => t.key === dualTechKey)
+      : null;
     const engineOptions = {
       playerAccuracyFloor: (state.npc.difficulty === 'Easy' && !(save.defeatedNpcs || []).length) ? 95 : 0,
+      playerMoveOverride: dualTechMove || undefined,
 
       // firewall_sentinel packet-shield (pilot)
       packetShield: state.bossPatternId === 'firewall_sentinel' && moveKey !== 'defend',
@@ -1532,7 +1549,27 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
   const dragon = state.dragon;
   const npc = state.npc;
-  const playerMoves = [...dragon.moveKeys.map((k) => ({ key: k, ...moves[k] })), { key: 'basic_attack', ...moves.basic_attack }];
+  // Dual techs: when the bench element pairs with the active's, the once-per-
+  // battle combo move unlocks (sorted key so order doesn't matter).
+  const dualTech = state.bench?.playerHp > 0
+    ? resolveDualTech(dragon.element, state.bench.dragon.element)
+    : null;
+  const dualTechUsedUp = !!state.dualTechUsed;
+  const playerMoves = [
+    ...dragon.moveKeys.map((k) => ({ key: k, ...moves[k] })),
+    { key: 'basic_attack', ...moves.basic_attack },
+  ];
+  if (dualTech && !dualTechUsedUp) {
+    playerMoves.push({
+      key: `dual_${dualTech.key}`,
+      name: dualTech.name,
+      element: dualTech.element,
+      power: dualTech.power,
+      accuracy: dualTech.accuracy,
+      vfxKey: dualTech.vfxKey,
+      isDualTech: true,
+    });
+  }
   const controllerCommandCount = playerMoves.length + 3; // moves + defend + speed + auto
   const playerColor = elementColors[dragon.element];
   const npcColor = elementColors[npc.element];
@@ -1920,13 +1957,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             const statusSummary = getStatusMoveSummary(move);
             const signatureSummary = getSignatureSummary(move);
             const signatureSpent = !!(move.isSignature && state.playerSignatureUsed?.[state.dragonId]);
+            const isDualTechBtn = !!move.isDualTech;
             return (
               <button
                 key={move.key}
-                className={`move-btn ${isSelected ? 'selected' : ''} ${controllerFocusIndex === index ? 'controller-focus' : ''} ${isResolving && !isSelected ? 'dimmed' : ''} ${matchup.toLowerCase()} ${move.isSignature ? 'signature' : ''}`}
+                className={`move-btn ${isSelected ? 'selected' : ''} ${controllerFocusIndex === index ? 'controller-focus' : ''} ${isResolving && !isSelected ? 'dimmed' : ''} ${matchup.toLowerCase()} ${move.isSignature ? 'signature' : ''} ${isDualTechBtn ? 'dual-tech' : ''}`}
                 style={{ '--move-color': moveColor.primary, '--move-glow': moveColor.glow, borderColor: moveColor.primary, color: moveColor.glow, opacity: signatureSpent ? 0.45 : 1 }}
                 disabled={isResolving || signatureSpent}
-                title={signatureSpent ? 'Signature already spent this battle' : signatureSummary ? `SIGNATURE — ${signatureSummary.title}` : ''}
+                title={isDualTechBtn ? `DUAL TECH — ${state.bench.dragon.name} pairs ${dualTech.move1}+${dualTech.move2}` : signatureSpent ? 'Signature already spent this battle' : signatureSummary ? `SIGNATURE — ${signatureSummary.title}` : ''}
                 onClick={() => handleMoveSelect(move.key)}
               >
                 <span className="tooltip">
@@ -1936,7 +1974,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                 <span className="move-meta">
                   <i>{moveColor.icon} {move.element.toUpperCase()}</i>
                   <i>{move.power > 0 ? `PWR ${move.power} · ACC ${move.accuracy}%` : signatureSummary?.title || 'SUPPORT'}</i>
-                  <i>{move.isSignature ? (signatureSpent ? 'SPENT' : (signatureSummary?.label || 'SIG')) : matchup}</i>
+                  <i>{isDualTechBtn ? 'DUAL' : move.isSignature ? (signatureSpent ? 'SPENT' : (signatureSummary?.label || 'SIG')) : matchup}</i>
                   {statusSummary && <i>{statusSummary.label}</i>}
                 </span>
               </button>

@@ -214,12 +214,12 @@ export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey, pl
   const playerFirst = player.spd >= npc.spd;
 
   const first = playerFirst
-    ? { state: player, moveKey: playerMoveKey, label: 'player' }
+    ? { state: player, moveKey: playerMoveKey, move: options.playerMoveOverride, label: 'player' }
     : { state: npc, moveKey: npcMoveKey, label: 'npc' };
 
   const second = playerFirst
     ? { state: npc, moveKey: npcMoveKey, label: 'npc' }
-    : { state: player, moveKey: playerMoveKey, label: 'player' };
+    : { state: player, moveKey: playerMoveKey, move: options.playerMoveOverride, label: 'player' };
 
   // Glitch randomization
   if (first.state.status?.effect === 'void') {
@@ -334,7 +334,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
     return;
   }
 
-  const moveData = allMoves[actor.moveKey];
+  const moveData = actor.move || allMoves[actor.moveKey];
   const move = moveData || allMoves.basic_attack;
 
   // Reflect handler
