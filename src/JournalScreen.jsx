@@ -20,32 +20,23 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
     return firstOwned || 'fire';
   });
   const [milestoneResults, setMilestoneResults] = useState([]);
-  const [newlyClaimed, setNewlyClaimed] = useState([]);
   const hasCheckedRef = useRef(false);
   const briefingMarkedRef = useRef(false);
+
+  function handleClaim(m) {
+    playSound('journalUnlock');
+    claimMilestone(m.id, m.reward);
+    showToast(`🏆 ${m.name} — +${m.reward} ◆`);
+    refreshSave();
+    setMilestoneResults(prev => prev.map(r => r.id === m.id ? { ...r, claimed: true, newlyClaimed: false } : r));
+  }
 
   useEffect(() => {
     if (hasCheckedRef.current) return;
     hasCheckedRef.current = true;
 
     const results = checkMilestones(save);
-    const toClaim = results.filter(m => m.newlyClaimed);
-
-    if (toClaim.length > 0) {
-      for (const m of toClaim) {
-        claimMilestone(m.id, m.reward);
-      }
-      playSound('journalUnlock');
-      refreshSave();
-      for (const m of toClaim) {
-        showToast(`🏆 ${m.name} — +${m.reward} ◆`);
-      }
-      const claimedIds = new Set(toClaim.map(m => m.id));
-      setMilestoneResults(results.map(m => claimedIds.has(m.id) ? { ...m, claimed: true, newlyClaimed: false } : m));
-      setNewlyClaimed(toClaim.map(m => m.id));
-    } else {
-      setMilestoneResults(results);
-    }
+    setMilestoneResults(results);
   }, []);
 
   useEffect(() => {
@@ -272,18 +263,26 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
 
             <div className="journal-milestones">
               {milestoneResults.map((m) => {
-                const isClaimed = m.claimed || newlyClaimed.includes(m.id);
-                const isNew = newlyClaimed.includes(m.id);
+                const isClaimed = m.claimed;
+                const claimable = m.newlyClaimed;
 
                 return (
                   <div
                     key={m.id}
-                    className={`milestone-badge ${isClaimed ? 'claimed' : ''} ${isNew ? 'newly-claimed' : ''}`}
+                    className={`milestone-badge ${isClaimed ? 'claimed' : ''} ${claimable ? 'claimable' : ''}`}
                     title={`${m.description} — ${m.reward} DataScraps`}
                   >
                     {isClaimed ? '✓ ' : ''}{m.name}
-                    {!isClaimed && <span style={{ display: 'block', fontSize: 6, color: '#444' }}>{m.progress}</span>}
-                    {isNew && <span style={{ display: 'block', fontSize: 6, color: '#ffcc00' }}>+{m.reward} ◆</span>}
+                    {claimable ? (
+                      <button
+                        className="milestone-claim-btn"
+                        onClick={() => handleClaim(m)}
+                      >
+                        CLAIM +{m.reward} ◆
+                      </button>
+                    ) : (
+                      !isClaimed && <span style={{ display: 'block', fontSize: 6, color: '#444' }}>{m.progress}</span>
+                    )}
                   </div>
                 );
               })}

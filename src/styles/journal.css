@@ -307,3 +307,34 @@
   .journal-briefing-grid { grid-template-columns: 1fr; }
   .journal-tab { min-height: 44px; }
 }
+
+/* === MANUAL MILESTONE CLAIM === */
+.milestone-badge.claimable {
+  border-color: #ffcc00;
+  box-shadow: 0 0 8px rgba(255, 204, 0, 0.25);
+}
+
+.milestone-claim-btn {
+  display: block;
+  margin-top: 6px;
+  padding: 5px 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  background: #ffcc00;
+  color: #0a0a14;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  animation: claimPulse 1.4s ease-in-out infinite;
+}
+
+.milestone-claim-btn:hover {
+  background: #ffd94d;
+  transform: scale(1.05);
+}
+
+@keyframes claimPulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(255, 204, 0, 0.4); }
+  50% { box-shadow: 0 0 12px rgba(255, 204, 0, 0.8); }
+}
