@@ -349,12 +349,22 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   // P4: firewall_sentinel's authored pattern — the shield holds unless the
   // player Defended last turn (waited out the cycle) or pierces (Phase Strike).
   const playerDefendedLastTurn = useRef(false);
+  // T8: every bare setTimeout gets tracked here so unmount can cancel pending
+  // sound/dispatch callbacks instead of them firing into a dead tree.
+  const pendingTimersRef = useRef(new Set());
+  const trackedTimeout = useCallback((fn, ms) => {
+    const id = setTimeout(() => {
+      pendingTimersRef.current.delete(id);
+      fn();
+    }, ms);
+    pendingTimersRef.current.add(id);
+    return id;
+  }, []);
   // C5: entrance overlay — stamps both combatants in before input unlocks.
   const [introDone, setIntroDone] = useState(false);
   useEffect(() => {
     playSound('attackLaunch', { element: state.npc.element });
-    const t = setTimeout(() => setIntroDone(true), Math.round(850 / getBattleSpeed()));
-    return () => clearTimeout(t);
+    trackedTimeout(() => setIntroDone(true), Math.round(850 / getBattleSpeed()));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -367,6 +377,16 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const playerAuraRef = useRef(null);
   const npcAuraRef = useRef(null);
   const damageStaggerRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      for (const id of pendingTimersRef.current) clearTimeout(id);
+      pendingTimersRef.current.clear();
+      if (playerAuraRef.current) playerAuraRef.current.kill();
+      if (npcAuraRef.current) npcAuraRef.current.kill();
+      stopHeartbeat();
+    };
+  }, []);
 
   const animateEvent = useCallback(async (event, dispatch) => {
     const isPlayer = event.attacker === 'player';
@@ -420,7 +440,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-telegraph' });
       }
       dispatch({ type: 'SET_BATTLE_CALLOUT', value: { text: 'FORTIFY', variant: 'buff' } });
-      setTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 700);
+      trackedTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 700);
       const dmgId = ++damageIdRef.current;
       dispatch({
         type: 'ADD_DAMAGE_NUMBER',
@@ -451,7 +471,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: 'sprite-telegraph' });
       }
       dispatch({ type: 'SET_BATTLE_CALLOUT', value: { text: 'RESTORE', variant: 'heal' } });
-      setTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 700);
+      trackedTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 700);
       const healId = ++damageIdRef.current;
       dispatch({
         type: 'ADD_DAMAGE_NUMBER',
@@ -521,7 +541,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       if (npcEl) npcLunge(npcEl, state.npc.flipSprite ? 'left' : 'right');
     }
     // Whip/swoosh at the contact frame (matches lunge anticipation -> strike timing)
-    setTimeout(() => playSound('lungeContact'), 110);
+    trackedTimeout(() => playSound('lungeContact'), 110);
 
     if (event.hit) {
       if (event.reflected) {
@@ -614,7 +634,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     const callout = getBattleResultCallout(event);
     if (callout) {
       dispatch({ type: 'SET_BATTLE_CALLOUT', value: callout });
-      setTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 620);
+      trackedTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 620);
     }
     const dmgId = ++damageIdRef.current;
     const staggerIdx = damageStaggerRef.current++;
@@ -701,7 +721,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         enemyHpRatio: state.npcHp / state.npcMaxHp,
       };
       const autoMove = pickNpcMove(playerMoveKeys, state.dragon.element, state.npc.element, state.npcStatus, autoBattleContext);
-      setTimeout(() => handleMoveSelect(autoMove), 500);
+      trackedTimeout(() => handleMoveSelect(autoMove), 500);
     }
   }, [autoBattle, state.phase, introDone]);
 
@@ -719,8 +739,22 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     }
   }, []); // once on mount
 
+  // T8: every bare setTimeout gets tracked here so unmount can cancel pending
+  // sound/dispatch callbacks instead of them firing into a dead tree.
+  const pendingTimersRef = useRef(new Set());
+  const trackedTimeout = useCallback((fn, ms) => {
+    const id = setTimeout(() => {
+      pendingTimersRef.current.delete(id);
+      fn();
+    }, ms);
+    pendingTimersRef.current.add(id);
+    return id;
+  }, []);
+
   useEffect(() => {
     return () => {
+      for (const id of pendingTimersRef.current) clearTimeout(id);
+      pendingTimersRef.current.clear();
       if (playerAuraRef.current) playerAuraRef.current.kill();
       if (npcAuraRef.current) npcAuraRef.current.kill();
       stopHeartbeat();
@@ -834,7 +868,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     // Dual techs: once-per-battle combo moves mark their use on fire.
     if (moveKey.startsWith('dual_')) {
       // Dispatch after the resolve so the combo still fires this turn.
-      setTimeout(() => dispatch({ type: 'SET_DUAL_TECH_USED' }), 0);
+      trackedTimeout(() => dispatch({ type: 'SET_DUAL_TECH_USED' }), 0);
     }
 
     const battleContext = {
@@ -1107,7 +1141,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     // Signature callout (player or NPC)
     if (isSignature || moves[moveKey]?.isSignature) {
       dispatch({ type: 'SET_BATTLE_CALLOUT', value: { text: 'SIGNATURE', variant: 'signature' } });
-      setTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 900);
+      trackedTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), 900);
     }
 
     // Charged strike callout
@@ -1382,9 +1416,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           stopHeartbeat();
           playSound('victoryFanfare');
           playSound('xpGain');
-          if (scrapsGained > 0) setTimeout(() => playSound('scrapsEarned'), 200);
-          if (leveledUp) setTimeout(() => playSound('levelUp'), 400);
-          if (stageEvolved) setTimeout(() => playSound('levelUp'), 800);
+          if (scrapsGained > 0) trackedTimeout(() => playSound('scrapsEarned'), 200);
+          if (leveledUp) trackedTimeout(() => playSound('levelUp'), 400);
+          if (stageEvolved) trackedTimeout(() => playSound('levelUp'), 800);
         }
       }
     } else if (result.player.hp <= 0) {

@@ -740,11 +740,11 @@ describe('P4 additional authored-pattern option mechanics', () => {
   });
 
   it('glitch_hydra floors HP at 30% until three heads unlock', () => {
-    // Ice move is super-effective vs storm (2.0 per the type chart) — would
-    // normally do far more than 70 damage, but the floor caps it at 30.
+    // Huge effective hit — would KO without the floor; deterministic regardless
+    // of the 0.85–1.0 damage roll. ice (2.0 SE vs storm) at high atk.
     const { npc } = resolveTurn(
-      { ...player, element: 'ice' }, hydra,
-      'blizzard', 'defend', ['blizzard'], ['defend'],
+      { ...player, element: 'ice', atk: 500 }, hydra,
+      'basic_attack', 'defend', ['basic_attack'], ['defend'],
       { hydraFloor: 0.3 },
     );
     expect(npc.hp).toBe(30); // Math.ceil(100 * 0.3)
