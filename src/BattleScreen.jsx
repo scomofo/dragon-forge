@@ -365,7 +365,6 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   useEffect(() => {
     playSound('attackLaunch', { element: state.npc.element });
     trackedTimeout(() => setIntroDone(true), Math.round(850 / getBattleSpeed()));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const battleContainerRef = useRef(null);
@@ -738,28 +737,6 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       dispatch({ type: 'ADD_LOG', text: `${boss.name}: ${boss.phaseLines[0]}` });
     }
   }, []); // once on mount
-
-  // T8: every bare setTimeout gets tracked here so unmount can cancel pending
-  // sound/dispatch callbacks instead of them firing into a dead tree.
-  const pendingTimersRef = useRef(new Set());
-  const trackedTimeout = useCallback((fn, ms) => {
-    const id = setTimeout(() => {
-      pendingTimersRef.current.delete(id);
-      fn();
-    }, ms);
-    pendingTimersRef.current.add(id);
-    return id;
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      for (const id of pendingTimersRef.current) clearTimeout(id);
-      pendingTimersRef.current.clear();
-      if (playerAuraRef.current) playerAuraRef.current.kill();
-      if (npcAuraRef.current) npcAuraRef.current.kill();
-      stopHeartbeat();
-    };
-  }, []);
 
   const runFragmentUnlockPass = () => {
     const s = loadSave();
@@ -1458,15 +1435,6 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         // Mirror fights keep their bespoke track; generic fights calm to battle.
         if (!battleConfig?.isMirrorAdmin && !battleConfig?.isSingularity) playMusic('battle');
       } else {
-        trackStat('battlesLost');
-        updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
-        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-defeated' });
-        dispatch({ type: 'SET_DEFEAT' });
-        stopMusic();
-        stopHeartbeat();
-        playSound('defeatDrone');
-      }
-    } else {
         trackStat('battlesLost');
         updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-defeated' });
