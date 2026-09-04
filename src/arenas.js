@@ -1,10 +1,10 @@
 // P1.1 arena registry — battle truth for every arena the cartridge renders.
 //
 // Eleven arenas are referenced by battle code (9 NPC + shadow + the
-// gravity chamber). All eleven are still placeholders: only magma and
-// lightning exist as authored 1024s and neither is assigned to a battle
-// yet (P3 zone material). Statuses here flip to `authored` as the P1 art
-// pass replaces files — no code changes needed beyond the flip.
+// gravity chamber). All eleven are now authored 1024x1024 art from the P1
+// pass (handoff/ARENA_AND_FORGE_BRIEF.md), generated + converted to webp.
+// magma and lightning remain authored 1024s and are P3 zone material, not
+// yet assigned to a battle.
 //
 // Filter ratchet: grade-only filters (saturate/contrast/brightness) pass
 // through. Hue-rotate/grayscale are content filters — a new actor or arena
@@ -26,17 +26,17 @@ const arena = (file, status) => ({
 });
 
 export const ARENAS = {
-  npc_firewall_sentinel: arena('npc_firewall_sentinel', ARENA_STATUS.PLACEHOLDER),
-  npc_bit_wraith: arena('npc_bit_wraith', ARENA_STATUS.PLACEHOLDER),
-  npc_glitch_hydra: arena('npc_glitch_hydra', ARENA_STATUS.PLACEHOLDER),
-  npc_recursive_golem: arena('npc_recursive_golem', ARENA_STATUS.PLACEHOLDER),
-  npc_buffer_overflow: arena('npc_buffer_overflow', ARENA_STATUS.PLACEHOLDER),
-  npc_crypto_crab: arena('npc_crypto_crab', ARENA_STATUS.PLACEHOLDER),
-  npc_logic_bomb: arena('npc_logic_bomb', ARENA_STATUS.PLACEHOLDER),
-  npc_phishing_siren: arena('npc_phishing_siren', ARENA_STATUS.PLACEHOLDER),
-  npc_protocol_vulture: arena('npc_protocol_vulture', ARENA_STATUS.PLACEHOLDER),
-  shadow: arena('shadow', ARENA_STATUS.PLACEHOLDER),
-  gravity_chamber: arena('gravity_chamber', ARENA_STATUS.PLACEHOLDER),
+  npc_firewall_sentinel: arena('npc_firewall_sentinel', ARENA_STATUS.AUTHORED),
+  npc_bit_wraith: arena('npc_bit_wraith', ARENA_STATUS.AUTHORED),
+  npc_glitch_hydra: arena('npc_glitch_hydra', ARENA_STATUS.AUTHORED),
+  npc_recursive_golem: arena('npc_recursive_golem', ARENA_STATUS.AUTHORED),
+  npc_buffer_overflow: arena('npc_buffer_overflow', ARENA_STATUS.AUTHORED),
+  npc_crypto_crab: arena('npc_crypto_crab', ARENA_STATUS.AUTHORED),
+  npc_logic_bomb: arena('npc_logic_bomb', ARENA_STATUS.AUTHORED),
+  npc_phishing_siren: arena('npc_phishing_siren', ARENA_STATUS.AUTHORED),
+  npc_protocol_vulture: arena('npc_protocol_vulture', ARENA_STATUS.AUTHORED),
+  shadow: arena('shadow', ARENA_STATUS.AUTHORED),
+  gravity_chamber: arena('gravity_chamber', ARENA_STATUS.AUTHORED),
 };
 
 // Boss ids whose arenaFilter relies on a content filter (hue-rotate or

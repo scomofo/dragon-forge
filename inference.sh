@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# inference.sh — calls fal CLI for Dragon Forge asset generation scripts.
+# inference.sh — generates a Dragon Forge asset via the fal PRODUCTION REST API.
+#
+# The fal CLI on this machine is pinned to FAL_HOST=api.alpha.fal.ai (an alpha
+# backend that does not see the production balance), so we bypass the CLI and
+# POST directly to https://fal.run with the FAL_KEY.
+#
 # Usage: bash inference.sh --model <id> --prompt <text> [--negative <text>] \
 #                          [--width <px>] [--height <px>] --output <file.png>
 #
-# Requires: fal CLI (uv tool install fal) + FAL_KEY env var or `fal auth login`
+# Requires: FAL_KEY env var (https://fal.ai/dashboard/keys). curl + python3+PIL.
 
 set -euo pipefail
 
-FAL="$(command -v fal 2>/dev/null || echo "$HOME/.local/bin/fal")"
-
-# Defaults
 MODEL=""
 PROMPT=""
 NEGATIVE=""
@@ -29,68 +31,69 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -z "$PROMPT" ]]  && { echo "ERROR: --prompt required" >&2; exit 1; }
-[[ -z "$OUTPUT" ]]  && { echo "ERROR: --output required" >&2; exit 1; }
+[[ -z "$PROMPT" ]] && { echo "ERROR: --prompt required" >&2; exit 1; }
+[[ -z "$OUTPUT" ]] && { echo "ERROR: --output required" >&2; exit 1; }
+[[ -z "${FAL_KEY:-}" ]] && { echo "ERROR: FAL_KEY env var required (https://fal.ai/dashboard/keys)" >&2; exit 3; }
 
-# Map model shorthand to fal app ID
+# Map model shorthand to a production endpoint id.
 case "$MODEL" in
-  seedream-4.5|seedream)  APP_ID="bytedance/seedream-4-5" ;;
-  seedream-4.0)           APP_ID="bytedance/seedream-4-0" ;;
-  flux)                   APP_ID="falai/flux-dev-lora" ;;
-  flux-klein)             APP_ID="pruna/flux-klein-4b" ;;
-  *)                      APP_ID="bytedance/seedream-4-5" ;;
+  seedream-4.5|seedream)  APP_ID="fal-ai/bytedance/seedream/v4.5/text-to-image" ;;
+  seedream-4.0)           APP_ID="fal-ai/bytedance/seedream/v4/text-to-image" ;;
+  flux)                   APP_ID="fal-ai/flux/dev" ;;
+  flux-schnell)           APP_ID="fal-ai/flux/schnell" ;;
+  *)                      APP_ID="fal-ai/bytedance/seedream/v4.5/text-to-image" ;;
 esac
 
-# Build fal api args (key=value pairs)
-ARGS=("$APP_ID" "prompt=${PROMPT}" "width=${WIDTH}" "height=${HEIGHT}")
-[[ -n "$NEGATIVE" ]] && ARGS+=("negative_prompt=${NEGATIVE}")
-
-# Fail loudly if not authenticated (previously the error was swallowed and the
-# batch scripts reported a phantom success).
-if ! "$FAL" auth whoami >/dev/null 2>&1 && [[ -z "${FAL_KEY:-}" ]]; then
-  echo "ERROR: fal is not authenticated." >&2
-  echo "  Run: fal profile key set <KEY>   (or)   export FAL_KEY=<KEY>" >&2
-  echo "  Get a key at https://fal.ai/dashboard/keys" >&2
-  exit 3
+# seedream v4.5 takes an image_size enum, not raw width/height. Pick the enum
+# that best matches the requested aspect ratio; we downscale to the exact
+# target below with PIL.
+if (( WIDTH == HEIGHT )); then
+  SIZE="square_hd"
+elif (( WIDTH > HEIGHT )); then
+  SIZE="landscape_4_3"
+else
+  SIZE="portrait_4_3"
 fi
 
-# Run and capture JSON output (surface fal's stderr if the call fails)
-if ! RESULT=$("$FAL" api "${ARGS[@]}" 2>/tmp/fal_err); then
-  echo "ERROR: fal api call failed for $APP_ID:" >&2
-  cat /tmp/fal_err >&2
-  exit 4
-fi
+# Build the JSON payload safely (prompt may contain quotes).
+PAYLOAD=$(python3 -c '
+import json, sys
+prompt, size = sys.argv[1], sys.argv[2]
+print(json.dumps({"prompt": prompt, "image_size": size, "num_images": 1, "enable_safety_checker": False}))
+' "$PROMPT" "$SIZE")
 
-# Extract image URL — seedream returns {"images":[{"url":"..."}]}
-# Fallback handles older {"output":{"image":"..."}} shape
+# Call the production endpoint.
+RESULT=$(curl -fsSL -X POST "https://fal.run/${APP_ID}" \
+  -H "Authorization: Key ${FAL_KEY}" \
+  -H "Content-Type: application/json" \
+  -d "$PAYLOAD") || { echo "ERROR: fal request failed for $APP_ID" >&2; exit 4; }
+
+# Extract the first image URL.
 IMAGE_URL=$(printf '%s' "$RESULT" | python3 -c '
 import json, sys
 data = json.load(sys.stdin)
 images = data.get("images", [])
-if images:
+if images and images[0].get("url"):
     print(images[0]["url"]); raise SystemExit(0)
-url = data.get("output", {}).get("image", "")
-if url:
-    print(url); raise SystemExit(0)
-raise SystemExit("No image URL in output: " + json.dumps(data))
+raise SystemExit("No image URL in response: " + json.dumps(data)[:400])
 ')
 
-# Download to output path
+# Download to a temp file, then downscale/normalize to the exact target size.
 mkdir -p "$(dirname "$OUTPUT")"
-curl -fsSL "$IMAGE_URL" -o "$OUTPUT"
-echo "  → saved $OUTPUT"
+TMP="$(mktemp --suffix=.img)"
+curl -fsSL "$IMAGE_URL" -o "$TMP"
 
-# Compress in-place if pillow is available (target ≤300 KB)
-python3 - "$OUTPUT" <<'PYEOF' 2>/dev/null || true
+python3 - "$TMP" "$OUTPUT" "$WIDTH" "$HEIGHT" <<'PYEOF'
 import sys
-from pathlib import Path
-try:
-    from PIL import Image
-    p = Path(sys.argv[1])
-    img = Image.open(p)
-    img.save(p, format="PNG", optimize=True, compress_level=9)
-    kb = p.stat().st_size // 1024
-    print(f"  → compressed {p.name} ({kb} KB)")
-except Exception:
-    pass
+from PIL import Image
+src, out, w, h = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+img = Image.open(src)
+if img.size != (w, h):
+    img = img.resize((w, h), Image.LANCZOS)
+# Preserve alpha if the source has it; otherwise save as-is.
+img.save(out, format="PNG", optimize=True, compress_level=9)
+kb = __import__("pathlib").Path(out).stat().st_size // 1024
+print(f"  saved {out} ({img.size[0]}x{img.size[1]}, {kb} KB)")
 PYEOF
+
+rm -f "$TMP"

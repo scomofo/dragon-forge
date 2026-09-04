@@ -15,6 +15,7 @@ import {
   hasBannedFilter,
   isBannedArtUrl,
   isKnownPlaceholderArena,
+  KNOWN_PLACEHOLDER_ARENAS,
   uniqueSilhouettes,
   validateBattleSetSpec,
 } from './artBible';
@@ -164,8 +165,9 @@ describe('P1 arena contract', () => {
     }
   });
 
-  it('tracks the gravity-chamber grid as the one known placeholder', () => {
-    expect(isKnownPlaceholderArena('/assets/arenas/gravity_chamber.webp')).toBe(true);
+  it('tracks no known placeholder arenas after the P1 art pass', () => {
+    expect(KNOWN_PLACEHOLDER_ARENAS).toEqual([]);
+    expect(isKnownPlaceholderArena('/assets/arenas/gravity_chamber.webp')).toBe(false);
     expect(isKnownPlaceholderArena('/assets/arenas/shadow.webp')).toBe(false);
   });
 });

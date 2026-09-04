@@ -48,9 +48,9 @@ describe('arena registry', () => {
     }
   });
 
-  it('stays honest — all battle arenas are placeholders until the art pass', () => {
+  it('stays honest — all battle arenas are authored after the P1 art pass', () => {
     for (const [id, entry] of Object.entries(ARENAS)) {
-      expect(entry.status, id).toBe(ARENA_STATUS.PLACEHOLDER);
+      expect(entry.status, id).toBe(ARENA_STATUS.AUTHORED);
     }
   });
 
@@ -94,7 +94,7 @@ describe('resolveBattleArena', () => {
     });
     expect(
       resolveBattleArena({ arena: '/x/gravity_chamber.webp', arenaFilter: 'saturate(1.5) contrast(1.2)' }),
-    ).toMatchObject({ filter: 'saturate(1.5) contrast(1.2)', placeholder: true, contentFilter: false });
+    ).toMatchObject({ filter: 'saturate(1.5) contrast(1.2)', placeholder: false, contentFilter: false });
     expect(
       resolveBattleArena({ arena: '/x/shadow.webp', arenaFilter: 'grayscale(0.5) hue-rotate(330deg)' }),
     ).toMatchObject({ contentFilter: true });

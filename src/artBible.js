@@ -76,8 +76,9 @@ export const BODY_PLANS = {
 export const BANNED_ART_SUBSTRINGS = ['404', 'error', 'gemini', 'watermark'];
 
 // P1.1 — leftover arena files that must never be referenced by battle code.
-// `fire.webp` carries baked-in type labels; the gravity-chamber grid paper is
-// tracked separately as the one known placeholder (see KNOWN_PLACEHOLDER_ARENAS).
+// `fire.webp` carries baked-in type labels and stays banned. The P1 art pass
+// replaced every battle arena (9 NPC + shadow + gravity chamber) with authored
+// 1024² art, so no arena is a known placeholder anymore.
 export const BANNED_ARENA_SUBSTRINGS = ['arenas/fire.webp', 'arenas/fire.png'];
 
 export function isBannedArtUrl(url) {
@@ -86,10 +87,10 @@ export function isBannedArtUrl(url) {
     || BANNED_ARENA_SUBSTRINGS.some((banned) => haystack.includes(banned));
 }
 
-// P1.1 — arenas ship at 320×176 logical from 1024² sources. The final-boss
-// chamber is still the 696×344 grid-paper placeholder; it stays referenced
-// until the authored replacement lands, and this list keeps it honest.
-export const KNOWN_PLACEHOLDER_ARENAS = ['gravity_chamber'];
+// P1.1 — arenas ship at 320×176 logical from 1024² sources. The P1 art pass
+// authored every referenced arena, so this list is empty: no placeholder debt
+// remains. Kept (empty) so debug flags and tests keep their shape.
+export const KNOWN_PLACEHOLDER_ARENAS = [];
 
 export function isKnownPlaceholderArena(url) {
   return KNOWN_PLACEHOLDER_ARENAS.some((slug) => String(url || '').includes(slug));
