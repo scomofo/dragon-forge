@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { DUAL_TECHS, resolveDualTech, listDualTechPairings } from './gameData';
 import { resolveTurn } from './battleEngine';
 
@@ -40,12 +40,19 @@ describe('dual tech override in the engine', () => {
   };
 
   it('playerMoveOverride drives the resolved event (power scales)', () => {
-    const tech = DUAL_TECHS.fire_ice;
-    const { events } = resolveTurn(player, dummy, 'dual_steam_burst', 'defend', ['dual_steam_burst'], ['defend'], {
-      playerMoveOverride: tech,
-    });
-    const hit = events.find(e => e.attacker === 'player' && e.action === 'attack');
-    expect(hit.moveName).toBe('Steam Burst');
-    expect(hit.damage).toBeGreaterThan(0);
+    // Steam Burst has accuracy 90, so stub the RNG to force a hit — otherwise
+    // ~10% of runs miss (damage 0) and this flakes on CI.
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    try {
+      const tech = DUAL_TECHS.fire_ice;
+      const { events } = resolveTurn(player, dummy, 'dual_steam_burst', 'defend', ['dual_steam_burst'], ['defend'], {
+        playerMoveOverride: tech,
+      });
+      const hit = events.find(e => e.attacker === 'player' && e.action === 'attack');
+      expect(hit.moveName).toBe('Steam Burst');
+      expect(hit.damage).toBeGreaterThan(0);
+    } finally {
+      vi.restoreAllMocks();
+    }
   });
 });
