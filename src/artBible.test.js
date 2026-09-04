@@ -60,7 +60,10 @@ describe('art bible', () => {
     expect(Object.keys(VFX_PLACEHOLDERS)).toEqual([]);
     const signatures = Object.values(moves).filter((move) => move.isSignature);
     for (const move of signatures) {
-      expect(getVfxKind(move.vfxKey), move.name).toBe('signature');
+      // The authored 1024x256 strips shipped in P1, so signatures now resolve
+      // to 'strip' (the overlay prefers the strip, keeping the procedural
+      // 'signature' contract as the documented fallback).
+      expect(getVfxKind(move.vfxKey), move.name).toBe('strip');
     }
     const ids = Object.keys(SIGNATURE_VFX);
     expect(ids.length).toBeGreaterThanOrEqual(9);

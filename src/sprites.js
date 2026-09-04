@@ -33,6 +33,13 @@ const strip = (move, frames = 4) => ({
   strip: { src: assetUrl(`/assets/vfx/vfx_${move}.png`), frames },
 });
 
+// Authored 1024x256 signature strips (P1) — generated into public/assets/vfx/
+// as vfx_sig_<key>.png. Attached alongside `signature:` so the overlay prefers
+// the authored strip and keeps the procedural contract as documented fallback.
+const sigStrip = (key, frames = 4) => ({
+  strip: { src: assetUrl(`/assets/vfx/vfx_sig_${key}.png`), frames },
+});
+
 // P1.2 — every signature ships its own authored VFX identity. These are
 // procedural contracts (palette + motif + motion) so no two signatures share
 // another move's strip. When 1024×256 signature strips land in
@@ -73,15 +80,15 @@ export const VFX_FRAMES = {
   VOID_RIFT:        strip('void_rift'),
   RADIANT_BEAM:     strip('radiant_beam'),
   SOLAR_FLARE:      strip('solar_flare'),
-  HEARTFORGE:       { ...SIGNATURE_VFX.HEARTFORGE },
-  ABSOLUTE_ZERO:    { ...SIGNATURE_VFX.ABSOLUTE_ZERO },
-  OVERCLOCK:        { ...SIGNATURE_VFX.OVERCLOCK },
-  BASTION:          { ...SIGNATURE_VFX.BASTION },
-  HEMOTOXIN:        { ...SIGNATURE_VFX.HEMOTOXIN },
-  PHASE_STRIKE:     { ...SIGNATURE_VFX.PHASE_STRIKE },
-  SIPHON_RIFT:      { ...SIGNATURE_VFX.SIPHON_RIFT },
-  RESTORATION:      { ...SIGNATURE_VFX.RESTORATION },
-  RECOMPILE:        { ...SIGNATURE_VFX.RECOMPILE },
+  HEARTFORGE:       { ...SIGNATURE_VFX.HEARTFORGE, ...sigStrip('heartforge') },
+  ABSOLUTE_ZERO:    { ...SIGNATURE_VFX.ABSOLUTE_ZERO, ...sigStrip('absolute_zero') },
+  OVERCLOCK:        { ...SIGNATURE_VFX.OVERCLOCK, ...sigStrip('overclock') },
+  BASTION:          { ...SIGNATURE_VFX.BASTION, ...sigStrip('bastion') },
+  HEMOTOXIN:        { ...SIGNATURE_VFX.HEMOTOXIN, ...sigStrip('hemotoxin') },
+  PHASE_STRIKE:     { ...SIGNATURE_VFX.PHASE_STRIKE, ...sigStrip('phase_strike') },
+  SIPHON_RIFT:      { ...SIGNATURE_VFX.SIPHON_RIFT, ...sigStrip('siphon_rift') },
+  RESTORATION:      { ...SIGNATURE_VFX.RESTORATION, ...sigStrip('restoration') },
+  RECOMPILE:        { ...SIGNATURE_VFX.RECOMPILE, ...sigStrip('recompile') },
   NULL_REFLECT: null,
   BASIC_ATTACK: null,
 };
