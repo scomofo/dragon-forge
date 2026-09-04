@@ -13,7 +13,7 @@
   - [ ] P1 art — authored 1024² arena replacements (gravity chamber + 5 element + 9 NPC), 9 stage-3 dragon sheets (idle 4 / attack 6 / hurt 2 / faint 3 @96px), 9 NPC sheets at same cell, boss phase cells, 9 signature VFX strips
 - [ ] P2 Twelve authored tracks — Mirror Admin title-motif arrangement first (`design/gdd/music-identity.md`)
 - [ ] P3 Four authored zones — Outer Grid / Frozen Cache / Storm Spine / Admin Core rooms (`src/worldZones.js`)
-- [x] P4 Execute `bossPatterns.js` in `battleEngine` — 12 of 13 live (options-based hooks + per-boss screen state); `mirror_admin_reset` deferred (needs cross-phase move tracking); remaining depth-axis choice (dual techs **or** 4-move kits) still open
+- [x] P4 Execute `bossPatterns.js` in `battleEngine` — **all 13 live** (options-based engine hooks + per-boss screen state; `mirror_admin_reset` via per-phase move history). Depth-axis choice (dual techs **or** 4-move kits) still open
 - [ ] P5 Roster expansion only after P1–P3
 
 ## Recent Browser QA

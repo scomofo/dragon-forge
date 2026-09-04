@@ -110,12 +110,10 @@ describe('boss pattern authorship', () => {
     }
   });
 
-  it('tracks execution per pattern; 12 of 13 are live, mirror_admin_reset is the documented deferral', () => {
+  it('tracks execution per pattern; all 13 are live', () => {
     const entries = Object.entries(BOSS_PATTERNS);
     const executed = entries.filter(([, p]) => p.executedByBattleEngine);
-    const deferred = entries.filter(([id, p]) => !p.executedByBattleEngine).map(([id]) => id);
-    expect(executed.length).toBe(12);
-    expect(deferred).toEqual(['mirror_admin_reset']);
+    expect(executed.length).toBe(13);
     // The original pilot must stay wired.
     expect(BOSS_PATTERNS.firewall_sentinel.executedByBattleEngine).toBe(true);
   });

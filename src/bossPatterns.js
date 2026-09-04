@@ -1,7 +1,6 @@
-// Authored encounter scripts. P4 executes 12 of 13 from battleEngine via the
-// options/plumbing layer (packet-shield, encryption, pierce, head-lock, fuse,
-// harden stacks, drain, garble, leak pips, surge/crash, force-swaps, forced
-// moves). mirror_admin_reset needs cross-phase move tracking and is deferred.
+// Authored encounter scripts. P4 executes all 13 from battleEngine — options-
+// based engine hooks + per-boss screen state; mirror_admin_reset (the last
+// deferral) lives on per-phase move history plus the player-faint punish hook.
 // Docs: design/gdd/snes-aaa-roadmap.md
 
 export const BOSS_PATTERNS = {
@@ -81,7 +80,7 @@ export const BOSS_PATTERNS = {
     id: 'mirror_admin_reset',
     tell: 'Phase 3 whispers the Great Reset. A clean-save pip fills each KO.',
     rule: 'If the player faints a dragon in Phase 3 without having spent Restoration or Recompile this phase, Mirror Admin heals 25% max HP.',
-    executedByBattleEngine: false,
+    executedByBattleEngine: true,
   },
 };
 

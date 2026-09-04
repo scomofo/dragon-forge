@@ -167,6 +167,10 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     garbledMoveKey: null, garbledTurnsLeft: 0, // data_corruption
     leakPips: 0,                         // memory_leak
     spdDoubleTurnsLeft: 0, surgeUsed: false, crashTurnsLeft: 0, // stack_overflow
+    // mirror_admin_reset (deferred-boss pattern — the Great Reset punishes a
+    // no-heal Phase 3: if the player faints without spending Restoration/
+    // Recompile THIS PHASE, Mirror Admin heals 25% max HP).
+    mirrorHealPunished: false,
   };
 
   return {
@@ -210,6 +214,7 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     playerAtkBuff: null,
     playerDefBuff: null,
     playerMoveHistory: [],
+    phaseMoveHistory: [],
     bossPatternId,
     bossState,
   };
@@ -270,6 +275,8 @@ function battleReducer(state, action) {
         npcAttacking: false,
         phase: PHASES.PLAYER_TURN,
         currentPhase: (state.currentPhase || 0) + 1,
+        // mirror_admin_reset per-phase constraint resets on phase shift.
+        phaseMoveHistory: [],
       };
     case 'SET_EPILOGUE':
       return { ...state, phase: PHASES.EPILOGUE, xpGained: action.xpGained, scrapsGained: action.scrapsGained, isMirrorAdmin: action.isMirrorAdmin || false };
@@ -292,7 +299,13 @@ function battleReducer(state, action) {
     case 'SET_SIGNATURE_USED':
       return { ...state, signatureMoveUsed: true };
     case 'APPEND_PLAYER_MOVE_HISTORY':
-      return { ...state, playerMoveHistory: [...(state.playerMoveHistory || []).slice(-4), action.moveKey] };
+      return {
+        ...state,
+        playerMoveHistory: [...(state.playerMoveHistory || []), action.moveKey],
+        // Per-phase history for the mirror_admin_reset constraint (reset on
+        // phase shift, not a rolling window).
+        phaseMoveHistory: [...(state.phaseMoveHistory || []), action.moveKey],
+      };
     case 'SET_BOSS_STATE':
       return { ...state, bossState: { ...state.bossState, ...action.value } };
     case 'SWAP_DRAGON':
@@ -1359,6 +1372,22 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       }
     } else if (result.player.hp <= 0) {
       playSound('ko');
+
+      // mirror_admin_reset (Great Reset): if the player faints in Phase 3
+      // without having spent Restoration or Recompile THIS PHASE, Mirror
+      // Admin heals 25% max HP. Checked before the bench swap so the punish
+      // lands on the phase where the dragon actually fell.
+      if (battleConfig?.isMirrorAdmin && (state.currentPhase || 0) === 2) {
+        const healMovesThisPhase = (state.phaseMoveHistory || []).filter(k => ['restoration', 'recompile'].includes(k));
+        if (healMovesThisPhase.length === 0 && !state.bossState.mirrorHealPunished) {
+          const healAmount = Math.max(1, Math.floor(state.npcMaxHp * 0.25));
+          result = { ...result, npc: { ...result.npc, hp: Math.min(state.npcMaxHp, result.npc.hp + healAmount) } };
+          dispatch({ type: 'SET_BOSS_STATE', value: { mirrorHealPunished: true } });
+          dispatch({ type: 'ADD_LOG', text: `${state.npc.name} triggers the Great Reset — heals ${healAmount} HP!` });
+          playSound('statusTick', { element: 'shadow' });
+        }
+      }
+
       const playerCanvas = playerSpriteRef.current?.getCanvas?.();
       if (playerCanvas) {
         await new Promise(resolve => {
@@ -1375,8 +1404,18 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         dispatch({ type: 'ADD_LOG', text: `${state.dragon.name} fell — ${state.bench.dragon.name} steps in!` });
         dispatch({ type: 'FAINT_SWAP' });
         playSound('uiConfirm');
-        playMusic('battle');
+        // Mirror fights keep their bespoke track; generic fights calm to battle.
+        if (!battleConfig?.isMirrorAdmin && !battleConfig?.isSingularity) playMusic('battle');
       } else {
+        trackStat('battlesLost');
+        updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
+        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-defeated' });
+        dispatch({ type: 'SET_DEFEAT' });
+        stopMusic();
+        stopHeartbeat();
+        playSound('defeatDrone');
+      }
+    } else {
         trackStat('battlesLost');
         updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-defeated' });
