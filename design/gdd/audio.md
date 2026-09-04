@@ -6,6 +6,8 @@
 > **Last Verified**: 2026-06-16
 > **Implements Pillar**: P5 — Earned Mastery, Never Trivialized
 
+> **2026-09-04 update**: Mirror Admin now uses the fixed note arrangement in `musicScores.js` through `scorePlayer.js`. Settings has a Sound Room for that arrangement and the Heartforge motif study; other procedural beds and MP3s remain. Music volume updates every playback type immediately. Mute preserves the requested screen track and resumes it on unmute; explicit `stopMusic` clears that request. Fades are cancelable per audio element, and queued score/arpeggio voices are disposed on navigation. Title interactions use the preserved title MP3 without bubbling over the hatchery transition. The historical line references below predate this pass; `music-identity.md` owns current composition status.
+
 ## Summary
 
 The audio system provides all sound effects and music for Dragon Forge through a single module (`src/soundEngine.js`). It synthesises all SFX procedurally at runtime using the Web Audio API — there are no pre-recorded SFX files. Music is streamed from MP3 assets. The module manages per-screen music routing, element-tinted combat SFX, a low-HP heartbeat tension pulse, per-sound cooldown gates, and a persist-to-localStorage mute/volume preference. Sensation is a secondary aesthetic, serving the P5 readable-feedback commitment: every sound must make the consequence of a player action legible, not merely impressive.

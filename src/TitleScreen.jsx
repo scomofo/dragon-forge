@@ -137,7 +137,7 @@ export default function TitleScreen({ onStart, save }) {
 
   const handleClick = () => {
     // Retry music on first user interaction (autoplay policy requires click)
-    playMusic('opening');
+    playMusic('title');
     if (phase === 'ready') return;
     skippedRef.current = true;
     setLines(OPENING_BOOT_LINES.map((l) => ({ text: l.text, status: l.status })));
@@ -150,7 +150,8 @@ export default function TitleScreen({ onStart, save }) {
     setGlitching(false);
   };
 
-  const handleStart = () => {
+  const handleStart = (event) => {
+    event?.stopPropagation();
     playSound('buttonClick');
     markIntroSeen();
     onStart();
@@ -161,7 +162,12 @@ export default function TitleScreen({ onStart, save }) {
       className={`terminal-screen ${glitching ? 'terminal-glitch' : ''}`}
       onClick={handleClick}
       tabIndex={0}
-      onKeyDown={(e) => { handleClick(); if (e.key === 'Enter' && phase === 'ready') handleStart(); }}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget || !['Enter', ' '].includes(e.key)) return;
+        e.preventDefault();
+        if (phase === 'ready') handleStart();
+        else handleClick();
+      }}
     >
       <div className="terminal-sound-toggle">
         <SoundToggle />

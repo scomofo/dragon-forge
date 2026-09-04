@@ -13,6 +13,10 @@
   - [x] P1.1 art — all 11 battle arenas + the 5 element arenas now authored 1024² (handoff/ARENA_AND_FORGE_BRIEF.md via seedream v4.5); gravity-chamber grid placeholder retired; `KNOWN_PLACEHOLDER_ARENAS` empty; webp in `public/assets/arenas/`
   - [x] P1 art — all done: arenas + dragon/NPC battle sheets + boss phase attack cells (12) + 9 signature VFX strips (vfx_sig_*.webp, wired via `strip:` so the overlay prefers them over the procedural fallback). Notes: battle sheets are keyframe strips (in-between frames future polish); void/protocol_vulture low-contrast; singularity surge/void idles remain the committed vortices (distinctness regen rejected).
 - [ ] P2 Twelve authored tracks — Mirror Admin title-motif arrangement first (`design/gdd/music-identity.md`)
+  - [x] First arrangement — 16-bar Caretaker score at 56 BPM; 112 BPM Heartforge motif study; Settings Sound Room; existing Mirror Admin battle route wired
+  - [x] Playback reliability — live MP3/score volume, immediate mute, destination-aware unmute, cancelable fades, disposed queued notes, title input/music bubbling repaired
+  - [ ] Listening gate — instrument design/mastering, SFX balance, loop seams, and motif correspondence with the preserved title MP3
+  - [ ] Remaining compositions and six-authored-loops full-run acceptance (first arrangement does not close P2)
 - [ ] P3 Four authored zones — Outer Grid / Frozen Cache / Storm Spine / Admin Core rooms (`src/worldZones.js`)
 - [x] P4 Execute `bossPatterns.js` in `battleEngine` — **all 13 live** (options-based engine hooks + per-boss screen state; `mirror_admin_reset` via per-phase move history). Depth-axis choice (dual techs **or** 4-move kits) still open
 - [ ] P5 Roster expansion only after P1–P3

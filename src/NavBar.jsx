@@ -104,6 +104,7 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
         <button
           className={`nav-tab ${activeScreen === 'settings' ? 'active' : ''}`}
           onClick={() => onNavigate('settings')}
+          aria-label="Settings"
         >
           ⚙
         </button>
