@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rollRarity, rollElement, rollShiny, executePull, applyPullResult } from './hatcheryEngine';
+import { rollRarity, rollElement, rollShiny, executePull, applyPullResult, getRarityCeremony, orderGridResults, rankPullExcitement } from './hatcheryEngine';
 
 describe('rollRarity', () => {
   it('returns a rarity tier object', () => {
@@ -146,5 +146,66 @@ describe('applyPullResult', () => {
     expect(result.save.dragons.fire.level).toBe(6);
     expect(result.save.dragons.fire.xp).toBe(30);
     expect(result.xpGained).toBe(250);
+  });
+});
+
+describe('getRarityCeremony', () => {
+  it('escalates with rarity: Exotic holds longest and shakes hardest', () => {
+    const common = getRarityCeremony('Common');
+    const rare = getRarityCeremony('Rare');
+    const exotic = getRarityCeremony('Exotic');
+    expect(common.holdMs).toBe(0);
+    expect(rare.holdMs).toBeGreaterThan(0);
+    expect(exotic.holdMs).toBeGreaterThan(rare.holdMs);
+    expect(exotic.extraShakes).toBeGreaterThan(rare.extraShakes);
+    expect(rare.extraShakes).toBeGreaterThan(common.extraShakes);
+  });
+
+  it('only Rare+ escalates the ceremony; Uncommon just tints the glow', () => {
+    expect(getRarityCeremony('Common').glow).toBeNull();
+    // Uncommon tints the warm-up glow but gets no shakes/hold/stinger.
+    expect(getRarityCeremony('Uncommon').glow).toBeTruthy();
+    expect(getRarityCeremony('Uncommon').extraShakes).toBe(0);
+    expect(getRarityCeremony('Uncommon').holdMs).toBe(0);
+    expect(getRarityCeremony('Uncommon').stinger).toBeNull();
+    expect(getRarityCeremony('Rare').glow).toBeTruthy();
+    expect(getRarityCeremony('Exotic').glow).toBeTruthy();
+    expect(getRarityCeremony('Common').stinger).toBeNull();
+    expect(getRarityCeremony('Exotic').stinger).toBeTruthy();
+  });
+
+  it('falls back to Common for unknown tiers', () => {
+    expect(getRarityCeremony('Mythic')).toEqual(getRarityCeremony('Common'));
+  });
+});
+
+describe('orderGridResults', () => {
+  const entry = (rarityMultiplier, { shiny = false, isNew = false } = {}) => ({
+    pull: { rarityMultiplier, shiny },
+    apply: { isNew },
+  });
+
+  it('orders least-to-most exciting so the best pull lands last', () => {
+    const common = entry(1);
+    const exoticShiny = entry(5, { shiny: true, isNew: true });
+    const rare = entry(3);
+    const ordered = orderGridResults([exoticShiny, common, rare]);
+    expect(ordered[0]).toBe(common);
+    expect(ordered[1]).toBe(rare);
+    expect(ordered[2]).toBe(exoticShiny);
+  });
+
+  it('ranks shiny and NEW above plain duplicates of the same tier', () => {
+    const plain = entry(2);
+    const shiny = entry(2, { shiny: true });
+    const fresh = entry(2, { isNew: true });
+    expect(rankPullExcitement(shiny)).toBeGreaterThan(rankPullExcitement(fresh));
+    expect(rankPullExcitement(fresh)).toBeGreaterThan(rankPullExcitement(plain));
+  });
+
+  it('does not mutate the input array', () => {
+    const input = [entry(5), entry(1)];
+    orderGridResults(input);
+    expect(input[0].pull.rarityMultiplier).toBe(5);
   });
 });

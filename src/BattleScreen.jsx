@@ -1135,10 +1135,16 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     } else {
       const playerHpPct = result.player.hp / (result.player.maxHp || state.playerMaxHp);
       const npcHpPct = result.npc.hp / (result.npc.maxHp || state.npcMaxHp);
-      if (playerHpPct < 0.25 || npcHpPct < 0.25) {
-        playMusic('battleIntense');
-      } else {
-        playMusic('battle');
+      // Intensity ramp: standard fights open on the calm battle loop and
+      // escalate to the intense track when either side drops below 25%.
+      // Boss/Singularity fights keep their own entry tracks (singularity,
+      // mirrorAdmin) — the generic battle loop must not stomp them.
+      if (!battleConfig?.isSingularity && !battleConfig?.isMirrorAdmin && !battleConfig?.isRemnant) {
+        if (playerHpPct < 0.25 || npcHpPct < 0.25) {
+          playMusic('battleIntense');
+        } else {
+          playMusic('battle');
+        }
       }
       // Heartbeat urgency pulse only when the PLAYER is in danger
       if (playerHpPct < 0.25) {

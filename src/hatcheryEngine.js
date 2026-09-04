@@ -71,3 +71,29 @@ export function applyPullResult(save, pull) {
 
   return { save: newSave, isNew, xpGained };
 }
+
+// === RARITY-TELEGRAPHED CEREMONY ===
+// The pull is rolled before the hatch animation starts, so the ceremony can
+// telegraph the tier: glow color, extra shake escalation, a hold-your-breath
+// beat before the burst, and a post-reveal stinger. Pure data so the screen
+// stays a shell and the escalation is unit-testable.
+const RARITY_CEREMONY = {
+  Common:   { glow: null,      extraShakes: 0, holdMs: 0,   stinger: null },
+  Uncommon: { glow: '#44aaff', extraShakes: 0, holdMs: 0,   stinger: null },
+  Rare:     { glow: '#aa66ff', extraShakes: 2, holdMs: 250, stinger: 'levelUp' },
+  Exotic:   { glow: '#ffcc00', extraShakes: 4, holdMs: 600, stinger: 'journalUnlock' },
+};
+
+export function getRarityCeremony(rarityName) {
+  return RARITY_CEREMONY[rarityName] || RARITY_CEREMONY.Common;
+}
+
+// 10-pull grid: order cards so the most exciting pull lands last (genre
+// convention), keeping pull order within ties (stable sort). Pure.
+export function rankPullExcitement({ pull, apply }) {
+  return (pull.rarityMultiplier || 1) * 10 + (pull.shiny ? 5 : 0) + (apply?.isNew ? 2 : 0);
+}
+
+export function orderGridResults(results) {
+  return [...results].sort((a, b) => rankPullExcitement(a) - rankPullExcitement(b));
+}

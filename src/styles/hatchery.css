@@ -125,6 +125,17 @@
   100% { filter: brightness(1.3) drop-shadow(0 0 12px rgba(255, 170, 68, 0.6)); }
 }
 
+/* Rarity telegraph: while --rarity-glow is set (Rare/Exotic pulls), the warm-up
+   glow takes the tier color instead of the default ember orange. */
+.egg-container[style*="--rarity-glow"] .egg-glow {
+  animation-name: hatchGlowRarity;
+}
+
+@keyframes hatchGlowRarity {
+  0% { filter: brightness(1) drop-shadow(0 0 6px var(--rarity-glow)); }
+  100% { filter: brightness(1.45) drop-shadow(0 0 20px var(--rarity-glow)); }
+}
+
 .egg-crack {
   animation: hatchCrack 0.3s ease-out;
 }
@@ -303,6 +314,19 @@
   border: 1px solid #333;
   border-radius: 4px;
   font-size: 7px;
+}
+
+/* 10-pull staging: cards flip in one at a time (delay set inline per index),
+   ordered best-last by the engine. */
+.pull-grid-card.grid-flip {
+  opacity: 0;
+  animation: gridCardFlip 0.28s ease-out forwards;
+}
+
+@keyframes gridCardFlip {
+  0% { opacity: 0; transform: scale(0.6) rotateX(60deg); }
+  60% { opacity: 1; transform: scale(1.08) rotateX(0deg); }
+  100% { opacity: 1; transform: scale(1) rotateX(0deg); }
 }
 
 .pull-grid-card .card-element {

@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { wait } from './utils';
 import { playSound } from './soundEngine';
 import { dragons, elementColors, eggSheets, PULL_COST } from './gameData';
-import { executePull, applyPullResult } from './hatcheryEngine';
+import { executePull, applyPullResult, getRarityCeremony, orderGridResults } from './hatcheryEngine';
 import { loadSave, writeSave, trackStat } from './persistence';
 import { assetUrl } from './utils';
 import { eggBurst } from './animationEngine';
@@ -37,6 +37,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const [eggFrame, setEggFrame] = useState(0);
   const [eggSheet, setEggSheet] = useState(eggSheets.generic);
   const [eggCss, setEggCss] = useState('');
+  const [eggGlowColor, setEggGlowColor] = useState(null);
   const [showTutorial, setShowTutorial] = useState(() => Object.values(save.dragons).every(d => !d.owned));
   const [currentResult, setCurrentResult] = useState(null);
   const [gridResults, setGridResults] = useState([]);
@@ -57,13 +58,15 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const canPull10 = save.dataScraps >= PULL_COST * 10;
   const pityRemaining = 10 - save.pityCounter;
 
-  const animateHatch = useCallback(async (element) => {
+  const animateHatch = useCallback(async (element, rarityName = 'Common') => {
+    const ceremony = getRarityCeremony(rarityName);
     skippedRef.current = false;
     burstFiredRef.current = false;
     currentElementRef.current = element;
     setEggSheet(eggSheets.generic);
     setEggFrame(0);
     setEggCss('');
+    setEggGlowColor(ceremony.glow);
     setPhase(PHASES.HATCHING);
 
     await wait(400);
@@ -71,7 +74,18 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
 
     setEggSheet(eggSheets[element] || eggSheets.generic);
 
-    for (const step of HATCH_SEQUENCE) {
+    // Rare+ gets extra shake escalation before the burst — the egg visibly
+    // struggles harder when something valuable is inside.
+    const sequence = [...HATCH_SEQUENCE];
+    if (ceremony.extraShakes > 0) {
+      const extra = [];
+      for (let i = 0; i < ceremony.extraShakes; i++) {
+        extra.push({ frame: i % 2 === 0 ? 4 : 5, duration: 70, css: 'egg-shake-intense' });
+      }
+      sequence.splice(sequence.length - 1, 0, ...extra);
+    }
+
+    for (const step of sequence) {
       if (skippedRef.current) return;
       setEggFrame(step.frame);
       setEggCss(step.css || '');
@@ -82,6 +96,12 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
       else if (step.frame === 6) { playSound('hatchBurst'); setTimeout(() => playSound('dragonReveal'), 200); }
 
       if (step.frame === 6) {
+        // Hold-your-breath beat: Rare+ hangs on the cracked egg for a moment
+        // before it bursts — anticipation is the reward.
+        if (ceremony.holdMs > 0) {
+          await wait(ceremony.holdMs);
+          if (skippedRef.current) return;
+        }
         await wait(60); // let the burst frame paint before slicing the canvas
         if (skippedRef.current) return;
         fireBurst(element);
@@ -111,10 +131,12 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     refreshSave();
     setGridResults([]);
 
-    await animateHatch(pull.element);
+    await animateHatch(pull.element, pull.rarityName);
 
     setCurrentResult({ pull, apply: result });
     setPhase(PHASES.REVEAL);
+    const stinger = getRarityCeremony(pull.rarityName).stinger;
+    if (stinger) setTimeout(() => playSound(stinger), 600);
   };
 
   const handlePull10 = async () => {
@@ -140,14 +162,16 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     // Animate first pull
     const first = results[0];
     setGridResults([]);
-    await animateHatch(first.pull.element);
+    await animateHatch(first.pull.element, first.pull.rarityName);
 
     setCurrentResult({ pull: first.pull, apply: first.apply });
     setPhase(PHASES.REVEAL);
+    const stinger = getRarityCeremony(first.pull.rarityName).stinger;
+    if (stinger) setTimeout(() => playSound(stinger), 600);
 
-    // After brief pause, show grid
+    // After brief pause, show grid — ordered so the best pull lands last
     await wait(500);
-    setGridResults(results);
+    setGridResults(orderGridResults(results));
     setPhase(PHASES.GRID);
   };
 
@@ -167,6 +191,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     setGridResults([]);
     setEggFrame(0);
     setEggSheet(eggSheets.generic);
+    setEggGlowColor(null);
     refreshSave();
   };
 
@@ -188,7 +213,11 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
       <div className="hatchery-content" onClick={handleContentClick}>
         <div className="hatchery-title">QUANTUM INCUBATION LAB</div>
 
-        <div className={`egg-container ${eggCss}`} ref={eggContainerRef}>
+        <div
+          className={`egg-container ${eggCss}`}
+          ref={eggContainerRef}
+          style={eggGlowColor ? { '--rarity-glow': eggGlowColor } : undefined}
+        >
           {(phase === PHASES.IDLE || phase === PHASES.HATCHING) && (
             <EggSprite sheet={eggSheet} frame={eggFrame} />
           )}
@@ -233,7 +262,11 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
                   const dragon = dragons[r.pull.element];
                   const color = elementColors[r.pull.element];
                   return (
-                    <div key={i} className={`pull-grid-card ${r.pull.shiny ? 'shiny-card' : ''}`}>
+                    <div
+                      key={i}
+                      className={`pull-grid-card grid-flip ${r.pull.shiny ? 'shiny-card' : ''}`}
+                      style={{ animationDelay: `${i * 70}ms` }}
+                    >
                       <DragonSprite
                         spriteSheet={dragon.spriteSheet}
                         stage={1}

@@ -104,14 +104,14 @@ export default function App() {
 
   function handleBeginBattle(config) {
     playSound('buttonClick');
-    playMusic('battleTense', true);
+    playMusic('battle', true); // open calm; BattleScreen escalates to intense at low HP
     setBattleConfig(config);
     setScreen(SCREENS.BATTLE);
   }
 
   function handleBeginCampaignBattle(config) {
     playSound('buttonClick');
-    playMusic('battleTense', true);
+    playMusic('battle', true); // open calm; BattleScreen escalates to intense at low HP
     setBattleConfig({
       dragonId: config.dragonId,
       npcId: config.npcId,
