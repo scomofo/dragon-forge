@@ -66,22 +66,22 @@ describe('battle pose resolution', () => {
 });
 
 describe('battle-set sprite resolution', () => {
-  it('falls back to portraits for all 18 catalog actors until sheets ship', () => {
+  it('resolves shipped sheets for all 18 catalog actors', () => {
     const ids = [...Object.keys(DRAGON_BATTLE_SETS), ...Object.keys(NPC_BATTLE_SETS)];
     expect(ids.length).toBe(18);
     for (const id of ids) {
-      expect(isBattleSetSheetLive(id)).toBe(false);
+      expect(isBattleSetSheetLive(id)).toBe(true);
       for (const pose of BATTLE_POSES) {
         const resolved = resolveBattleSprite(id, pose);
-        expect(resolved.kind, `${id} ${pose}`).toBe('portrait');
-        expect(resolved.src, `${id} ${pose}`).toBe(null);
+        expect(resolved.kind, `${id} ${pose}`).toBe('sheet');
+        expect(resolved.src, `${id} ${pose}`).toContain(`battle-sets/${id}_${pose}`);
         expect(resolved.cell, `${id} ${pose}`).toBe(BATTLE_CELL.mid);
         expect(resolved.frames, `${id} ${pose}`).toBe(BATTLE_FRAME_COUNTS[pose]);
       }
     }
   });
 
-  it('falls back to portraits for unknown, null, and boss actors', () => {
+  it('falls back to portraits only for actors outside the shipped catalog', () => {
     expect(resolveBattleSprite('the_singularity', 'attack').kind).toBe('portrait');
     expect(resolveBattleSprite('mirror_admin', 'hurt').kind).toBe('portrait');
     expect(resolveBattleSprite('not-a-dragon', 'idle').kind).toBe('portrait');
@@ -89,21 +89,15 @@ describe('battle-set sprite resolution', () => {
     expect(resolveBattleSprite(undefined, 'faint').pose).toBe('faint');
   });
 
-  it('resolves a shippable sheet the moment a set flips to shipped', () => {
-    const spec = DRAGON_BATTLE_SETS[JOURNAL_DRAGON_IDS[0]];
-    const prev = spec.status;
-    spec.status = BATTLE_SET_STATUS.SHIPPED;
-    try {
-      expect(isBattleSetSheetLive(JOURNAL_DRAGON_IDS[0])).toBe(true);
-      const resolved = resolveBattleSprite(JOURNAL_DRAGON_IDS[0], 'attack');
+  it('every catalog set is live and resolves to a battle-sets sheet', () => {
+    for (const id of JOURNAL_DRAGON_IDS) {
+      expect(isBattleSetSheetLive(id)).toBe(true);
+      const resolved = resolveBattleSprite(id, 'attack');
       expect(resolved.kind).toBe('sheet');
-      expect(resolved.src).toContain(`battle-sets/${JOURNAL_DRAGON_IDS[0]}_attack`);
+      expect(resolved.src).toContain(`battle-sets/${id}_attack`);
       expect(resolved.cell).toBe(BATTLE_CELL.mid);
       expect(resolved.frames).toBe(BATTLE_FRAME_COUNTS.attack);
-    } finally {
-      spec.status = prev;
     }
-    expect(isBattleSetSheetLive(JOURNAL_DRAGON_IDS[0])).toBe(false);
   });
 
   it('keeps every future sheet URL inside battle-sets with no banned language', () => {

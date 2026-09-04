@@ -107,9 +107,10 @@ export function hasBannedFilter(filter) {
 
 // P1.3–P1.5 — battle frame-set contract. Real sets ship idle 4 / attack 6 /
 // hurt 2 / faint 3 at one shared cell (96 mid, 64 small, 128 final only).
-// Everything below is honestly `portrait-only` until the sheets land; the
-// loader falls back to the painted stage portrait and the tests enforce that
-// no entry claims `shipped` without meeting the counts + cell + path rules.
+// The keyframe art for all 18 sets landed 2026-09-04; the loader resolves the
+// shipped strips and the tests enforce the counts + cell + path rules. The
+// strips hold one authored keyframe per pose held across the frame count —
+// in-between frames are a future polish pass, honestly not present.
 export const BATTLE_SET_STATUS = {
   PORTRAIT_ONLY: 'portrait-only',
   SHIPPED: 'shipped',
@@ -118,17 +119,20 @@ export const BATTLE_SET_STATUS = {
 const battleSetEntry = (actorId, kind) => ({
   actorId,
   kind,
-  status: BATTLE_SET_STATUS.PORTRAIT_ONLY,
+  status: BATTLE_SET_STATUS.SHIPPED,
   cell: BATTLE_CELL.mid,
   frames: { ...BATTLE_FRAME_COUNTS },
 });
 
-// Stage-3 battle sets for the 9 journal dragons (P1.3).
+// Stage-3 battle sets for the 9 journal dragons (P1.3). Keyframe art landed
+// 2026-09-04 via tools/asset_gen/gen_battle_sheets.py (seedream edit-anchored
+// on the stage-3 portraits). Each pose strip holds its keyframe across the
+// frame count at a 96px cell; in-between frames are a future polish pass.
 export const DRAGON_BATTLE_SETS = Object.fromEntries(
   listBodyPlanIds().map((id) => [id, battleSetEntry(id, 'dragon-stage3')]),
 );
 
-// NPC battle sets at the same cell size (P1.4).
+// NPC battle sets at the same cell size (P1.4). Same keyframe pipeline.
 export const NPC_BATTLE_SET_IDS = [
   'firewall_sentinel',
   'bit_wraith',

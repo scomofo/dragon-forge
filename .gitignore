@@ -21,3 +21,4 @@ handoff/synthesis_incoming/*.png
 .claude/agent-memory/
 # Local preview-server config for the Claude Preview MCP tool.
 .claude/launch.json
+__pycache__/

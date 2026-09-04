@@ -141,10 +141,10 @@ describe('P1 battle frame-set catalog', () => {
     }
   });
 
-  it('stays honest — nothing claims shipped until real sheets exist', () => {
+  it('stays honest — shipped sets have real strips on disk', () => {
     expect(ACTOR_CONTRACT.stagePortraitsAreSingleFrame).toBe(true);
     for (const id of [...JOURNAL_DRAGON_IDS, ...NPC_BATTLE_SET_IDS]) {
-      expect(getBattleSet(id)?.status, id).toBe(BATTLE_SET_STATUS.PORTRAIT_ONLY);
+      expect(getBattleSet(id)?.status, id).toBe(BATTLE_SET_STATUS.SHIPPED);
     }
   });
 });

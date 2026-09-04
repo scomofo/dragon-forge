@@ -11,7 +11,7 @@
   - [x] P1.3/P1.4 pipeline — pose-driven battle-set loader (`src/battleSets.js`: idle/attack/hurt/faint resolution + sheet/fallback) with strip player (`src/BattleSetSprite.jsx`); `DragonSprite`/`NpcSprite`/`BattleScreen` wired, portraits render unchanged until sheets ship
   - [x] P1.1 registry — `src/arenas.js` covers the 11 battle arenas (all honest placeholders); grade-only filter allowlist with 7 locked content-filter users; `BattleScreen` resolves through it with debug flags
   - [x] P1.1 art — all 11 battle arenas + the 5 element arenas now authored 1024² (handoff/ARENA_AND_FORGE_BRIEF.md via seedream v4.5); gravity-chamber grid placeholder retired; `KNOWN_PLACEHOLDER_ARENAS` empty; webp in `public/assets/arenas/`
-  - [ ] P1 art — 9 stage-3 dragon sheets (idle 4 / attack 6 / hurt 2 / faint 3 @96px), 9 NPC sheets at same cell, boss phase cells, 9 signature VFX strips
+  - [ ] P1 art — boss phase cells, 9 signature VFX strips. ~~Dragon/NPC sheets + arenas done~~ (dragon/NPC battle sheets landed 2026-09-04 as keyframe strips — idle/attack/hurt/faint held at 96px; in-between frames are a future polish pass. void/protocol_vulture are low-contrast and may want a regen.)
 - [ ] P2 Twelve authored tracks — Mirror Admin title-motif arrangement first (`design/gdd/music-identity.md`)
 - [ ] P3 Four authored zones — Outer Grid / Frozen Cache / Storm Spine / Admin Core rooms (`src/worldZones.js`)
 - [x] P4 Execute `bossPatterns.js` in `battleEngine` — **all 13 live** (options-based engine hooks + per-boss screen state; `mirror_admin_reset` via per-phase move history). Depth-axis choice (dual techs **or** 4-move kits) still open
