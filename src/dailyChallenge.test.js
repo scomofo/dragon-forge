@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getEffectiveStreak, getDailyStreakMultiplier } from './dailyChallenge';
+import { getEffectiveStreak, getDailyStreakMultiplier, getMsUntilDailyReset } from './dailyChallenge';
 
 function seedFor(date) {
   return date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
@@ -47,5 +47,13 @@ describe('getDailyStreakMultiplier', () => {
   it('caps at 1.5', () => {
     const save = { lastDailyCompleted: yesterdaySeed(), dailyStreak: 20 };
     expect(getDailyStreakMultiplier(save)).toBe(1.5);
+  });
+});
+
+describe('getMsUntilDailyReset', () => {
+  it('is positive and never more than 24 hours out', () => {
+    const ms = getMsUntilDailyReset();
+    expect(ms).toBeGreaterThan(0);
+    expect(ms).toBeLessThanOrEqual(24 * 60 * 60 * 1000);
   });
 });

@@ -91,13 +91,21 @@ export function calculateFusionStats(statsA, statsB, stabilityTier) {
   return fused;
 }
 
+// Level carry: the child keeps most of the parents' investment instead of the
+// old flat cap-30 reset, which made fusing two Lv50s (the exact moment players
+// are most invested) destroy ~10k XP. 85% of the parents' average, floor 10
+// (the fusion unlock level, so the child can always be re-fused), cap 50.
+export function getFusionOffspringLevel(levelA, levelB) {
+  return Math.max(10, Math.min(50, Math.round((levelA + levelB) / 2 * 0.85)));
+}
+
 export function executeFusion(parentA, parentB, { stabilityBoost = false } = {}) {
   const element = getFusionElement(parentA.element, parentB.element);
   const stabilityTier = getStabilityTier(parentA.element, parentB.element, stabilityBoost);
   const fusedBaseStats = calculateFusionStats(parentA.stats, parentB.stats, stabilityTier);
   const shiny = parentA.shiny || parentB.shiny;
 
-  const level = Math.min(30, Math.max(1, Math.round((parentA.level + parentB.level) / 2)));
+  const level = getFusionOffspringLevel(parentA.level, parentB.level);
 
   return {
     element,

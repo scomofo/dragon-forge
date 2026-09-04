@@ -60,3 +60,28 @@ describe('collection milestones count discovered, not owned', () => {
     expect(get(results, 'full_roster').progress).toBe('0/8');
   });
 });
+
+describe('daily streak milestones', () => {
+  it('report progress from save.dailyStreak and stay locked below threshold', () => {
+    const save = { ...makeSave(rosterAll()), dailyStreak: 6 };
+    const results = checkMilestones(save);
+    const seven = get(results, 'daily_streak_7');
+    expect(seven.progress).toBe('6/7');
+    expect(seven.newlyClaimed).toBe(false);
+  });
+
+  it('claim at 7/14/30 days and clamp progress at the cap', () => {
+    const save = { ...makeSave(rosterAll()), dailyStreak: 31 };
+    const results = checkMilestones(save);
+    expect(get(results, 'daily_streak_7').newlyClaimed).toBe(true);
+    expect(get(results, 'daily_streak_14').newlyClaimed).toBe(true);
+    expect(get(results, 'daily_streak_30').newlyClaimed).toBe(true);
+    expect(get(results, 'daily_streak_30').progress).toBe('30/30');
+  });
+
+  it('treat a missing streak as zero', () => {
+    const results = checkMilestones(makeSave(rosterAll()));
+    expect(get(results, 'daily_streak_7').progress).toBe('0/7');
+    expect(get(results, 'daily_streak_7').newlyClaimed).toBe(false);
+  });
+});

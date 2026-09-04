@@ -3,6 +3,7 @@ import { getSingularityStage, isSingularityUnlocked } from './singularityProgres
 import { getTickerMessage } from './felixDialogue';
 import { getPlayerGuidance } from './playerGuidance';
 import { checkMilestones } from './journalMilestones';
+import { isDailyChallengeCompleted, getEffectiveStreak } from './dailyChallenge';
 import SoundToggle from './SoundToggle';
 
 export default function NavBar({ activeScreen, onNavigate, save }) {
@@ -20,6 +21,10 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
   const showForge = defeatedNpcs.length >= 1;
   const showStats = (save.stats?.battlesWon || 0) >= 1;
   const hasClaimableMilestone = checkMilestones(save).some(m => m.newlyClaimed);
+  // Daily visibility: dot on BATTLES while today's challenge is still open;
+  // show the live streak next to it so there's something to lose.
+  const dailyOpen = !isDailyChallengeCompleted(save);
+  const liveStreak = getEffectiveStreak(save);
 
   return (
     <div className="nav-bar">
@@ -62,7 +67,15 @@ export default function NavBar({ activeScreen, onNavigate, save }) {
           className={`nav-tab ${activeScreen === 'battleSelect' ? 'active' : ''}`}
           onClick={() => onNavigate('battleSelect')}
         >
-          BATTLES
+          BATTLES{dailyOpen && (
+            <span
+              title={liveStreak > 0 ? `Daily Challenge open — ${liveStreak}-day streak on the line` : 'Daily Challenge open'}
+              style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#ff6600', marginLeft: 4, verticalAlign: 'middle' }}
+            />
+          )}
+          {liveStreak > 0 && (
+            <span style={{ marginLeft: 3, fontSize: 8, color: '#ff6600' }}>🔥{liveStreak}</span>
+          )}
         </button>
         {showForge && (
           <button

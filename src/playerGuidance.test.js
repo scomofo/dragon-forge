@@ -11,6 +11,17 @@ const freshSave = {
   inventory: { cores: {} },
 };
 
+function todaySeed() {
+  const now = new Date();
+  return now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+}
+
+// Mark the daily as done so tests below exercise the branch they name (the
+// open-daily branch outranks forge/fusion/shop/campaign continuation).
+function dailyDone(save) {
+  return { ...save, lastDailyCompleted: todaySeed() };
+}
+
 describe('getPlayerGuidance', () => {
   it('points new players at the first hatch', () => {
     expect(getPlayerGuidance(freshSave)).toMatchObject({
@@ -32,13 +43,13 @@ describe('getPlayerGuidance', () => {
   });
 
   it('points players with spendable rewards at the shop', () => {
-    const save = {
+    const save = dailyDone({
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 3 } },
       defeatedNpcs: ['firewall_sentinel'],
       dataScraps: 120,
       inventory: { cores: { stone: 1 } },
-    };
+    });
 
     expect(getPlayerGuidance(save)).toMatchObject({
       target: 'shop',
@@ -47,13 +58,13 @@ describe('getPlayerGuidance', () => {
   });
 
   it('does not point at the shop when nothing is affordable', () => {
-    const save = {
+    const save = dailyDone({
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 3 } },
       defeatedNpcs: ['firewall_sentinel'],
       dataScraps: 30,
       inventory: { cores: { stone: 1 } },
-    };
+    });
 
     expect(getPlayerGuidance(save)).toMatchObject({
       target: 'map',
@@ -62,7 +73,7 @@ describe('getPlayerGuidance', () => {
   });
 
   it('points players at fusion when they have enough lineage and level', () => {
-    const save = {
+    const save = dailyDone({
       ...freshSave,
       dragons: {
         ...freshSave.dragons,
@@ -72,7 +83,7 @@ describe('getPlayerGuidance', () => {
       defeatedNpcs: ['firewall_sentinel'],
       dataScraps: 0,
       inventory: { cores: {} },
-    };
+    });
 
     expect(getPlayerGuidance(save)).toMatchObject({
       target: 'fusion',
@@ -81,7 +92,7 @@ describe('getPlayerGuidance', () => {
   });
 
   it('points players at singularity when it unlocks', () => {
-    const save = {
+    const save = dailyDone({
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 7 } },
       defeatedNpcs: ['firewall_sentinel', 'protocol_vulture'],
@@ -89,7 +100,7 @@ describe('getPlayerGuidance', () => {
       inventory: { cores: {} },
       singularityProgress: { defeated: [] },
       flags: { currentAct: 3 },
-    };
+    });
 
     expect(getPlayerGuidance(save)).toMatchObject({
       target: 'singularity',
@@ -98,14 +109,14 @@ describe('getPlayerGuidance', () => {
   });
 
   it('points at the next campaign node when nothing else is actionable', () => {
-    const save = {
+    const save = dailyDone({
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 4 } },
       defeatedNpcs: ['firewall_sentinel'],
       dataScraps: 0,
       inventory: { cores: {} },
       flags: { currentAct: 1 },
-    };
+    });
 
     expect(getPlayerGuidance(save)).toMatchObject({
       target: 'map',
@@ -137,12 +148,42 @@ describe('getPlayerGuidance', () => {
   });
 
   it('points at forge when player has enough progression to upgrade', () => {
-    const save = {
+    const save = dailyDone({
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 5 } },
       defeatedNpcs: ['a', 'b', 'c'],
       skye: { wrenchTier: 1 },
-    };
+    });
     expect(getPlayerGuidance(save)).toMatchObject({ target: 'forge', action: 'VISIT FORGE' });
+  });
+
+  it('surfaces an open Daily Challenge once the player is battling', () => {
+    const save = {
+      ...freshSave,
+      dragons: { ...freshSave.dragons, fire: { owned: true, level: 5 } },
+      defeatedNpcs: ['firewall_sentinel'],
+      lastDailyCompleted: 19990101, // some other day — today's is open
+    };
+    expect(getPlayerGuidance(save)).toMatchObject({ target: 'battleSelect', action: 'DAILY OPEN' });
+  });
+
+  it('does not surface the daily after it is completed today', () => {
+    const now = new Date();
+    const todaySeed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    const save = {
+      ...freshSave,
+      dragons: { ...freshSave.dragons, fire: { owned: true, level: 4 } },
+      defeatedNpcs: ['firewall_sentinel'],
+      dataScraps: 0,
+      inventory: { cores: {} },
+      flags: { currentAct: 1 },
+      lastDailyCompleted: todaySeed,
+    };
+    const guidance = getPlayerGuidance(save);
+    expect(guidance.action).not.toBe('DAILY OPEN');
+  });
+
+  it('keeps the daily out of the way for brand-new players (first hatch/battle first)', () => {
+    expect(getPlayerGuidance(freshSave).action).not.toBe('DAILY OPEN');
   });
 });

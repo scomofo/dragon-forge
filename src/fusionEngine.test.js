@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { describe, it, expect } from 'vitest';
-import { getFusionElement, calculateFusionStats, getStabilityTier, executeFusion } from './fusionEngine';
+import { getFusionElement, calculateFusionStats, getStabilityTier, getFusionOffspringLevel, executeFusion } from './fusionEngine';
 
 describe('getFusionElement', () => {
   it('returns same element for same-element fusion', () => {
@@ -80,8 +80,8 @@ describe('executeFusion', () => {
     expect(result.element).toBe('storm');
     expect(result.stabilityTier).toBe('unstable');
     expect(result.fusedBaseStats).toHaveProperty('hp');
-    // offspring level = min(30, max(1, round((12 + 10) / 2))) = round(11) = 11
-    expect(result.level).toBe(11);
+    // offspring level = max(10, min(50, round((12 + 10) / 2 * 0.85))) = max(10, round(9.35)) = 10
+    expect(result.level).toBe(10);
     expect(result.shiny).toBe(false);
   });
 
@@ -92,20 +92,44 @@ describe('executeFusion', () => {
     expect(result.shiny).toBe(true);
   });
 
-  it('offspring level is the parents average, capped at 30', () => {
+  it('offspring keeps 85% of the parents average level', () => {
     const parentA = { id: 'fire', element: 'fire', stats: { hp: 200, atk: 50, def: 40, spd: 40 }, level: 30, shiny: false };
     const parentB = { id: 'fire', element: 'fire', stats: { hp: 200, atk: 50, def: 40, spd: 40 }, level: 25, shiny: false };
     const result = executeFusion(parentA, parentB);
-    // min(30, max(1, round((30 + 25) / 2))) = min(30, round(27.5)) = min(30, 28) = 28
-    expect(result.level).toBe(28);
+    // max(10, min(50, round(27.5 * 0.85))) = round(23.375) = 23
+    expect(result.level).toBe(23);
   });
 
   it('scales offspring level smoothly with parent levels (no L50 cliff)', () => {
     const parentA = { id: 'fire', element: 'fire', stats: { hp: 100, atk: 20, def: 20, spd: 20 }, level: 24, shiny: false };
     const parentB = { id: 'fire', element: 'fire', stats: { hp: 100, atk: 20, def: 20, spd: 20 }, level: 25, shiny: false };
     const result = executeFusion(parentA, parentB);
-    // min(30, max(1, round((24 + 25) / 2))) = round(24.5) = 25
-    expect(result.level).toBe(25);
+    // max(10, min(50, round(24.5 * 0.85))) = round(20.825) = 21
+    expect(result.level).toBe(21);
+  });
+
+  it('never regresses high-investment parents to a low-level child', () => {
+    const parentA = { id: 'fire', element: 'fire', stats: { hp: 100, atk: 20, def: 20, spd: 20 }, level: 50, shiny: false };
+    const parentB = { id: 'ice', element: 'ice', stats: { hp: 100, atk: 20, def: 20, spd: 20 }, level: 50, shiny: false };
+    const result = executeFusion(parentA, parentB);
+    // round(50 * 0.85) = 43 — not the old cap-30 cliff
+    expect(result.level).toBe(43);
+  });
+});
+
+describe('getFusionOffspringLevel', () => {
+  it('floors at 10 so the child is always re-fusable', () => {
+    expect(getFusionOffspringLevel(10, 10)).toBe(10);
+    expect(getFusionOffspringLevel(1, 1)).toBe(10);
+  });
+
+  it('keeps 85% of the average, rounded', () => {
+    expect(getFusionOffspringLevel(30, 25)).toBe(23);
+    expect(getFusionOffspringLevel(50, 50)).toBe(43);
+  });
+
+  it('caps at the level cap', () => {
+    expect(getFusionOffspringLevel(50, 50)).toBeLessThanOrEqual(50);
   });
 
   it('applies the stability boost to the fusion result', () => {

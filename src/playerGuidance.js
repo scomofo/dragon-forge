@@ -3,6 +3,7 @@ import { isSingularityUnlocked } from './singularityProgress';
 import { getAvailableCampaignNodes } from './campaignMap';
 import { BUY_ITEMS, FORGE_RECIPES, canAffordBuy, canForge } from './shopItems';
 import { REQUIRED_FRAGMENT_IDS } from './loreCanon';
+import { isDailyChallengeCompleted } from './dailyChallenge';
 
 function getOwnedDragons(save) {
   return Object.entries(save?.dragons || {}).filter(([, dragon]) => dragon?.owned);
@@ -51,6 +52,16 @@ export function getPlayerGuidance(save) {
       target: 'map',
       action: 'FIRST BATTLE',
       title: 'Stabilize Signal Breach',
+    };
+  }
+
+  // The daily is the highest-value thing on the board while it's open — it
+  // pays 3× scraps / 2× XP and feeds the streak, so outrank optional systems.
+  if (!isDailyChallengeCompleted(save)) {
+    return {
+      target: 'battleSelect',
+      action: 'DAILY OPEN',
+      title: 'Daily Challenge: 3× DataScraps, 2× XP — streak on the line',
     };
   }
 

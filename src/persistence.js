@@ -194,6 +194,15 @@ export function addScraps(amount) {
   writeSave(save);
 }
 
+// Battle-rank skill bonus: S/A/B pay a flat scrap bonus so clean, fast fights
+// are worth more than slow ones. Pure so the bonus tiers are unit-testable.
+export function getRankBonusScraps(rank) {
+  if (rank === 'S') return 15;
+  if (rank === 'A') return 8;
+  if (rank === 'B') return 4;
+  return 0;
+}
+
 export function spendScraps(amount) {
   const save = loadSave();
   if (save.dataScraps < amount) return false;

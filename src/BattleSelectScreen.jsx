@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { playSound } from './soundEngine';
 import { dragons, npcs, elementColors } from './gameData';
 import { getTypeEffectiveness, calculateStatsForLevel, getStageForLevel } from './battleEngine';
-import { getDailyChallenge, isDailyChallengeCompleted, getDateString, getEffectiveStreak } from './dailyChallenge';
+import { getDailyChallenge, isDailyChallengeCompleted, getDateString, getEffectiveStreak, getMsUntilDailyReset } from './dailyChallenge';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import NavBar from './NavBar';
@@ -10,10 +10,24 @@ import NavBar from './NavBar';
 const dragonList = Object.values(dragons);
 const npcList = Object.values(npcs).sort((a, b) => a.level - b.level);
 
+function formatResetCountdown(ms) {
+  const totalMinutes = Math.floor(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
 export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, refreshSave }) {
   const [selectedDragon, setSelectedDragon] = useState(null);
   const [selectedBench, setSelectedBench] = useState(null);
   const [selectedNpc, setSelectedNpc] = useState(null);
+  const [resetIn, setResetIn] = useState(() => getMsUntilDailyReset());
+
+  // Live countdown to the daily roll-over — visible urgency for the streak.
+  useEffect(() => {
+    const id = setInterval(() => setResetIn(getMsUntilDailyReset()), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   // First pick = primary, second (different) owned dragon = reserve/bench.
   // Click the primary to clear it (the bench is promoted); click the bench to clear it.
@@ -157,11 +171,11 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                     {completed && <span style={{ color: '#44cc44', marginLeft: 6 }}>✓</span>}
                   </div>
                   <div className="select-card-stats">
-                    {completed ? 'COMPLETED TODAY' : `${daily.name.replace('DAILY: ', '')} · ${getDateString()}`}
+                    {completed ? `COMPLETED TODAY · resets in ${formatResetCountdown(resetIn)}` : `${daily.name.replace('DAILY: ', '')} · ${getDateString()}`}
                   </div>
                   {!completed && (
                     <div style={{ fontSize: 7, color: '#ffcc00', marginTop: 2 }}>
-                      3x DataScraps · 2x XP
+                      3x DataScraps · 2x XP · resets in {formatResetCountdown(resetIn)}
                     </div>
                   )}
                 </div>

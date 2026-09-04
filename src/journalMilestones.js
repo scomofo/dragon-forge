@@ -63,7 +63,7 @@ export const MILESTONES = [
   {
     id: 'elder_forged',
     name: 'Elder Forged',
-    description: 'Reach Stage IV (Lv.50+)',
+    description: 'Raise a dragon to Lv.50',
     reward: 250,
     check: (save) => {
       const hasElder = Object.values(save.dragons).some(d => d.owned && d.level >= 50);
@@ -159,6 +159,37 @@ export const MILESTONES = [
     check: (save) => {
       const streak = save.records?.longestStreak || 0;
       return { met: streak >= 5, progress: `${Math.min(streak, 5)}/5` };
+    },
+  },
+  // === Daily-streak milestones (the retention chase) ===
+  {
+    id: 'daily_streak_7',
+    name: 'Weekly Circuit',
+    description: 'Hold a 7-day Daily Challenge streak',
+    reward: 350,
+    check: (save) => {
+      const streak = save.dailyStreak || 0;
+      return { met: streak >= 7, progress: `${Math.min(streak, 7)}/7` };
+    },
+  },
+  {
+    id: 'daily_streak_14',
+    name: 'Fortnight Protocol',
+    description: 'Hold a 14-day Daily Challenge streak',
+    reward: 700,
+    check: (save) => {
+      const streak = save.dailyStreak || 0;
+      return { met: streak >= 14, progress: `${Math.min(streak, 14)}/14` };
+    },
+  },
+  {
+    id: 'daily_streak_30',
+    name: 'Persistent Signal',
+    description: 'Hold a 30-day Daily Challenge streak',
+    reward: 1500,
+    check: (save) => {
+      const streak = save.dailyStreak || 0;
+      return { met: streak >= 30, progress: `${Math.min(streak, 30)}/30` };
     },
   },
   // === Post-game milestones (the endgame chase) ===

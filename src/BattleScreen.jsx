@@ -7,7 +7,7 @@ import {
   getStageForLevel, calculateXpGain, getTypeEffectivenessLabel,
   CHARGE_ATK_MULTIPLIER,
 } from './battleEngine';
-import { loadSave, addDragonXp, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, setLastZone, trackStat, completeDailyChallenge, updateRecords, unlockFragment } from './persistence';
+import { loadSave, addDragonXp, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, setLastZone, trackStat, completeDailyChallenge, updateRecords, unlockFragment, getRankBonusScraps } from './persistence';
 import { getDailyStreakMultiplier } from './dailyChallenge';
 import { getAvailableCampaignNodes } from './campaignMap';
 import { FRAGMENT_TRIGGERS, RELIC_DROPS, getRelic, getRelicBattleModifiers } from './forgeData';
@@ -221,7 +221,7 @@ function battleReducer(state, action) {
     case 'SET_PHASE':
       return { ...state, phase: action.phase };
     case 'SET_VICTORY':
-      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1, relicDropped: action.relicDropped || null, wasRepeat: action.wasRepeat || false };
+      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1, relicDropped: action.relicDropped || null, wasRepeat: action.wasRepeat || false, rankBonus: action.rankBonus || 0, stageEvolved: action.stageEvolved || null };
     case 'SET_DEFEAT':
       return { ...state, phase: PHASES.DEFEAT };
     case 'RESET_TURN':
@@ -1084,13 +1084,24 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           runFragmentUnlockPass();
           setLastZone(state.npc.zone ?? null);
           dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-celebrate' });
-          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped, wasRepeat: isRepeatDefeat || isSingularityRepeat });
+          // Skill pay: S/A/B ranks pay a flat bonus on top of the battle payout.
+          const finalRank = getBattleRank(state.turnCount + 1, state.maxDamageDealt, playerHpPercent);
+          const rankBonus = getRankBonusScraps(finalRank);
+          if (rankBonus > 0) addScraps(rankBonus);
+          // Stage-up detection: did this battle's XP push the dragon across a
+          // stage threshold (II@8 / III@20 / IV@38)? That's a visual evolution —
+          // it deserves a callout, not silence.
+          const preBattleStage = getStageForLevel(state.playerLevel);
+          const postBattleStage = getStageForLevel(newLevel);
+          const stageEvolved = postBattleStage > preBattleStage ? postBattleStage : null;
+          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped, wasRepeat: isRepeatDefeat || isSingularityRepeat, rankBonus, stageEvolved });
           stopMusic();
           stopHeartbeat();
           playSound('victoryFanfare');
           playSound('xpGain');
           if (scrapsGained > 0) setTimeout(() => playSound('scrapsEarned'), 200);
           if (leveledUp) setTimeout(() => playSound('levelUp'), 400);
+          if (stageEvolved) setTimeout(() => playSound('levelUp'), 800);
         }
       }
     } else if (result.player.hp <= 0) {
@@ -1638,6 +1649,20 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
               <span>BATTLE RANK</span>
               <strong>{battleRank}</strong>
             </div>
+            {state.rankBonus > 0 && (
+              <div style={{ fontSize: 9, color: '#ffcc00', letterSpacing: '0.04em' }}>
+                RANK BONUS +{state.rankBonus} ◆
+              </div>
+            )}
+            {state.stageEvolved && (
+              <div className="stage-up-display">
+                <div className="stage-up-kicker">EVOLUTION</div>
+                <div className="stage-up-body">
+                  {dragon.name} reached <strong>STAGE {['I', 'II', 'III', 'IV'][state.stageEvolved - 1]}</strong>
+                </div>
+                <div className="stage-up-sub">New form unlocked — damage multiplier increased</div>
+              </div>
+            )}
             <div className="result-summary-grid">
               <div>
                 <span>XP</span>
@@ -1647,7 +1672,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                 <span>SCRAPS</span>
                 <strong>{state.scrapsGained > 0 ? `+${state.scrapsGained}` : '0'}</strong>
                 {state.wasRepeat && (
-                  <em style={{ display: 'block', fontSize: 9, color: '#cc8844', fontStyle: 'normal', letterSpacing: '0.04em' }}>REPEAT ×0.25</em>
+                  <em style={{ display: 'block', fontSize: 9, color: '#cc8844', fontStyle: 'normal', letterSpacing: '0.04em' }}>REPEAT ×0.45</em>
                 )}
               </div>
               <div>

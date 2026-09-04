@@ -76,3 +76,11 @@ export function getDateString() {
   const now = new Date();
   return now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
+
+// Milliseconds until the next local midnight — the daily rolls over with the
+// player's calendar day, so this is also the "don't lose your streak" timer.
+export function getMsUntilDailyReset() {
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return Math.max(0, midnight.getTime() - now.getTime());
+}
