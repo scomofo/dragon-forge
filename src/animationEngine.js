@@ -65,7 +65,11 @@ export function targetKnockback(el, attackerSide = 'left', intensity = 12) {
 
 // === HIT FLICKER (NES palette-swap crunch) ===
 // Fast 4-cycle brightness toggle. Use on the sprite element, not the container.
+// Strobe-frequency falls above WCAG's 3-flashes-per-second threshold, so it's
+// guarded by the same reduced-motion check the shakes already respect
+// (design/gdd/vfx-animation-accessibility.md's open question — now closed).
 export function hitFlicker(spriteEl, cycles = 4) {
+  if (prefersReducedMotion()) return gsap.to(spriteEl, { duration: 0 });
   const tl = gsap.timeline({
     onComplete() { gsap.set(spriteEl, { filter: '' }); },
   });
@@ -80,6 +84,7 @@ export function hitFlicker(spriteEl, cycles = 4) {
 
 // === HIT FLASH ===
 export function hitFlash(targetContainer, color = '#ffffff') {
+  if (prefersReducedMotion()) return gsap.to(targetContainer, { duration: 0 });
   const flash = document.createElement('div');
   Object.assign(flash.style, {
     position: 'absolute',

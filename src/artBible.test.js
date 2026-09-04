@@ -107,8 +107,15 @@ describe('boss pattern authorship', () => {
     for (const pattern of Object.values(BOSS_PATTERNS)) {
       expect(pattern.tell).toBeTruthy();
       expect(pattern.rule).toBeTruthy();
-      expect(pattern.executedByBattleEngine).toBe(false);
     }
+  });
+
+  it('tracks execution per pattern; the firewall_sentinel pilot is live', () => {
+    // P4 executes patterns incrementally — flags say which scripts the engine
+    // actually honors. The pilot (packet-shield) must stay wired.
+    const executed = Object.values(BOSS_PATTERNS).filter(p => p.executedByBattleEngine);
+    expect(executed.length).toBeGreaterThanOrEqual(1);
+    expect(BOSS_PATTERNS.firewall_sentinel.executedByBattleEngine).toBe(true);
   });
 });
 

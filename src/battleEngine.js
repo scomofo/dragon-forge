@@ -426,6 +426,14 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
     resolvedMove = { ...resolvedMove, element: best };
   }
 
+  // P4 pilot — firewall_sentinel packet shield. Incoming damage lands at 0
+  // unless the player Defended last turn (waited out the cycle) or the move
+  // pierces Defend (Phase Strike). BLOCKED callout tells the player why.
+  let packetBlocked = false;
+  if (options.packetShield && actor.label === 'player') {
+    packetBlocked = !(options.playerDefendedLastTurn || resolvedMove.ignoreDefend);
+  }
+
   // Apply Guard Break debuff to effective DEF
   let effectiveDef = target.def;
   if (target.status?.effect === 'stone') {
@@ -445,11 +453,13 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
   // Apply attacker's atkBuff and any charged-move boost under one shared ceiling
   const effectiveAtk = effectiveAttack(actor.state.atk, actor.state.atkBuff, actor.state.chargeMultiplier);
 
-  const result = calculateDamage(
-    { atk: effectiveAtk, element: actor.state.element, stage: actor.state.stage },
-    { def: effectiveDef, element: target.element, defending: target.defending },
-    { ...resolvedMove, accuracy: effectiveAccuracy }
-  );
+  const result = packetBlocked
+    ? { damage: 0, effectiveness: getTypeEffectiveness(resolvedMove.element, target.element), hit: true, isCritical: false }
+    : calculateDamage(
+        { atk: effectiveAtk, element: actor.state.element, stage: actor.state.stage },
+        { def: effectiveDef, element: target.element, defending: target.defending },
+        { ...resolvedMove, accuracy: effectiveAccuracy }
+      );
 
   // Check if target is reflecting
   if (target.reflecting) {
@@ -523,6 +533,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
     hit: result.hit,
     isCritical: result.isCritical,
     targetHp: newTargetHp,
+    blocked: packetBlocked || undefined,
     appliedStatus: appliedStatus ? STATUS_EFFECTS[appliedStatus.effect].name : null,
     lifesteal: lifestealHeal || undefined,
     isSignature: !!resolvedMove.isSignature,

@@ -1,3 +1,5 @@
+import { CAMPAIGN_NODES } from './campaignMap';
+
 export const MILESTONES = [
   {
     id: 'first_discovery',
@@ -242,6 +244,21 @@ export const MILESTONES = [
       const all = Object.values(save.dragons);
       const maxed = all.filter(d => d.owned && d.level >= 50).length;
       return { met: maxed >= all.length, progress: `${maxed}/${all.length}` };
+    },
+  },
+  {
+    id: 'rank_perfect',
+    name: 'Rank Perfect',
+    description: 'Earn an S rank on every campaign node',
+    reward: 1500,
+    check: (save) => {
+      const campaignNpcIds = CAMPAIGN_NODES.map((node) => node.npcId);
+      const total = campaignNpcIds.length;
+      const sCount = campaignNpcIds.filter((id) => save.bestRanks?.[id] === 'S').length;
+      return {
+        met: total > 0 && sCount >= total,
+        progress: `${sCount}/${total}`,
+      };
     },
   },
 ];

@@ -273,6 +273,7 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
               const state = nodeStates[node.id];
               const color = elementColors[node.element] || elementColors.neutral;
               const isSelected = selectedNode.id === node.id;
+              const bestRank = save.bestRanks?.[node.npcId];
               return (
                 <button
                   key={node.id}
@@ -284,11 +285,14 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
                     '--node-glow': color.glow,
                   }}
                   onClick={() => selectNode(node)}
-                  aria-label={`${node.label} ${state}`}
+                  aria-label={`${node.label} ${state}${bestRank ? ` best rank ${bestRank}` : ''}`}
                 >
                   <span className={`node-type-badge ${node.type}`}>{getNodeTypeGlyph(node.type)}</span>
                   <span className="node-orb">{state === 'locked' ? 'LOCK' : state === 'cleared' ? 'OK' : color.icon}</span>
                   <span className="node-label">{node.label}</span>
+                  {bestRank && (
+                    <span className={`node-rank-badge rank-${bestRank.toLowerCase()}`}>{bestRank}</span>
+                  )}
                 </button>
               );
             })}

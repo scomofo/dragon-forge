@@ -645,3 +645,59 @@ describe('pickNpcMove adaptive AI', () => {
     expect(statusCount).toBeGreaterThan(25);
   });
 });
+
+describe('P4 firewall_sentinel packet shield (executedByBattleEngine pilot)', () => {
+  const player = {
+    name: 'Test', element: 'storm', stage: 1, hp: 100, maxHp: 100,
+    atk: 200, def: 20, spd: 50, defending: false, status: null,
+  };
+  const sentinel = {
+    name: 'Firewall Sentinel', element: 'stone', stage: 3, hp: 100, maxHp: 100,
+    atk: 10, def: 20, spd: 10, defending: false, status: null,
+  };
+
+  it('blocks all player damage while the shield is up', () => {
+    const { npc, events } = resolveTurn(player, sentinel, 'basic_attack', 'defend', ['basic_attack'], ['defend'], {
+      packetShield: true,
+      playerDefendedLastTurn: false,
+    });
+    expect(npc.hp).toBe(100);
+    const hit = events.find(e => e.attacker === 'player' && e.action === 'attack');
+    expect(hit.blocked).toBe(true);
+    expect(hit.damage).toBe(0);
+  });
+
+  it('shield drops for a player who Defended last turn (waited out the cycle)', () => {
+    const { npc } = resolveTurn(player, sentinel, 'basic_attack', 'defend', ['basic_attack'], ['defend'], {
+      packetShield: true,
+      playerDefendedLastTurn: true,
+    });
+    expect(npc.hp).toBeLessThan(100);
+  });
+
+  it('Phase Strike pierces the shield even without a wait-out', () => {
+    const strike = { ...player };
+    const { npc, events } = resolveTurn(strike, sentinel, 'phase_strike', 'defend', ['phase_strike'], ['defend'], {
+      packetShield: true,
+      playerDefendedLastTurn: false,
+    });
+    expect(npc.hp).toBeLessThan(100);
+    const hit = events.find(e => e.attacker === 'player' && e.action === 'attack');
+    expect(hit.blocked).toBeUndefined();
+  });
+
+  it('NPC attacks are unaffected by the shield option', () => {
+    const { player: after } = resolveTurn(player, { ...sentinel, atk: 200 }, 'defend', 'basic_attack', ['defend'], ['basic_attack'], {
+      packetShield: true,
+      playerDefendedLastTurn: false,
+    });
+    expect(after.hp).toBeLessThan(100);
+  });
+
+  it('marks the pattern as executed', () => {
+    // The authored script's contract flips once the engine honors it.
+    return import('./bossPatterns').then(({ getBossPattern }) => {
+      expect(getBossPattern('firewall_sentinel').executedByBattleEngine).toBe(true);
+    });
+  });
+});
