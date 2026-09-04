@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Toast from './Toast';
 import TitleScreen from './TitleScreen';
 import BattleSelectScreen from './BattleSelectScreen';
@@ -14,7 +14,7 @@ import SingularityScreen from './SingularityScreen';
 import ForgeScreen from './ForgeScreen';
 import CreditsScreen from './CreditsScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
-import { loadSave, recordRemnantDefeat } from './persistence';
+import { loadSave, recordRemnantDefeat, beginSession, accumulatePlaytime, grantWelcomeBack } from './persistence';
 import { getSingularityStage, scaleBossForPlayer } from './singularityProgress';
 import { checkMilestones } from './journalMilestones';
 
@@ -59,6 +59,24 @@ export default function App() {
   function removeToast(id) {
     setToasts(prev => prev.filter(t => t.id !== id));
   }
+
+  // Session telemetry + welcome-back beat. beginSession is guarded to one call
+  // per page load internally, so StrictMode's double-effect can't double-count.
+  useEffect(() => {
+    const { daysAway, grant } = beginSession();
+    if (grant > 0) {
+      grantWelcomeBack(grant);
+      setSave(loadSave());
+      showToast(`WELCOME BACK, SKYE — ${daysAway} days away. Felix kept the forge warm. +${grant} ◆`);
+    }
+    const heartbeat = setInterval(accumulatePlaytime, 60000);
+    window.addEventListener('beforeunload', accumulatePlaytime);
+    return () => {
+      clearInterval(heartbeat);
+      window.removeEventListener('beforeunload', accumulatePlaytime);
+      accumulatePlaytime();
+    };
+  }, []);
 
   function handleStartGame() {
     playSound('screenTransition');

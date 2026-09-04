@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { wait } from './utils';
 import { playSound } from './soundEngine';
 import { dragons, elementColors, eggSheets, PULL_COST } from './gameData';
-import { executePull, applyPullResult, getRarityCeremony, orderGridResults } from './hatcheryEngine';
+import { executePull, executeVoidEggPull, applyPullResult, getRarityCeremony, orderGridResults } from './hatcheryEngine';
 import { loadSave, writeSave, trackStat } from './persistence';
 import { assetUrl } from './utils';
 import { eggBurst } from './animationEngine';
@@ -54,7 +54,8 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   }, []);
 
   const isFirstGame = Object.values(save.dragons).every(d => !d.owned);
-  const canPull1 = isFirstGame || save.dataScraps >= PULL_COST;
+  const hasVoidEgg = !!save.inventory?.voidEgg;
+  const canPull1 = isFirstGame || hasVoidEgg || save.dataScraps >= PULL_COST;
   const canPull10 = save.dataScraps >= PULL_COST * 10;
   const pityRemaining = 10 - save.pityCounter;
 
@@ -118,13 +119,17 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     if (phase !== PHASES.IDLE && phase !== PHASES.REVEAL && phase !== PHASES.GRID) return;
 
     let currentSave = loadSave();
+    const voidEggPull = !!currentSave.inventory?.voidEgg;
 
-    if (!isFirstGame) {
+    if (voidEggPull) {
+      // The forged Void Egg IS the pull — no scrap cost, deterministic result.
+      currentSave.inventory.voidEgg = false;
+    } else if (!isFirstGame) {
       if (currentSave.dataScraps < PULL_COST) return;
       currentSave.dataScraps -= PULL_COST;
     }
 
-    const pull = executePull(currentSave.pityCounter);
+    const pull = voidEggPull ? executeVoidEggPull() : executePull(currentSave.pityCounter);
     const result = applyPullResult(currentSave, pull);
     writeSave(result.save);
     trackStat('totalPulls');
@@ -291,8 +296,13 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
 
         {(phase === PHASES.IDLE || phase === PHASES.REVEAL || phase === PHASES.GRID) && (
           <div className="pull-buttons">
-            <button className="pull-btn" disabled={!canPull1} onClick={handlePull1}>
-              {isFirstGame ? 'FREE PULL' : `PULL x1 — ${PULL_COST}◆`}
+            <button
+              className="pull-btn"
+              disabled={!canPull1}
+              onClick={handlePull1}
+              style={hasVoidEgg ? { borderColor: '#aa66ff', color: '#cc88ff', boxShadow: '0 0 12px rgba(170, 102, 255, 0.4)' } : undefined}
+            >
+              {hasVoidEgg ? '🥚 HATCH VOID EGG' : isFirstGame ? 'FREE PULL' : `PULL x1 — ${PULL_COST}◆`}
             </button>
             {!isFirstGame && (
               <button className="pull-btn" disabled={!canPull10} onClick={handlePull10}>

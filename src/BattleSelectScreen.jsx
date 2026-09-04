@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { playSound } from './soundEngine';
 import { dragons, npcs, elementColors } from './gameData';
 import { getTypeEffectiveness, calculateStatsForLevel, getStageForLevel } from './battleEngine';
-import { getDailyChallenge, isDailyChallengeCompleted, getDateString, getEffectiveStreak, getMsUntilDailyReset } from './dailyChallenge';
+import { getDailyChallenge, isDailyChallengeCompleted, getDateString, getEffectiveStreak, getMsUntilDailyReset, getTodaySeedCode, decodeSeedCode } from './dailyChallenge';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import NavBar from './NavBar';
@@ -22,12 +22,41 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
   const [selectedBench, setSelectedBench] = useState(null);
   const [selectedNpc, setSelectedNpc] = useState(null);
   const [resetIn, setResetIn] = useState(() => getMsUntilDailyReset());
+  const [seedEntryOpen, setSeedEntryOpen] = useState(false);
+  const [seedInput, setSeedInput] = useState('');
+  const [seedError, setSeedError] = useState(null);
+  const [sharedNpc, setSharedNpc] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   // Live countdown to the daily roll-over — visible urgency for the streak.
   useEffect(() => {
     const id = setInterval(() => setResetIn(getMsUntilDailyReset()), 30000);
     return () => clearInterval(id);
   }, []);
+
+  function handleShareDaily() {
+    playSound('buttonClick');
+    const code = getTodaySeedCode();
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(code).catch(() => {});
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  function handleSeedSubmit() {
+    const seed = decodeSeedCode(seedInput);
+    if (!seed) {
+      setSeedError('Invalid code — format DF-YYYYMMDD');
+      return;
+    }
+    playSound('uiConfirm');
+    const npc = getDailyChallenge(seed, { boostRewards: false });
+    setSharedNpc(npc);
+    setSelectedNpc(npc);
+    setSeedError(null);
+    setSeedEntryOpen(false);
+  }
 
   // First pick = primary, second (different) owned dragon = reserve/bench.
   // Click the primary to clear it (the bench is promoted); click the bench to clear it.
@@ -169,6 +198,16 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
                       <span style={{ marginLeft: 6, color: '#ff6600' }}>🔥{getEffectiveStreak(save) + 1}</span>
                     )}
                     {completed && <span style={{ color: '#44cc44', marginLeft: 6 }}>✓</span>}
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      title="Copy today's seed code to share this fight"
+                      style={{ marginLeft: 8, color: '#44aaff', cursor: 'pointer', fontSize: 8 }}
+                      onClick={(e) => { e.stopPropagation(); handleShareDaily(); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); handleShareDaily(); } }}
+                    >
+                      {copied ? 'COPIED!' : '📋 SHARE'}
+                    </span>
                   </div>
                   <div className="select-card-stats">
                     {completed ? `COMPLETED TODAY · resets in ${formatResetCountdown(resetIn)}` : `${daily.name.replace('DAILY: ', '')} · ${getDateString()}`}
@@ -182,6 +221,53 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
               </div>
             );
           })()}
+          {/* Seed entry + shared-seed battle */}
+          <div style={{ marginTop: 4 }}>
+            {!seedEntryOpen ? (
+              <button
+                className="seed-entry-toggle"
+                onClick={() => { playSound('buttonClick'); setSeedEntryOpen(true); }}
+              >
+                ENTER SEED CODE
+              </button>
+            ) : (
+              <div className="seed-entry">
+                <input
+                  className="seed-input"
+                  value={seedInput}
+                  onChange={(e) => setSeedInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSeedSubmit(); }}
+                  placeholder="DF-YYYYMMDD"
+                  maxLength={12}
+                />
+                <button className="seed-entry-toggle" onClick={handleSeedSubmit}>LOAD</button>
+                {seedError && <span className="seed-error">{seedError}</span>}
+              </div>
+            )}
+            {sharedNpc && (
+              <div
+                className={`select-card seed-battle-card ${selectedNpc === sharedNpc ? 'selected' : ''}`}
+                style={{ borderColor: '#44aaff' }}
+                onClick={() => { playSound('buttonClick'); setSelectedNpc(sharedNpc); }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playSound('buttonClick'); setSelectedNpc(sharedNpc); } }}
+              >
+                <div style={{ width: 60, height: 60, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <NpcSprite idleSprite={sharedNpc.idleSprite} attackSprite={sharedNpc.attackSprite} size={55} />
+                </div>
+                <div className="select-card-info">
+                  <div className="select-card-name" style={{ color: '#44aaff' }}>
+                    📡 SEED BATTLE
+                    <span style={{ marginLeft: 6, fontSize: 8, color: '#888' }}>{sharedNpc.name.replace('DAILY: ', '')}</span>
+                  </div>
+                  <div className="select-card-stats">
+                    Lv.{sharedNpc.level} · base rewards · no streak
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
           {npcList.map((npc) => {
             const color = elementColors[npc.element];
             if (isBossLocked(npc)) {

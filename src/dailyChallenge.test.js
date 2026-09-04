@@ -57,3 +57,43 @@ describe('getMsUntilDailyReset', () => {
     expect(ms).toBeLessThanOrEqual(24 * 60 * 60 * 1000);
   });
 });
+
+describe('seed codes (shareable daily)', () => {
+  it('round-trips a date seed', async () => {
+    const { encodeSeedCode, decodeSeedCode, getDailyChallenge } = await import('./dailyChallenge');
+    expect(decodeSeedCode(encodeSeedCode(20260903))).toBe(20260903);
+  });
+
+  it('accepts lowercase and surrounding whitespace', async () => {
+    const { decodeSeedCode } = await import('./dailyChallenge');
+    expect(decodeSeedCode('  df-20260903 ')).toBe(20260903);
+  });
+
+  it('rejects garbage and impossible dates', async () => {
+    const { decodeSeedCode } = await import('./dailyChallenge');
+    expect(decodeSeedCode('hello')).toBeNull();
+    expect(decodeSeedCode('DF-20261301')).toBeNull(); // month 13
+    expect(decodeSeedCode('DF-123')).toBeNull();
+  });
+
+  it('shared seed reproduces the same fighter with base rewards', async () => {
+    const { getDailyChallenge } = await import('./dailyChallenge');
+    const a = getDailyChallenge(20260903, { boostRewards: false });
+    const b = getDailyChallenge(20260903, { boostRewards: false });
+    expect(a.name).toBe(b.name);
+    expect(a.stats).toEqual(b.stats);
+    expect(a.level).toBe(b.level);
+    expect(a.shared).toBe(true);
+    // Base rewards: the official daily pays 3x scraps / 2x XP; shared pays 1x
+    const official = getDailyChallenge(20260903);
+    expect(a.scrapsReward).toBeLessThan(official.scrapsReward);
+    expect(a.baseXP).toBeLessThan(official.baseXP);
+  });
+
+  it('marks official (no-override) dailies as not shared', async () => {
+    const { getDailyChallenge } = await import('./dailyChallenge');
+    expect(getDailyChallenge().shared).toBe(false);
+    expect(getDailyChallenge(null).shared).toBe(false);
+    expect(getDailyChallenge(20260903).shared).toBe(true);
+  });
+});

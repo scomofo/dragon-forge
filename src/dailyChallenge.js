@@ -7,6 +7,27 @@ function getDailySeed() {
   return now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
 }
 
+// Shareable seed codes: the daily is deterministic per calendar day, so a code
+// like DF-20260903 regenerates the exact same boosted fight for anyone.
+export function encodeSeedCode(seed) {
+  return `DF-${seed}`;
+}
+
+export function decodeSeedCode(code) {
+  const match = /^\s*DF-(\d{8})\s*$/i.exec(code || '');
+  if (!match) return null;
+  const seed = Number(match[1]);
+  const year = Math.floor(seed / 10000);
+  const month = Math.floor((seed % 10000) / 100);
+  const day = seed % 100;
+  if (year < 2024 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return seed;
+}
+
+export function getTodaySeedCode() {
+  return encodeSeedCode(getDailySeed());
+}
+
 function seededRandom(seed) {
   let s = seed;
   return () => {
@@ -15,8 +36,8 @@ function seededRandom(seed) {
   };
 }
 
-export function getDailyChallenge() {
-  const seed = getDailySeed();
+export function getDailyChallenge(seedOverride = null, { boostRewards = true } = {}) {
+  const seed = seedOverride ?? getDailySeed();
   const rng = seededRandom(seed);
 
   // Pick today's NPC
@@ -30,9 +51,9 @@ export function getDailyChallenge() {
     boostedStats[key] = Math.floor(baseNpc.stats[key] * boostFactor);
   }
 
-  // Boost rewards
-  const boostedXP = Math.floor(baseNpc.baseXP * 2);
-  const boostedScraps = Math.floor(baseNpc.scrapsReward * 3);
+  // Boost rewards (shared-seed battles keep the tough stats but pay base rate)
+  const boostedXP = Math.floor(baseNpc.baseXP * (boostRewards ? 2 : 1));
+  const boostedScraps = Math.floor(baseNpc.scrapsReward * (boostRewards ? 3 : 1));
 
   return {
     ...baseNpc,
@@ -44,6 +65,7 @@ export function getDailyChallenge() {
     scrapsReward: boostedScraps,
     difficulty: 'Daily',
     seed,
+    shared: seedOverride != null,
   };
 }
 

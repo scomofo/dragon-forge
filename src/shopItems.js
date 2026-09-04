@@ -57,7 +57,7 @@ export const BUY_ITEMS = [
   {
     id: 'prestige_hatch',
     name: 'Prestige Hatch',
-    description: 'Next pull is guaranteed Rare+. Endgame sink.',
+    description: 'Next pull is guaranteed Rare+ (25% Void). Endgame sink.',
     cost: 800,
     icon: '🌀',
     effect: 'exoticPull',
@@ -110,11 +110,20 @@ export const FORGE_RECIPES = [
   {
     id: 'void_fragment',
     name: 'Void Fragment',
-    description: 'Free Exotic hatchery pull',
+    description: 'Next pull guaranteed Rare+ (25% Void)',
     cores: { allSix: true }, // 1 of each of 6 elements
     scrapsCost: 500,
     icon: '🌀',
     effect: 'exoticPull',
+  },
+  {
+    id: 'void_egg',
+    name: 'Void Egg',
+    description: 'GUARANTEED Void Dragon hatch (shiny) — the deterministic chase',
+    cores: { allSixCount: 5 }, // 5 of each of the 6 elements — a real grind
+    scrapsCost: 800,
+    icon: '🥚',
+    effect: 'voidEgg',
   },
 ];
 
@@ -147,6 +156,9 @@ export function canForge(recipe, save) {
   }
   if (recipe.cores.allSix) {
     return ELEMENTS_FOR_CORES.every(el => (cores[el] || 0) >= 1);
+  }
+  if (recipe.cores.allSixCount) {
+    return ELEMENTS_FOR_CORES.every(el => (cores[el] || 0) >= recipe.cores.allSixCount);
   }
   return false;
 }

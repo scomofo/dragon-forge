@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { playSound } from './soundEngine';
 import { assetUrl } from './utils';
 import { dragons, elementColors, JOURNAL_DRAGON_IDS } from './gameData';
-import { spendScraps, addDragonXp, upgradeDragonShiny, updatePityCounter, setXpBoost, spendCores, setStabilityBoost, meltCores } from './persistence';
+import { spendScraps, addDragonXp, upgradeDragonShiny, updatePityCounter, setXpBoost, spendCores, setStabilityBoost, meltCores, setVoidEgg } from './persistence';
 import { BUY_ITEMS, FORGE_RECIPES, canAffordBuy, canForge, getForgeableElement, ELEMENTS_FOR_CORES } from './shopItems';
 import NavBar from './NavBar';
 
@@ -109,6 +109,10 @@ export default function ShopScreen({ onNavigate, save, refreshSave }) {
       for (const el of ELEMENTS_FOR_CORES) {
         coresToSpend[el] = 1;
       }
+    } else if (recipe.cores.allSixCount) {
+      for (const el of ELEMENTS_FOR_CORES) {
+        coresToSpend[el] = recipe.cores.allSixCount;
+      }
     }
 
     spendCores(coresToSpend);
@@ -129,6 +133,9 @@ export default function ShopScreen({ onNavigate, save, refreshSave }) {
       case 'exoticPull':
         // Set pity to max so next pull is guaranteed Rare+, and we'll handle exotic in hatchery
         updatePityCounter(9);
+        break;
+      case 'voidEgg':
+        setVoidEgg(true);
         break;
     }
 

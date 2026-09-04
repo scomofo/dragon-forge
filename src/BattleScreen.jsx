@@ -310,6 +310,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const [selectedMoveKey, setSelectedMoveKey] = useState(null);
   const [controllerFocusIndex, setControllerFocusIndex] = useState(0);
   const [signatureFocus, setSignatureFocus] = useState(false);
+  // C5: entrance overlay — stamps both combatants in before input unlocks.
+  const [introDone, setIntroDone] = useState(false);
+  useEffect(() => {
+    playSound('attackLaunch', { element: state.npc.element });
+    const t = setTimeout(() => setIntroDone(true), Math.round(850 / getBattleSpeed()));
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const battleContainerRef = useRef(null);
   const playerSpriteContainerRef = useRef(null);
@@ -644,7 +652,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   }, [state]);
 
   useEffect(() => {
-    if (autoBattle && autoBattleAllowed && state.phase === PHASES.PLAYER_TURN && !animatingRef.current) {
+    if (autoBattle && autoBattleAllowed && introDone && state.phase === PHASES.PLAYER_TURN && !animatingRef.current) {
       const playerMoveKeys = [...state.dragon.moveKeys.filter((k) => !moves[k]?.isSignature || !state.playerSignatureUsed?.[state.dragonId]), 'basic_attack'];
       const autoBattleContext = {
         playerMoveHistory: state.playerMoveHistory,
@@ -655,7 +663,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       const autoMove = pickNpcMove(playerMoveKeys, state.dragon.element, state.npc.element, state.npcStatus, autoBattleContext);
       setTimeout(() => handleMoveSelect(autoMove), 500);
     }
-  }, [autoBattle, state.phase]);
+  }, [autoBattle, state.phase, introDone]);
 
   // A multi-phase boss with phaseLines speaks its opening line into the combat
   // log on mount (review #8 — voice the villain). Phase-transition lines fire in
@@ -687,6 +695,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   };
 
   const handleMoveSelect = useCallback(async (moveKey) => {
+    if (!introDone) return; // entrance still stamping in
     if (animatingRef.current) return;
     if (moves[moveKey]?.isSignature && state.playerSignatureUsed?.[state.dragonId]) return;
     playSound('commandSelect', { element: moves[moveKey]?.element });
@@ -996,13 +1005,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                 : ((sp.defeated || []).includes(npcId) || (sp.replayCounts?.[npcId] || 0) > 0)
         );
         const rawScraps = state.npc.scrapsReward || 0;
+        const isSharedSeed = !!battleConfig?.dailyNpc?.shared;
         let scrapsGained;
         // Captured before completeDailyChallenge mutates the streak — the
         // overlay must show the multiplier that was actually applied.
         let streakMultiplier = 1.0;
         if (isRepeatDefeat || isSingularityRepeat) {
           scrapsGained = Math.max(12, Math.floor(rawScraps * 0.45));
-        } else if (battleConfig?.dailyNpc) {
+        } else if (battleConfig?.dailyNpc && !isSharedSeed) {
           streakMultiplier = getDailyStreakMultiplier(save);
           scrapsGained = Math.floor(rawScraps * streakMultiplier);
         } else {
@@ -1032,7 +1042,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           }
         } else {
           recordNpcDefeat(npcId);
-          if (battleConfig?.dailyNpc) {
+          if (battleConfig?.dailyNpc && !isSharedSeed) {
             completeDailyChallenge(battleConfig.dailyNpc.seed);
           }
         }
@@ -1173,7 +1183,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     animatingRef.current = false;
     setSelectedMoveKey(null);
     setSignatureFocus(false);
-  }, [state, animateEvent, save]);
+  }, [state, animateEvent, save, introDone]);
 
   // Manual tactical swap — costs the turn: swap the reserve in, then the enemy
   // gets a free strike on the incoming dragon (which guards as it enters).
@@ -1263,7 +1273,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const npcHpState = getHpState(state.npcHp, state.npcMaxHp);
   const playerHpPercent = Math.max(0, Math.min(100, (state.playerHp / state.playerMaxHp) * 100));
   const npcHpPercent = Math.max(0, Math.min(100, (state.npcHp / state.npcMaxHp) * 100));
-  const isResolvingTurn = state.phase !== PHASES.PLAYER_TURN;
+  const isResolvingTurn = state.phase !== PHASES.PLAYER_TURN || !introDone;
   const battleEdge = getBattleEdge(playerHpPercent, npcHpPercent, playerHpState, npcHpState);
   const battleRank = getBattleRank(state.turnCount + 1, state.maxDamageDealt, playerHpPercent);
   // P1 battle-set poses: derived from live sprite classes so shipped sheets
@@ -1341,6 +1351,20 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       />
       <div className="arena-overlay" aria-hidden="true" />
       <div className="signature-dim" aria-hidden="true" />
+
+      {/* C5: battle entrance — VS sweep, nameplate stamps, READY beat */}
+      {!introDone && (
+        <div className="battle-intro">
+          <div className="battle-intro-nameplate left">
+            <strong>{dragon.name}</strong>
+          </div>
+          <div className="battle-intro-nameplate right">
+            <strong>{npc.name}</strong>
+          </div>
+          <div className="battle-intro-vs">VS</div>
+          <div className="battle-intro-ready">READY</div>
+        </div>
+      )}
       <div className="battle-telemetry-grid" aria-hidden="true">
         <span className="telemetry-node node-a" />
         <span className="telemetry-node node-b" />
@@ -1740,6 +1764,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           {battleConfig?.dailyNpc && state.streakMultiplier > 1 && (
             <div style={{ color: '#ff6600', fontSize: 12, marginTop: 6 }}>
               🔥 Streak bonus ×{state.streakMultiplier.toFixed(1)} applied
+            </div>
+          )}
+          {battleConfig?.dailyNpc?.shared && (
+            <div style={{ color: '#44aaff', fontSize: 9, marginTop: 6 }}>
+              SEED BATTLE — streak unaffected
             </div>
           )}
             <button className="result-btn" onClick={() => onBattleEnd(true)}>CONTINUE</button>

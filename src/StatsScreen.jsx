@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { dragons, elementColors, JOURNAL_DRAGON_IDS } from './gameData';
 import { getStageForLevel } from './battleEngine';
+import { formatPlaytime } from './persistence';
 import NavBar from './NavBar';
 
 export default function StatsScreen({ onNavigate, save }) {
@@ -108,6 +109,33 @@ export default function StatsScreen({ onNavigate, save }) {
             <div className="stats-card-label">Win Streak</div>
             <div className="stats-card-value" style={{ color: '#aa66ff' }}>
               {save.records?.longestStreak || 0} (current: {save.records?.currentStreak || 0})
+            </div>
+          </div>
+          <div className="stats-card">
+            <div className="stats-card-label">Daily Streak</div>
+            <div className="stats-card-value" style={{ color: '#ff6600' }}>
+              🔥 {save.dailyStreak || 0} day{save.dailyStreak === 1 ? '' : 's'}
+            </div>
+          </div>
+        </div>
+
+        {/* Activity */}
+        <div className="stats-title" style={{ fontSize: 10, marginTop: 12 }}>ACTIVITY</div>
+        <div className="stats-grid">
+          <div className="stats-card">
+            <div className="stats-card-label">Time Played</div>
+            <div className="stats-card-value">{formatPlaytime(save.activity?.playtimeMs)}</div>
+          </div>
+          <div className="stats-card">
+            <div className="stats-card-label">Sessions</div>
+            <div className="stats-card-value">{save.activity?.sessions || 0}</div>
+          </div>
+          <div className="stats-card">
+            <div className="stats-card-label">First Boot</div>
+            <div className="stats-card-value" style={{ fontSize: 9 }}>
+              {save.activity?.firstPlayed
+                ? new Date(save.activity.firstPlayed).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '—'}
             </div>
           </div>
         </div>

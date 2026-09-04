@@ -33,6 +33,10 @@ const DEFAULT_SAVE = {
   dailyStreak: 0,
   introSeen: false,
   ngPlus: 0,
+  // Engagement telemetry: when they first booted, when they were last here,
+  // how many sessions, and how long they've played. Drives the Stats screen
+  // and the welcome-back beat.
+  activity: { firstPlayed: null, lastPlayed: null, sessions: 0, playtimeMs: 0 },
   records: { fastestWin: null, highestDamage: 0, longestStreak: 0, currentStreak: 0 },
   flags: {
     currentAct: 1,
@@ -121,10 +125,16 @@ function migrateSave(save) {
   if (save.inventory === undefined) {
     save.inventory = { cores: {}, xpBoostBattles: 0, stabilityBoost: false };
   }
+  if (save.inventory.voidEgg === undefined) save.inventory.voidEgg = false;
   if (save.stats === undefined) {
     save.stats = { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 };
   }
   if (save.lastDailyCompleted === undefined) save.lastDailyCompleted = 0;
+  if (save.activity === undefined) save.activity = { firstPlayed: null, lastPlayed: null, sessions: 0, playtimeMs: 0 };
+  if (save.activity.firstPlayed === undefined) save.activity.firstPlayed = null;
+  if (save.activity.lastPlayed === undefined) save.activity.lastPlayed = null;
+  if (save.activity.sessions === undefined) save.activity.sessions = 0;
+  if (save.activity.playtimeMs === undefined) save.activity.playtimeMs = 0;
   if (save.records === undefined) save.records = { fastestWin: null, highestDamage: 0, longestStreak: 0, currentStreak: 0 };
   if (save.flags === undefined) {
     save.flags = { currentAct: 1, metFelix: false, felixGreeted: false, lastZone: null, fragmentsUnlocked: [], journalBriefingSeen: false, felixStageHeard: 0, felixIrisHeard: false };
@@ -394,6 +404,14 @@ export function setStabilityBoost(value) {
   writeSave(save);
 }
 
+// Void Egg: the deterministic Void chase. Forged from 5 of each core; the
+// hatchery consumes it on the next pull for a guaranteed shiny Void Dragon.
+export function setVoidEgg(value) {
+  const save = loadSave();
+  save.inventory.voidEgg = value;
+  writeSave(save);
+}
+
 export function fuseDragons(parentAId, parentBId, offspringElement, offspringLevel, offspringXp, offspringShiny, fusedBaseStats) {
   const save = loadSave();
   if (save.dataScraps < 100) return null;
@@ -557,4 +575,71 @@ export function unequipRelic(relicId) {
   save.skye.relicsEquipped = save.skye.relicsEquipped.filter(id => id !== relicId);
   writeSave(save);
   return true;
+}
+
+// === ENGAGEMENT TELEMETRY / RETURN-PLAYER ===
+
+// Whole calendar days between two timestamps (local time, matching the daily
+// seed's local-day semantics). Pure for tests.
+export function computeDaysAway(lastPlayed, now = Date.now()) {
+  if (!lastPlayed) return 0;
+  const last = new Date(lastPlayed);
+  const cur = new Date(now);
+  const lastDay = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+  const curDay = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate());
+  return Math.max(0, Math.round((curDay - lastDay) / 86400000));
+}
+
+export function formatPlaytime(ms) {
+  const minutes = Math.floor((ms || 0) / 60000);
+  if (minutes < 1) return '<1m';
+  const hours = Math.floor(minutes / 60);
+  if (hours < 1) return `${minutes}m`;
+  return `${hours}h ${minutes % 60}m`;
+}
+
+// Welcome-back grant: modest, scales with time away, capped. Pure for tests.
+export function getWelcomeBackGrant(daysAway) {
+  if (daysAway < 3) return 0;
+  return Math.min(200, 50 + daysAway * 25);
+}
+
+// One session per page load (module flag survives StrictMode's double-effect
+// in dev). Returns { daysAway, grant } from BEFORE this session stamped
+// lastPlayed, so the caller can greet a returning player.
+let sessionStarted = false;
+export function beginSession() {
+  if (sessionStarted) return { daysAway: 0, grant: 0 };
+  sessionStarted = true;
+  const save = loadSave();
+  const now = Date.now();
+  const daysAway = computeDaysAway(save.activity.lastPlayed, now);
+  const hasProgress = (save.defeatedNpcs || []).length > 0 || (save.stats?.battlesWon || 0) > 0;
+  const grant = hasProgress ? getWelcomeBackGrant(daysAway) : 0;
+  save.activity.sessions++;
+  if (!save.activity.firstPlayed) save.activity.firstPlayed = now;
+  save.activity.lastPlayed = now;
+  save.activity.sessionStart = now;
+  writeSave(save);
+  return { daysAway, grant };
+}
+
+// Separate write so the welcome-back grant can't get clobbered by a concurrent
+// battle save (each persistence call load+writes the whole blob).
+export function grantWelcomeBack(amount) {
+  if (amount <= 0) return;
+  const save = loadSave();
+  save.dataScraps += amount;
+  writeSave(save);
+}
+
+// Playtime accrues in heartbeats (App calls this on an interval and on unload).
+export function accumulatePlaytime() {
+  const save = loadSave();
+  const start = save.activity.sessionStart;
+  if (!start) return;
+  const now = Date.now();
+  save.activity.playtimeMs = (save.activity.playtimeMs || 0) + Math.max(0, now - start);
+  save.activity.sessionStart = now;
+  writeSave(save);
 }

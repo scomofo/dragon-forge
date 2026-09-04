@@ -48,6 +48,19 @@ export function executePull(pityCounter) {
   };
 }
 
+// Void Egg pull: fully deterministic — the forged egg hatches into a shiny
+// Void Dragon, no RNG. Same shape as executePull so the ceremony + apply path
+// are identical (Exotic telegraphing included).
+export function executeVoidEggPull() {
+  return {
+    element: 'void',
+    rarityName: 'Exotic',
+    rarityMultiplier: 5,
+    shiny: true,
+    newPityCounter: 0,
+  };
+}
+
 export function applyPullResult(save, pull) {
   const newSave = structuredClone(save);
   const dragon = newSave.dragons[pull.element];

@@ -1771,3 +1771,83 @@
   color: #ffcc00;
   font-size: 0.7em;
 }
+
+/* === BATTLE ENTRANCE (C5) === */
+.battle-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  font-family: 'Press Start 2P', monospace;
+}
+
+.battle-intro-nameplate {
+  position: absolute;
+  top: 18%;
+  padding: 8px 18px;
+  background: rgba(10, 10, 20, 0.85);
+  border: 1px solid #ffcc00;
+  color: #ffcc00;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  animation: introStampLeft 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.battle-intro-nameplate.left {
+  left: 6%;
+  animation-name: introStampLeft;
+}
+
+.battle-intro-nameplate.right {
+  right: 6%;
+  animation-name: introStampRight;
+  animation-delay: 0.12s;
+}
+
+@keyframes introStampLeft {
+  0% { transform: translateX(-120%) skewX(10deg); opacity: 0; }
+  100% { transform: translateX(0) skewX(0); opacity: 1; }
+}
+
+@keyframes introStampRight {
+  0% { transform: translateX(120%) skewX(-10deg); opacity: 0; }
+  100% { transform: translateX(0) skewX(0); opacity: 1; }
+}
+
+.battle-intro-vs {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 34px;
+  color: #ff6622;
+  text-shadow: 0 0 24px rgba(255, 102, 34, 0.8);
+  animation: introVsZoom 0.3s 0.4s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+@keyframes introVsZoom {
+  0% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.battle-intro-ready {
+  position: absolute;
+  top: 58%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  letter-spacing: 0.5em;
+  color: #44ff44;
+  text-shadow: 0 0 12px rgba(68, 255, 68, 0.7);
+  animation: introReadyBlink 0.4s 0.55s steps(2) both;
+}
+
+@keyframes introReadyBlink {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  .battle-intro-nameplate { font-size: 8px; padding: 6px 10px; }
+  .battle-intro-vs { font-size: 22px; }
+}

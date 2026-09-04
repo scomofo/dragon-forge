@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rollRarity, rollElement, rollShiny, executePull, applyPullResult, getRarityCeremony, orderGridResults, rankPullExcitement } from './hatcheryEngine';
+import { rollRarity, rollElement, rollShiny, executePull, executeVoidEggPull, applyPullResult, getRarityCeremony, orderGridResults, rankPullExcitement } from './hatcheryEngine';
 
 describe('rollRarity', () => {
   it('returns a rarity tier object', () => {
@@ -207,5 +207,30 @@ describe('orderGridResults', () => {
     const input = [entry(5), entry(1)];
     orderGridResults(input);
     expect(input[0].pull.rarityMultiplier).toBe(5);
+  });
+});
+
+describe('executeVoidEggPull', () => {
+  it('is fully deterministic: shiny Exotic void, pity reset', () => {
+    const pull = executeVoidEggPull();
+    expect(pull).toEqual({
+      element: 'void',
+      rarityName: 'Exotic',
+      rarityMultiplier: 5,
+      shiny: true,
+      newPityCounter: 0,
+    });
+  });
+
+  it('grants the void dragon through the standard apply path', () => {
+    const save = {
+      dragons: { void: { level: 1, xp: 0, owned: false, discovered: false, shiny: false, fusedBaseStats: null } },
+      pityCounter: 4,
+    };
+    const result = applyPullResult(save, executeVoidEggPull());
+    expect(result.isNew).toBe(true);
+    expect(result.save.dragons.void.owned).toBe(true);
+    expect(result.save.dragons.void.shiny).toBe(true);
+    expect(result.save.pityCounter).toBe(0);
   });
 });
