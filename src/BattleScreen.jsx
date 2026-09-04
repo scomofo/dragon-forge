@@ -7,7 +7,7 @@ import {
   getStageForLevel, calculateXpGain, getTypeEffectivenessLabel,
   CHARGE_ATK_MULTIPLIER,
 } from './battleEngine';
-import { loadSave, addDragonXp, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, setLastZone, trackStat, completeDailyChallenge, updateRecords, unlockFragment, getRankBonusScraps } from './persistence';
+import { loadSave, addDragonXp, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, setLastZone, trackStat, completeDailyChallenge, updateRecords, unlockFragment, getRankBonusScraps, recordBattleRank } from './persistence';
 import { getDailyStreakMultiplier } from './dailyChallenge';
 import { getAvailableCampaignNodes } from './campaignMap';
 import { FRAGMENT_TRIGGERS, RELIC_DROPS, getRelic, getRelicBattleModifiers } from './forgeData';
@@ -21,6 +21,7 @@ import VfxOverlay from './VfxOverlay';
 import { getBattlePresentationProfile, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, shouldAnimateBattleEvent } from './battlePresentation';
 import { resolveBattlePose } from './battleSets';
 import { resolveBattleArena } from './arenas';
+import { getBossPattern } from './bossPatterns';
 import useGamepadController from './useGamepadController';
 import {
   screenShake, hitFlash, criticalHit, shatterKO,
@@ -133,8 +134,8 @@ function initBattle(dragonId, npcId, save, battleConfig) {
   const stats = calculateStatsForLevel(progress.fusedBaseStats || dragon.baseStats, progress.level, progress.shiny);
 
   // Optional reserve dragon (the "bench"): a second life + a tactical mid-fight
-  // swap. Only wired for standard battles (BattleSelectScreen passes benchDragonId);
-  // bosses/Singularity stay single-dragon so their fixed-TTK balance holds.
+  // swap. Wired for free battles (B7) and campaign nodes; bosses/Singularity
+  // stay single-dragon so their fixed-TTK balance holds.
   let bench = null;
   const benchId = battleConfig?.benchDragonId;
   if (benchId && benchId !== dragonId && save.dragons[benchId]?.owned && dragons[benchId]) {
@@ -310,6 +311,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const [selectedMoveKey, setSelectedMoveKey] = useState(null);
   const [controllerFocusIndex, setControllerFocusIndex] = useState(0);
   const [signatureFocus, setSignatureFocus] = useState(false);
+  // P4: firewall_sentinel's authored pattern — the shield holds unless the
+  // player Defended last turn (waited out the cycle) or pierces (Phase Strike).
+  const playerDefendedLastTurn = useRef(false);
   // C5: entrance overlay — stamps both combatants in before input unlocks.
   const [introDone, setIntroDone] = useState(false);
   useEffect(() => {
@@ -598,9 +602,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     if (event.hit) {
       const critText = event.isCritical ? ' CRITICAL!' : '';
-      const effText = event.effectiveness > 1 ? ' Super effective!' : event.effectiveness < 1 ? ' Resisted.' : '';
+      const blockedText = event.blocked ? ' BLOCKED — sentinel shield holds' : '';
+      const effText = event.blocked ? '' : event.effectiveness > 1 ? ' Super effective!' : event.effectiveness < 1 ? ' Resisted.' : '';
       const reflectText = event.reflected ? ' REFLECTED!' : '';
-      dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — ${event.damage} dmg.${critText}${effText}${reflectText}` });
+      dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — ${event.damage} dmg.${critText}${effText}${blockedText}${reflectText}` });
       playSound('combatMessage');
     } else {
       dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — missed!` });
@@ -798,9 +803,16 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     // On charge turn: NPC defends (takes the player hit while winding up)
     const effectiveNpcMoveKey = isCharging ? 'defend' : npcMoveKey;
 
+    // P4: execute the authored firewall_sentinel packet-shield pattern. It
+    // blocks all player damage unless the player Defended last turn or uses
+    // Phase Strike — the tell up top ("EDGE reads BLOCKED") explains why.
+    const bossPattern = getBossPattern(state.npc.id);
     let result = resolveTurn(playerState, chargedNpcState, moveKey, effectiveNpcMoveKey, state.dragon.moveKeys, state.npc.moveKeys, {
       playerAccuracyFloor: (state.npc.difficulty === 'Easy' && !(save.defeatedNpcs || []).length) ? 95 : 0,
+      packetShield: bossPattern?.id === 'firewall_sentinel' && moveKey !== 'defend',
+      playerDefendedLastTurn: playerDefendedLastTurn.current,
     });
+    playerDefendedLastTurn.current = moveKey === 'defend';
 
     // Tag signature events for presentation
     const isSignature = shouldFireSignature && !previouslyCharged;
@@ -1113,6 +1125,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           const finalRank = getBattleRank(state.turnCount + 1, state.maxDamageDealt, playerHpPercent);
           const rankBonus = getRankBonusScraps(finalRank);
           if (rankBonus > 0) addScraps(rankBonus);
+          // B8: persist the best rank per opponent — drives S-rank ribbons on
+          // the campaign map and the rank-perfect endgame milestone.
+          recordBattleRank(npcId, finalRank);
           // Stage-up detection: did this battle's XP push the dragon across a
           // stage threshold (II@8 / III@20 / IV@38)? That's a visual evolution —
           // it deserves a callout, not silence.
@@ -1315,19 +1330,53 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         return;
       }
       if (button === 'A' || button === 'START') {
-        if (controllerFocusIndex < playerMoves.length) {
-          handleMoveSelect(playerMoves[controllerFocusIndex].key);
-        } else if (controllerFocusIndex === playerMoves.length) {
-          handleMoveSelect('defend');
-        } else if (controllerFocusIndex === playerMoves.length + 1) {
-          toggleSpeed();
-        } else if (autoBattleAllowed) {
-          playSound('uiConfirm');
-          setAutoBattle((enabled) => !enabled);
-        }
+        activateFocusedCommand(controllerFocusIndex);
       }
     },
   });
+
+  function activateFocusedCommand(index) {
+    if (index < playerMoves.length) {
+      handleMoveSelect(playerMoves[index].key);
+    } else if (index === playerMoves.length) {
+      handleMoveSelect('defend');
+    } else if (index === playerMoves.length + 1) {
+      toggleSpeed();
+    } else if (autoBattleAllowed) {
+      playSound('uiConfirm');
+      setAutoBattle((enabled) => !enabled);
+    }
+  }
+
+  // C6: keyboard parity with the gamepad — arrows cycle the command row,
+  // Enter/Space executes, D defends, S toggles speed, A toggles auto.
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.repeat) return;
+      if (isResolvingTurn) return;
+      const commands = ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'Enter', ' ', 'd', 'D', 's', 'S', 'a', 'A'];
+      if (!commands.includes(e.key)) return;
+      e.preventDefault();
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        playSound('uiHover');
+        setControllerFocusIndex((index) => (index - 1 + controllerCommandCount) % controllerCommandCount);
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        playSound('uiHover');
+        setControllerFocusIndex((index) => (index + 1) % controllerCommandCount);
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        activateFocusedCommand(controllerFocusIndex);
+      } else if (e.key === 'd' || e.key === 'D') {
+        handleMoveSelect('defend');
+      } else if (e.key === 's' || e.key === 'S') {
+        toggleSpeed();
+      } else if ((e.key === 'a' || e.key === 'A') && autoBattleAllowed) {
+        playSound('uiConfirm');
+        setAutoBattle((enabled) => !enabled);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [controllerFocusIndex, isResolvingTurn, controllerCommandCount, autoBattleAllowed, playerMoves]);
 
   return (
     <div
@@ -1771,7 +1820,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
               SEED BATTLE — streak unaffected
             </div>
           )}
-            <button className="result-btn" onClick={() => onBattleEnd(true)}>CONTINUE</button>
+            <button
+              className="result-btn"
+              onClick={() => onBattleEnd(true)}
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onBattleEnd(true); } }}
+            >
+              CONTINUE
+            </button>
           </div>
         </div>
       )}
@@ -1817,7 +1873,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                     ? 'Level up your dragon and try again, or pick another opponent in Battle Select.'
                     : 'Head to the Campaign Map to try a different matchup.'}
             </p>
-            <button className="result-btn" onClick={() => onBattleEnd(false)}>TRY AGAIN</button>
+            <button
+              className="result-btn"
+              onClick={() => onBattleEnd(false)}
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onBattleEnd(false); } }}
+            >
+              TRY AGAIN
+            </button>
           </div>
         </div>
       )}

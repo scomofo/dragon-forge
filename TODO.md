@@ -14,6 +14,7 @@
 - [ ] P2 Twelve authored tracks — Mirror Admin title-motif arrangement first (`design/gdd/music-identity.md`)
 - [ ] P3 Four authored zones — Outer Grid / Frozen Cache / Storm Spine / Admin Core rooms (`src/worldZones.js`)
 - [ ] P4 Execute `bossPatterns.js` in `battleEngine`; pick one depth axis (dual techs **or** 4-move kits)
+  - [x] P4 pilot — `firewall_sentinel` packet-shield executed (`resolveTurn` options; executedByBattleEngine flag flips per pattern)
 - [ ] P5 Roster expansion only after P1–P3
 
 ## Recent Browser QA

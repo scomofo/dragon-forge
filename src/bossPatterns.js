@@ -1,5 +1,5 @@
-// Authored encounter scripts. P4 will execute these from battleEngine.
-// Until then executedByBattleEngine is false — data + tells only.
+// Authored encounter scripts. P4 executes these from battleEngine — flags say
+// which scripts are live (firewall_sentinel's packet-shield is the pilot).
 // Docs: design/gdd/snes-aaa-roadmap.md
 
 export const BOSS_PATTERNS = {
@@ -7,7 +7,7 @@ export const BOSS_PATTERNS = {
     id: 'firewall_sentinel',
     tell: 'Raises a packet-shield for two turns. EDGE reads BLOCKED.',
     rule: 'Incoming damage is 0 unless the hit is Phase Strike or the player Defended last turn (wait out the cycle).',
-    executedByBattleEngine: false,
+    executedByBattleEngine: true,
   },
   buffer_overflow: {
     id: 'buffer_overflow',

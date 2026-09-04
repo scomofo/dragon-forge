@@ -1327,3 +1327,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* === BEST-RANK RIBBONS (B8) === */
+.node-rank-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 8px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Press Start 2P', monospace;
+  color: #0a0a14;
+}
+
+.node-rank-badge.rank-s { background: #ffcc00; box-shadow: 0 0 8px rgba(255, 204, 0, 0.7); }
+.node-rank-badge.rank-a { background: #aa66ff; }
+.node-rank-badge.rank-b { background: #44aaff; }
+.node-rank-badge.rank-c { background: #888; }

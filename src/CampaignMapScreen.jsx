@@ -70,6 +70,9 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
   const firstActionable = CAMPAIGN_NODES.find((node) => nodeStates[node.id] === 'available') || CAMPAIGN_NODES[0];
   const [selectedNodeId, setSelectedNodeId] = useState(firstActionable.id);
   const [selectedDragonId, setSelectedDragonId] = useState(null);
+  // B7: the tactical bench is now available on campaign nodes too — pick a
+  // reserve with click-on-primary (like Battle Select) to bring a second life.
+  const [selectedBenchId, setSelectedBenchId] = useState(null);
 
   const selectedNode = CAMPAIGN_NODES.find((node) => node.id === selectedNodeId) || firstActionable;
   const selectedState = getCampaignNodeState(selectedNode, save);
@@ -106,7 +109,19 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
 
   function selectDragon(dragonId) {
     playSound('dragonSelect');
-    setSelectedDragonId(dragonId);
+    // B7 click rules (mirrors Battle Select): first pick = primary, second
+    // distinct pick = reserve; click primary to clear (bench promotes); click
+    // bench to clear it.
+    if (selectedDragonId === dragonId) {
+      setSelectedDragonId(selectedBenchId);
+      setSelectedBenchId(null);
+    } else if (selectedBenchId === dragonId) {
+      setSelectedBenchId(null);
+    } else if (!selectedDragonId) {
+      setSelectedDragonId(dragonId);
+    } else {
+      setSelectedBenchId(dragonId);
+    }
   }
 
   function beginBattle() {
@@ -116,6 +131,7 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
       nodeId: selectedNode.id,
       dragonId: selectedDragonId,
       npcId: selectedNode.npcId,
+      benchDragonId: selectedBenchId || null,
     });
   }
 
@@ -257,6 +273,7 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
               const state = nodeStates[node.id];
               const color = elementColors[node.element] || elementColors.neutral;
               const isSelected = selectedNode.id === node.id;
+              const bestRank = save.bestRanks?.[node.npcId];
               return (
                 <button
                   key={node.id}
@@ -268,11 +285,14 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
                     '--node-glow': color.glow,
                   }}
                   onClick={() => selectNode(node)}
-                  aria-label={`${node.label} ${state}`}
+                  aria-label={`${node.label} ${state}${bestRank ? ` best rank ${bestRank}` : ''}`}
                 >
                   <span className={`node-type-badge ${node.type}`}>{getNodeTypeGlyph(node.type)}</span>
                   <span className="node-orb">{state === 'locked' ? 'LOCK' : state === 'cleared' ? 'OK' : color.icon}</span>
                   <span className="node-label">{node.label}</span>
+                  {bestRank && (
+                    <span className={`node-rank-badge rank-${bestRank.toLowerCase()}`}>{bestRank}</span>
+                  )}
                 </button>
               );
             })}
@@ -397,6 +417,9 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
           )}
 
           <div className="dragon-picker-title">CHOOSE GUARDIAN</div>
+          <div style={{ fontSize: 8, color: '#888', margin: '2px 0 6px', letterSpacing: '0.03em' }}>
+            Pick a PRIMARY, then optionally a 2nd as RESERVE — it steps in if your primary falls (half XP).
+          </div>
           <div className="campaign-dragon-list">
             {ownedDragons.length === 0 && (
               <div className="empty-dragons">Pull a dragon from the Hatchery to enter the campaign.</div>
@@ -407,10 +430,12 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
               const color = elementColors[data.element];
               const matchup = getTypeEffectiveness(data.element, selectedNode.element);
               const matchupLabel = matchup > 1 ? 'EDGE' : matchup < 1 ? 'RESIST' : 'EVEN';
+              const isPrimary = selectedDragonId === id;
+              const isBench = selectedBenchId === id;
               return (
                 <button
                   key={id}
-                  className={`campaign-dragon ${selectedDragonId === id ? 'selected controller-focus' : ''}`}
+                  className={`campaign-dragon ${isPrimary || isBench ? 'selected controller-focus' : ''}`}
                   style={{ '--dragon-color': color.primary, '--dragon-glow': color.glow }}
                   onClick={() => selectDragon(id)}
                 >
@@ -422,7 +447,11 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
                     element={data.element}
                   />
                   <span>
-                    <strong>{color.icon} {progress.nickname || data.name}</strong>
+                    <strong>
+                      {color.icon} {progress.nickname || data.name}
+                      {isPrimary && <span style={{ marginLeft: 6, fontSize: 8, color: color.primary }}>● PRIMARY</span>}
+                      {isBench && <span style={{ marginLeft: 6, fontSize: 8, color: '#44aaff' }}>● RESERVE</span>}
+                    </strong>
                     <small>Lv.{progress.level} · HP {stats.hp} · {matchupLabel}</small>
                   </span>
                 </button>

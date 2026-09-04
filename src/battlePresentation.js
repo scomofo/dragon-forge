@@ -208,6 +208,7 @@ export function getBattlePresentationProfile(event, move = null) {
 }
 
 export function getBattleResultCallout(event) {
+  if (event?.blocked) return { text: 'BLOCKED', variant: 'blocked' };
   const variant = classifyBattleEvent(event);
   const textByVariant = {
     miss: 'MISS',

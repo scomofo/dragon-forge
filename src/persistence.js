@@ -27,6 +27,7 @@ const DEFAULT_SAVE = {
   mirrorAdminDefeated: false,
   remnantDefeated: [],
   fusionLineage: [],
+  bestRanks: {},
   inventory: { cores: {}, xpBoostBattles: 0, stabilityBoost: false },
   stats: { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 },
   lastDailyCompleted: 0,
@@ -117,6 +118,7 @@ function migrateSave(save) {
   if (save.mirrorAdminDefeated === undefined) save.mirrorAdminDefeated = false;
   if (!Array.isArray(save.remnantDefeated)) save.remnantDefeated = [];
   if (!Array.isArray(save.fusionLineage)) save.fusionLineage = [];
+  if (save.bestRanks === undefined || save.bestRanks === null) save.bestRanks = {};
   // Light Dragon is the Singularity completion reward; grant retroactively to finishers.
   if (save.singularityComplete && !save.dragons.light.owned) {
     save.dragons.light.owned = true;
@@ -211,6 +213,32 @@ export function getRankBonusScraps(rank) {
   if (rank === 'A') return 8;
   if (rank === 'B') return 4;
   return 0;
+}
+
+// Best-rank persistence: each NPC's highest military rank is recorded so the
+// campaign map / battle select can show S-rank ribbons and the rank-perfect
+// milestone has a counting source. S > A > B > C ordering.
+const RANK_ORDER = ['C', 'B', 'A', 'S'];
+
+// Pure comparator — testable without storage.
+export function getUpgradedRank(current, next) {
+  if (!current) return next;
+  return RANK_ORDER.indexOf(next) > RANK_ORDER.indexOf(current) ? next : current;
+}
+
+export function recordBattleRank(npcId, rank) {
+  const save = loadSave();
+  if (!save.bestRanks) save.bestRanks = {};
+  save.bestRanks[npcId] = getUpgradedRank(save.bestRanks[npcId], rank);
+  writeSave(save);
+}
+
+export function getBestRanks(save) {
+  return save?.bestRanks || {};
+}
+
+export function countSRanks(save) {
+  return Object.values(save?.bestRanks || {}).filter(r => r === 'S').length;
 }
 
 export function spendScraps(amount) {
