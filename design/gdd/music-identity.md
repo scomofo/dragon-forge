@@ -1,7 +1,15 @@
 # Music Identity
 
-> **Status**: Binding (commission list). Runtime still uses 5 MP3s + procedural beds.
-> **Code twin**: `src/soundEngine.js` → `MUSIC_COMMISSION` (landed locally; wire on P2 if not on this branch yet).
+> **Status**: Binding (commission list). Runtime uses 5 MP3s, remaining procedural beds, and a sequenced Mirror Admin arrangement. P2 is still in progress.
+> **Code twins**: `src/musicScores.js` (authored note data), `src/scorePlayer.js` (playback), `src/soundEngine.js` (routing and preferences).
+
+## P2 first delivery — 2026-09-04
+
+- **The Caretaker** replaces Mirror Admin's four-note procedural bed in its existing boss entry point. It is a fixed 16-bar arrangement at **56 BPM**, with the documented melody, an opening A-flat bass, a contrasting bridge, a return, and a resolving phrase. Percussion leaves beat one empty.
+- **Heartforge — Motif Study** provides a 16-bar **112 BPM** reference for auditioning the same melody. Both arrangements are available in **Settings → Sound Room**; Play auditions, Stop restores the previous screen's music, and navigation replaces the audition.
+- The original `theme.mp3` is preserved and now actually used on the title screen. Its correspondence to the written motif has **not** been established by transcription or listening in this pass. The Motif Study is a reference, not a silent replacement of that asset.
+- Scores use a bounded Web Audio scheduler, fixed note data, simple synthesized voices, and no new audio assets or packages. The note arrangement fits an eight-voice budget. This is an arrangement draft for listening review, **not a mastered sampled-instrument soundtrack**.
+- Live volume, mute/resume, navigation while muted, rapid cached-track changes, and note disposal have regression coverage. Pending: real-browser listening, balance against SFX, loop seam audition, and comparison with the original title recording.
 
 ## Title motif (Heartforge theme)
 
@@ -24,9 +32,11 @@ Mirror Admin is this motif at half-time, flattened 6th in the bass, no percussio
 6. `battleElite` — commission
 7. `singularity` — commission
 8. `boss` — commission
-9. `mirrorAdmin` — **commission first**
+9. `mirrorAdmin` — sequenced first arrangement implemented; listening, instrument design, and mastering pending
 10. `victory` — sting ≤ 6s
 11. `defeat` — sting
 12. `credits` — full title arrangement
 
 Acceptance: a 0–credits run plays at least six different authored loops, and the Mirror Admin theme is recognizably the title motif at half-time.
+
+This first delivery does not satisfy the six-loop run criterion. The remaining beds and reused battle tracks still require composition. Do not mark all twelve tracks complete because the runtime can now play a score.

@@ -1,5 +1,7 @@
 // @ts-nocheck
 import { assetUrl } from './utils';
+import { MUSIC_SCORES } from './musicScores';
+import { startScore } from './scorePlayer';
 
 let audioCtx = null;
 
@@ -8,38 +10,58 @@ function getCtx() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
   if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
+    audioCtx.resume().catch(() => {});
   }
   return audioCtx;
 }
 
 const SOUND_PREFS_KEY = 'dragonforge_sound';
+const DEFAULT_PREFS = { sfxVolume: 0.7, musicVolume: 0.5, muted: false };
+const preferenceListeners = new Set();
+
+function clampVolume(value, fallback) {
+  return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : fallback;
+}
 
 function loadPrefs() {
   try {
     const raw = localStorage.getItem(SOUND_PREFS_KEY);
-    if (!raw) return { sfxVolume: 0.7, musicVolume: 0.5, muted: false };
-    return JSON.parse(raw);
+    const saved = raw ? JSON.parse(raw) : null;
+    return {
+      sfxVolume: clampVolume(saved?.sfxVolume, DEFAULT_PREFS.sfxVolume),
+      musicVolume: clampVolume(saved?.musicVolume, DEFAULT_PREFS.musicVolume),
+      muted: saved?.muted === true,
+    };
   } catch {
-    return { sfxVolume: 0.7, musicVolume: 0.5, muted: false };
+    return { ...DEFAULT_PREFS };
   }
 }
 
-function savePrefs(prefs) {
-  localStorage.setItem(SOUND_PREFS_KEY, JSON.stringify(prefs));
+function savePrefs(next) {
+  prefs = next;
+  try { localStorage.setItem(SOUND_PREFS_KEY, JSON.stringify(prefs)); } catch { /* session-only preferences */ }
+  preferenceListeners.forEach(listener => listener());
 }
 
 let prefs = loadPrefs();
+
+export function getSoundPreferences() { return prefs; }
+
+export function subscribeSoundPreferences(listener) {
+  preferenceListeners.add(listener);
+  return () => preferenceListeners.delete(listener);
+}
 
 export function isMuted() {
   return prefs.muted;
 }
 
 export function toggleMute() {
-  prefs.muted = !prefs.muted;
-  savePrefs(prefs);
+  savePrefs({ ...prefs, muted: !prefs.muted });
   if (prefs.muted) {
-    stopMusic();
+    silencePlayback();
+  } else if (currentTrackName) {
+    playMusic(currentTrackName, true);
   }
   return prefs.muted;
 }
@@ -53,13 +75,19 @@ export function getMusicVolume() {
 }
 
 export function setSfxVolume(vol) {
-  prefs.sfxVolume = Math.max(0, Math.min(1, vol));
-  savePrefs(prefs);
+  savePrefs({ ...prefs, sfxVolume: clampVolume(vol, prefs.sfxVolume) });
 }
 
 export function setMusicVolume(vol) {
-  prefs.musicVolume = Math.max(0, Math.min(1, vol));
-  savePrefs(prefs);
+  savePrefs({ ...prefs, musicVolume: clampVolume(vol, prefs.musicVolume) });
+  // End outgoing fades before applying the new level. A stale fade-in must
+  // never turn music back up after the player has set the slider to zero.
+  for (const audio of musicCache.values()) {
+    cancelFade(audio);
+    if (audio === currentMusic) audio.volume = getMusicVolume();
+    else audio.pause();
+  }
+  currentScore?.setVolume(getMusicVolume());
   if (proc.master) {
     const spec = PROCEDURAL_BEDS[proc.name];
     proc.master.gain.value = getMusicVolume() * (spec?.gain || 0.22);
@@ -299,7 +327,8 @@ const MUSIC_SCHEMA = {
   journal: { role: 'lore-calm', mood: 'reflective', source: 'procedural' },
   shop: { role: 'shop', mood: 'brisk', source: 'procedural' },
   credits: { role: 'credits', mood: 'resolute', source: 'procedural' },
-  mirrorAdmin: { role: 'true-final', mood: 'tragic', source: 'procedural' },
+  heartforge: { role: 'motif-study', mood: 'reflective', source: 'score', bpm: MUSIC_SCORES.heartforge.bpm },
+  mirrorAdmin: { role: 'true-final', mood: 'tragic', source: 'score', bpm: MUSIC_SCORES.mirrorAdmin.bpm },
 };
 
 const MUSIC_ALIASES = {
@@ -747,6 +776,7 @@ export function playSound(name, options) {
 
 let currentMusic = null;
 let currentTrackName = null;
+let currentScore = null;
 
 const MUSIC_TRACKS = {
   title: '/assets/music/theme.mp3',
@@ -767,11 +797,11 @@ const PROCEDURAL_BEDS = {
   shop:        { bpm: 100, pad: [98, 147],    arp: [294, 330, 392, 330], wave: 'square',   filterFreq: 1600, gain: 0.18 },
   credits:     { bpm: 72,  pad: [87, 130],    arp: [349, 440, 523, 440], wave: 'sine',     filterFreq: 2000, gain: 0.18 },
   singularity: { bpm: 96,  pad: [41, 61],     arp: [82, 98, 61, 123],    wave: 'sawtooth', filterFreq: 700,  gain: 0.20 },
-  mirrorAdmin: { bpm: 108, pad: [49, 73.5],   arp: [147, 156, 196, 185], wave: 'sawtooth', filterFreq: 560,  gain: 0.22 },
 };
 
 const musicCache = new Map();
-const proc = { master: null, nodes: [], timer: null, name: null };
+const fadeTimers = new Map();
+const proc = { master: null, nodes: new Set(), timer: null, name: null };
 
 function getCachedAudio(src) {
   let audio = musicCache.get(src);
@@ -785,6 +815,7 @@ function getCachedAudio(src) {
 }
 
 function stopProceduralBed() {
+  if (proc.master) proc.master.gain.value = 0;
   if (proc.timer) {
     clearInterval(proc.timer);
     proc.timer = null;
@@ -793,7 +824,7 @@ function stopProceduralBed() {
     try { node.stop?.(); } catch { /* already stopped */ }
     try { node.disconnect?.(); } catch { /* already disconnected */ }
   });
-  proc.nodes = [];
+  proc.nodes.clear();
   proc.master = null;
   proc.name = null;
 }
@@ -814,7 +845,8 @@ function startProceduralBed(name) {
   filter.connect(ctx.destination);
 
   proc.master = master;
-  proc.nodes.push(master, filter);
+  proc.nodes.add(master);
+  proc.nodes.add(filter);
   proc.name = name;
 
   (spec.pad || []).forEach((freq, i) => {
@@ -827,7 +859,8 @@ function startProceduralBed(name) {
     o.connect(g);
     g.connect(master);
     o.start();
-    proc.nodes.push(o, g);
+    proc.nodes.add(o);
+    proc.nodes.add(g);
   });
 
   const stepMs = (60 / spec.bpm) * 1000;
@@ -846,6 +879,14 @@ function startProceduralBed(name) {
     g.gain.exponentialRampToValueAtTime(0.0001, now + (stepMs / 1000) * 0.82);
     o.connect(g);
     g.connect(master);
+    proc.nodes.add(o);
+    proc.nodes.add(g);
+    o.onended = () => {
+      o.disconnect();
+      g.disconnect();
+      proc.nodes.delete(o);
+      proc.nodes.delete(g);
+    };
     o.start();
     o.stop(now + stepMs / 1000);
   };
@@ -867,62 +908,74 @@ export function getMusicDefinition(trackName) {
   return MUSIC_SCHEMA[resolveMusicName(trackName)] || null;
 }
 
-function fadeOut(audio, duration = 350) {
-  return new Promise((resolve) => {
-    if (!audio || audio.paused) { resolve(); return; }
-    const startVol = audio.volume;
-    const steps = 20;
-    const stepTime = duration / steps;
-    const stepVol = startVol / steps;
-    let step = 0;
-    const interval = setInterval(() => {
-      step++;
-      audio.volume = Math.max(0, startVol - stepVol * step);
-      if (step >= steps) {
-        clearInterval(interval);
-        audio.pause();
-        audio.volume = startVol;
-        resolve();
-      }
-    }, stepTime);
-  });
+function cancelFade(audio) {
+  clearInterval(fadeTimers.get(audio));
+  fadeTimers.delete(audio);
 }
 
-function fadeIn(audio, targetVol, duration = 350) {
-  audio.volume = 0;
-  audio.play().catch(() => {});
+function fadeAudio(audio, targetVol, pauseAtEnd = false) {
+  cancelFade(audio);
+  const startVol = audio.volume;
   const steps = 20;
-  const stepTime = duration / steps;
-  const stepVol = targetVol / steps;
   let step = 0;
   const interval = setInterval(() => {
     step++;
-    audio.volume = Math.min(targetVol, stepVol * step);
-    if (step >= steps) clearInterval(interval);
-  }, stepTime);
+    audio.volume = Math.max(0, Math.min(1, startVol + (targetVol - startVol) * step / steps));
+    if (step >= steps) {
+      cancelFade(audio);
+      if (pauseAtEnd) audio.pause();
+    }
+  }, 350 / steps);
+  fadeTimers.set(audio, interval);
+}
+
+function silencePlayback() {
+  stopProceduralBed();
+  currentScore?.stop();
+  currentScore = null;
+  for (const audio of musicCache.values()) {
+    cancelFade(audio);
+    audio.pause();
+  }
+  currentMusic = null;
 }
 
 export function playMusic(trackName, immediate = false) {
+  const resolvedTrackName = resolveMusicName(trackName);
+  // A typo must not silence the valid score already playing.
+  if (!MUSIC_SCHEMA[resolvedTrackName]) return;
+  const isProc = !!PROCEDURAL_BEDS[resolvedTrackName];
+  const score = MUSIC_SCORES[resolvedTrackName];
   if (prefs.muted) {
-    stopMusic();
+    currentTrackName = resolvedTrackName;
+    silencePlayback();
     return;
   }
-  const resolvedTrackName = resolveMusicName(trackName);
-  const isProc = !!PROCEDURAL_BEDS[resolvedTrackName];
   if (resolvedTrackName === currentTrackName) {
+    if (score && currentScore) return;
     if (isProc && proc.name === resolvedTrackName) return;
     if (!isProc && currentMusic && !currentMusic.paused) return;
   }
 
   stopProceduralBed();
+  currentScore?.stop();
+  currentScore = null;
   if (currentMusic && !currentMusic.paused) {
-    if (immediate) currentMusic.pause();
-    else fadeOut(currentMusic);
+    if (immediate) {
+      cancelFade(currentMusic);
+      currentMusic.pause();
+    } else fadeAudio(currentMusic, 0, true);
   }
   currentMusic = null;
+  if (immediate) silencePlayback();
+  currentTrackName = resolvedTrackName;
+
+  if (score) {
+    if (typeof window !== 'undefined') currentScore = startScore(getCtx(), score, getMusicVolume());
+    return;
+  }
 
   if (isProc) {
-    currentTrackName = resolvedTrackName;
     startProceduralBed(resolvedTrackName);
     return;
   }
@@ -932,26 +985,24 @@ export function playMusic(trackName, immediate = false) {
 
   const vol = getMusicVolume();
   const newAudio = getCachedAudio(src);
-  if (newAudio !== currentMusic) newAudio.currentTime = 0;
+  cancelFade(newAudio);
+  newAudio.currentTime = 0;
   newAudio.loop = true;
   newAudio.volume = immediate ? vol : 0;
 
   currentMusic = newAudio;
-  currentTrackName = resolvedTrackName;
-  if (immediate) {
-    newAudio.volume = vol;
-    newAudio.play().catch(() => {});
-  } else {
-    fadeIn(newAudio, vol);
-  }
+  newAudio.play().catch(() => {});
+  if (!immediate) fadeAudio(newAudio, vol);
 }
 
 export function stopMusic() {
   stopProceduralBed();
-  if (currentMusic) {
-    fadeOut(currentMusic);
-    currentMusic = null;
+  currentScore?.stop();
+  currentScore = null;
+  for (const audio of musicCache.values()) {
+    if (!audio.paused) fadeAudio(audio, 0, true);
   }
+  currentMusic = null;
   currentTrackName = null;
 }
 

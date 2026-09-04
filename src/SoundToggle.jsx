@@ -1,16 +1,16 @@
-import { useState } from 'react';
-import { isMuted, toggleMute, getSfxVolume, getMusicVolume, setSfxVolume, setMusicVolume } from './soundEngine';
+import { useId, useState, useSyncExternalStore } from 'react';
+import { getSoundPreferences, subscribeSoundPreferences, toggleMute, setSfxVolume, setMusicVolume } from './soundEngine';
 
 export default function SoundToggle() {
-  const [muted, setMuted] = useState(isMuted());
+  const { muted, sfxVolume: sfxVol, musicVolume: musicVol } = useSyncExternalStore(
+    subscribeSoundPreferences, getSoundPreferences, getSoundPreferences,
+  );
+  const id = useId();
   const [open, setOpen] = useState(false);
-  const [sfxVol, setSfxVol] = useState(getSfxVolume());
-  const [musicVol, setMusicVol] = useState(getMusicVolume());
 
   function handleToggle(e) {
     e.stopPropagation();
-    const newMuted = toggleMute();
-    setMuted(newMuted);
+    toggleMute();
   }
 
   function handleOpen(e) {
@@ -19,40 +19,40 @@ export default function SoundToggle() {
   }
 
   return (
-    <div className="sound-controls" onClick={(e) => e.stopPropagation()}>
-      <button className="sound-toggle" onClick={handleToggle} title={muted ? 'Unmute' : 'Mute'}>
+    <div className="sound-controls" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+      <button className="sound-toggle" onClick={handleToggle} title={muted ? 'Unmute' : 'Mute'} aria-label={muted ? 'Unmute audio' : 'Mute audio'} aria-pressed={muted}>
         {muted ? '🔇' : '🔊'}
       </button>
-      <button className="sound-settings-btn" onClick={handleOpen} title="Sound settings">
+      <button className="sound-settings-btn" onClick={handleOpen} title="Sound settings" aria-label="Sound settings" aria-expanded={open} aria-controls={`${id}-panel`}>
         ⚙
       </button>
       {open && (
-        <div className="sound-settings-panel">
+        <div className="sound-settings-panel" id={`${id}-panel`}>
           <div className="sound-slider-row">
-            <label>SFX</label>
+            <label htmlFor={`${id}-sfx`}>SFX</label>
             <input
+              id={`${id}-sfx`}
               type="range"
               min="0"
               max="100"
               value={Math.round(sfxVol * 100)}
               onChange={(e) => {
                 const val = e.target.value / 100;
-                setSfxVol(val);
                 setSfxVolume(val);
               }}
             />
             <span>{Math.round(sfxVol * 100)}%</span>
           </div>
           <div className="sound-slider-row">
-            <label>Music</label>
+            <label htmlFor={`${id}-music`}>Music</label>
             <input
+              id={`${id}-music`}
               type="range"
               min="0"
               max="100"
               value={Math.round(musicVol * 100)}
               onChange={(e) => {
                 const val = e.target.value / 100;
-                setMusicVol(val);
                 setMusicVolume(val);
               }}
             />
