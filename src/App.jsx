@@ -133,6 +133,7 @@ export default function App() {
     setBattleConfig({
       dragonId: config.dragonId,
       npcId: config.npcId,
+      benchDragonId: config.benchDragonId || null,
       campaignNodeId: config.nodeId,
       returnScreen: SCREENS.MAP,
     });

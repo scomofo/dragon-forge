@@ -133,8 +133,8 @@ function initBattle(dragonId, npcId, save, battleConfig) {
   const stats = calculateStatsForLevel(progress.fusedBaseStats || dragon.baseStats, progress.level, progress.shiny);
 
   // Optional reserve dragon (the "bench"): a second life + a tactical mid-fight
-  // swap. Only wired for standard battles (BattleSelectScreen passes benchDragonId);
-  // bosses/Singularity stay single-dragon so their fixed-TTK balance holds.
+  // swap. Wired for free battles (B7) and campaign nodes; bosses/Singularity
+  // stay single-dragon so their fixed-TTK balance holds.
   let bench = null;
   const benchId = battleConfig?.benchDragonId;
   if (benchId && benchId !== dragonId && save.dragons[benchId]?.owned && dragons[benchId]) {
