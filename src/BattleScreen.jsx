@@ -343,6 +343,16 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     battleConfig?.isRemnant ||
     battleConfig?.dailyNpc
   );
+  // P2: each fight class owns its calm track. Gatekeepers/remnants are 'boss';
+  // only the Singularity itself plays the dread commission; Mirror Admin has
+  // its own. Used when the fight re-opens after a bench swap.
+  const baseTrack = battleConfig?.isMirrorAdmin
+    ? 'mirrorAdmin'
+    : battleConfig?.npcId === 'singularity'
+      ? 'singularity'
+      : (battleConfig?.isSingularity || battleConfig?.isRemnant || battleConfig?.boss)
+        ? 'boss'
+        : 'battle';
   const [selectedMoveKey, setSelectedMoveKey] = useState(null);
   const [controllerFocusIndex, setControllerFocusIndex] = useState(0);
   const [signatureFocus, setSignatureFocus] = useState(false);
@@ -1432,8 +1442,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         dispatch({ type: 'ADD_LOG', text: `${state.dragon.name} fell — ${state.bench.dragon.name} steps in!` });
         dispatch({ type: 'FAINT_SWAP' });
         playSound('uiConfirm');
-        // Mirror fights keep their bespoke track; generic fights calm to battle.
-        if (!battleConfig?.isMirrorAdmin && !battleConfig?.isSingularity) playMusic('battle');
+        // Every fight re-opens on its own calm track (remnants included —
+        // previously their theme was stomped by the generic battle loop).
+        playMusic(baseTrack);
       } else {
         trackStat('battlesLost');
         updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
@@ -1446,13 +1457,15 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     } else {
       const playerHpPct = result.player.hp / (result.player.maxHp || state.playerMaxHp);
       const npcHpPct = result.npc.hp / (result.npc.maxHp || state.npcMaxHp);
-      // Intensity ramp: standard fights open on the calm battle loop and
-      // escalate to the intense track when either side drops below 25%.
-      // Boss/Singularity fights keep their own entry tracks (singularity,
-      // mirrorAdmin) — the generic battle loop must not stomp them.
-      if (!battleConfig?.isSingularity && !battleConfig?.isMirrorAdmin && !battleConfig?.isRemnant) {
+      // Intensity ramp: standard fights open calm, tense below 50%, critical
+      // below 25% (battleA -> battleB -> battleElite, the P2 battleB split).
+      // Boss/Singularity/Remnant/Mirror fights keep their own entry track —
+      // the generic battle loops must not stomp them.
+      if (!battleConfig?.isSingularity && !battleConfig?.isMirrorAdmin && !battleConfig?.isRemnant && !battleConfig?.boss) {
         if (playerHpPct < 0.25 || npcHpPct < 0.25) {
           playMusic('battleIntense');
+        } else if (playerHpPct < 0.5 || npcHpPct < 0.5) {
+          playMusic('battleTense');
         } else {
           playMusic('battle');
         }

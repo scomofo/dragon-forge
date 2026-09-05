@@ -311,20 +311,39 @@ const SOUND_ALIASES = {
 
 const MUSIC_SCHEMA = {
   title: { role: 'boot-theme', mood: 'mysterious', source: 'asset', path: '/assets/music/theme.mp3' },
-  openingTense: { role: 'opening-sequence', mood: 'tense', source: 'asset', path: '/assets/music/music_battle_intense.mp3' },
-  hatchery: { role: 'home-base', mood: 'warm', source: 'asset', path: '/assets/music/music_hatchery.mp3' },
+  openingTense: { role: 'opening-sequence', mood: 'tense', source: 'asset', path: '/assets/music/music_battle_tense.mp3' },
+  hatchery: { role: 'home-base', mood: 'warm', source: 'asset', path: '/assets/music/music_hub.mp3' },
   select: { role: 'menu-selection', mood: 'focused', source: 'asset', path: '/assets/music/music_select.mp3' },
-  mapWander: { role: 'map-wandering', mood: 'wandering', source: 'procedural' },
-  singularity: { role: 'singularity-boss', mood: 'dread', source: 'procedural' },
+  mapWander: { role: 'map-wandering', mood: 'wandering', source: 'asset', path: '/assets/music/music_map_wander.mp3' },
+  singularity: { role: 'singularity-boss', mood: 'dread', source: 'asset', path: '/assets/music/music_singularity.mp3' },
   battle: { role: 'battle-standard', mood: 'active', source: 'asset', path: '/assets/music/music_battle.mp3' },
-  battleTense: { role: 'battle-tense', mood: 'tense', source: 'asset', path: '/assets/music/music_battle_intense.mp3' },
-  battleIntense: { role: 'battle-critical', mood: 'danger', source: 'asset', path: '/assets/music/music_battle_intense.mp3' },
+  battleTense: { role: 'battle-tense', mood: 'tense', source: 'asset', path: '/assets/music/music_battle_tense.mp3' },
+  battleIntense: { role: 'battle-critical', mood: 'danger', source: 'asset', path: '/assets/music/music_battle_elite.mp3' },
+  boss: { role: 'boss-gatekeeper-remnant', mood: 'defiant', source: 'asset', path: '/assets/music/music_boss.mp3' },
   forge: { role: 'hub', mood: 'industrial', source: 'procedural' },
   fusion: { role: 'fusion-lab', mood: 'crystalline', source: 'procedural' },
   journal: { role: 'lore-calm', mood: 'reflective', source: 'procedural' },
   shop: { role: 'shop', mood: 'brisk', source: 'procedural' },
-  credits: { role: 'credits', mood: 'resolute', source: 'procedural' },
-  mirrorAdmin: { role: 'true-final', mood: 'tragic', source: 'procedural' },
+  credits: { role: 'credits', mood: 'resolute', source: 'asset', path: '/assets/music/music_credits.mp3' },
+  mirrorAdmin: { role: 'true-final', mood: 'tragic', source: 'asset', path: '/assets/music/music_mirror_admin.mp3' },
+};
+
+// P2 — the code twin of design/gdd/music-identity.md's 12-track commission.
+// Every entry is an authored file under public/assets/music/ (verified by
+// soundEngine.test): kept legacy assets or P2 commissions.
+export const MUSIC_COMMISSION = {
+  title: { file: 'theme.mp3', status: 'kept', note: 'Heartforge title motif' },
+  hub: { file: 'music_hub.mp3', status: 'authored', note: 'motif-major hatchery rewrite' },
+  mapWander: { file: 'music_map_wander.mp3', status: 'authored', note: 'commission' },
+  battleA: { file: 'music_battle.mp3', status: 'kept', note: 'standard battle' },
+  battleB: { file: 'music_battle_tense.mp3', status: 'authored', note: 'split: opening + mid-fight tense' },
+  battleElite: { file: 'music_battle_elite.mp3', status: 'authored', note: 'low-HP / elite escalation' },
+  singularity: { file: 'music_singularity.mp3', status: 'authored', note: 'the Singularity final boss' },
+  boss: { file: 'music_boss.mp3', status: 'authored', note: 'gatekeepers + remnants' },
+  mirrorAdmin: { file: 'music_mirror_admin.mp3', status: 'authored', note: 'title motif half-time, Ab in the bass, no percussion on the downbeat' },
+  victory: { file: 'music_victory.mp3', status: 'authored', note: 'sting <= 6s, motif resolved major' },
+  defeat: { file: 'music_defeat.mp3', status: 'authored', note: 'sting; the question collapses to Ab' },
+  credits: { file: 'music_credits.mp3', status: 'authored', note: 'full title arrangement' },
 };
 
 const MUSIC_ALIASES = {
@@ -342,6 +361,21 @@ const SOUND_DEFINITIONS = Object.entries(SFX_SCHEMA).reduce((defs, [category, en
   });
   return defs;
 }, {});
+
+// P2 — authored one-shot stings (music-identity tracks 10–11). These back the
+// battle end SFX with real files instead of the procedural fanfare/drone.
+const SFX_ASSETS = {
+  victoryFanfare: '/assets/music/music_victory.mp3',
+  defeatDrone: '/assets/music/music_defeat.mp3',
+};
+
+function playStingAsset(src) {
+  if (typeof window === 'undefined') return;
+  const audio = new Audio(assetUrl(src));
+  audio.loop = false;
+  audio.volume = getSfxVolume();
+  audio.play().catch(() => {});
+}
 
 const lastPlayedAt = new Map();
 
@@ -755,7 +789,8 @@ export function listSoundNames(category) {
 export function playSound(name, options) {
   const resolvedName = resolveSoundName(name);
   const fn = SFX[resolvedName];
-  if (fn) {
+  const asset = SFX_ASSETS[resolvedName];
+  if (fn || asset) {
     try {
       const definition = SOUND_DEFINITIONS[resolvedName];
       const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -763,7 +798,8 @@ export function playSound(name, options) {
       const lastPlayed = lastPlayedAt.get(resolvedName) || 0;
       if (cooldownMs > 0 && now - lastPlayed < cooldownMs) return;
       lastPlayedAt.set(resolvedName, now);
-      fn(options);
+      if (asset) playStingAsset(asset);
+      else fn(options);
     } catch { /* ignore audio errors */ }
   }
 }
@@ -775,24 +811,26 @@ let currentTrackName = null;
 
 const MUSIC_TRACKS = {
   title: '/assets/music/theme.mp3',
-  openingTense: '/assets/music/music_battle_intense.mp3',
-  hatchery: '/assets/music/music_hatchery.mp3',
+  openingTense: '/assets/music/music_battle_tense.mp3',
+  hatchery: '/assets/music/music_hub.mp3',
   select: '/assets/music/music_select.mp3',
+  mapWander: '/assets/music/music_map_wander.mp3',
   battle: '/assets/music/music_battle.mp3',
-  battleTense: '/assets/music/music_battle_intense.mp3',
-  battleIntense: '/assets/music/music_battle_intense.mp3',
+  battleTense: '/assets/music/music_battle_tense.mp3',
+  battleIntense: '/assets/music/music_battle_elite.mp3',
+  boss: '/assets/music/music_boss.mp3',
+  singularity: '/assets/music/music_singularity.mp3',
+  mirrorAdmin: '/assets/music/music_mirror_admin.mp3',
+  credits: '/assets/music/music_credits.mp3',
 };
 
-// Screens that used to share the 5 mp3s get their own 8-bit beds instead.
+// P2 — hub utility screens that are not in the 12-track commission keep their
+// own 8-bit procedural beds.
 const PROCEDURAL_BEDS = {
   forge:       { bpm: 88,  pad: [55, 82],     arp: [110, 165, 220, 165], wave: 'square',   filterFreq: 900,  gain: 0.20 },
   fusion:      { bpm: 76,  pad: [98, 147],    arp: [392, 494, 588, 392], wave: 'triangle', filterFreq: 1800, gain: 0.18 },
   journal:     { bpm: 52,  pad: [110, 165],   arp: [330, 392, 494, 392], wave: 'sine',     filterFreq: 1400, gain: 0.16 },
-  mapWander:   { bpm: 64,  pad: [73, 110],    arp: [220, 247, 294, 247], wave: 'triangle', filterFreq: 1200, gain: 0.16 },
   shop:        { bpm: 100, pad: [98, 147],    arp: [294, 330, 392, 330], wave: 'square',   filterFreq: 1600, gain: 0.18 },
-  credits:     { bpm: 72,  pad: [87, 130],    arp: [349, 440, 523, 440], wave: 'sine',     filterFreq: 2000, gain: 0.18 },
-  singularity: { bpm: 96,  pad: [41, 61],     arp: [82, 98, 61, 123],    wave: 'sawtooth', filterFreq: 700,  gain: 0.20 },
-  mirrorAdmin: { bpm: 108, pad: [49, 73.5],   arp: [147, 156, 196, 185], wave: 'sawtooth', filterFreq: 560,  gain: 0.22 },
 };
 
 const musicCache = new Map();

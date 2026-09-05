@@ -149,9 +149,14 @@ export default function App() {
     if (config.isMirrorAdmin) {
       playSound('mirrorAdminSpawn');
       playMusic('mirrorAdmin', true);
-    } else {
+    } else if (config.boss?.id === 'singularity') {
+      // The Singularity itself keeps the dread commission; gatekeepers are
+      // boss fights and get the boss track.
       playSound('buttonClick');
       playMusic('singularity', true);
+    } else {
+      playSound('buttonClick');
+      playMusic('boss', true);
     }
     const scaledBoss = scaleBossForPlayer(config.boss, save);
     setBattleConfig({
@@ -167,7 +172,7 @@ export default function App() {
 
   function handleEngageRemnant(config) {
     playSound('buttonClick');
-    playMusic('singularity', true);
+    playMusic('boss', true); // remnants are boss fights, not the Singularity
     const scaledBoss = scaleBossForPlayer(config.boss, save);
     setBattleConfig({
       dragonId: config.dragonId,
