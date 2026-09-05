@@ -50,7 +50,10 @@ beforeEach(() => {
   });
   vi.stubGlobal('cancelAnimationFrame', (id) => pendingFrames.delete(id));
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 function tick(timestamp) {
   const frames = [...pendingFrames.values()];
@@ -58,9 +61,9 @@ function tick(timestamp) {
   frames.forEach((callback) => callback(timestamp));
 }
 
-function renderEffect(vfxKey, onImpact, onComplete) {
+function renderEffect(vfxKey, onImpact, onComplete, travelMs = 270, impactMs = 220) {
   renderToStaticMarkup(<VfxOverlay vfxKey={vfxKey} element="fire" direction="right-to-left"
-    targetSide="left" travelMs={270} impactMs={220} onImpact={onImpact} onComplete={onComplete} />);
+    targetSide="left" travelMs={travelMs} impactMs={impactMs} onImpact={onImpact} onComplete={onComplete} />);
   // LegacyVfx registers the slash-end handler before its travel-end handler.
   [harness.callbacks.handleImpactEnd, harness.callbacks.handleTravelEnd] = harness.handlers;
   return harness.effects.at(-1);
@@ -179,5 +182,108 @@ describe('fallback VFX pacing', () => {
     harness.callbacks.handleImpactEnd();
     expect(onComplete).toHaveBeenCalledOnce();
     cleanup();
+  });
+});
+
+describe('reduced-motion VFX pacing', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.stubGlobal('window', { matchMedia: () => ({ matches: true }) });
+  });
+
+  it.each([
+    ['MAGMA_BREATH', true], ['TEST_SIGNATURE', true], ['BASIC_ATTACK', true], ['UNKNOWN', false],
+  ])('keeps %s contact and completion on their original beats without RAF or animation events', (key, hasBurst) => {
+    const order = [];
+    const cleanup = renderEffect(key, () => order.push('impact'), () => order.push('complete'))();
+    expect(pendingFrames.size).toBe(0);
+    expect(harness.handlers).toHaveLength(0);
+    vi.advanceTimersByTime(269);
+    expect(order).toEqual([]);
+    vi.advanceTimersByTime(1);
+    expect(harness.setPhase).toHaveBeenLastCalledWith(true);
+    expect(order).toEqual(hasBurst ? ['impact'] : ['impact', 'complete']);
+    if (hasBurst) {
+      vi.advanceTimersByTime(219);
+      expect(order).toEqual(['impact']);
+      vi.advanceTimersByTime(1);
+    }
+    expect(order).toEqual(['impact', 'complete']);
+    vi.advanceTimersByTime(1000);
+    expect(order).toEqual(['impact', 'complete']);
+    cleanup();
+  });
+
+  it('preserves 2x speed instead of allowing the CSS reset to complete a basic attack instantly', () => {
+    const onImpact = vi.fn();
+    const onComplete = vi.fn();
+    const cleanup = renderEffect('BASIC_ATTACK', onImpact, onComplete, 135, 110)();
+    vi.advanceTimersByTime(134);
+    expect(onImpact).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(onImpact).toHaveBeenCalledOnce();
+    vi.advanceTimersByTime(109);
+    expect(onComplete).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(onComplete).toHaveBeenCalledOnce();
+    cleanup();
+  });
+
+  it('cancels both callbacks on unmount before contact', () => {
+    const onImpact = vi.fn();
+    const onComplete = vi.fn();
+    const cleanup = renderEffect('MAGMA_BREATH', onImpact, onComplete)();
+    vi.advanceTimersByTime(100);
+    cleanup();
+    vi.advanceTimersByTime(1000);
+    expect(onImpact).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('cancels an old completion when its effect restarts after contact', () => {
+    const onImpact = vi.fn();
+    const onComplete = vi.fn();
+    const effect = renderEffect('TEST_SIGNATURE', onImpact, onComplete);
+    const firstCleanup = effect();
+    vi.advanceTimersByTime(270);
+    expect(onImpact).toHaveBeenCalledOnce();
+    firstCleanup();
+    const secondCleanup = effect();
+    vi.advanceTimersByTime(220);
+    expect(onComplete).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(50);
+    expect(onImpact).toHaveBeenCalledTimes(2);
+    vi.advanceTimersByTime(220);
+    expect(onComplete).toHaveBeenCalledOnce();
+    secondCleanup();
+  });
+
+  it('does not complete an effect that its contact callback unmounts', () => {
+    const onComplete = vi.fn();
+    let cleanup;
+    cleanup = renderEffect('BASIC_ATTACK', () => cleanup(), onComplete)();
+    vi.advanceTimersByTime(490);
+    expect(onComplete).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('completes even when a contact callback is not supplied', () => {
+    const onComplete = vi.fn();
+    const cleanup = renderEffect('BASIC_ATTACK', undefined, onComplete)();
+    vi.advanceTimersByTime(490);
+    expect(onComplete).toHaveBeenCalledOnce();
+    cleanup();
+  });
+
+  it.each(['left', 'right'])('places a stationary strip impact frame on the %s target', (targetSide) => {
+    const html = renderToStaticMarkup(<VfxOverlay vfxKey="MAGMA_BREATH" element="fire"
+      direction="left-to-right" targetSide={targetSide} onComplete={() => {}} />);
+    expect(html).toContain('vfx-reduced-impact');
+    expect(html).toContain(`left:${targetSide === 'left' ? 18 : 78}%`);
+    expect(html).toContain('background-position:-600px 0px');
+    expect(html.includes('scaleX(-1)')).toBe(targetSide === 'left');
+    expect(html).not.toContain('vfx-travel');
+    expect(html).not.toContain('animation');
   });
 });

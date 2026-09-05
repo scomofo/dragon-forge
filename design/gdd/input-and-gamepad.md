@@ -2,13 +2,13 @@
 
 > **Status**: Implemented
 > **Author**: reverse-document (Claude)
-> **Last Updated**: 2026-06-16
-> **Last Verified**: 2026-06-16
+> **Last Updated**: 2026-09-05
+> **Verification**: automated input contracts; physical-controller acceptance pending in `docs/controller-motion-playtest.md`
 > **Implements Pillar**: P5 — Earned Mastery, Never Trivialized (accessibility sub-pillar)
 
 ## Summary
 
-Dragon Forge supports both mouse/keyboard and standard USB/Bluetooth gamepads in the browser. A polling loop reads the Web Gamepad API every animation frame and fires discrete press events to whichever screen is currently active. The system is a thin, stateless adapter — screens define their own response to directional and button events via a handler object passed to the `useGamepadController` hook.
+Dragon Forge supports mouse/keyboard and standard-layout gamepads in the browser. A polling loop reads the Web Gamepad API every animation frame and fires discrete press events to the active screen or Forge overlay. Screens define their response via a handler object passed to `useGamepadController`. The hook retains input snapshots so held buttons cannot repeat or carry confirmation into a newly entered screen.
 
 > **Quick reference** — Layer: `Foundation` · Priority: `MVP` · Key deps: `campaign-map.md`, `forge-skye.md`
 
@@ -32,7 +32,7 @@ The player should never feel blocked by input. A controller should feel like a n
 4. The left analogue stick axes are read at indices 0 (X) and 1 (Y). Each axis is normalized through a deadzone function: values with absolute magnitude below 0.45 are treated as 0; values above the threshold are snapped to +1 or -1. (`gamepadInput.js:16–19`)
 5. A stick direction fires as an `axisPresses` event only when the normalized value changes from the previous frame. This prevents repeat-fire while the stick is held. (`gamepadInput.js:35–36`)
 6. D-pad directions (`DPAD_UP`, `DPAD_DOWN`, `DPAD_LEFT`, `DPAD_RIGHT`) are routed to `onDirectionPress`; all other buttons go to `onButtonPress`. Analogue stick presses also route to `onDirectionPress`. (`useGamepadController.js:32–38`)
-7. When no gamepad is connected, previous-frame state is reset to empty each frame so reconnection produces fresh rising-edge events.
+7. On mount, re-enable, reconnection, or a change of primary controller, the first gamepad state is observed without firing actions. A held button or direction must be released and pressed again. When disconnected, the observed-controller identity and input snapshots reset. This prevents an opening confirm from becoming a purchase on the next screen.
 
 **Button index mapping** (`gamepadInput.js:1–14`)
 
@@ -63,18 +63,23 @@ The Battle Screen and Campaign Map Screen handle their own keyboard events direc
 
 ### States and Transitions
 
-The gamepad hook has two states: **disconnected** and **connected**. The `connectedGamepad` value returned by the hook is `null` when no pad is present and `{ id, index }` when one is found. Screens may optionally read this value to render controller hint UI, but none currently do.
+The `connectedGamepad` value returned by the hook is `null` when no pad is present and `{ id, index }` when one is found. Title, Hatchery and Forge menus use this value to show controller hints. Connecting observes current input before enabling edge events.
 
 | State | Entry Condition | Exit Condition | Behavior |
 |-------|----------------|----------------|----------|
 | Disconnected | No gamepad returned by `navigator.getGamepads()` | A gamepad appears | Poll loop continues; no events fired; previous-state refs reset each frame |
-| Connected | First non-null gamepad found | Gamepad removed or becomes null | Rising-edge detection active; button and axis events fired to handlers |
+| Connected | First non-null gamepad found | Gamepad removed or becomes null | First sample establishes held inputs; subsequent new presses fire to handlers |
 
 ### Interactions with Other Systems
 
-**Battle Screen** (`src/BattleScreen.jsx:1184–1221`)
-- D-pad / left stick: cycles `controllerFocusIndex` through the move button list (wraps). LEFT and UP decrement; RIGHT and DOWN increment.
-- A / START: confirms the currently focused move. If focus is on the Defend slot, selects Defend. If focus is on the Auto slot and auto-battle is allowed, toggles auto-battle.
+**Title and Hatchery**
+- Title A / START: reveals the full introduction; a separate press on the ready screen starts the game.
+- Hatchery D-pad / left stick: cycles enabled actions and navigation controls. A / START activates the visibly focused button. Begin, free hatch, Skip, Continue and Explore are controller-reachable.
+- Hatch results default to Continue/Explore, so a paid pull requires deliberate selection. The synchronous hatch lock still rejects overlapping single/ten-pull operations.
+
+**Battle Screen** (`src/BattleScreen.jsx`, `src/battleCommands.js`)
+- D-pad / left stick: cycles enabled command IDs, including Swap, speed and eligible Auto. LEFT and UP decrement; RIGHT and DOWN increment. Consumed techniques cannot shift selection to an unrelated action.
+- A / START: confirms the currently focused command. After defeat, retries the same encounter at full HP; B returns to setup.
 - B: immediately selects the Defend action regardless of focus position.
 - Y: toggles auto-battle (only when `autoBattleAllowed` is true — disabled for boss, Singularity, Mirror Admin, Remnant, and Daily Challenge fights).
 - Input is ignored while a turn is resolving (`isResolvingTurn` guard). (`BattleScreen.jsx:1186–1204`)
@@ -84,12 +89,14 @@ The gamepad hook has two states: **disconnected** and **connected**. The `connec
 - A / START: auto-selects the first owned dragon if none is chosen, then begins the battle.
 - B: navigates back to the battle select screen.
 - LB: cycles the selected dragon one step backward through the owned dragon list.
-- RB / Y: cycles the selected dragon one step forward through the owned dragon list.
+- RB: cycles the primary dragon one step forward through the owned dragon list. Crossing the reserve swaps the previous primary into reserve.
+- Y: cycles reserve choices, including NONE. Primary and reserve remain distinct.
 
 **Forge Screen** (`src/ForgeScreen.jsx:152–161`, `src/forge/forgeMovement.js`)
 - D-pad / left stick: moves the Skye avatar in the forge world by `FORGE_STEP` (2 percentage-point units) per press, clamped to `FORGE_BOUNDS` (x: 4–96, y: 20–92).
 - A / X / START: triggers the Interact action (opens overlays, talks to Felix, etc.).
-- B / SELECT: closes the current overlay if one is open.
+- B / SELECT: exits to the map when no overlay is open.
+- While an overlay is open, scene polling pauses. D-pad / left stick cycles enabled overlay buttons, A / START confirms, B / SELECT closes, and LB / RB scrolls long content. Focus is visible and keyboard Tab stays inside the overlay.
 
 ## Formulas
 
@@ -132,7 +139,7 @@ Candidates are filtered to only those on the correct side of the selected node (
 | No gamepad ever connected | Poll loop runs every frame; no events fire; `connectedGamepad` stays null | Keyboard/mouse paths are fully independent |
 | Gamepad disconnected mid-session | Next poll returns null; previous-state refs reset; handler callbacks stop firing | Avoids phantom inputs from stale state |
 | Multiple gamepads connected | Only the first non-null gamepad in `navigator.getGamepads()` is used | Simplicity; game is single-player |
-| Button held continuously | Only the first frame triggers an event (rising-edge detection) | Prevents unintended rapid-fire selection |
+| Button held continuously | Only a new press after the first observed sample triggers an event | Prevents repeats and accidental handoff confirmations |
 | Axis value exactly at deadzone boundary (±0.45) | Treated as active (exclusive lower bound) | Deadzone uses `< deadzone`; boundary registers |
 | No directional node found in the requested direction | Current node remains selected | `findDirectionalNode` returns the existing selection as fallback |
 | `enabled` prop is false | Hook returns early; no poll loop; no events | Allows screens to opt out of gamepad input entirely |
@@ -186,7 +193,7 @@ This is a turn-based, sprite-based browser game. Frame-data concepts (startup fr
 | Information | Display Location | Update Frequency | Condition |
 |-------------|-----------------|-----------------|-----------|
 | Controller connection state | Not currently displayed | — | No UI exists for this |
-| Focused move button (Battle) | `controller-focus` CSS class on the focused button | Every frame (via React state) | When gamepad is connected and it is the player's turn |
+| Focused command (Battle) | `controller-focus` CSS class and native button focus | Selection changes | Uses stable command IDs and skips unavailable actions |
 
 ## Cross-References
 
@@ -216,4 +223,4 @@ This is a turn-based, sprite-based browser game. Frame-data concepts (startup fr
 | Should a controller-connected toast or indicator be added to the NavBar? | UX Designer | — | Unresolved |
 | Should held-button repeat be added for Campaign Map node navigation (quality-of-life for large maps)? | Game Designer | — | Unresolved |
 | Should tuning knobs be extracted to `assets/data/input-config.json` for runtime tuning? | Lead Programmer | — | Unresolved |
-| Keyboard navigation in BattleScreen is not documented — does it exist? | Lead Programmer | — | No `keydown` listener was found in BattleScreen.jsx; keyboard may not be supported there |
+| Physical-controller and reduced-motion acceptance | Lead Programmer | Before release | Pending checklist in `docs/controller-motion-playtest.md`; automated tests do not close this gate |

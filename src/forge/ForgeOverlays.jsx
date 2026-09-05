@@ -20,29 +20,105 @@ import {
   upgradeWrench,
 } from '../persistence';
 import { playSound } from '../soundEngine';
+import useGamepadController from '../useGamepadController';
 
 export function OverlayShell({ title, accent = '#c9a567', onClose, children }) {
   const closeButtonRef = useRef(null);
+  const shellRef = useRef(null);
+  const activatingRef = useRef(false);
 
   useEffect(() => {
+    const previousFocus = document.activeElement;
     closeButtonRef.current?.focus();
+    return () => previousFocus?.focus?.();
   }, []);
+
+  function enabledButtons() {
+    return Array.from(shellRef.current?.querySelectorAll('button:not(:disabled)') || []);
+  }
+
+  function focusButton(button) {
+    button?.focus();
+    button?.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+  }
+
+  function cycleFocus(direction) {
+    const buttons = enabledButtons();
+    if (!buttons.length) return;
+    const currentIndex = buttons.indexOf(document.activeElement);
+    const nextIndex = currentIndex < 0
+      ? (direction > 0 ? 0 : buttons.length - 1)
+      : (currentIndex + direction + buttons.length) % buttons.length;
+    focusButton(buttons[nextIndex]);
+  }
+
+  function confirmFocused() {
+    if (activatingRef.current) return;
+    const buttons = enabledButtons();
+    const focused = buttons.find(button => button === document.activeElement);
+    // A disabled or removed action never falls through to a purchase or exit.
+    if (!focused) {
+      performAction(() => focusButton(buttons[0]));
+      return;
+    }
+    performAction(() => focused.click());
+  }
+
+  function performAction(action) {
+    if (activatingRef.current) return;
+    activatingRef.current = true;
+    // A and Start may both be reported in one poll; perform only one action.
+    queueMicrotask(() => { activatingRef.current = false; });
+    action();
+  }
+
+  const gamepad = useGamepadController({
+    onDirectionPress(direction) {
+      cycleFocus(direction === 'UP' || direction === 'LEFT' ? -1 : 1);
+    },
+    onButtonPress(button) {
+      if (button === 'B' || button === 'SELECT') performAction(onClose);
+      else if (button === 'A' || button === 'START') confirmFocused();
+      else if (button === 'LB' || button === 'RB') {
+        const shell = shellRef.current;
+        if (shell) {
+          shell.scrollTop += Math.max(80, shell.clientHeight * 0.7) * (button === 'LB' ? -1 : 1);
+          // Reading a long log can move its focused action out of view. A
+          // following confirm restores visible focus before activating it.
+          shell.focus({ preventScroll: true });
+        }
+      }
+    },
+  });
 
   return (
     <div className="forge-overlay-backdrop" onClick={onClose}>
       <section
+        ref={shellRef}
         className="forge-overlay-shell"
         style={{ '--overlay-accent': accent }}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        tabIndex={-1}
+        onKeyDown={(event) => {
+          if (event.key === 'Tab') {
+            event.preventDefault();
+            cycleFocus(event.shiftKey ? -1 : 1);
+          }
+        }}
       >
         <div className="forge-overlay-header">
           <h2>{title}</h2>
           <button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Close overlay">ESC</button>
         </div>
         {children}
+        <p className="forge-overlay-controls">
+          {gamepad
+            ? 'D-pad: choose · A: confirm · B: close · LB / RB: scroll'
+            : 'Tab: choose · Enter: confirm · Esc: close'}
+        </p>
       </section>
     </div>
   );

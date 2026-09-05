@@ -44,8 +44,9 @@
 - [x] Learn and retry — defeat offers one encounter-specific tactical tip, a direct full-HP rematch of the same encounter, and a separate route back to change setup
 - [x] Battle command access — keyboard/controller selection includes Swap, skips unavailable actions, preserves command identity, and respects native focused buttons and save controls
 - [ ] Hands-on opening/retry acceptance — first hatch, repeated inputs, defeat/rematch, daily/boss snapshots, keyboard/controller/touch and 390px layout (`docs/playability-playtest.md`)
-- [ ] Complete controller opening — Title/Hatchery gamepad actions, Forge overlay navigation/confirmation, and campaign-map guardian cycling
-- [ ] Reduced-motion completion — audit critical-hit flash/zoom, zoom punch and egg burst, then play the opening under normal and reduced motion
+- [x] Controller opening implementation — Title/Hatchery gamepad actions, Forge overlay navigation/confirmation, campaign primary/reserve cycling, and held-input protection at screen/overlay handoffs
+- [x] Reduced-motion implementation — calm critical/egg and battle effects, stationary contact cues with preserved timing, readable damage/result labels
+- [ ] Controller and motion hands-on acceptance — opening through Forge, paid-pull focus, controller reconnects, normal/reduced motion and 1×/2× combat (`docs/controller-motion-playtest.md`)
 - [ ] Measured fresh-player opening — record time to first meaningful choice, first fight and Forge return; observe whether players understand the enemy signal and adjust after defeat
 
 ## Recent Browser QA
