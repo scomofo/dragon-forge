@@ -34,6 +34,7 @@ import {
   statusAuraApply, npcLunge, playerLunge, hitSquash,
   pixelShake, hitStop, targetKnockback, hitFlicker,
 } from './animationEngine';
+import { isLogicBombDetonationDue, createCorruptionState, getCorruptedMoveKey } from './bossMechanics';
 
 const PHASES = {
   PLAYER_TURN: 'playerTurn',
@@ -169,10 +170,10 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     pierceNext: false,                   // bit_wraith
     prevElement: null, decrypted: false, // crypto_crab
     headsBroken: 0,                      // glitch_hydra
-    fuseTurns: 6,                        // logic_bomb
+    fuseTurns: 6, fuseDetonated: false,   // logic_bomb
     hardenStacks: 0,                     // recursive_golem
     perchUsed: false,                    // protocol_vulture
-    garbledMoveKey: null, garbledTurnsLeft: 0, // data_corruption
+    garbledMoveKey: null, garbledTurnsLeft: 0, garbledDragonId: null, // data_corruption (uses)
     leakPips: 0,                         // memory_leak
     spdDoubleTurnsLeft: 0, surgeUsed: false, crashTurnsLeft: 0, // stack_overflow
     // mirror_admin_reset (deferred-boss pattern — the Great Reset punishes a
@@ -180,6 +181,8 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     // Recompile THIS PHASE, Mirror Admin heals 25% max HP).
     mirrorHealPunished: false,
   };
+  // Telegraph the affected slot before the first command can be selected.
+  if (bossPatternId === 'data_corruption') Object.assign(bossState, createCorruptionState(dragonId, dragon.moveKeys));
 
   return {
     phase: PHASES.PLAYER_TURN,
@@ -834,17 +837,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       defBuff: turnState.playerDefBuff,
     };
 
-    // data_corruption: on turn 1 a random non-signature move garbles into
-    // basic_attack for 2 turns. Also re-arms whenever Burn applies.
-    if (turnState.bossPatternId === 'data_corruption' && turnState.bossState.garbledTurnsLeft === 0 && turnState.bossState.garbledMoveKey == null && currentTurn === 1) {
-      const nonSig = turnState.dragon.moveKeys.filter(k => !moves[k]?.isSignature);
-      if (nonSig.length > 0) {
-        const garbled = nonSig[Math.floor(Math.random() * nonSig.length)];
-        dispatch({ type: 'SET_BOSS_STATE', value: { garbledMoveKey: garbled, garbledTurnsLeft: 2 } });
-        dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} corrupts a slot — ${moves[garbled]?.name} garbles into BASIC for 2 turns!` });
-      }
-    }
-    const activeGarble = turnState.bossPatternId === 'data_corruption' && turnState.bossState.garbledTurnsLeft > 0 ? turnState.bossState.garbledMoveKey : null;
+    const activeGarble = getCorruptedMoveKey(turnState);
 
     const npcState = {
       name: turnState.npc.name,
@@ -860,16 +853,6 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       atkBuff: turnState.npcAtkBuff,
       defBuff: turnState.npcDefBuff,
     };
-
-    // data_corruption: if the garbled slot was picked, it fires as basic_attack
-    // and the garble ticks down one turn (expires after 2 player turns).
-    let effectivePlayerMoveKey = moveKey;
-    if (activeGarble && moveKey === activeGarble) {
-      effectivePlayerMoveKey = 'basic_attack';
-      const turnsLeft = turnState.bossState.garbledTurnsLeft - 1;
-      dispatch({ type: 'SET_BOSS_STATE', value: { garbledTurnsLeft: turnsLeft, garbledMoveKey: turnsLeft > 0 ? activeGarble : null } });
-      dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name}'s corruption holds — your move fires as BASIC.` });
-    }
 
     const battleContext = {
       playerMoveHistory: turnState.playerMoveHistory,
@@ -894,8 +877,15 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
     let npcMoveKey;
     let previouslyCharged = false;
     let isCharging = false;
+    const fuseDetonationDue = isLogicBombDetonationDue(turnState);
 
-    if (turnState.npcChargedMove) {
+    if (fuseDetonationDue) {
+      // The six-turn fuse takes priority over a stored charge or HP trigger.
+      // Discard the old charge instead of boosting or postponing Detonation.
+      npcMoveKey = 'bomb_detonation';
+      if (turnState.npcChargedMove) dispatch({ type: 'CLEAR_NPC_CHARGED_MOVE' });
+      dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name}'s fuse hits zero — FINAL DETONATION! Defend or finish it before it acts.` });
+    } else if (turnState.npcChargedMove) {
       // Fire the stored charged move at 1.4× ATK
       npcMoveKey = turnState.npcChargedMove;
       previouslyCharged = true;
@@ -949,14 +939,6 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
         dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} crashes — it skips the turn recovering.` });
       }
 
-      // logic_bomb: at fuse 0 Final Detonation is FORCED (screen ticks the
-      // fuse down after each player turn; the signature threshold is irrelevant).
-      if (patternId === 'logic_bomb' && bs.fuseTurns <= 0 && npcData.signatureMoveKey) {
-        npcMoveKey = npcData.signatureMoveKey;
-        dispatch({ type: 'SET_SIGNATURE_USED' });
-        dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name}'s fuse hits zero — FINAL DETONATION!` });
-      }
-
       const npcMoveData = moves[npcMoveKey];
       if (npcMoveData?.canCharge && !desperationMode && Math.random() < (npcMoveData.chargeChance ?? 0.4)) {
         isCharging = true;
@@ -990,6 +972,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       npcOpeningMoveKey: forcedSwap ? 'toxic_cloud' : undefined,
       playerAccuracyFloor: (turnState.npc.difficulty === 'Easy' && !(save.defeatedNpcs || []).length) ? 95 : 0,
       playerMoveOverride: dualTechMove || undefined,
+      playerCorruptedMoveKey: activeGarble || undefined,
+      logicBombDetonation: fuseDetonationDue,
 
       // firewall_sentinel packet-shield (pilot)
       packetShield: turnState.bossPatternId === 'firewall_sentinel' && moveKey !== 'defend',
@@ -1017,7 +1001,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
 
     const availablePlayerMoves = turnState.dragon.moveKeys.filter(key =>
       !moves[key]?.isSignature || !turnState.playerSignatureUsed?.[turnState.dragonId]);
-    let result = resolveTurn(playerState, finalNpcState, effectivePlayerMoveKey, effectiveNpcMoveKey,
+    let result = resolveTurn(playerState, finalNpcState, moveKey, effectiveNpcMoveKey,
       guardOnEntry ? ['defend'] : availablePlayerMoves, turnState.npc.moveKeys, engineOptions);
     // Spend techniques only when the actor actually executes them. A KO,
     // status skip, or forced swap cannot consume the outgoing dragon's move.
@@ -1036,6 +1020,27 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
 
     // === Post-resolve pattern hooks ===
     const playerAttackEvent = result.events.find(e => e.attacker === 'player' && e.action === 'attack');
+
+    if (turnState.bossPatternId === 'data_corruption') {
+      if (playerAttackEvent?.corruptedMoveKey === activeGarble && activeGarble) {
+        const usesLeft = Math.max(0, bs.garbledTurnsLeft - 1);
+        dispatch({ type: 'SET_BOSS_STATE', value: {
+          garbledTurnsLeft: usesLeft,
+          garbledMoveKey: usesLeft ? activeGarble : null,
+          garbledDragonId: usesLeft ? turnState.dragonId : null,
+        } });
+        dispatch({ type: 'ADD_LOG', text: `${moves[activeGarble].name} fires as BASIC — ${usesLeft ? `${usesLeft} corrupted use remains.` : 'the slot is clear.'}` });
+      }
+      // New applications and refreshes both emit Burn. DOT alone does not.
+      // Rearm after resolution so the next command matches its visible signal,
+      // even if a faster enemy applied Burn before this turn's player action.
+      if (result.player.hp > 0 && result.npc.hp > 0 && result.events.some(event =>
+        event.attacker === 'npc' && event.action === 'attack' && event.hit && !event.reflected && event.appliedStatus === 'Burn')) {
+        const corruption = createCorruptionState(turnState.dragonId, turnState.dragon.moveKeys);
+        dispatch({ type: 'SET_BOSS_STATE', value: corruption });
+        if (corruption.garbledMoveKey) dispatch({ type: 'ADD_LOG', text: `Burn corrupts ${turnState.dragon.name}'s ${moves[corruption.garbledMoveKey].name} — BASIC for its next 2 uses.` });
+      }
+    }
 
     // crypto_crab encryption: hide type until you repeat the previous element
     // (same-element back-to-back → reveal → damage gates open).
@@ -1069,11 +1074,17 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       }
     }
 
-    // logic_bomb: the fuse ticks down one per player turn; at 0 the bomb can
-    // force Final Detonation (handled via the signature threshold below).
-    if (turnState.bossPatternId === 'logic_bomb' && bs.fuseTurns > 0 && npcMoveKey !== 'bomb_detonation') {
-      dispatch({ type: 'SET_BOSS_STATE', value: { fuseTurns: bs.fuseTurns - 1 } });
-      dispatch({ type: 'ADD_LOG', text: `Fuse ${Math.max(0, bs.fuseTurns - 1)} — Final Detonation at zero.` });
+    // Early HP signatures still spend a turn of the fuse. Its one guaranteed
+    // detonation is consumed only by the actual action, not by selecting it.
+    if (turnState.bossPatternId === 'logic_bomb') {
+      if (bs.fuseTurns > 0) {
+        dispatch({ type: 'SET_BOSS_STATE', value: { fuseTurns: bs.fuseTurns - 1 } });
+        dispatch({ type: 'ADD_LOG', text: `Fuse ${Math.max(0, bs.fuseTurns - 1)} — Final Detonation at zero.` });
+      }
+      if (fuseDetonationDue && npcAttackEvent?.moveKey === 'bomb_detonation') {
+        dispatch({ type: 'SET_BOSS_STATE', value: { fuseDetonated: true } });
+        dispatch({ type: 'SET_SIGNATURE_USED' });
+      }
     }
 
     // Ice clears the leak even though the boss resists ice damage.
@@ -1103,7 +1114,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
     }
 
     // Tag signature events for presentation
-    const isSignature = shouldFireSignature && !previouslyCharged;
+    const isSignature = fuseDetonationDue || (shouldFireSignature && !previouslyCharged);
     if (isSignature) {
       result = {
         ...result,
@@ -1530,8 +1541,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
     ? resolveDualTech(dragon.element, state.bench.dragon.element)
     : null;
   const dualTechUsedUp = !!state.dualTechUsed;
+  const corruptedMoveKey = getCorruptedMoveKey(state);
   const playerMoves = [
-    ...dragon.moveKeys.map((k) => ({ key: k, ...moves[k] })),
+    ...dragon.moveKeys.map((k) => k === corruptedMoveKey
+      ? { key: k, ...moves.basic_attack, name: moves[k].name, corrupted: true }
+      : { key: k, ...moves[k] }),
     { key: 'basic_attack', ...moves.basic_attack },
   ];
   if (dualTech && !dualTechUsedUp) {
@@ -1981,10 +1995,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
                 onClick={() => handleMoveSelect(move.key)}
               >
                 <span className="tooltip">
-                  PWR:{move.power} ACC:{move.accuracy}%{statusSummary ? ` | ${statusSummary.title}: ${statusSummary.summary}, ${statusSummary.duration}` : ''}{signatureSummary ? ` | ${signatureSummary.title}` : ''}
+                  {move.corrupted ? 'BASIC ATTACK | ' : ''}PWR:{move.power} ACC:{move.accuracy}%{statusSummary ? ` | ${statusSummary.title}: ${statusSummary.summary}, ${statusSummary.duration}` : ''}{signatureSummary ? ` | ${signatureSummary.title}` : ''}
                 </span>
                 <strong>{move.name.toUpperCase()}</strong>
                 <span className="move-meta">
+                  {move.corrupted && <i>CORRUPTED · {state.bossState.garbledTurnsLeft} {state.bossState.garbledTurnsLeft === 1 ? 'USE' : 'USES'}</i>}
                   <i>{moveColor.icon} {move.element.toUpperCase()}</i>
                   <i>{move.power > 0 ? `PWR ${move.power} · ACC ${move.accuracy}%` : signatureSummary?.title || 'SUPPORT'}</i>
                   <i>{isDualTechBtn ? 'DUAL' : move.isSignature ? (signatureSpent ? 'SPENT' : (signatureSummary?.label || 'SIG')) : matchup}</i>

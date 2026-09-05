@@ -48,6 +48,8 @@ Execute `bossPatterns.js` in `battleEngine`. Then pick **one** depth axis: field
 
 Execution is now live for all 13 patterns; dual-tech support and tests also exist. Review the existing implementation and observed player decisions before expanding either depth axis.
 
+Logic Bomb and Data Corruption now match their authored contracts: the six-turn fuse guarantees one turn-seven detonation without inheriting an old charge boost, and corruption is visible before selection, lasts two executed uses, belongs to its dragon, and rearms when the boss applies Burn. Their signals and command metadata describe those actual rules. Deterministic regressions cover the rules; hands-on acceptance remains in `docs/boss-contracts-playtest.md`.
+
 ### P5 — Roster expansion
 
 16 or 24 dragons only after P1–P3. New stills that cannot animate or live in a zone are journal entries, not content.
@@ -73,4 +75,4 @@ Save recovery now protects unreadable progress, keeps a previous-write backup, r
 
 The opening and retry pass gives the first guardian a prominent route into Outer Grid, prevents overlapping hatch purchases, and makes a loss lead to a useful counter tip and an immediate full-HP rematch. Rematches preserve the exact encounter, party setup, route, and daily/boss rules. Battle command navigation includes Swap and respects the focused native control. Acceptance is tracked in `docs/playability-playtest.md`.
 
-The controller and motion pass adds Title/Hatchery actions and Forge menu confirmation, fixes campaign primary/reserve cycling, and prevents held controller inputs from activating a newly entered screen or overlay. Reduced motion uses calm battle/hatch feedback and stationary contact cues while preserving event timing. Automated checks cover these contracts; `docs/controller-motion-playtest.md` keeps physical-controller and visual acceptance open. Next, resolve the remaining authored-boss contracts and use measured opening playtests to select improvements to pacing and combat depth.
+The controller and motion pass adds Title/Hatchery actions and Forge menu confirmation, fixes campaign primary/reserve cycling, and prevents held controller inputs from activating a newly entered screen or overlay. Reduced motion uses calm battle/hatch feedback and stationary contact cues while preserving event timing. Automated checks cover these contracts; `docs/controller-motion-playtest.md` keeps physical-controller and visual acceptance open. With the remaining boss contracts implemented above, next use measured opening playtests to select improvements to pacing and combat depth.

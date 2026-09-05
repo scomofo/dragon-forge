@@ -236,14 +236,14 @@ export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey, pl
     : { state: player, moveKey: playerMoveKey, move: options.playerMoveOverride, label: 'player' };
 
   // Glitch randomization
-  if (first.state.status?.effect === 'void') {
+  if (first.state.status?.effect === 'void' && !isFuseDetonation(first, options)) {
     const keys = first.label === 'player' ? playerMoveKeys : npcMoveKeys;
     if (keys && keys.length > 0) {
       first.moveKey = keys[Math.floor(Math.random() * keys.length)];
       first.move = undefined;
     }
   }
-  if (second.state.status?.effect === 'void') {
+  if (second.state.status?.effect === 'void' && !isFuseDetonation(second, options)) {
     const keys = second.label === 'player' ? playerMoveKeys : npcMoveKeys;
     if (keys && keys.length > 0) {
       second.moveKey = keys[Math.floor(Math.random() * keys.length)];
@@ -314,9 +314,14 @@ function decrementBuff(state, buffKey) {
     : { ...state, [buffKey]: { ...buff, turnsLeft } };
 }
 
+function isFuseDetonation(actor, options) {
+  return options.logicBombDetonation && actor.label === 'npc' && actor.moveKey === 'bomb_detonation';
+}
+
 function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {}) {
+  const fuseDetonation = isFuseDetonation(actor, options);
   // Check for Freeze — skip entirely
-  if (actor.state.status?.effect === 'ice') {
+  if (!fuseDetonation && actor.state.status?.effect === 'ice') {
     events.push({
       attacker: actor.label,
       action: 'statusSkip',
@@ -326,7 +331,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
   }
 
   // Check for Paralyze — 50% chance to skip
-  if (actor.state.status?.effect === 'storm') {
+  if (!fuseDetonation && actor.state.status?.effect === 'storm') {
     if (Math.random() < STATUS_EFFECTS.storm.value) {
       events.push({
         attacker: actor.label,
@@ -335,6 +340,14 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
       });
       return;
     }
+  }
+
+  // Transform the actual command after Glitch and status skips. A selected
+  // slot that never executes must not spend one of its corrupted uses.
+  let corruptedMoveKey;
+  if (actor.label === 'player' && !actor.move && actor.moveKey === options.playerCorruptedMoveKey) {
+    corruptedMoveKey = actor.moveKey;
+    actor = { ...actor, moveKey: 'basic_attack' };
   }
 
   if (actor.moveKey === 'defend') {
@@ -490,6 +503,9 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
   if (actor.state.status?.effect === 'shadow') {
     effectiveAccuracy = Math.max(0, effectiveAccuracy - STATUS_EFFECTS.shadow.value * 100);
   }
+  // The armed fuse is the one guaranteed action. Early HP signatures and
+  // ordinary moves still use their usual accuracy and status rules.
+  if (fuseDetonation) effectiveAccuracy = 100;
 
   // Apply attacker's atkBuff and any charged-move boost under one shared ceiling
   const effectiveAtk = effectiveAttack(actor.state.atk, actor.state.atkBuff, actor.state.chargeMultiplier);
@@ -529,6 +545,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
         action: 'attack',
         moveName: move.name,
         moveKey: actor.moveKey,
+        corruptedMoveKey,
         vfxKey: move.vfxKey,
         damage: result.damage,
         effectiveness: result.effectiveness,
@@ -546,6 +563,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
         action: 'attack',
         moveName: move.name,
         moveKey: actor.moveKey,
+        corruptedMoveKey,
         vfxKey: move.vfxKey,
         damage: 0,
         effectiveness: result.effectiveness,
@@ -584,6 +602,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
     action: 'attack',
     moveName: resolvedMove.name,
     moveKey: actor.moveKey,
+    corruptedMoveKey,
     vfxKey: resolvedMove.vfxKey,
     element: resolvedMove.element,
     damage: result.damage,

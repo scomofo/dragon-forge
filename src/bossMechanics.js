@@ -1,5 +1,30 @@
+import { moves } from './gameData';
+
 export const HYDRA_HEAD_COUNT = 3;
 export const HYDRA_HP_FLOOR = 0.3;
+
+export function isLogicBombDetonationDue(state) {
+  return state.bossPatternId === 'logic_bomb'
+    && (state.bossState?.fuseTurns ?? 6) <= 0
+    && !state.bossState?.fuseDetonated;
+}
+
+// Garble belongs to the affected dragon, not the arena slot. The existing
+// counter name is retained, but its unit is completed uses, not elapsed turns.
+export function createCorruptionState(dragonId, moveKeys) {
+  const candidates = moveKeys.filter(key => key !== 'basic_attack'
+    && moves[key] && !moves[key].isSignature && !key.startsWith('dual_'));
+  const key = candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
+  return { garbledDragonId: key ? dragonId : null, garbledMoveKey: key, garbledTurnsLeft: key ? 2 : 0 };
+}
+
+export function getCorruptedMoveKey(state) {
+  const bs = state.bossState || {};
+  return state.bossPatternId === 'data_corruption' && bs.garbledTurnsLeft > 0
+    && bs.garbledDragonId === state.dragonId
+    && state.dragon?.moveKeys?.includes(bs.garbledMoveKey)
+    ? bs.garbledMoveKey : null;
+}
 
 function isPlayerHit(event) {
   return event?.attacker === 'player' && event.action === 'attack'
