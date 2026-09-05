@@ -1,0 +1,44 @@
+/* Storm Spine (Sector 03) — reuses the Outer Grid room shell classes
+   (.outer-grid-*) and adds the zone palette plus the three-lane fork
+   arc-shut animation. */
+
+.storm-spine-screen .outer-grid-header h1 { color: #b9a8f5; }
+.storm-spine-screen .outer-grid-kicker { color: #9d8bd8; }
+.storm-spine-screen .outer-grid-objective { border-left-color: #a48cf0; background: #141d2e; }
+.storm-spine-scene { border-color: #5a5478; }
+.storm-spine-screen .outer-grid-room-kind { border-color: #5a5478; color: #ddd6f5; }
+.storm-spine-screen .outer-grid-actions button:hover:not(:disabled),
+.storm-spine-screen .outer-grid-actions .is-selected { border-color: #a48cf0; background: #262038; color: #e4dbff; }
+
+/* Fork in the Wire: three lanes hang in the scene; on a choice the chosen
+   lane floods with storm-blue light while the other two arc red and shut. */
+.storm-fork-fx { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.fork-lane {
+  position: absolute; top: 6%; bottom: 14%; width: 8%;
+  border: 1px solid #6a6390; background: #14102199;
+}
+.fork-lane-capacitor { left: 34%; }
+.fork-lane-archive { left: 46%; }
+.fork-lane-direct { left: 58%; }
+.fork-lane.is-chosen {
+  border-color: #8fd0ff;
+  background: linear-gradient(to top, #66ccff55, #66ccff11 70%, transparent);
+  box-shadow: 0 0 26px #66ccff77, inset 0 0 18px #66ccff44;
+  animation: fork-chosen 1400ms ease-out both;
+}
+.fork-lane.is-shut {
+  animation: fork-shut 900ms ease-in both;
+}
+@keyframes fork-chosen {
+  from { opacity: 0.4; }
+  30% { opacity: 1; box-shadow: 0 0 60px #66ccffcc, inset 0 0 30px #66ccff88; }
+  to { opacity: 1; }
+}
+@keyframes fork-shut {
+  0% { opacity: 1; border-color: #6a6390; }
+  35% { border-color: #ff6a55; box-shadow: 0 0 30px #ff6a5588; }
+  100% { opacity: 0.12; border-color: #3a3040; box-shadow: none; transform: scaleY(0.12); transform-origin: bottom; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fork-lane.is-chosen, .fork-lane.is-shut { animation-duration: 1ms; animation-delay: 0ms; }
+}

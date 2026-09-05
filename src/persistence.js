@@ -2,6 +2,7 @@
 import { canEquipRelic } from './forgeData';
 import { applyOuterGridAction, getOuterGridProgress } from './outerGrid';
 import { applyFrozenCacheAction, getFrozenCacheProgress } from './frozenCache';
+import { applyStormSpineAction, getStormSpineProgress } from './stormSpine';
 
 const STORAGE_KEY = 'dragonforge_save';
 
@@ -26,6 +27,7 @@ const DEFAULT_SAVE = {
   defeatedNpcs: [],
   outerGrid: getOuterGridProgress({}),
   frozenCache: getFrozenCacheProgress({}),
+  stormSpine: getStormSpineProgress({}),
   singularityProgress: { defeated: [], finalBossPhase: 0, replayCounts: {} },
   singularityComplete: false,
   mirrorAdminDefeated: false,
@@ -166,6 +168,7 @@ function migrateSave(save) {
   }
   save.outerGrid = getOuterGridProgress(save);
   save.frozenCache = getFrozenCacheProgress(save);
+  save.stormSpine = getStormSpineProgress(save);
   return save;
 }
 
@@ -198,6 +201,14 @@ export function actInOuterGrid(action, value) {
 export function actInFrozenCache(action, value) {
   const save = loadSave();
   const next = applyFrozenCacheAction(save, action, value);
+  if (next === save) return false;
+  writeSave(next);
+  return true;
+}
+
+export function actInStormSpine(action, value) {
+  const save = loadSave();
+  const next = applyStormSpineAction(save, action, value);
   if (next === save) return false;
   writeSave(next);
   return true;
@@ -533,6 +544,7 @@ export function applyNewGamePlus(save) {
   save.defeatedNpcs = [];
   save.outerGrid = getOuterGridProgress({});
   save.frozenCache = getFrozenCacheProgress({});
+  save.stormSpine = getStormSpineProgress({});
   save.singularityProgress = { defeated: [], finalBossPhase: 0, replayCounts: {} };
   save.singularityComplete = false;
   save.mirrorAdminDefeated = false;
