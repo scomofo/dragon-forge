@@ -1,0 +1,54 @@
+/* Admin Core (Sector 04) — reuses the Outer Grid room shell classes
+   (.outer-grid-*) and adds the zone palette plus the cold-lantern setpiece
+   animation: the lit lantern flares warm amber; the other two burn out cold. */
+
+.admin-core-screen .outer-grid-header h1 { color: #e8e4f0; }
+.admin-core-screen .outer-grid-kicker { color: #b8b0cc; }
+.admin-core-screen .outer-grid-objective { border-left-color: #cfc6e8; background: #161822; }
+.admin-core-scene { border-color: #565064; }
+.admin-core-screen .outer-grid-room-kind { border-color: #565064; color: #e8e4f0; }
+.admin-core-screen .outer-grid-actions button:hover:not(:disabled),
+.admin-core-screen .outer-grid-actions .is-selected { border-color: #cfc6e8; background: #232030; color: #f0ecff; }
+
+/* Cold Lanterns: three cold flames hang over the antechamber. On a choice the
+   lit lantern flares warm amber; the other two snuff to dead grey. */
+.admin-lantern-fx { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.lantern {
+  position: absolute; top: 10%; width: 7%; height: 30%;
+  border: 1px solid #565064; background: #10101899;
+  border-radius: 4px;
+}
+.lantern::after {
+  content: ''; position: absolute; left: 50%; bottom: 12%; width: 40%; height: 46%;
+  transform: translateX(-50%);
+  background: #7f8ba0;
+  clip-path: polygon(50% 0, 78% 34%, 92% 78%, 50% 100%, 8% 78%, 22% 34%);
+  opacity: 0.55;
+}
+.lantern-hoarding { left: 32%; }
+.lantern-memory { left: 46.5%; }
+.lantern-passage { left: 61%; }
+.lantern.is-lit {
+  border-color: #f0c581;
+  box-shadow: 0 0 30px #f0c58188, inset 0 0 14px #f0c58133;
+  animation: lantern-flare 1400ms ease-out both;
+}
+.lantern.is-lit::after {
+  background: linear-gradient(to top, #ff9a3c, #ffe1a9);
+  opacity: 1;
+  box-shadow: 0 0 24px #ffb060cc;
+}
+.lantern.is-out { animation: lantern-out 900ms ease-in both; }
+.lantern.is-out::after { opacity: 0; transition: opacity 500ms; }
+@keyframes lantern-flare {
+  0% { transform: scaleY(1); }
+  25% { box-shadow: 0 0 70px #f0c581ee, inset 0 0 26px #ffe1a966; }
+  100% { box-shadow: 0 0 30px #f0c58188, inset 0 0 14px #f0c58133; }
+}
+@keyframes lantern-out {
+  0% { opacity: 1; }
+  100% { opacity: 0.15; filter: grayscale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lantern.is-lit, .lantern.is-out { animation-duration: 1ms; animation-delay: 0ms; }
+}

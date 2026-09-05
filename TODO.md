@@ -21,6 +21,8 @@
   - [ ] Frozen Cache hands-on acceptance — same playtest dimensions as Outer Grid
   - [x] Storm Spine gameplay + presentation — eight rooms (Overclock Gantry shelter with the hydra overhead; Live Wire; Hydra Spine mid-boss; Fork in the Wire three-lane setpiece — capacitor cache / conduit lore / direct bus, other two lanes arc shut permanently; Capacitor Bank; Broken Conduit; Logic Core finale; Discharge Gate), saved lane choice, 25-scrap cache, return reward; bespoke arc-shut animation (chosen lane floods storm-blue, others arc red and collapse); verified via `scripts/storm-spine-shots.mjs`; zone def corrected to match the DAG (hydra mid-boss, logic core finale). PR #11
   - [ ] Storm Spine hands-on acceptance — same playtest dimensions as Outer Grid
+  - [x] Admin Core gameplay + presentation — eight rooms (Mirror Vestibule with Felix's last unscripted line; Processional; Recursive Gate mid-boss; Cold Lanterns setpiece — hoarding/memory/passage, light one and the other two burn out; Reliquary Vault cache; Echo Archive lore; Protocol Perch finale; Reset Threshold homeward), saved lantern choice, 35-scrap cache, return reward; bespoke lantern flare/burn-out animation; zone palette CSS. (PR: admin-core-zone, stacked on storm-spine-zone)
+  - [ ] Admin Core hands-on acceptance — same playtest dimensions; seeded Playwright QA script in progress (boot-splash/terminal-stability harness issue, not a feature bug)
 - [x] P4 Execute `bossPatterns.js` in `battleEngine` — **all 13 live** (options-based engine hooks + per-boss screen state; `mirror_admin_reset` via per-phase move history). Depth-axis choice (dual techs **or** 4-move kits) still open
 - [ ] P5 Roster expansion only after P1–P3
 
