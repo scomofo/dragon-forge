@@ -1,5 +1,4 @@
 import { STATUS_APPLY_CHANCE, STATUS_EFFECTS } from './gameData';
-import { getBattleSpeed } from './battleSpeed';
 
 const BASE_PROFILES = {
   defend: {
@@ -183,12 +182,12 @@ export function getBattlePresentationProfile(event, move = null) {
   const kind = classifyBattleEvent(event);
   const profile = BASE_PROFILES[kind] || BASE_PROFILES.normalHit;
   const isHeavyMove = (move?.power || 0) >= 70;
-  const speed = getBattleSpeed();
 
   // C3: recovery tails are trimmed from the old fixed 200ms-class beats —
   // the next telegraph overlaps them, so a turn no longer ends in dead air.
-  // C4: the whole table scales down at 2x battle speed.
-  const scale = (ms) => Math.max(40, Math.round(ms * 0.6 / speed));
+  // Keep these durations at 1×. battleWait and GSAP already apply battle
+  // speed; scaling here too made anticipation, recovery and hit-stop run at 4×.
+  const scale = (ms) => Math.max(40, Math.round(ms * 0.6));
 
   return {
     ...profile,
@@ -196,15 +195,38 @@ export function getBattlePresentationProfile(event, move = null) {
     anticipationMs: scale(isHeavyMove ? profile.anticipationMs + 60 : profile.anticipationMs),
     launchMs: scale(isHeavyMove ? profile.launchMs + 40 : profile.launchMs),
     recoveryMs: scale(profile.recoveryMs),
-    impactPauseMs: Math.max(30, Math.round(profile.impactPauseMs / speed)),
+    impactPauseMs: Math.max(30, Math.round(profile.impactPauseMs)),
     // Move weight: heavy attacks fly slower, light attacks snap across.
-    vfxTravelMs: Math.round(((move?.power || 0) >= 70 ? 400 : 270) / speed),
-    vfxImpactMs: Math.round(220 / speed),
+    vfxTravelMs: (move?.power || 0) >= 70 ? 400 : 270,
+    vfxImpactMs: 220,
     flashColor: move?.element && move.element !== 'neutral'
       ? profile.flashColor
       : profile.flashColor,
     statusVariant: event?.appliedStatus ? 'status' : null,
   };
+}
+
+// Apply poses at contact, before recovery. Reflected damage recoils its source;
+// a miss can whiff, but a blocked/zero-damage hit must not fake a hurt reaction.
+export function hasDamagingImpact(event) {
+  return !!event.hit && !event.blocked && event.damage > 0;
+}
+
+export function getBattleContactState(event, profile = getBattlePresentationProfile(event)) {
+  const isPlayer = event.attacker === 'player';
+  const target = event.reflected ? event.attacker : isPlayer ? 'npc' : 'player';
+  const state = {
+    playerSpriteClass: isPlayer ? 'sprite-lunge' : '',
+    npcSpriteClass: isPlayer ? '' : 'sprite-lunge',
+    playerForcedFrame: isPlayer ? 3 : null,
+    npcAttacking: !isPlayer,
+  };
+  if (!event.hit) {
+    state[`${target}SpriteClass`] = profile.defenderClass || 'sprite-whiff';
+  } else if (hasDamagingImpact(event)) {
+    state[`${target}SpriteClass`] = profile.defenderClass || 'sprite-recoil';
+  }
+  return state;
 }
 
 export function getBattleResultCallout(event) {

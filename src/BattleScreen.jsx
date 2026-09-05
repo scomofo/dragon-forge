@@ -1,5 +1,5 @@
 import { useState, useReducer, useCallback, useEffect, useRef } from 'react';
-import { battleWait, getBattleSpeed, setBattleSpeed } from './battleSpeed';
+import { battleWait, getBattleSpeed, setBattleSpeed, scaleBattleDuration } from './battleSpeed';
 import { playSound, playMusic, stopMusic, startHeartbeat, stopHeartbeat } from './soundEngine';
 import { dragons, npcs, moves, elementColors, STATUS_EFFECTS, DUAL_TECHS } from './gameData';
 import { resolveDualTech } from './gameData';
@@ -20,7 +20,7 @@ import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
 import VfxOverlay from './VfxOverlay';
-import { getBattlePresentationProfile, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, shouldAnimateBattleEvent } from './battlePresentation';
+import { getBattlePresentationProfile, getBattleContactState, hasDamagingImpact, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, shouldAnimateBattleEvent } from './battlePresentation';
 import { resolveBattlePose } from './battleSets';
 import { resolveBattleArena } from './arenas';
 import BattleCues from './BattleCues';
@@ -238,6 +238,8 @@ function battleReducer(state, action) {
       return { ...state, npcAttacking: action.value };
     case 'SET_PLAYER_FORCED_FRAME':
       return { ...state, playerForcedFrame: action.value };
+    case 'SET_CONTACT_POSES':
+      return { ...state, ...action.value };
     case 'APPLY_DAMAGE_TO_NPC':
       return { ...state, npcHp: Math.max(0, state.npcHp - action.damage) };
     case 'APPLY_DAMAGE_TO_PLAYER':
@@ -263,6 +265,7 @@ function battleReducer(state, action) {
     case 'SET_VFX':
       return { ...state, vfxActive: action.value };
     case 'CLEAR_VFX':
+      if (action.id != null && state.vfxActive?.id !== action.id) return state;
       return { ...state, vfxActive: null };
     case 'SET_BATTLE_CALLOUT':
       return { ...state, battleCallout: action.value };
@@ -521,20 +524,24 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     const vfxElement = move.element === 'neutral' ? 'neutral' : move.element;
     const vfxDirection = isPlayer ? 'left-to-right' : 'right-to-left';
 
-    // Create a promise that resolves when VfxOverlay calls onComplete
+    // Start damage feedback when the projectile arrives; let its burst finish
+    // alongside hit-stop/recovery instead of waiting until it has disappeared.
+    const vfxId = ++damageIdRef.current;
     let vfxResolve;
     const vfxPromise = new Promise((resolve) => { vfxResolve = resolve; });
     dispatch({
       type: 'SET_VFX',
       value: {
+        id: vfxId,
         vfxKey: event.vfxKey,
         element: vfxElement,
         direction: vfxDirection,
         targetSide: isPlayer ? 'left' : 'right',
-        travelMs: profile.vfxTravelMs,
-        impactMs: profile.vfxImpactMs,
+        travelMs: scaleBattleDuration(profile.vfxTravelMs),
+        impactMs: scaleBattleDuration(profile.vfxImpactMs),
+        onImpact: vfxResolve,
         onComplete: () => {
-          dispatch({ type: 'CLEAR_VFX' });
+          dispatch({ type: 'CLEAR_VFX', id: vfxId });
           vfxResolve();
         },
       },
@@ -542,21 +549,18 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     await Promise.race([vfxPromise, battleWait(1400)]);
 
     // IMPACT phase
+    dispatch({ type: 'SET_CONTACT_POSES', value: getBattleContactState(event, profile) });
     if (isPlayer) {
-      dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: '' });
-      dispatch({ type: 'SET_PLAYER_FORCED_FRAME', value: 3 });
       const spriteEl = playerSpriteRef.current?.getCanvas?.() || playerSpriteContainerRef.current;
       if (spriteEl) playerLunge(spriteEl, 'left');
     } else {
-      dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: '' });
-      dispatch({ type: 'SET_NPC_ATTACKING', value: true });
       const npcEl = npcSpriteImgRef.current;
       if (npcEl) npcLunge(npcEl, state.npc.flipSprite ? 'left' : 'right');
     }
     // Whip/swoosh at the contact frame (matches lunge anticipation -> strike timing)
-    trackedTimeout(() => playSound('lungeContact'), 110);
+    trackedTimeout(() => playSound('lungeContact'), scaleBattleDuration(110));
 
-    if (event.hit) {
+    if (hasDamagingImpact(event)) {
       if (event.reflected) {
         if (isPlayer) {
           dispatch({ type: 'APPLY_DAMAGE_TO_PLAYER', damage: event.damage });
@@ -586,6 +590,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         ? (event.reflected ? playerSpriteContainerRef.current : npcSpriteContainerRef.current)
         : (event.reflected ? npcSpriteContainerRef.current : playerSpriteContainerRef.current);
       const targetSide = isPlayer ? (event.reflected ? 'right' : 'left') : (event.reflected ? 'left' : 'right');
+      const incomingSide = targetSide === 'left' ? 'right' : 'left';
 
       // Pull the target sprite element (not container) for crunchy NES-style flicker
       const targetSpriteEl = targetContainer === playerSpriteContainerRef.current
@@ -607,7 +612,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           setTimeout(resolve, 800);
         });
         if (targetSpriteEl) hitFlicker(targetSpriteEl, 5);
-        if (targetContainer) targetKnockback(targetContainer, isPlayer ? 'left' : 'right', 18);
+        if (targetContainer) targetKnockback(targetContainer, incomingSide, 18);
       } else if (container) {
         const hpRatio = event.damage / (isPlayer ? state.npcMaxHp : state.playerMaxHp);
         const isHeavy = event.effectiveness > 1.0 || hpRatio > 0.25;
@@ -624,7 +629,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         }
         if (targetSpriteEl) hitFlicker(targetSpriteEl, isHeavy ? 4 : 3);
         if (targetContainer) {
-          targetKnockback(targetContainer, isPlayer ? 'left' : 'right', isHeavy ? 14 : 9);
+          targetKnockback(targetContainer, incomingSide, isHeavy ? 14 : 9);
         }
       }
 
@@ -632,15 +637,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         ? (event.reflected ? playerSpriteContainerRef.current : npcSpriteContainerRef.current)
         : (event.reflected ? npcSpriteContainerRef.current : playerSpriteContainerRef.current);
       if (hitTarget) hitSquash(hitTarget);
-    } else {
+    } else if (!event.hit) {
       playSound(profile.sound);
-      const whiffTarget = isPlayer ? npcSpriteContainerRef.current : playerSpriteContainerRef.current;
-      if (whiffTarget) {
-        dispatch({
-          type: isPlayer ? 'SET_NPC_SPRITE_CLASS' : 'SET_PLAYER_SPRITE_CLASS',
-          value: profile.defenderClass,
-        });
-      }
+    } else {
+      playSound('shieldDeflectSting');
     }
 
     const dmgTarget = event.reflected ? (isPlayer ? 'player' : 'npc') : (isPlayer ? 'npc' : 'player');
@@ -703,14 +703,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     damageStaggerRef.current = 0;
 
-    // C3: recoil and cleanup run inside ONE overlapped beat instead of three
-    // sequential 200ms waits — the next telegraph starts as the target settles,
-    // which removes the dead air at the end of every event.
-    if (isPlayer) {
-      dispatch({ type: 'SET_NPC_SPRITE_CLASS', value: profile.defenderClass || 'sprite-recoil' });
-    } else {
-      dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: profile.defenderClass || 'sprite-recoil' });
-    }
+    // Contact poses have already played through hit-stop and recovery. Let
+    // them settle before cleanup; do not restart recoil after the hit is over.
     await battleWait(140);
 
     dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: '' });
@@ -1841,6 +1835,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             <strong>{npc.name}</strong>
           </div>
           <NpcSprite
+            battlePlayback
             ref={npcSpriteImgRef}
             idleSprite={npc.idleSprite}
             attackSprite={npc.attackSprite}
@@ -1883,6 +1878,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             <strong>{save.dragons[dragonId]?.nickname || dragon.name}</strong>
           </div>
           <DragonSprite
+            battlePlayback
             ref={playerSpriteRef}
             spriteSheet={dragon.stageSprites?.[state.playerStage] || dragon.spriteSheet}
             stage={state.playerStage}
@@ -1916,10 +1912,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         {/* VFX overlay */}
         {state.vfxActive && (
           <VfxOverlay
+            key={state.vfxActive.id}
             vfxKey={state.vfxActive.vfxKey}
             element={state.vfxActive.element}
             direction={state.vfxActive.direction}
             targetSide={state.vfxActive.targetSide}
+            travelMs={state.vfxActive.travelMs}
+            impactMs={state.vfxActive.impactMs}
+            onImpact={state.vfxActive.onImpact}
             onComplete={state.vfxActive.onComplete}
           />
         )}
