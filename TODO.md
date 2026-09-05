@@ -16,7 +16,7 @@
 - [ ] P3 Four authored zones — Outer Grid / Frozen Cache / Storm Spine / Admin Core rooms (`src/worldZones.js`)
   - [x] Outer Grid gameplay — seven rooms, a saved crossing choice, optional cache, Sentinel/Overflow encounters, room checkpoints, and return reward
   - [ ] Outer Grid hands-on acceptance — first-time comprehension, both crossings, loss/retry, keyboard/controller/touch, narrow screens, and timed pacing (`docs/outer-grid-playtest.md`)
-  - [ ] Outer Grid presentation — bespoke span animation and room transitions; current route reuses shipped arena/Forge art
+  - [x] Outer Grid presentation — room transitions (walk-off/enter + scene dim) and the bespoke firewall-span crossing animation (brace: struts + bridge; crawlway: hatch) landed 2026-09-05, verified via `scripts/outer-grid-shots.mjs`; room backgrounds still reuse shipped arena/Forge art (bespoke room art is a future commission pass)
 - [x] P4 Execute `bossPatterns.js` in `battleEngine` — **all 13 live** (options-based engine hooks + per-boss screen state; `mirror_admin_reset` via per-phase move history). Depth-axis choice (dual techs **or** 4-move kits) still open
 - [ ] P5 Roster expansion only after P1–P3
 
