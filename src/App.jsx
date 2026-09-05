@@ -9,6 +9,7 @@ import JournalScreen from './JournalScreen';
 import CampaignMapScreen from './CampaignMapScreen';
 import OuterGridScreen from './OuterGridScreen';
 import FrozenCacheScreen from './FrozenCacheScreen';
+import StormSpineScreen from './StormSpineScreen';
 import ShopScreen from './ShopScreen';
 import StatsScreen from './StatsScreen';
 import SettingsScreen from './SettingsScreen';
@@ -30,6 +31,7 @@ const SCREENS = {
   MAP: 'map',
   OUTER_GRID: 'outerGrid',
   FROZEN_CACHE: 'frozenCache',
+  STORM_SPINE: 'stormSpine',
   SHOP: 'shop',
   STATS: 'stats',
   SETTINGS: 'settings',
@@ -115,6 +117,9 @@ export default function App() {
     } else if (target === 'frozenCache') {
       playMusic('mapWander');
       setScreen(SCREENS.FROZEN_CACHE);
+    } else if (target === 'stormSpine') {
+      playMusic('mapWander');
+      setScreen(SCREENS.STORM_SPINE);
     } else if (target === 'stats') {
       playMusic('hatchery');
       setScreen(SCREENS.STATS);
@@ -145,7 +150,7 @@ export default function App() {
       npcId: config.npcId,
       benchDragonId: config.benchDragonId || null,
       campaignNodeId: config.nodeId,
-      returnScreen: [SCREENS.OUTER_GRID, SCREENS.FROZEN_CACHE].includes(config.returnScreen) ? config.returnScreen : SCREENS.MAP,
+      returnScreen: [SCREENS.OUTER_GRID, SCREENS.FROZEN_CACHE, SCREENS.STORM_SPINE].includes(config.returnScreen) ? config.returnScreen : SCREENS.MAP,
     });
     setScreen(SCREENS.BATTLE);
   }
@@ -195,7 +200,7 @@ export default function App() {
   function handleBattleEnd() {
     refreshSave();
     const returnScreen = battleConfig?.returnScreen;
-    playMusic([SCREENS.MAP, SCREENS.OUTER_GRID, SCREENS.FROZEN_CACHE].includes(returnScreen) ? 'mapWander' : 'select');
+    playMusic([SCREENS.MAP, SCREENS.OUTER_GRID, SCREENS.FROZEN_CACHE, SCREENS.STORM_SPINE].includes(returnScreen) ? 'mapWander' : 'select');
     setBattleConfig(null);
     setScreen(returnScreen || SCREENS.BATTLE_SELECT);
   }
@@ -247,6 +252,11 @@ export default function App() {
       {screen === SCREENS.FROZEN_CACHE && (
         <div className="screen-enter" key="frozenCache">
           <FrozenCacheScreen save={save} refreshSave={refreshSave} onNavigate={handleNavigate} onBeginCampaignBattle={handleBeginCampaignBattle} />
+        </div>
+      )}
+      {screen === SCREENS.STORM_SPINE && (
+        <div className="screen-enter" key="stormSpine">
+          <StormSpineScreen save={save} refreshSave={refreshSave} onNavigate={handleNavigate} onBeginCampaignBattle={handleBeginCampaignBattle} />
         </div>
       )}
       {screen === SCREENS.MAP && (

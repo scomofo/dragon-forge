@@ -37,8 +37,10 @@ export const WORLD_ZONES = {
     kicker: 'SECTOR 03 — STORM SPINE',
     setpiece: 'Three-headed fork in the wire. Choose a lane; the other two arc shut.',
     labRoom: 'Overclock gantry — Glitch Hydra watches from the ceiling grid.',
-    midBossNodeId: 'logic-core',
-    bossNodeId: 'hydra-spine',
+    // DAG order (hydra-spine unlocks logic-core) makes the hydra the mid-boss
+    // and the Logic Core the finale.
+    midBossNodeId: 'hydra-spine',
+    bossNodeId: 'logic-core',
     nodeIds: ['hydra-spine', 'logic-core'],
     music: 'singularity',
   },
@@ -190,5 +192,76 @@ export const FROZEN_CACHE_ROOMS = {
     description: 'The channel hums at room temperature. Felix has wired your next hatch to the return lantern.',
     inspect: 'Felix: "You listened to the frozen ones and brought the silence back warm. That is rarer than you know."',
     exits: [{ to: 'crypto-lock', label: 'Back to the quiet lock', x: 12 }, { to: 'cold-archive', label: 'Return to Cold Archive', x: 88 }],
+  },
+};
+
+// Sector 03 — Storm Spine. Gantry shelter (the hydra watches from the ceiling
+// grid the whole time) -> live wire -> hydra mid-boss -> the three-lane fork
+// (choose one: capacitor cache, conduit archive, or the direct lane — the
+// other two arc shut for the expedition) -> Logic Core finale -> homeward.
+// Entry needs the Frozen Cache finale (crypto_crab), matching the DAG.
+export const STORM_SPINE_ROOMS = {
+  'overclock-gantry': {
+    id: 'overclock-gantry', name: 'Overclock Gantry', kind: 'Shelter',
+    background: '/assets/arenas/storm.webp',
+    description: 'A maintenance gantry over the storm spine. Somewhere above the grid, three pairs of eyes open in sequence, then close.',
+    inspect: 'Felix, by wire: "The hydra watches from the ceiling grid. Three heads, three tempers — each one falls only to a different element. Count your lanes before you commit."',
+    exits: [{ to: 'live-wire', label: 'Step onto the live wire', x: 88 }],
+  },
+  'live-wire': {
+    id: 'live-wire', name: 'Live Wire', kind: 'Charged path',
+    background: '/assets/arenas/storm.webp',
+    description: 'Current runs along the gantry floor in standing waves. Step between pulses and the wire only hums.',
+    inspect: 'Scorch marks alternate with frost blooms — storm and fire share this spine, and neither shares well.',
+    exits: [{ to: 'overclock-gantry', label: 'Back to the gantry', x: 12 }, { to: 'hydra-spine', label: 'Approach the ceiling grid', x: 88 }],
+  },
+  'hydra-spine': {
+    id: 'hydra-spine', name: 'Hydra Spine', kind: 'Mid-boss',
+    background: '/assets/arenas/npc_glitch_hydra.webp',
+    description: 'The Glitch Hydra uncoils from the ceiling grid, three heads arguing in packet loss.',
+    clearedDescription: 'The heads hang quiet, still arguing in static. The fork ahead is live.',
+    nodeId: 'hydra-spine',
+    exits: [{ to: 'live-wire', label: 'Back to the live wire', x: 12 }, { to: 'fork-in-the-wire', label: 'Enter the fork', x: 88 }],
+  },
+  'fork-in-the-wire': {
+    id: 'fork-in-the-wire', name: 'Fork in the Wire', kind: 'Setpiece',
+    background: '/assets/arenas/storm.webp', requiredNpc: 'glitch_hydra',
+    description: 'The spine splits into three lanes: a charged capacitor bank, a broken conduit whispering old logs, and a bare direct bus. Pick one — the other two arc shut.',
+    inspect: 'Charge pools in the capacitor lane. The conduit lane carries the hydra\'s origin logs. The direct bus is fastest and holds nothing.',
+    exits: [
+      { to: 'hydra-spine', label: 'Back to the hydra', x: 12 },
+      { to: 'capacitor-bank', label: 'Ride the capacitor lane', x: 64, route: 'capacitor' },
+      { to: 'broken-conduit', label: 'Enter the conduit lane', x: 76, route: 'archive' },
+      { to: 'logic-core', label: 'Take the direct bus', x: 88, route: 'direct' },
+    ],
+  },
+  'capacitor-bank': {
+    id: 'capacitor-bank', name: 'Capacitor Bank', kind: 'Hidden room',
+    background: '/assets/arenas/storm.webp', requiredNpc: 'glitch_hydra',
+    description: 'Charged cells hum in rows, overfull. Their stored scraps never made it to the front line.',
+    inspect: 'A charge tag reads: "Store it where the storm can\'t reach." The storm reached anyway.',
+    exits: [{ to: 'fork-in-the-wire', label: 'Back to the fork', x: 12 }, { to: 'logic-core', label: 'Discharge toward the Logic Core', x: 88 }],
+  },
+  'broken-conduit': {
+    id: 'broken-conduit', name: 'Broken Conduit', kind: 'Lore room',
+    background: '/assets/arenas/shadow.webp', requiredNpc: 'glitch_hydra',
+    description: 'The conduit is cracked open, spooling the hydra\'s origin logs into the dark.',
+    inspect: 'Log fragment: "Three heads were cheaper than three watchdogs. We regret the savings." Another: "It still thinks it is guarding the fork."',
+    exits: [{ to: 'fork-in-the-wire', label: 'Back to the fork', x: 12 }, { to: 'logic-core', label: 'Follow the logs to the Logic Core', x: 88 }],
+  },
+  'logic-core': {
+    id: 'logic-core', name: 'Logic Core', kind: 'Zone finale',
+    background: '/assets/arenas/npc_logic_bomb.webp', requiredNpc: 'glitch_hydra',
+    description: 'A Logic Bomb ticks in the core cradle, fuse burning down in orderly turns. It has been patient. It is done being patient.',
+    clearedDescription: 'The fuse is out. The core spins down to a clean, honest hum.',
+    nodeId: 'logic-core',
+    exits: [{ to: 'fork-in-the-wire', label: 'Back to the fork', x: 12 }, { to: 'discharge-gate', label: 'Follow the discharge out', x: 88 }],
+  },
+  'discharge-gate': {
+    id: 'discharge-gate', name: 'Discharge Gate', kind: 'Homeward path',
+    background: '/assets/forge/station_bulkhead.webp', requiresBoss: 'logic_bomb',
+    description: 'The spine grounds itself into the return rail. Felix has your next hatch wired and waiting.',
+    inspect: 'Felix, by wire: "You picked a lane and lived with it. That is the whole trick. Come home."',
+    exits: [{ to: 'logic-core', label: 'Back to the quiet core', x: 12 }, { to: 'overclock-gantry', label: 'Return to the gantry', x: 88 }],
   },
 };

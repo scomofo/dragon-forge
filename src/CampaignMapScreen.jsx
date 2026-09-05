@@ -79,7 +79,7 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
   const selectedState = getCampaignNodeState(selectedNode, save);
   const selectedNpc = npcs[selectedNode.npcId];
   // Zones with an authored room route get an EXPLORE entry point.
-  const ZONE_SCREEN_IDS = { outer_grid: 'outerGrid', frozen_cache: 'frozenCache' };
+  const ZONE_SCREEN_IDS = { outer_grid: 'outerGrid', frozen_cache: 'frozenCache', storm_spine: 'stormSpine' };
   const zoneScreenId = ZONE_SCREEN_IDS[getZoneForNode(selectedNode.id)?.id] || null;
   const selectedZone = getZoneForNode(selectedNode.id);
   const selectedColor = elementColors[selectedNode.element] || elementColors.neutral;
