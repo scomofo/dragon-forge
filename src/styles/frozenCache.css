@@ -1,0 +1,56 @@
+/* Frozen Cache (Sector 02) — reuses the Outer Grid room shell classes
+   (.outer-grid-*) and adds the zone palette plus the bespoke thaw-junction
+   crossing animation. */
+
+.frozen-cache-screen .outer-grid-header h1 { color: #a8dcf0; }
+.frozen-cache-screen .outer-grid-kicker { color: #7fb8d4; }
+.frozen-cache-screen .outer-grid-objective { border-left-color: #8cccd7; background: #101d28; }
+.frozen-cache-scene { border-color: #4a6b7a; }
+.frozen-cache-screen .outer-grid-room-kind { border-color: #4a6b7a; color: #cfe8f2; }
+.frozen-cache-screen .outer-grid-actions button:hover:not(:disabled),
+.frozen-cache-screen .outer-grid-actions .is-selected { border-color: #8cccd7; background: #1d3038; color: #d8f2f8; }
+
+/* Thaw: warm light wells up from the floor and the corridor softens. */
+.frozen-junction-fx { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.thaw-glow {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
+  background: linear-gradient(to top, #f0c58188, #f0c58122 55%, transparent);
+  animation: thaw-rise 1300ms ease-out both;
+}
+.thaw-glow-late {
+  height: 100%;
+  background: radial-gradient(ellipse at 50% 100%, #ffe1a944, transparent 65%);
+  animation: thaw-rise 1300ms 250ms ease-out both;
+}
+@keyframes thaw-rise {
+  from { transform: translateY(45%); opacity: 0; }
+  35% { opacity: 1; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Crack: two white fracture lines split the scene, then a cold flash. */
+.crack-line {
+  position: absolute; top: 8%; bottom: 10%; width: 6px;
+  background: linear-gradient(to bottom, transparent, #eaf8ff 18%, #ffffff 50%, #eaf8ff 82%, transparent);
+  box-shadow: 0 0 22px #bfe8ffcc, 0 0 60px #8cccd766;
+  transform-origin: center;
+}
+.crack-line-a { left: 42%; animation: crack-split 520ms ease-in both; }
+.crack-line-b { left: 58%; animation: crack-split 520ms 140ms ease-in both; }
+.crack-flash {
+  position: absolute; inset: 0; background: #dff4ff;
+  animation: crack-flash-out 900ms 480ms ease-out both;
+}
+@keyframes crack-split {
+  from { transform: scaleY(0) rotate(-2deg); opacity: 0; }
+  30% { opacity: 1; }
+  to { transform: scaleY(1) rotate(2deg); opacity: 1; }
+}
+@keyframes crack-flash-out {
+  from { opacity: 0; }
+  30% { opacity: 0.85; }
+  to { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .thaw-glow, .crack-line, .crack-flash { animation-duration: 1ms; animation-delay: 0ms; }
+}

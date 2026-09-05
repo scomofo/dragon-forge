@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { canEquipRelic } from './forgeData';
 import { applyOuterGridAction, getOuterGridProgress } from './outerGrid';
+import { applyFrozenCacheAction, getFrozenCacheProgress } from './frozenCache';
 
 const STORAGE_KEY = 'dragonforge_save';
 
@@ -24,6 +25,7 @@ const DEFAULT_SAVE = {
   milestones: [],
   defeatedNpcs: [],
   outerGrid: getOuterGridProgress({}),
+  frozenCache: getFrozenCacheProgress({}),
   singularityProgress: { defeated: [], finalBossPhase: 0, replayCounts: {} },
   singularityComplete: false,
   mirrorAdminDefeated: false,
@@ -163,6 +165,7 @@ function migrateSave(save) {
     if (save.skye.companionDragonId === undefined) save.skye.companionDragonId = null;
   }
   save.outerGrid = getOuterGridProgress(save);
+  save.frozenCache = getFrozenCacheProgress(save);
   return save;
 }
 
@@ -187,6 +190,14 @@ export function writeSave(save) {
 export function actInOuterGrid(action, value) {
   const save = loadSave();
   const next = applyOuterGridAction(save, action, value);
+  if (next === save) return false;
+  writeSave(next);
+  return true;
+}
+
+export function actInFrozenCache(action, value) {
+  const save = loadSave();
+  const next = applyFrozenCacheAction(save, action, value);
   if (next === save) return false;
   writeSave(next);
   return true;
@@ -521,6 +532,7 @@ export function applyNewGamePlus(save) {
   save.ngPlus = (save.ngPlus || 0) + 1;
   save.defeatedNpcs = [];
   save.outerGrid = getOuterGridProgress({});
+  save.frozenCache = getFrozenCacheProgress({});
   save.singularityProgress = { defeated: [], finalBossPhase: 0, replayCounts: {} };
   save.singularityComplete = false;
   save.mirrorAdminDefeated = false;

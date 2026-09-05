@@ -121,3 +121,74 @@ export const OUTER_GRID_ROOMS = {
     exits: [{ to: 'overflow-vent', label: 'Back to the quiet vent', x: 12 }, { to: 'field-locker', label: 'Return to Field Locker', x: 88 }],
   },
 };
+
+// Sector 02 — Frozen Cache. Lab room + path + wraith encounter + the thaw
+// setpiece (direct slow thaw, or crack the deep freeze for the vault cache)
+// + siren mid-boss + crypto finale + homeward gate. Campaign prerequisites
+// hold: entry needs the Outer Grid gatekeeper; the Crypto Lock still waits
+// for the Overflow Vent.
+export const FROZEN_CACHE_ROOMS = {
+  'cold-archive': {
+    id: 'cold-archive', name: 'Cold Archive', kind: 'Shelter',
+    background: '/assets/arenas/ice.webp',
+    description: 'Three frozen processes hang in the ice, mid-scream, mid-thought, mid-lie. The ice keeps them honest. Mostly.',
+    inspect: 'The archive hums at a pitch you feel in your teeth. Each remnant is a process the Grid froze before it could finish.',
+    exits: [{ to: 'mute-channel', label: 'Enter the Mute Channel', x: 88 }],
+  },
+  'mute-channel': {
+    id: 'mute-channel', name: 'Mute Channel', kind: 'Frozen corridor',
+    background: '/assets/arenas/shadow.webp',
+    description: 'The screaming channel, muted. Sound moves through the ice like light through dirty glass — slow and wrong.',
+    inspect: 'Frozen packets hang in rows like pinned moths. One shadow among them is still warm.',
+    exits: [{ to: 'cold-archive', label: 'Back to Cold Archive', x: 12 }, { to: 'wraith-cache', label: 'Approach the warm shadow', x: 88 }],
+  },
+  'wraith-cache': {
+    id: 'wraith-cache', name: 'Wraith Cache', kind: 'Encounter',
+    background: '/assets/arenas/npc_bit_wraith.webp',
+    description: 'A Bit Wraith coils around a forgotten memory cache, drinking what the ice preserved.',
+    clearedDescription: 'The wraith is quiet. The cache it guarded bleeds cold light toward the junction.',
+    nodeId: 'wraith-cache',
+    exits: [{ to: 'mute-channel', label: 'Back to Mute Channel', x: 12 }, { to: 'thaw-junction', label: 'Follow the cold light', x: 88 }],
+  },
+  'thaw-junction': {
+    id: 'thaw-junction', name: 'Thaw Junction', kind: 'Setpiece',
+    background: '/assets/arenas/ice.webp', requiredNpc: 'bit_wraith',
+    description: 'The corridor splits around a frozen core. You can coax the thaw upward — or crack the deep freeze below and take your chances in the vault.',
+    inspect: 'The slow thaw is safe and direct. The deep freeze hides a sealed vault: more to carry, if you can carry it.',
+    exits: [
+      { to: 'wraith-cache', label: 'Back to Wraith Cache', x: 12 },
+      { to: 'siren-loop', label: 'Take the slow thaw', x: 88, route: 'thaw' },
+      { to: 'frozen-vault', label: 'Descend into the vault', x: 74, route: 'crack' },
+    ],
+  },
+  'frozen-vault': {
+    id: 'frozen-vault', name: 'Frozen Vault', kind: 'Hidden room',
+    background: '/assets/arenas/shadow.webp', requiredNpc: 'bit_wraith',
+    description: 'Below the junction, a vault of unclaimed processes. Their hoarded scraps never thawed.',
+    inspect: 'A maintenance tag, frozen mid-print: "Cold keeps what fire forgets."',
+    exits: [{ to: 'thaw-junction', label: 'Climb back to the junction', x: 12 }, { to: 'siren-loop', label: 'Follow the lure toward Siren Loop', x: 88 }],
+  },
+  'siren-loop': {
+    id: 'siren-loop', name: 'Siren Loop', kind: 'Mid-boss',
+    background: '/assets/arenas/npc_phishing_siren.webp', requiredNpc: 'bit_wraith',
+    description: 'A venomous lure repeats through the damaged lanes. The Phishing Siren has been singing to the ice for a long time.',
+    clearedDescription: 'The loop is broken. The lanes carry only your own footsteps now — toward the lock.',
+    nodeId: 'siren-loop',
+    exits: [{ to: 'thaw-junction', label: 'Back to Thaw Junction', x: 12 }, { to: 'crypto-lock', label: 'Approach the Crypto Lock', x: 88 }],
+  },
+  'crypto-lock': {
+    id: 'crypto-lock', name: 'Crypto Lock', kind: 'Zone finale',
+    background: '/assets/arenas/npc_crypto_crab.webp', requiredNpc: 'phishing_siren', requiresBoss: 'buffer_overflow',
+    description: 'Frozen ciphers seal the route inward. The Crypto Crab turns its shell to face you: ENCRYPTED, it says, in every pixel.',
+    clearedDescription: 'The lock opens. What the ice held in place is finally, quietly, let go.',
+    nodeId: 'crypto-lock',
+    exits: [{ to: 'siren-loop', label: 'Back to Siren Loop', x: 12 }, { to: 'thaw-gate', label: 'Follow the thaw out', x: 88 }],
+  },
+  'thaw-gate': {
+    id: 'thaw-gate', name: 'Thaw Gate', kind: 'Homeward path',
+    background: '/assets/forge/station_bulkhead.webp', requiresBoss: 'crypto_crab',
+    description: 'The channel hums at room temperature. Felix has wired your next hatch to the return lantern.',
+    inspect: 'Felix: "You listened to the frozen ones and brought the silence back warm. That is rarer than you know."',
+    exits: [{ to: 'crypto-lock', label: 'Back to the quiet lock', x: 12 }, { to: 'cold-archive', label: 'Return to Cold Archive', x: 88 }],
+  },
+};
