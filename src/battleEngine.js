@@ -452,8 +452,8 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
     bitWraithPierce = true;
   }
 
-  // P4 — glitch_hydra head-lock: until three distinct elements have landed
-  // super-effective hits, the hydra's HP cannot drop below 30%.
+  // P4 — glitch_hydra head-lock: until three super-effective strikes land,
+  // the hydra's HP cannot drop below 30%.
   let hydraFloor = 0;
   if (options.hydraFloor && actor.label === 'player') {
     hydraFloor = options.hydraFloor;
@@ -489,8 +489,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
         { ...resolvedMove, accuracy: effectiveAccuracy }
       );
 
-  // glitch_hydra head-lock: HP cannot drop below the floor until three
-  // distinct elements have landed super-effective hits (tracked in screen state).
+  // The screen removes the Hydra floor after three super-effective strikes.
   if (hydraFloor > 0 && actor.label === 'player' && result.hit) {
     const maxHp = target.maxHp || target.hp;
     const floorHp = Math.ceil(maxHp * hydraFloor);
@@ -568,6 +567,7 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
     moveName: resolvedMove.name,
     moveKey: actor.moveKey,
     vfxKey: resolvedMove.vfxKey,
+    element: resolvedMove.element,
     damage: result.damage,
     effectiveness: result.effectiveness,
     hit: result.hit,

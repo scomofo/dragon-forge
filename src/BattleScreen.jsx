@@ -23,6 +23,9 @@ import VfxOverlay from './VfxOverlay';
 import { getBattlePresentationProfile, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, shouldAnimateBattleEvent } from './battlePresentation';
 import { resolveBattlePose } from './battleSets';
 import { resolveBattleArena } from './arenas';
+import BattleCues from './BattleCues';
+import { getBattleCues } from './battleCueModel';
+import { advanceHydraHeads, resetsMemoryLeak, HYDRA_HEAD_COUNT, HYDRA_HP_FLOOR } from './bossMechanics';
 import useGamepadController from './useGamepadController';
 import {
   screenShake, hitFlash, criticalHit, shatterKO,
@@ -162,7 +165,7 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     heatStacks: 0,                       // buffer_overflow
     pierceNext: false,                   // bit_wraith
     prevElement: null, decrypted: false, // crypto_crab
-    elementsHit: [],                     // glitch_hydra
+    headsBroken: 0,                      // glitch_hydra
     fuseTurns: 6,                        // logic_bomb
     hardenStacks: 0,                     // recursive_golem
     perchUsed: false,                    // protocol_vulture
@@ -990,10 +993,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       // bit_wraith: miss primes pierce → next hit ignores Defend
       bitWraithPierce: state.bossPatternId === 'bit_wraith' && bs.pierceNext,
 
-      // glitch_hydra: HP floor until 3 distinct elements land super-effective
-      hydraFloor: state.bossPatternId === 'glitch_hydra' && bs.elementsHit.length < 3 ? 0.3 : 0,
+      // Three successful super-effective strikes break the head lock.
+      hydraFloor: state.bossPatternId === 'glitch_hydra' && bs.headsBroken < HYDRA_HEAD_COUNT ? HYDRA_HP_FLOOR : 0,
     };
-    // memory_leak: DEF climbs one pip per turn until an ice SE hit resets it.
+    // memory_leak: DEF climbs one pip per turn until an ice hit resets it.
     if (state.bossPatternId === 'memory_leak') {
       const pips = Math.min(5, (bs.leakPips || 0) + 1);
       finalNpcState = { ...finalNpcState, def: Math.floor(finalNpcState.def * (1 + pips * 0.1)) };
@@ -1034,14 +1037,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       }
     }
 
-    // glitch_hydra: three super-effective hits of three distinct elements
-    // unlock the sub-30% threshold (per-head tracking).
-    if (state.bossPatternId === 'glitch_hydra' && playerAttackEvent?.hit && playerAttackEvent.effectiveness > 1) {
-      const el = moves[playerAttackEvent.moveKey]?.element;
-      if (el && !bs.elementsHit.includes(el)) {
-        const elementsHit = [...bs.elementsHit, el];
-        dispatch({ type: 'SET_BOSS_STATE', value: { elementsHit } });
-        dispatch({ type: 'ADD_LOG', text: `Head down (${elementsHit.length}/3 elements): ${el.toUpperCase()}` });
+    if (state.bossPatternId === 'glitch_hydra') {
+      const headsBroken = advanceHydraHeads(bs.headsBroken, playerAttackEvent);
+      if (headsBroken > bs.headsBroken) {
+        dispatch({ type: 'SET_BOSS_STATE', value: { headsBroken } });
+        dispatch({ type: 'ADD_LOG', text: `Head down (${headsBroken}/${HYDRA_HEAD_COUNT})${headsBroken === HYDRA_HEAD_COUNT ? ' — HP lock broken!' : ' — keep hitting its weakness.'}` });
       }
     }
 
@@ -1052,9 +1052,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       dispatch({ type: 'ADD_LOG', text: `Fuse ${Math.max(0, bs.fuseTurns - 1)} — Final Detonation at zero.` });
     }
 
-    // memory_leak: ice super-effective hits disarm the leak back to zero.
-    if (state.bossPatternId === 'memory_leak' && playerAttackEvent?.hit &&
-        moves[playerAttackEvent.moveKey]?.element === 'ice' && playerAttackEvent.effectiveness > 1) {
+    // Ice clears the leak even though the boss resists ice damage.
+    if (state.bossPatternId === 'memory_leak' && resetsMemoryLeak(playerAttackEvent)) {
       dispatch({ type: 'SET_BOSS_STATE', value: { leakPips: 0 } });
       dispatch({ type: 'ADD_LOG', text: `Ice strike resets the ${state.npc.name} leak — DEF climb cleared.` });
     }
@@ -1594,6 +1593,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const playerHpPercent = Math.max(0, Math.min(100, (state.playerHp / state.playerMaxHp) * 100));
   const npcHpPercent = Math.max(0, Math.min(100, (state.npcHp / state.npcMaxHp) * 100));
   const isResolvingTurn = state.phase !== PHASES.PLAYER_TURN || !introDone;
+  const battleCues = getBattleCues(state, { playerDefendedLastTurn: playerDefendedLastTurn.current, isMirrorAdmin: battleConfig?.isMirrorAdmin });
   const battleEdge = getBattleEdge(playerHpPercent, npcHpPercent, playerHpState, npcHpState);
   const battleRank = getBattleRank(state.turnCount + 1, state.maxDamageDealt, playerHpPercent);
   // P1 battle-set poses: derived from live sprite classes so shipped sheets
@@ -1791,11 +1791,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           <span>{isResolvingTurn ? 'RESOLVING' : 'PLAYER TURN'}</span>
           <strong>TURN {state.turnCount + 1}</strong>
           <small>ENEMY: {getMoveProfileText(npc.moveKeys)}</small>
-          {state.npcChargedMove && (
-            <div className="charge-warning">
-              ⚡ CHARGING: {moves[state.npcChargedMove]?.name?.toUpperCase()}
-            </div>
-          )}
+          <BattleCues cues={battleCues} />
         </div>
 
         <div

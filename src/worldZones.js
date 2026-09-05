@@ -205,7 +205,7 @@ export const STORM_SPINE_ROOMS = {
     id: 'overclock-gantry', name: 'Overclock Gantry', kind: 'Shelter',
     background: '/assets/arenas/storm.webp',
     description: 'A maintenance gantry over the storm spine. Somewhere above the grid, three pairs of eyes open in sequence, then close.',
-    inspect: 'Felix, by wire: "The hydra watches from the ceiling grid. Three heads, three tempers — each one falls only to a different element. Count your lanes before you commit."',
+    inspect: 'Felix, by wire: "The hydra watches from the ceiling grid. Three heads, three tempers — break one with each Ice or Shadow strike. Keep hitting its weakness until the lock gives."',
     exits: [{ to: 'live-wire', label: 'Step onto the live wire', x: 88 }],
   },
   'live-wire': {
