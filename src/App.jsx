@@ -14,11 +14,12 @@ import AdminCoreScreen from './AdminCoreScreen';
 import ShopScreen from './ShopScreen';
 import StatsScreen from './StatsScreen';
 import SettingsScreen from './SettingsScreen';
+import SaveRecovery, { SaveStatusBanner, useSaveStatus } from './SaveRecovery';
 import SingularityScreen from './SingularityScreen';
 import ForgeScreen from './ForgeScreen';
 import CreditsScreen from './CreditsScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
-import { loadSave, recordRemnantDefeat, beginSession, accumulatePlaytime, grantWelcomeBack, rememberExpedition } from './persistence';
+import { loadSave, getSaveStatus, recordRemnantDefeat, beginSession, accumulatePlaytime, grantWelcomeBack, rememberExpedition } from './persistence';
 import { getExpedition } from './expeditions';
 import { getSingularityStage, scaleBossForPlayer } from './singularityProgress';
 import { checkMilestones } from './journalMilestones';
@@ -47,6 +48,9 @@ export default function App() {
   const [screen, setScreen] = useState(SCREENS.TITLE);
   const [battleConfig, setBattleConfig] = useState(null);
   const [save, setSave] = useState(() => loadSave());
+  const [saveSessionEpoch, setSaveSessionEpoch] = useState(0);
+  const saveSessionEpochRef = useRef(0);
+  const saveStatus = useSaveStatus();
   function refreshSave() {
     const newSave = loadSave();
     const prevIds = new Set(checkMilestones(save).filter(m => m.newlyClaimed).map(m => m.id));
@@ -72,20 +76,39 @@ export default function App() {
   // Session telemetry + welcome-back beat. beginSession is guarded to one call
   // per page load internally, so StrictMode's double-effect can't double-count.
   useEffect(() => {
+    if (saveStatus.blocked) return;
     const { daysAway, grant } = beginSession();
     if (grant > 0) {
       grantWelcomeBack(grant);
       setSave(loadSave());
       showToast(`WELCOME BACK, SKYE — ${daysAway} days away. Felix kept the forge warm. +${grant} ◆`);
     }
-    const heartbeat = setInterval(accumulatePlaytime, 60000);
-    window.addEventListener('beforeunload', accumulatePlaytime);
+    const recordPlaytime = () => {
+      // A replacement save belongs to the next session. An old effect's cleanup
+      // must not add time from this session to imported or restored progress.
+      if (saveSessionEpochRef.current === saveSessionEpoch && !getSaveStatus().blocked) accumulatePlaytime();
+    };
+    const heartbeat = setInterval(recordPlaytime, 60000);
+    window.addEventListener('beforeunload', recordPlaytime);
     return () => {
       clearInterval(heartbeat);
-      window.removeEventListener('beforeunload', accumulatePlaytime);
-      accumulatePlaytime();
+      window.removeEventListener('beforeunload', recordPlaytime);
+      recordPlaytime();
     };
-  }, []);
+  }, [saveStatus.blocked, saveSessionEpoch]);
+
+  function handleSaveReplaced() {
+    saveSessionEpochRef.current += 1;
+    setSaveSessionEpoch(saveSessionEpochRef.current);
+    setSave(loadSave());
+    setToasts([]);
+  }
+
+  function handleSaveRecovered() {
+    handleSaveReplaced();
+    setBattleConfig(null);
+    setScreen(SCREENS.TITLE);
+  }
 
   function handleStartGame() {
     playSound('screenTransition');
@@ -233,8 +256,15 @@ export default function App() {
     setScreen(wonMirrorAdmin ? SCREENS.CREDITS : SCREENS.SINGULARITY);
   }
 
+  // Recovery must own the whole screen: mounting TitleScreen would mark the
+  // intro seen, and other game screens can write progress from their effects.
+  if (saveStatus.blocked) return (
+    <div className="app"><SaveRecovery onRecovered={handleSaveRecovered} /></div>
+  );
+
   return (
     <div className={`app${stage >= 2 ? ` corruption-stage-${stage}` : ''}`}>
+      <SaveStatusBanner />
       {screen === SCREENS.TITLE && (
         <TitleScreen onStart={handleStartGame} save={save} />
       )}
@@ -292,7 +322,7 @@ export default function App() {
       )}
       {screen === SCREENS.SETTINGS && (
         <div className="screen-enter" key="settings">
-          <SettingsScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+          <SettingsScreen onNavigate={handleNavigate} save={save} refreshSave={handleSaveReplaced} />
         </div>
       )}
       {screen === SCREENS.SINGULARITY && (

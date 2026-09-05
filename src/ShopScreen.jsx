@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { playSound } from './soundEngine';
 import { assetUrl } from './utils';
 import { dragons, elementColors, JOURNAL_DRAGON_IDS } from './gameData';
-import { spendScraps, addDragonXp, upgradeDragonShiny, updatePityCounter, setXpBoost, spendCores, setStabilityBoost, meltCores, setVoidEgg } from './persistence';
+import { loadSave, writeSave, spendScraps, addDragonXp, upgradeDragonShiny, updatePityCounter, setXpBoost, spendCores, setStabilityBoost, meltCores, setVoidEgg } from './persistence';
 import { BUY_ITEMS, FORGE_RECIPES, canAffordBuy, canForge, getForgeableElement, ELEMENTS_FOR_CORES } from './shopItems';
 import NavBar from './NavBar';
 
@@ -54,14 +54,11 @@ export default function ShopScreen({ onNavigate, save, refreshSave }) {
               const variance = Math.floor(base[stat] * 0.2);
               rerolled[stat] = base[stat] + Math.floor(Math.random() * variance * 2) - variance;
             }
-            // Write via persistence — guard against missing/cleared storage.
-            const raw = localStorage.getItem('dragonforge_save');
-            if (raw) {
-              const s = JSON.parse(raw);
-              if (s?.dragons?.[targetDragonId]) {
-                s.dragons[targetDragonId].fusedBaseStats = rerolled;
-                localStorage.setItem('dragonforge_save', JSON.stringify(s));
-              }
+            // Include pending purchases when storage is temporarily full.
+            const current = loadSave();
+            if (current.dragons[targetDragonId]) {
+              current.dragons[targetDragonId].fusedBaseStats = rerolled;
+              writeSave(current);
             }
           }
         }

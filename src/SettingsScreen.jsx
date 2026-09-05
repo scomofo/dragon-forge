@@ -1,24 +1,7 @@
-import { useState } from 'react';
-import { playSound } from './soundEngine';
-import { resetSave } from './persistence';
 import NavBar from './NavBar';
+import { SaveDataControls } from './SaveRecovery';
 
 export default function SettingsScreen({ onNavigate, save, refreshSave }) {
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [resetDone, setResetDone] = useState(false);
-
-  const handleReset = () => {
-    if (!confirmReset) {
-      setConfirmReset(true);
-      return;
-    }
-    playSound('terminalFail');
-    resetSave();
-    refreshSave();
-    setResetDone(true);
-    setConfirmReset(false);
-  };
-
   return (
     <div>
       <NavBar activeScreen="settings" onNavigate={onNavigate} save={save} />
@@ -28,18 +11,7 @@ export default function SettingsScreen({ onNavigate, save, refreshSave }) {
 
         <div className="settings-section">
           <h3 className="settings-section-title">Save Data</h3>
-          <div className="settings-option">
-            <div>
-              <div className="settings-option-name">Reset All Progress</div>
-              <div className="settings-option-desc">Delete all save data and start fresh. This cannot be undone.</div>
-            </div>
-            <button
-              className={`settings-btn ${confirmReset ? 'settings-btn-danger' : ''}`}
-              onClick={handleReset}
-            >
-              {resetDone ? 'RESET COMPLETE' : confirmReset ? 'CONFIRM RESET' : 'RESET SAVE'}
-            </button>
-          </div>
+          <SaveDataControls onChange={refreshSave} />
         </div>
 
         <div className="settings-section">

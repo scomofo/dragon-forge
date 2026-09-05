@@ -66,3 +66,5 @@ The target is a replayable 15–20 minute opening slice: awaken → first dragon
 | Reliability | Clean install, save/resume, first hatch, first battle, failure/retry, sound controls, keyboard/gamepad and narrow-screen play all pass in real browsers. |
 
 Use observed playtests to decide when the slice is ready. Test counts and asset totals cannot establish that the game is compelling or predict a commercial hit.
+
+Save recovery now protects unreadable progress, keeps a previous-write backup, retains failed writes in the current tab, and provides retry, downloads, and confirmed recovery actions (ADR-0012). The remaining save gate is the real-browser failure and input pass in `docs/save-recovery-playtest.md`; implementation and automated coverage do not close it. Then measure the opening slice with keyboard/controller/touch and normal/reduced motion, recording where players need coaching and whether the first boss teaches a usable counter.

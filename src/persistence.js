@@ -5,8 +5,8 @@ import { applyFrozenCacheAction, getFrozenCacheProgress } from './frozenCache';
 import { applyStormSpineAction, getStormSpineProgress } from './stormSpine';
 import { applyAdminCoreAction, getAdminCoreProgress } from './adminCore';
 import { isExpeditionAvailable } from './expeditions';
-
-const STORAGE_KEY = 'dragonforge_save';
+import { fillSaveDefaults, validateSaveShape } from './saveValidation';
+import { createSaveStorage, READY_SAVE_STATUS } from './saveStorage';
 
 const DEFAULT_SAVE = {
   // `discovered` is a permanent codex flag: once a dragon has ever been owned it stays
@@ -92,7 +92,7 @@ function migrateSave(save) {
   if (Array.isArray(save.fusionLineage)) {
     for (const entry of save.fusionLineage) {
       for (const id of [entry?.parentA, entry?.parentB, entry?.offspring]) {
-        if (id && save.dragons[id]) save.dragons[id].discovered = true;
+        if (id && Object.hasOwn(save.dragons, id)) save.dragons[id].discovered = true;
       }
     }
   }
@@ -178,22 +178,92 @@ function migrateSave(save) {
   return save;
 }
 
-export function loadSave() {
-  try {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return structuredClone(DEFAULT_SAVE);
-    }
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return structuredClone(DEFAULT_SAVE);
-    return migrateSave(JSON.parse(raw));
-  } catch {
-    return structuredClone(DEFAULT_SAVE);
+function decodeSave(raw) {
+  const parsed = JSON.parse(raw);
+  validateSaveShape(parsed);
+  return fillSaveDefaults(migrateSave(parsed), DEFAULT_SAVE);
+}
+
+let saveStore;
+let storageWindow;
+function getSaveStore() {
+  if (typeof window === 'undefined') return null;
+  if (!saveStore || storageWindow !== window) {
+    storageWindow = window;
+    const owner = window;
+    saveStore = createSaveStorage({
+      getStorage: () => owner.localStorage,
+      makeDefault: () => structuredClone(DEFAULT_SAVE),
+      decode: decodeSave,
+    });
   }
+  return saveStore;
+}
+
+export function loadSave() {
+  return getSaveStore()?.load() ?? structuredClone(DEFAULT_SAVE);
 }
 
 export function writeSave(save) {
-  if (typeof window === 'undefined' || !window.localStorage) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
+  return getSaveStore()?.write(save) ?? false;
+}
+
+export function getSaveStatus() {
+  return getSaveStore()?.getStatus() ?? READY_SAVE_STATUS;
+}
+
+export function subscribeSaveStatus(listener) {
+  return getSaveStore()?.subscribe(listener) ?? (() => {});
+}
+
+export function retrySave() {
+  return getSaveStore()?.retry() ?? { ok: false, error: 'Browser storage is unavailable.' };
+}
+
+function changedSave(result) {
+  if (result.ok) sessionStarted = false;
+  return result;
+}
+
+export function restoreSaveBackup() {
+  return changedSave(getSaveStore()?.restore() ?? { ok: false, error: 'Browser storage is unavailable.' });
+}
+
+export function reloadStoredSave() {
+  return changedSave(getSaveStore()?.reloadStored() ?? { ok: false, error: 'Browser storage is unavailable.' });
+}
+
+export function getSaveDownload(kind = 'current') {
+  return getSaveStore()?.download(kind) ?? null;
+}
+
+function decodeImport(text) {
+  if (typeof text !== 'string' || new TextEncoder().encode(text).length > 1024 * 1024) {
+    throw new Error('Choose a Dragon Forge save smaller than 1 MB.');
+  }
+  return decodeSave(text);
+}
+
+export function previewSaveImport(text) {
+  try {
+    const save = decodeImport(text);
+    return { ok: true, summary: {
+      ownedDragons: Object.values(save.dragons).filter(dragon => dragon.owned).length,
+      battlesWon: save.stats.battlesWon,
+      dataScraps: save.dataScraps,
+    } };
+  } catch (error) {
+    return { ok: false, error: error instanceof SyntaxError ? 'This file is not readable save JSON.' : error.message };
+  }
+}
+
+export function importSave(text) {
+  try {
+    const save = decodeImport(text);
+    return changedSave(getSaveStore()?.replace(save) ?? { ok: false, error: 'Browser storage is unavailable.' });
+  } catch (error) {
+    return { ok: false, error: error instanceof SyntaxError ? 'This file is not readable save JSON.' : error.message };
+  }
 }
 
 export function rememberExpedition(screen) {
@@ -577,7 +647,7 @@ export function startNewGamePlus() {
 }
 
 export function resetSave() {
-  localStorage.removeItem(STORAGE_KEY);
+  return changedSave(getSaveStore()?.reset() ?? { ok: false, error: 'Browser storage is unavailable.' });
 }
 
 // === FORGE / SKYE STATE ===
@@ -689,8 +759,9 @@ export function getWelcomeBackGrant(daysAway) {
 let sessionStarted = false;
 export function beginSession() {
   if (sessionStarted) return { daysAway: 0, grant: 0 };
-  sessionStarted = true;
   const save = loadSave();
+  if (getSaveStatus().blocked) return { daysAway: 0, grant: 0 };
+  sessionStarted = true;
   const now = Date.now();
   const daysAway = computeDaysAway(save.activity.lastPlayed, now);
   const hasProgress = (save.defeatedNpcs || []).length > 0 || (save.stats?.battlesWon || 0) > 0;
@@ -715,6 +786,7 @@ export function grantWelcomeBack(amount) {
 // Playtime accrues in heartbeats (App calls this on an interval and on unload).
 export function accumulatePlaytime() {
   const save = loadSave();
+  if (getSaveStatus().blocked) return;
   const start = save.activity.sessionStart;
   if (!start) return;
   const now = Date.now();

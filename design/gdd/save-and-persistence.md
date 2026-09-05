@@ -2,13 +2,13 @@
 
 > **Status**: Implemented
 > **Author**: reverse-document (Claude)
-> **Last Updated**: 2026-06-16
-> **Last Verified**: 2026-06-16
+> **Last Updated**: 2026-09-05
+> **Last Verified**: 2026-09-05 (save recovery implementation; browser acceptance pending)
 > **Implements Pillar**: P3 — The Myth Is Hardware (diegetic save); P5 — Earned Mastery, Never Trivialized
 
 ## Summary
 
-Save & Persistence is the single-file, `localStorage`-backed state layer that makes every other system in Dragon Forge durable across browser sessions. One canonical save object (key `dragonforge_save`) holds the complete game state — dragon ownership, currency, progression flags, inventory, records, and Singularity progress — and is read/written synchronously on every state mutation. A forward-compat migration function (`migrateSave`) backfills any field that did not exist in the save version the player last played, including a structural repair that reconstructs the `discovered` codex flag for dragons that existed in fusion lineages before the flag was introduced.
+Save & Persistence stores the canonical game state at `dragonforge_save`, with a previous-write backup and preserved damaged originals for explicit recovery. `persistence.js` owns the schema and gameplay helpers; `saveValidation.js` validates known field shapes; `saveStorage.js` handles guarded reads/writes and pending progress. Additive migration retains legacy progress, including reconstruction of the `discovered` codex flag from fusion lineages.
 
 > **Quick reference** — Layer: `Foundation` · Priority: `MVP` · Key deps: `None` (all other systems depend on this; this system depends on none)
 
@@ -16,13 +16,13 @@ Save & Persistence is the single-file, `localStorage`-backed state layer that ma
 
 ## Overview
 
-Every screen in Dragon Forge calls helpers exported from `src/persistence.js` to read and mutate game state. There is no in-memory game state separate from the save object; `loadSave()` reads from `localStorage`, helpers mutate a deserialized copy, and `writeSave()` serializes it back. The `DEFAULT_SAVE` constant defines the canonical schema for a new game. When `loadSave()` finds an existing save, it passes it through `migrateSave()`, which applies a flat list of backfill checks (one `if (field === undefined)` guard per field) to bring any older save up to the current schema without data loss. The system is intentionally simple: no versioning integer, no migration queue, no server round-trip.
+Screens call `persistence.js` helpers, which load a copy, mutate it, and attempt a synchronous write. `DEFAULT_SAVE` remains the canonical schema. Load validates present fields, runs semantic `migrateSave()` backfills, then fills missing defaults. If a write fails, subsequent helpers use the pending in-memory save so later mutations do not discard unsaved progress. A status subscription drives the recovery screen or persistent save warning. There is no versioning integer, migration queue, or server round-trip.
 
 ---
 
 ## Player Fantasy
 
-This is an infrastructure system. The player never sees persistence directly, but they feel it as **trustworthiness**: progress is never lost, milestones never double-count, and returning to a saved game feels exactly like leaving it. The emotional contract is "the game remembers everything you did." Secondary feeling for returning players: the `introSeen` heuristic and retroactive milestone grants mean the game correctly infers what they have already accomplished and does not make them re-earn it.
+The target feeling is **trustworthiness**: normal saving stays quiet; failures explain what is retained and give the player a recovery choice. A local backup cannot survive origin storage deletion, and memory-only progress can be lost when a tab closes, so downloads provide a portable copy. Returning players retain the `introSeen` heuristic and retroactive milestone grants instead of having to re-earn old progress.
 
 Primary MDA aesthetics served: **Submission** (the player trusts the system enough to stop worrying about losing progress) and **Achievement** (milestone and record state are permanent, so every accomplishment accumulates visibly).
 
@@ -32,15 +32,15 @@ Primary MDA aesthetics served: **Submission** (the player trusts the system enou
 
 ### Core Rules
 
-1. **Storage key**: The sole `localStorage` key is `dragonforge_save`. No other keys are written by the game engine. (`persistence.js` line 3)
+1. **Storage keys**: `dragonforge_save` remains the main object. `dragonforge_save_backup` holds the previous changed write; `dragonforge_save_damaged` and numbered suffixes retain raw damaged originals during explicit recovery. These are managed by `saveStorage.js`.
 
-2. **Load path**: `loadSave()` calls `localStorage.getItem(STORAGE_KEY)`. If the result is `null` or `JSON.parse` throws, it returns `structuredClone(DEFAULT_SAVE)` — a fresh game state. Otherwise it calls `migrateSave(JSON.parse(raw))` and returns the result. (`persistence.js` lines 147–155)
+2. **Load path**: A genuinely empty store starts with defaults. Malformed JSON, invalid field shapes, inaccessible storage on startup, or a missing main save with a backup block gameplay. A complete fallback object is available for rendering, but it does not authorize fresh-game writes. Recovery must explicitly restore, import, or reset.
 
-3. **Write path**: `writeSave(save)` calls `localStorage.setItem(STORAGE_KEY, JSON.stringify(save))` immediately and synchronously. There is no debounce, batch queue, or dirty flag. Every exported helper follows the pattern: call `loadSave()`, mutate the returned object, call `writeSave()`. (`persistence.js` lines 157–159)
+3. **Write path**: `writeSave(save)` validates, compares the stored main value with the last value read, writes the safety copy, then writes the main value. Failure returns `false` and retains ordinary gameplay changes in memory for retry/export. A detected external change blocks further writes until the player resolves the conflict. This comparison is not an atomic cross-tab lock.
 
 4. **No versioning integer**: Migration is field-presence-based (`if (field === undefined)`), not schema-version-based. Every migration guard runs on every load, making the function idempotent: calling `migrateSave` on an already-migrated save is a no-op.
 
-5. **Reset**: `resetSave()` calls `localStorage.removeItem(STORAGE_KEY)`. The next `loadSave()` call returns `DEFAULT_SAVE`. (`persistence.js` lines 443–445)
+5. **Explicit replacement**: Import (up to 1 MiB) previews owned dragons, wins, and scraps before confirmation. Restore confirms replacement with the backup. Damaged main bytes must be archived before either overwrites them. Confirmed reset removes recovery copies and writes a fresh main save; failures retain the main value and attempt to restore removed copies. Multi-key rollback is best effort. These actions return an explicit success/error result.
 
 6. **Dragon `discovered` flag semantics**: `discovered` is a permanent codex flag. Once `true` it is never set back to `false`, even when fusion consumes a dragon (which sets `owned = false`). Codex collection-count milestones count `discovered`, not `owned`, so fusing never regresses progress. (`persistence.js` lines 6–8, comment block)
 
@@ -60,7 +60,7 @@ Primary MDA aesthetics served: **Submission** (the player trusts the system enou
 
 ### States and Transitions
 
-The save object has no explicit state machine. Relevant boolean/enum fields that act as state:
+Storage status is separate from the save schema: `ready` permits play; `unsaved` retains session progress and shows retry/download; `recovery`, `unavailable`, and `conflict` block gameplay. Startup telemetry and heartbeats skip blocked states. The save itself contains these progression fields:
 
 | Field | Values | Transition Rule |
 |-------|--------|----------------|
@@ -142,8 +142,11 @@ Source: `persistence.js` lines 253–265.
 
 | Scenario | Expected Behavior | Rationale |
 |----------|------------------|-----------|
-| `localStorage` is unavailable (private browsing, storage full, SecurityError) | `loadSave()` catches the exception and returns `structuredClone(DEFAULT_SAVE)`. `writeSave()` will also silently fail — the session continues without persistence. | Browser compatibility: private mode blocks `localStorage` on some browsers; the game should not hard-crash. |
-| Corrupted save (non-JSON string) | `JSON.parse` throws; `loadSave()` catch block returns `DEFAULT_SAVE`. Save is not repaired — next write will overwrite the corrupted string with a fresh save. | Simple and safe; data loss is already guaranteed if the JSON is unrecoverable. |
+| Storage cannot be read on startup | Block gameplay and offer retry/import/recovery; do not write defaults. | Existing progress may still be present. |
+| Storage write fails during play | Show a persistent warning, retain all subsequent changes in memory, and offer retry/download. | The next helper must not reload older disk progress. |
+| Malformed JSON or invalid nested shape | Block gameplay, leave raw main bytes untouched, and offer damaged download plus explicit recovery. | Unreadable data must not be silently overwritten by startup or heartbeat writes. |
+| Backup/archive write fails | Do not overwrite the main save; report failure. | Recovery protection must succeed before replacement. |
+| Another tab changes the main save before a pending write | Block the write, retain this session for download, and confirm loading the stored progress. | Prevent detected stale writes from silently replacing another session. |
 | Dragon pulled that player already owns | XP is granted to the existing dragon via `applyDragonXp` instead of setting `owned = true` again. No duplicate entry is created. | Handled by hatchery callers, not by `persistence.js` itself. |
 | Fusion with insufficient scraps (< 100) | `fuseDragons()` returns `null` and writes nothing. | Guard at `persistence.js` line 360. |
 | `xpForLevel` called at level 50 | Returns 290 (the formula is evaluated, result is valid but unused — the `while` loop condition `dragon.level < 50` prevents the value from being consumed). | No division or undefined behavior; the cap is in the loop guard, not the formula. |
@@ -176,7 +179,7 @@ This system is the **foundation layer**. All other systems depend on it; it depe
 
 **External dependency**: `forgeData.js` — `canEquipRelic()` is imported by `persistence.js` and called inside `equipRelic()`. This is the one case where `persistence.js` imports from a content module rather than being purely data-agnostic. (`persistence.js` line 1)
 
-**ADR reference**: ADR-0003 (localStorage as the sole persistence backend) has not been written yet. This GDD documents the implemented decision. The ADR should be authored to record the rationale: synchronous localStorage provides zero infrastructure cost and acceptable reliability for a browser-only, single-player game, while ruling out IndexedDB (async complexity), server-side sync (requires auth/infra), and cookie storage (size limit).
+**ADR references**: [ADR-0003](../../docs/architecture/adr-0003-single-localstorage-save-migrate.md) records the canonical schema and React ownership. [ADR-0012](../../docs/architecture/adr-0012-protected-save-recovery.md) supersedes its corrupt-save fallback and unguarded storage operations.
 
 ---
 
@@ -184,7 +187,7 @@ This system is the **foundation layer**. All other systems depend on it; it depe
 
 | Parameter | Current Value | Safe Range | Category | File:Line | Effect of Increase | Effect of Decrease |
 |-----------|--------------|------------|----------|-----------|-------------------|-------------------|
-| `STORAGE_KEY` | `'dragonforge_save'` | N/A — string constant | Gate | `persistence.js:3` | N/A | N/A |
+| Main storage key | `'dragonforge_save'` | N/A — compatibility contract | Gate | `saveStorage.js` | N/A | N/A |
 | XP base at level 1 (`50` in `xpForLevel`) | 50 | 30–100 | Feel | `persistence.js:188` | Slower early levelling; more grinding before first stage unlock | Faster early power spike; reduces sense of level-up accomplishment |
 | XP ramp per level (`5` in `xpForLevel`) | 5 | 2–15 | Curve | `persistence.js:188` | Steeper late-game XP wall; levels 40–50 become very slow | Flatter curve; high levels feel less meaningful as milestones |
 | Dragon level cap | 50 | 20–100 | Gate | `persistence.js:197` | More room for long-term grind; stat spread widens | Shorter progression arc; caps out earlier in campaign |
@@ -204,7 +207,8 @@ This is a pure data-layer system. No visual or audio output is generated by `per
 | Event | Visual Feedback | Audio Feedback | Priority |
 |-------|----------------|---------------|----------|
 | Save written | None (silent background operation) | None | N/A |
-| Load failure / corrupt save | App-level recovery (returns DEFAULT_SAVE; calling code decides UI) | None | Low |
+| Load failure / corrupt save | Blocking recovery screen with explicit actions and damaged download | None | High |
+| Write failure during play | Persistent retry/download warning, including during battle | None | High |
 | Level-up (triggered by `applyDragonXp`) | Handled by caller (BattleScreen, HatcheryScreen) | Handled by caller | High |
 | Milestone claimed (`claimMilestone`) | Handled by caller (JournalScreen) | Handled by caller | High |
 
@@ -212,13 +216,13 @@ This is a pure data-layer system. No visual or audio output is generated by `per
 
 ## Game Feel
 
-N/A — turn-based browser game. This is a data persistence system with no direct player-facing interaction or timing characteristics. All feel targets are the responsibility of the screen components that call persistence helpers and render the results.
+Successful saves stay quiet. A failed write keeps the active battle mounted while retry and download remain available. Recovery text must state what will be replaced, and cancellation must leave progress unchanged.
 
 ---
 
 ## UI Requirements
 
-No direct UI. The save object drives UI in other screens by being passed as the `save` prop to every screen component via `App.jsx`. The relevant UI concern is **data freshness**: after any persistence write, the caller must invoke `refreshSave()` (defined in `App.jsx`) to re-read from storage and trigger a React re-render with the updated state.
+`SaveRecovery.jsx` supplies the blocking recovery screen, persistent save warning, and shared Settings save controls. Import, restore, reset, and loading conflicting stored progress require explicit confirmation; errors must not show success feedback. Controls need keyboard focus, accessible status/error text, and a readable 390px layout. Gameplay callers still invoke `refreshSave()` to display the current save, including pending in-memory progress.
 
 ---
 
@@ -241,8 +245,13 @@ No direct UI. The save object drives UI in other screens by being passed as the 
 
 ## Acceptance Criteria
 
-- [ ] `loadSave()` returns `DEFAULT_SAVE` when `localStorage` is empty or inaccessible.
-- [ ] `loadSave()` returns `DEFAULT_SAVE` (not a partial object or throw) when the stored value is not valid JSON.
+- [ ] An empty store starts normally; inaccessible startup storage blocks writes without throwing.
+- [ ] Malformed JSON or invalid nested data opens recovery; startup and heartbeat leave its bytes untouched.
+- [ ] Failed writes preserve sequential gameplay mutations for retry and current-save download.
+- [ ] Backup/archive failures leave the main value untouched; invalid imports change nothing.
+- [ ] Confirmed restore/import preserves damaged bytes; confirmed reset removes old recovery copies.
+- [ ] A detected conflicting stored value cannot be overwritten by retrying pending progress.
+- [ ] Complete the real-browser checks in `docs/save-recovery-playtest.md`, including failures during battle and narrow-screen keyboard/touch controls.
 - [ ] `writeSave()` followed immediately by `loadSave()` returns an object equal to the written object (round-trip fidelity).
 - [ ] `migrateSave()` called on an already-migrated save produces an identical result (idempotency).
 - [ ] A save created before `discovered` existed: after `migrateSave()`, every dragon with `owned === true` or `level > 1` or `xp > 0` has `discovered === true`.
@@ -266,6 +275,5 @@ No direct UI. The save object drives UI in other screens by being passed as the 
 
 | Question | Owner | Deadline | Resolution |
 |----------|-------|----------|-----------|
-| Should ADR-0003 (localStorage as persistence backend) be written to formalize the rationale? | lead-programmer | Next architecture review | Not written as of 2026-06-16; GDD documents the decision, ADR is the formal record. |
 | If the game expands to Godot runtime, should `persistence.js` semantics be ported 1:1 to GDScript, or should the Godot build use a different save format (e.g., `.tres` resource files)? | technical-director | Before Godot persistence is implemented | The Godot build at `dragon-forge-godot/` does not yet have a persistence layer; this question is open. |
 | `canEquipRelic` is imported from `forgeData.js` inside `persistence.js`, coupling a pure-data module to a content module. Should this logic move into `persistence.js` or remain in `forgeData.js`? | lead-programmer | Next refactor sprint | Current design works; question is one of architectural cleanliness. |
