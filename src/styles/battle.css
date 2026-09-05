@@ -224,21 +224,6 @@
 .status-indicator.buff-atk { color: #ffcc44; border-color: rgba(255, 204, 68, 0.55); }
 .status-indicator.buff-def { color: #88aaff; border-color: rgba(136, 170, 255, 0.55); }
 
-.charge-warning {
-  margin-top: 4px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #ffaa00;
-  letter-spacing: 0.08em;
-  animation: chargePulse 0.55s steps(2, end) infinite;
-}
-
-@keyframes chargePulse {
-  0%   { opacity: 1; }
-  50%  { opacity: 0.35; }
-  100% { opacity: 1; }
-}
-
 .hp-bar-label {
   display: flex;
   align-items: center;
@@ -300,7 +285,8 @@
 }
 
 .turn-chip {
-  min-width: 96px;
+  min-width: 0;
+  flex: 1.1;
   padding: 9px 10px;
   color: #ff8844;
   background: rgba(0, 0, 0, 0.72);
@@ -309,27 +295,99 @@
   text-shadow: 1px 1px 0 #000;
 }
 
-.turn-chip span,
-.turn-chip strong,
-.turn-chip small {
+.turn-chip > span,
+.turn-chip > strong,
+.turn-chip > small {
   display: block;
   line-height: 1.5;
 }
 
-.turn-chip span {
+.turn-chip > span {
   color: #888;
   font-size: 6px;
 }
 
-.turn-chip strong {
+.turn-chip > strong {
   color: #ffcc00;
   font-size: 8px;
 }
 
-.turn-chip small {
+.turn-chip > small {
   margin-top: 5px;
   color: #777;
   font-size: 5px;
+}
+
+.battle-screen .panel-top {
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.battle-screen .combatant-card {
+  flex: 1;
+  min-width: 0;
+}
+
+.battle-screen .hp-bar-label {
+  flex-wrap: wrap;
+}
+
+.battle-cues {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+
+.battle-cues:not(:empty) {
+  margin-top: 8px;
+}
+
+.battle-cue {
+  --cue-color: #ffd27a;
+  padding: 6px 7px;
+  background: #161722;
+  border-left: 3px solid var(--cue-color);
+  overflow-wrap: anywhere;
+}
+
+.battle-cue.danger { --cue-color: #ff9b92; }
+.battle-cue.opening { --cue-color: #9ceac1; }
+.battle-cue.neutral { --cue-color: #b4cce9; }
+
+.battle-cue-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 8px;
+  justify-content: space-between;
+}
+
+.battle-cue-heading strong {
+  color: var(--cue-color);
+  font-size: 7px;
+  line-height: 1.7;
+}
+
+.battle-cue p {
+  margin-top: 3px;
+  color: #e0e4ee;
+  font-size: 7px;
+  line-height: 1.8;
+}
+
+.battle-cue-pips {
+  display: flex;
+  gap: 3px;
+}
+
+.battle-cue-pips i {
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--cue-color);
+}
+
+.battle-cue-pips i.filled {
+  background: var(--cue-color);
 }
 
 /* === MOVE BUTTONS === */
@@ -1568,10 +1626,28 @@
   .move-btn { min-height: 54px; padding: 6px; }
   .move-btn > strong { font-size: 7px; }
   .move-meta i { font-size: 4px; padding: 3px; }
-  .panel-top { flex-direction: column; gap: 4px; }
+  .battle-screen .panel-top {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 8px;
+  }
   .hp-bar-container { min-width: unset; }
-  .combatant-card { width: calc(100% - 20px); }
-  .turn-chip { width: calc(100% - 20px); }
+  .combatant-card { width: 100%; padding: 7px; }
+  .combatant-card.enemy { grid-column: 1; grid-row: 1; }
+  .combatant-card.player { grid-column: 2; grid-row: 1; }
+  .turn-chip {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    text-align: left;
+    padding: 6px;
+  }
+  .turn-chip > small, .battle-cues { grid-column: 1 / -1; }
+  .turn-chip > small { margin-top: 2px; }
+  .battle-cues:not(:empty) { margin-top: 5px; }
   .combat-stat-strip {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

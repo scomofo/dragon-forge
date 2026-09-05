@@ -14,7 +14,7 @@ import useGamepadController from './useGamepadController';
 
 // Per-encounter opening advice shown in the party briefing panel.
 const OPENING_HINTS = {
-  glitch_hydra: 'Three heads, three tempers — each falls only to a different element. Rotate your strikes; repeating an element stalls the kill.',
+  glitch_hydra: 'Break three heads with super-effective Ice or Shadow strikes. Repeated elements count; the third hit releases its HP lock.',
   logic_bomb: 'A six-turn fuse ticks in the feed. Every guard and swap eats a turn — spend them on damage.',
 };
 

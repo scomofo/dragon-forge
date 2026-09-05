@@ -6,13 +6,13 @@
 export const BOSS_PATTERNS = {
   firewall_sentinel: {
     id: 'firewall_sentinel',
-    tell: 'Raises a packet-shield for two turns. EDGE reads BLOCKED.',
+    tell: 'Raises a packet shield. The enemy signal shows SHIELD CLOSED until you Defend.',
     rule: 'Incoming damage is 0 unless the hit is Phase Strike or the player Defended last turn (wait out the cycle).',
     executedByBattleEngine: true,
   },
   buffer_overflow: {
     id: 'buffer_overflow',
-    tell: 'Heat stack ticks up in the combat feed each turn.',
+    tell: 'A live heat meter builds toward four stacks.',
     rule: 'After 4 stacks, Magma Breath becomes forced and burns the user for 10% max HP.',
     executedByBattleEngine: true,
   },
@@ -36,13 +36,13 @@ export const BOSS_PATTERNS = {
   },
   glitch_hydra: {
     id: 'glitch_hydra',
-    tell: 'Three heads. Each head falls only to a different element.',
-    rule: 'Requires three super-effective hits of three distinct elements before HP can drop below 30%.',
+    tell: 'Three heads. A live counter shows how many you have broken.',
+    rule: 'Three super-effective strikes break the heads and release the 30% HP lock. Repeated elements count.',
     executedByBattleEngine: true,
   },
   logic_bomb: {
     id: 'logic_bomb',
-    tell: 'A turn fuse counts down from 6 in the feed.',
+    tell: 'A live fuse counts down from 6 beside the turn counter.',
     rule: 'If the fight reaches turn 7 with the bomb alive, Final Detonation hits and cannot miss.',
     executedByBattleEngine: true,
   },
@@ -60,14 +60,14 @@ export const BOSS_PATTERNS = {
   },
   data_corruption: {
     id: 'data_corruption',
-    tell: 'One player move slot garbles into BASIC for two turns.',
+    tell: 'The enemy signal names a corrupted move and its remaining uses.',
     rule: 'On turn 1 and after each Burn apply, a random non-signature move is replaced by basic_attack.',
     executedByBattleEngine: true,
   },
   memory_leak: {
     id: 'memory_leak',
     tell: 'DEF climbs a pip at the end of every enemy turn.',
-    rule: 'Permanent +10% DEF per turn, cap +50%. Ice super-effective hits reset the leak.',
+    rule: 'Permanent +10% DEF per turn, cap +50%. Any landed Ice strike resets the leak, even when resisted.',
     executedByBattleEngine: true,
   },
   stack_overflow: {
