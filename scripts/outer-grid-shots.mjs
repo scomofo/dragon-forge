@@ -32,6 +32,7 @@ async function main() {
   await page.addInitScript(() => {
     const dragon = { level: 6, xp: 0, owned: true, discovered: true, shiny: false, fusedBaseStats: null };
     const save = {
+      introSeen: true,
       dragons: { fire: { ...dragon, owned: false }, shadow: dragon },
       defeatedNpcs: ['firewall_sentinel', 'buffer_overflow'],
       outerGrid: { roomId: 'firewall-span', visited: ['field-locker', 'signal-approach', 'signal-breach', 'firewall-span'] },

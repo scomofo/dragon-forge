@@ -265,3 +265,77 @@ export const STORM_SPINE_ROOMS = {
     exits: [{ to: 'logic-core', label: 'Back to the quiet core', x: 12 }, { to: 'overclock-gantry', label: 'Return to the gantry', x: 88 }],
   },
 };
+
+// Sector 04 — Admin Core. The Great Reset antechamber: the mirror vestibule
+// (Felix's last unscripted line), the processional, the Recursive Gate, then
+// the cold-lantern setpiece — three save lanterns burn cold; you light ONE
+// (hoarding = reliquary cache, memory = the Reset's origin logs, passage =
+// the direct walk) and the other two burn out for the expedition. The
+// Protocol Perch waits past it; the Reset Threshold leads home. Entry needs
+// the Storm Spine finale (logic_bomb); the perch also needs the gate golem,
+// matching the DAG.
+export const ADMIN_CORE_ROOMS = {
+  'mirror-vestibule': {
+    id: 'mirror-vestibule', name: 'Mirror Vestibule', kind: 'Shelter',
+    background: '/assets/arenas/shadow.webp',
+    description: 'The antechamber of the Great Reset. Your reflection keeps perfect time; you do not. Somewhere past the glass, Protocol rehearses.',
+    inspect: 'Felix\'s last unscripted line is scrawled under the mirror: "They will offer you a clean world. Check the price tag. The old one is still yours to walk."',
+    exits: [{ to: 'processional', label: 'Walk the processional', x: 88 }],
+  },
+  'processional': {
+    id: 'processional', name: 'Processional', kind: 'Cold path',
+    background: '/assets/arenas/stone.webp',
+    description: 'Save lanterns line the walk, burning cold — every flame a world someone chose to keep.',
+    inspect: 'Each lantern is a checkpoint someone never returned to. The brackets on the gate ahead nest deeper the longer you look.',
+    exits: [{ to: 'mirror-vestibule', label: 'Back to the vestibule', x: 12 }, { to: 'recursive-gate', label: 'Approach the Recursive Gate', x: 88 }],
+  },
+  'recursive-gate': {
+    id: 'recursive-gate', name: 'Recursive Gate', kind: 'Mid-boss',
+    background: '/assets/arenas/npc_recursive_golem.webp',
+    description: 'The Recursive Golem hardens in loops, brackets within brackets, a gate that locks itself locking itself.',
+    clearedDescription: 'The loops unwind to a single open bracket. The lanterns ahead wait to be chosen.',
+    nodeId: 'recursive-gate',
+    exits: [{ to: 'processional', label: 'Back to the processional', x: 12 }, { to: 'cold-lanterns', label: 'Approach the cold lanterns', x: 88 }],
+  },
+  'cold-lanterns': {
+    id: 'cold-lanterns', name: 'Cold Lanterns', kind: 'Setpiece',
+    background: '/assets/arenas/gravity_chamber.webp', requiredNpc: 'recursive_golem',
+    description: 'Three save lanterns burn cold over the antechamber: one over a hoard, one over a memory, one over the open walk. You can light exactly one. The other two burn out.',
+    inspect: 'Hoarding warms the reliquary vault. Memory warms the echo archive. Passage warms nothing but the road.',
+    exits: [
+      { to: 'recursive-gate', label: 'Back to the gate', x: 12 },
+      { to: 'reliquary-vault', label: 'Follow the hoarding light', x: 64, route: 'hoarding' },
+      { to: 'echo-archive', label: 'Follow the memory light', x: 76, route: 'memory' },
+      { to: 'protocol-perch', label: 'Follow the passage light', x: 88, route: 'passage' },
+    ],
+  },
+  'reliquary-vault': {
+    id: 'reliquary-vault', name: 'Reliquary Vault', kind: 'Hidden room',
+    background: '/assets/arenas/lightning.webp', requiredNpc: 'recursive_golem',
+    description: 'A vault of unspent saves — hoarded scraps from runs that never happened, still warm with potential.',
+    inspect: 'A reliquary plaque: "Saved for later." Later never came. It can come for you.',
+    exits: [{ to: 'cold-lanterns', label: 'Back to the lanterns', x: 12 }, { to: 'protocol-perch', label: 'Carry the light to the perch', x: 88 }],
+  },
+  'echo-archive': {
+    id: 'echo-archive', name: 'Echo Archive', kind: 'Lore room',
+    background: '/assets/arenas/lightning.webp', requiredNpc: 'recursive_golem',
+    description: 'The archive holds the first draft of the Great Reset — and the signature at the bottom is not the Admin\'s.',
+    inspect: 'Draft zero of the Reset: "Wipe the Grid clean; begin again blameless." The margin note, in Felix\'s hand: "Blameless is not the same as kind."',
+    exits: [{ to: 'cold-lanterns', label: 'Back to the lanterns', x: 12 }, { to: 'protocol-perch', label: 'Carry the memory to the perch', x: 88 }],
+  },
+  'protocol-perch': {
+    id: 'protocol-perch', name: 'Protocol Perch', kind: 'Zone finale',
+    background: '/assets/arenas/npc_protocol_vulture.webp', requiredNpc: 'recursive_golem', requiresBoss: 'logic_bomb',
+    description: 'The Protocol Vulture roosts over the last door, patient as policy. At half strength it will perch — and drain what it is owed.',
+    clearedDescription: 'The perch stands empty. Policy, it turns out, can be outlasted.',
+    nodeId: 'protocol-perch',
+    exits: [{ to: 'cold-lanterns', label: 'Back to the lanterns', x: 12 }, { to: 'reset-threshold', label: 'Approach the Reset Threshold', x: 88 }],
+  },
+  'reset-threshold': {
+    id: 'reset-threshold', name: 'Reset Threshold', kind: 'Homeward path',
+    background: '/assets/forge/station_bulkhead.webp', requiresBoss: 'protocol_vulture',
+    description: 'The last door before the Singularity opens inward — toward home. Felix kept your lantern lit the whole time.',
+    inspect: 'Felix: "You walked the old world when they offered you a new one. That is why there is still a world to walk."',
+    exits: [{ to: 'protocol-perch', label: 'Back to the empty perch', x: 12 }, { to: 'mirror-vestibule', label: 'Return to the vestibule', x: 88 }],
+  },
+};

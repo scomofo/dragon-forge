@@ -18,6 +18,7 @@ async function seedAndShoot(browser, route, shots) {
   await page.addInitScript(() => {
     const dragon = { level: 8, xp: 0, owned: true, discovered: true, shiny: false, fusedBaseStats: null };
     const save = {
+      introSeen: true,
       dragons: { ice: dragon },
       defeatedNpcs: ['firewall_sentinel', 'bit_wraith', 'buffer_overflow'],
       outerGrid: { roomId: 'return-gate', visited: ['field-locker'] },

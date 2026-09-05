@@ -10,6 +10,7 @@ import './styles/campaignMap.css';
 import './styles/outerGrid.css';
 import './styles/frozenCache.css';
 import './styles/stormSpine.css';
+import './styles/adminCore.css';
 import './styles/hatchery.css';
 import './styles/select.css';
 import './styles/fusion.css';
