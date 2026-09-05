@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   getTypeEffectiveness, calculateDamage, calculateXpGain,
   calculateStatsForLevel, getStageForLevel, pickNpcMove, resolveTurn,
@@ -596,14 +596,19 @@ describe('pickNpcMove adaptive AI', () => {
     expect(earthquakeCount).toBeGreaterThan(20);
   });
 
-  it('buff timing: uses buff move in first 2 turns with >30% frequency', () => {
+  it('can choose an opening buff, but attacks after its opening window or a declined buff roll', () => {
     const moveKeys = ['rock_slide', 'npc_harden'];
     const ctx = { turnCount: 1, enemyHpRatio: 0.80, playerHpRatio: 0.80 };
-    let buffCount = 0;
-    for (let i = 0; i < 60; i++) {
-      if (pickNpcMove(moveKeys, 'stone', 'fire', null, ctx) === 'npc_harden') buffCount++;
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.1);
+    try {
+      expect(pickNpcMove(moveKeys, 'stone', 'fire', null, ctx)).toBe('npc_harden');
+      expect(pickNpcMove(moveKeys, 'stone', 'fire', null, { ...ctx, turnCount: 2 })).toBe('npc_harden');
+      expect(pickNpcMove(moveKeys, 'stone', 'fire', null, { ...ctx, turnCount: 3 })).not.toBe('npc_harden');
+      random.mockReturnValue(0.9);
+      expect(pickNpcMove(moveKeys, 'stone', 'fire', null, ctx)).not.toBe('npc_harden');
+    } finally {
+      random.mockRestore();
     }
-    expect(buffCount).toBeGreaterThan(18); // >30% of 60
   });
 
   it('anti-stack: never picks npc_focus when atkBuff is active', () => {

@@ -26,6 +26,34 @@ vi.mock('react', async importOriginal => {
 beforeEach(() => { control.phase = null; control.handlers = null; });
 
 describe('battle controller result flow', () => {
+  it('retries defeat directly once without also returning to the menus', () => {
+    control.phase = 'defeat';
+    const onBattleEnd = vi.fn();
+    const onRetryBattle = vi.fn();
+    const html = renderToStaticMarkup(<BattleScreen dragonId="fire" npcId="firewall_sentinel" save={loadSave()}
+      refreshSave={() => {}} onBattleEnd={onBattleEnd} onRetryBattle={onRetryBattle} battleConfig={{ returnScreen: 'outerGrid' }} />);
+    expect(html).toContain('RETRY BATTLE');
+    expect(html).toContain('CHANGE SETUP');
+    expect(html).toContain('Defend first');
+    control.handlers.onButtonPress('A');
+    control.handlers.onButtonPress('START');
+    control.handlers.onButtonPress('B');
+    expect(onRetryBattle).toHaveBeenCalledOnce();
+    expect(onBattleEnd).not.toHaveBeenCalled();
+  });
+
+  it('lets B leave defeat to change setup without starting another attempt', () => {
+    control.phase = 'defeat';
+    const onBattleEnd = vi.fn();
+    const onRetryBattle = vi.fn();
+    renderToStaticMarkup(<BattleScreen dragonId="fire" npcId="firewall_sentinel" save={loadSave()}
+      refreshSave={() => {}} onBattleEnd={onBattleEnd} onRetryBattle={onRetryBattle} battleConfig={{ returnScreen: 'outerGrid' }} />);
+    control.handlers.onButtonPress('B');
+    control.handlers.onButtonPress('A');
+    expect(onBattleEnd).toHaveBeenCalledExactlyOnceWith(false);
+    expect(onRetryBattle).not.toHaveBeenCalled();
+  });
+
   it.each([['victory', true], ['defeat', false], ['epilogue', true]])('lets A and Start leave %s with the actual outcome', (phase, won) => {
     control.phase = phase;
     const onBattleEnd = vi.fn();
@@ -40,7 +68,7 @@ describe('battle controller result flow', () => {
     control.handlers.onButtonPress('Y');
     control.handlers.onButtonPress('B');
     expect(onBattleEnd).not.toHaveBeenCalled();
-    if (!won) expect(html).toContain('Return to this room to retry');
+    if (!won) expect(html).toContain('Change Setup returns you to this room');
   });
 
   it.each(['animating', 'phaseShift'])('does not leave the battle during %s', phase => {
@@ -57,7 +85,7 @@ describe('battle controller result flow', () => {
     control.phase = 'defeat';
     const html = renderToStaticMarkup(<BattleScreen dragonId="fire" npcId="firewall_sentinel" save={loadSave()}
       refreshSave={() => {}} onBattleEnd={() => {}} battleConfig={{ returnScreen: screen }} />);
-    expect(html).toContain('Return to this room to retry');
+    expect(html).toContain('Change Setup returns you to this room');
     expect(html).not.toContain('Head to the Campaign Map to try a different matchup.');
   });
 

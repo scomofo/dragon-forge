@@ -10,7 +10,6 @@ import {
 } from './battleEngine';
 import { loadSave, addDragonXp, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, setLastZone, trackStat, completeDailyChallenge, updateRecords, unlockFragment, getRankBonusScraps, recordBattleRank } from './persistence';
 import { getDailyStreakMultiplier } from './dailyChallenge';
-import { getAvailableCampaignNodes } from './campaignMap';
 import { getExpedition } from './expeditions';
 import { FRAGMENT_TRIGGERS, RELIC_DROPS, getRelic, getRelicBattleModifiers } from './forgeData';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
@@ -25,6 +24,8 @@ import { resolveBattlePose } from './battleSets';
 import { resolveBattleArena } from './arenas';
 import BattleCues from './BattleCues';
 import { getBattleCues } from './battleCueModel';
+import { getBattleCommands, cycleBattleCommand, getBattleKeyboardCommand } from './battleCommands';
+import { getDefeatAdvice } from './battleAdvice';
 import { advanceHydraHeads, resetsMemoryLeak, HYDRA_HEAD_COUNT, HYDRA_HP_FLOOR } from './bossMechanics';
 import useGamepadController from './useGamepadController';
 import {
@@ -348,7 +349,7 @@ function battleReducer(state, action) {
   }
 }
 
-export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refreshSave, battleConfig }) {
+export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBattle, save, refreshSave, battleConfig }) {
   const [state, dispatch] = useReducer(battleReducer, null, () => initBattle(dragonId, npcId, save, battleConfig));
   const animatingRef = useRef(false);
   const damageIdRef = useRef(0);
@@ -379,7 +380,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         ? 'boss'
         : 'battle';
   const [selectedMoveKey, setSelectedMoveKey] = useState(null);
-  const [controllerFocusIndex, setControllerFocusIndex] = useState(0);
+  const [controllerFocusId, setControllerFocusId] = useState(() => dragons[dragonId].moveKeys[0]);
   const [signatureFocus, setSignatureFocus] = useState(false);
   // P4: firewall_sentinel's authored pattern — the shield holds unless the
   // player Defended last turn (waited out the cycle) or pierces (Phase Strike).
@@ -397,6 +398,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   }, []);
   // C5: entrance overlay — stamps both combatants in before input unlocks.
   const [introDone, setIntroDone] = useState(false);
+  const retryStartedRef = useRef(false);
   useEffect(() => {
     playSound('attackLaunch', { element: state.npc.element });
     trackedTimeout(() => setIntroDone(true), Math.round(850 / getBattleSpeed()));
@@ -1543,7 +1545,6 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       isDualTech: true,
     });
   }
-  const controllerCommandCount = playerMoves.length + 3; // moves + defend + speed + auto
   const playerColor = elementColors[dragon.element];
   const npcColor = elementColors[npc.element];
   const playerHpState = getHpState(state.playerHp, state.playerMaxHp);
@@ -1551,6 +1552,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const playerHpPercent = Math.max(0, Math.min(100, (state.playerHp / state.playerMaxHp) * 100));
   const npcHpPercent = Math.max(0, Math.min(100, (state.npcHp / state.npcMaxHp) * 100));
   const isResolvingTurn = state.phase !== PHASES.PLAYER_TURN || !introDone;
+  const commands = getBattleCommands({
+    moves: playerMoves,
+    signatureUsed: state.playerSignatureUsed?.[state.dragonId],
+    hasBench: Boolean(state.bench), benchHp: state.bench?.playerHp,
+    isResolving: isResolvingTurn, autoBattleAllowed,
+  });
+  const commandDisabled = id => commands.find(command => command.id === id)?.disabled ?? true;
+  const defeatAdvice = state.phase === PHASES.DEFEAT ? getDefeatAdvice(state, battleConfig) : null;
   const battleCues = getBattleCues(state, { playerDefendedLastTurn: playerDefendedLastTurn.current, isMirrorAdmin: battleConfig?.isMirrorAdmin });
   const battleEdge = getBattleEdge(playerHpPercent, npcHpPercent, playerHpState, npcHpState);
   const battleRank = getBattleRank(state.turnCount + 1, state.maxDamageDealt, playerHpPercent);
@@ -1563,55 +1572,85 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   const battleArena = resolveBattleArena({ arena: npc.arena, arenaFilter: state.npc.arenaFilter });
 
   useEffect(() => {
-    setControllerFocusIndex((index) => Math.min(index, controllerCommandCount - 1));
-  }, [controllerCommandCount]);
+    if (!isResolvingTurn && commandDisabled(controllerFocusId)) {
+      setControllerFocusId(cycleBattleCommand(commands, controllerFocusId, 1));
+    }
+  }, [commands, controllerFocusId, isResolvingTurn]);
+
+  function focusCommand(id) {
+    if (!id) return;
+    setControllerFocusId(id);
+    // Synchronize the browser focus ring with arrows/gamepad so Enter and Space
+    // always activate the command the player actually sees selected.
+    const buttons = battleContainerRef.current?.querySelectorAll('[data-battle-command]');
+    Array.from(buttons || []).find(button => button.dataset.battleCommand === id)?.focus({ preventScroll: true });
+  }
+
+  function cycleCommand(direction) {
+    playSound('uiHover');
+    focusCommand(cycleBattleCommand(commands, controllerFocusId, direction));
+  }
+
+  function retryBattle() {
+    if (state.phase !== PHASES.DEFEAT || !onRetryBattle || retryStartedRef.current) return;
+    retryStartedRef.current = true;
+    onRetryBattle();
+  }
+
+  function leaveDefeat() {
+    if (retryStartedRef.current) return;
+    retryStartedRef.current = true;
+    onBattleEnd(false);
+  }
 
   useGamepadController({
     onDirectionPress: (direction) => {
       if (isResolvingTurn) return;
       if (direction === 'LEFT' || direction === 'UP') {
-        playSound('uiHover');
-        setControllerFocusIndex((index) => (index - 1 + controllerCommandCount) % controllerCommandCount);
+        cycleCommand(-1);
       }
       if (direction === 'RIGHT' || direction === 'DOWN') {
-        playSound('uiHover');
-        setControllerFocusIndex((index) => (index + 1) % controllerCommandCount);
+        cycleCommand(1);
       }
     },
     onButtonPress: (button) => {
       if ([PHASES.VICTORY, PHASES.DEFEAT, PHASES.EPILOGUE].includes(state.phase)) {
-        if (button === 'A' || button === 'START') onBattleEnd(state.phase !== PHASES.DEFEAT);
+        if (state.phase === PHASES.DEFEAT && onRetryBattle) {
+          if (button === 'A' || button === 'START') retryBattle();
+          if (button === 'B') leaveDefeat();
+        } else if (button === 'A' || button === 'START') onBattleEnd(state.phase !== PHASES.DEFEAT);
         return;
       }
       if (button === 'Y') {
-        if (!autoBattleAllowed) return;
-        playSound('uiConfirm');
-        setAutoBattle((enabled) => !enabled);
-        setControllerFocusIndex(controllerCommandCount - 1);
+        activateCommand('auto');
+        if (autoBattleAllowed) focusCommand('auto');
         return;
       }
       if (isResolvingTurn) return;
       if (button === 'B') {
-        setControllerFocusIndex(playerMoves.length);
-        handleMoveSelect('defend');
+        focusCommand('defend');
+        activateCommand('defend');
         return;
       }
       if (button === 'A' || button === 'START') {
-        activateFocusedCommand(controllerFocusIndex);
+        activateCommand(controllerFocusId);
       }
     },
   });
 
-  function activateFocusedCommand(index) {
-    if (index < playerMoves.length) {
-      handleMoveSelect(playerMoves[index].key);
-    } else if (index === playerMoves.length) {
+  function activateCommand(id) {
+    if (commandDisabled(id)) return;
+    if (id === 'defend') {
       handleMoveSelect('defend');
-    } else if (index === playerMoves.length + 1) {
+    } else if (id === 'swap') {
+      handleSwap();
+    } else if (id === 'speed') {
       toggleSpeed();
-    } else if (autoBattleAllowed) {
+    } else if (id === 'auto') {
       playSound('uiConfirm');
       setAutoBattle((enabled) => !enabled);
+    } else {
+      handleMoveSelect(id);
     }
   }
 
@@ -1619,31 +1658,23 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
   // Enter/Space executes, D defends, S toggles speed, A toggles auto.
   useEffect(() => {
     const handler = (e) => {
-      if (e.repeat) return;
-      if (isResolvingTurn) return;
-      const commands = ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'Enter', ' ', 'd', 'D', 's', 'S', 'a', 'A'];
-      if (!commands.includes(e.key)) return;
-      e.preventDefault();
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-        playSound('uiHover');
-        setControllerFocusIndex((index) => (index - 1 + controllerCommandCount) % controllerCommandCount);
-      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-        playSound('uiHover');
-        setControllerFocusIndex((index) => (index + 1) % controllerCommandCount);
-      } else if (e.key === 'Enter' || e.key === ' ') {
-        activateFocusedCommand(controllerFocusIndex);
-      } else if (e.key === 'd' || e.key === 'D') {
-        handleMoveSelect('defend');
-      } else if (e.key === 's' || e.key === 'S') {
-        toggleSpeed();
-      } else if ((e.key === 'a' || e.key === 'A') && autoBattleAllowed) {
-        playSound('uiConfirm');
-        setAutoBattle((enabled) => !enabled);
+      if ([PHASES.VICTORY, PHASES.DEFEAT, PHASES.EPILOGUE].includes(state.phase)) return;
+      const intent = getBattleKeyboardCommand(e);
+      if (!intent) return;
+      if (intent.type === 'cycle') {
+        if (isResolvingTurn) return;
+        e.preventDefault();
+        cycleCommand(intent.direction);
+      } else {
+        const id = intent.id || controllerFocusId;
+        if (commandDisabled(id)) return;
+        e.preventDefault();
+        activateCommand(id);
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [controllerFocusIndex, isResolvingTurn, controllerCommandCount, autoBattleAllowed, playerMoves]);
+  }, [controllerFocusId, isResolvingTurn, commands]);
 
   return (
     <div
@@ -1929,7 +1960,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           <i />
         </div>
         <div className="move-panel">
-          {playerMoves.map((move, index) => {
+          {playerMoves.map((move) => {
             const moveColor = elementColors[move.element] || elementColors.neutral;
             const isResolving = isResolvingTurn;
             const isSelected = selectedMoveKey === move.key;
@@ -1941,9 +1972,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             return (
               <button
                 key={move.key}
-                className={`move-btn ${isSelected ? 'selected' : ''} ${controllerFocusIndex === index ? 'controller-focus' : ''} ${isResolving && !isSelected ? 'dimmed' : ''} ${matchup.toLowerCase()} ${move.isSignature ? 'signature' : ''} ${isDualTechBtn ? 'dual-tech' : ''}`}
+                className={`move-btn ${isSelected ? 'selected' : ''} ${controllerFocusId === move.key ? 'controller-focus' : ''} ${isResolving && !isSelected ? 'dimmed' : ''} ${matchup.toLowerCase()} ${move.isSignature ? 'signature' : ''} ${isDualTechBtn ? 'dual-tech' : ''}`}
+                data-battle-command={move.key}
+                onFocus={() => setControllerFocusId(move.key)}
                 style={{ '--move-color': moveColor.primary, '--move-glow': moveColor.glow, borderColor: moveColor.primary, color: moveColor.glow, opacity: signatureSpent ? 0.45 : 1 }}
-                disabled={isResolving || signatureSpent}
+                disabled={commandDisabled(move.key)}
                 title={isDualTechBtn ? `DUAL TECH — ${state.bench.dragon.name} pairs ${dualTech.move1}+${dualTech.move2}` : signatureSpent ? 'Signature already spent this battle' : signatureSummary ? `SIGNATURE — ${signatureSummary.title}` : ''}
                 onClick={() => handleMoveSelect(move.key)}
               >
@@ -1961,9 +1994,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             );
           })}
           <button
-            className={`move-btn ${selectedMoveKey === 'defend' ? 'selected' : ''} ${controllerFocusIndex === playerMoves.length ? 'controller-focus' : ''} ${state.phase !== PHASES.PLAYER_TURN && selectedMoveKey !== 'defend' ? 'dimmed' : ''}`}
+            className={`move-btn ${selectedMoveKey === 'defend' ? 'selected' : ''} ${controllerFocusId === 'defend' ? 'controller-focus' : ''} ${state.phase !== PHASES.PLAYER_TURN && selectedMoveKey !== 'defend' ? 'dimmed' : ''}`}
+            data-battle-command="defend"
+            onFocus={() => setControllerFocusId('defend')}
             style={{ '--move-color': '#44aa44', '--move-glow': '#66cc66', borderColor: '#44aa44', color: '#66cc66' }}
-            disabled={state.phase !== PHASES.PLAYER_TURN}
+            disabled={commandDisabled('defend')}
             onClick={() => handleMoveSelect('defend')}
           >
             <span className="tooltip">Halves damage this turn</span>
@@ -1976,12 +2011,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           </button>
           {state.bench && (
             <button
-              className={`move-btn swap ${state.bench.playerHp <= 0 ? 'disabled' : ''}`}
+              className={`move-btn swap ${state.bench.playerHp <= 0 ? 'disabled' : ''} ${controllerFocusId === 'swap' ? 'controller-focus' : ''}`}
+              data-battle-command="swap"
+              onFocus={() => setControllerFocusId('swap')}
               style={{ '--move-color': '#44aaff', '--move-glow': '#66ccff', borderColor: '#44aaff', color: state.bench.playerHp > 0 ? '#66ccff' : '#555', opacity: state.bench.playerHp > 0 ? 1 : 0.5 }}
-              disabled={state.phase !== PHASES.PLAYER_TURN || state.bench.playerHp <= 0}
+              disabled={commandDisabled('swap')}
               onClick={handleSwap}
             >
-              <span className="tooltip">Swap in {state.bench.dragon.name} — costs a turn (enemy strikes as it enters)</span>
+              <span className="tooltip">Swap in {state.bench.dragon.name} — guards the entry hit, then gains an opening next turn</span>
               <strong>SWAP</strong>
               <span className="move-meta">
                 <i>{state.bench.dragon.name}</i>
@@ -1990,7 +2027,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             </button>
           )}
           <button
-            className={`move-btn speed ${speed === 2 ? 'selected' : ''} ${controllerFocusIndex === playerMoves.length + 1 ? 'controller-focus' : ''}`}
+            className={`move-btn speed ${speed === 2 ? 'selected' : ''} ${controllerFocusId === 'speed' ? 'controller-focus' : ''}`}
+            data-battle-command="speed"
+            onFocus={() => setControllerFocusId('speed')}
             style={{ '--move-color': speed === 2 ? '#ffcc00' : '#666', '--move-glow': speed === 2 ? '#ffcc00' : '#888', borderColor: speed === 2 ? '#ffcc00' : '#666', color: speed === 2 ? '#ffcc00' : '#888' }}
             onClick={toggleSpeed}
             title="Toggle battle animation speed"
@@ -2002,7 +2041,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             </span>
           </button>
           <button
-            className={`move-btn auto ${autoBattle ? 'selected' : ''} ${!autoBattleAllowed ? 'disabled' : ''} ${controllerFocusIndex === playerMoves.length + 2 ? 'controller-focus' : ''}`}
+            className={`move-btn auto ${autoBattle ? 'selected' : ''} ${!autoBattleAllowed ? 'disabled' : ''} ${controllerFocusId === 'auto' ? 'controller-focus' : ''}`}
+            data-battle-command="auto"
+            onFocus={() => setControllerFocusId('auto')}
             style={autoBattleAllowed
               ? { '--move-color': autoBattle ? '#44cc44' : '#666', '--move-glow': autoBattle ? '#44cc44' : '#888', borderColor: autoBattle ? '#44cc44' : '#666', color: autoBattle ? '#44cc44' : '#888' }
               : { '--move-color': '#555', '--move-glow': '#555', borderColor: '#444', color: '#666', opacity: 0.55, cursor: 'not-allowed' }}
@@ -2130,29 +2171,31 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                 <strong>RETRY</strong>
               </div>
             </div>
-            <p>
-              "Hmm, a setback! But every great Dragon Forger learns from defeat. Recalibrate and try again!"
-              <br />— Professor Felix
-            </p>
+            {defeatAdvice && <div className="defeat-advice">
+              <strong>{defeatAdvice.title}</strong>
+              <p>{defeatAdvice.detail}</p>
+            </div>}
             <p style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
               {battleConfig?.dailyNpc
-                ? 'The daily card is still open — retry it from Battle Select.'
+                ? 'Change Setup returns to Battle Select to choose another guardian. Retry Battle keeps this challenge.'
                 : getExpedition(battleConfig?.returnScreen)
-                  ? 'Return to this room to retry, change your guardian, or retreat. Your route progress is safe.'
+                  ? 'Change Setup returns you to this room. Your route progress is safe.'
                 : (battleConfig?.isSingularity || battleConfig?.isMirrorAdmin)
-                  ? 'Return to the Singularity breach to re-engage.'
-                  : getAvailableCampaignNodes(save).length <= 1
-                    ? 'Level up your dragon and try again, or pick another opponent in Battle Select.'
-                    : 'Head to the Campaign Map to try a different matchup.'}
+                  ? 'Change Setup returns to the Singularity breach to prepare another guardian.'
+                  : battleConfig?.campaignNodeId
+                    ? 'Change Setup returns to the Campaign Map to prepare another guardian.'
+                    : 'Change Setup returns to Battle Select to choose your guardian and opponent.'}
             </p>
-            <button
-              className="result-btn"
-              onClick={() => onBattleEnd(false)}
-              autoFocus
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onBattleEnd(false); } }}
-            >
-              TRY AGAIN
-            </button>
+            <div className="result-actions">
+              {onRetryBattle && <button className="result-btn" onClick={retryBattle} autoFocus>
+                RETRY BATTLE
+              </button>}
+              <button className={`result-btn ${onRetryBattle ? 'secondary' : ''}`}
+                onClick={leaveDefeat} autoFocus={!onRetryBattle}>
+                CHANGE SETUP
+              </button>
+            </div>
+            {onRetryBattle && <p className="result-controls">Same encounter · full party HP<br />Controller A/Start: retry · B: change setup</p>}
           </div>
         </div>
       )}
