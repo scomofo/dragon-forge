@@ -68,6 +68,7 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
   const [overlay, setOverlay] = useState(null);
   const [felixLine, setFelixLine] = useState(null);
   const isFirstVisitRef = useRef(!save?.flags?.felixGreeted);
+  const interactingRef = useRef(false);
 
   const act = getCurrentAct(save);
   const view = getBulkheadView(act);
@@ -85,7 +86,9 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
   }, []);
 
   const openStation = useCallback((stationId) => {
-    if (!stationId) return;
+    if (!stationId || interactingRef.current) return;
+    interactingRef.current = true;
+    queueMicrotask(() => { interactingRef.current = false; });
     playSound('buttonClick');
     setActiveStation(stationId);
 
@@ -170,10 +173,13 @@ export default function ForgeScreen({ onNavigate, save, refreshSave }) {
       if (mapped) move(mapped);
     },
     onButtonPress(button) {
-      if (overlay && (button === 'B' || button === 'SELECT')) closeOverlay();
-      else if (!overlay && (button === 'A' || button === 'X' || button === 'START')) interact();
+      if (overlay) return;
+      if (button === 'B' || button === 'SELECT') {
+        playSound('screenTransition');
+        onNavigate?.('map');
+      } else if (button === 'A' || button === 'X' || button === 'START') interact();
     },
-  });
+  }, !overlay);
 
   return (
     <div

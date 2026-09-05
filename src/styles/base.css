@@ -68,8 +68,8 @@ body {
    Honour the OS "reduce motion" preference. Neutralizes CSS animations and
    transitions app-wide — most importantly the always-on corruption glitch /
    flicker at high Singularity stages, which is a real photosensitivity concern.
-   (The GSAP-driven battle screen-shake is JS; it needs a matchMedia hook in
-   animationEngine as a follow-up.) */
+   JS-driven effects also check the preference in animationEngine. Informational
+   callouts override this reset so their final fade cannot hide the result. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

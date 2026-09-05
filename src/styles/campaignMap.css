@@ -1344,3 +1344,9 @@
 .node-rank-badge.rank-a { background: #aa66ff; }
 .node-rank-badge.rank-b { background: #44aaff; }
 .node-rank-badge.rank-c { background: #888; }
+.campaign-party-controls {
+  color: #b6c8dd;
+  font-size: 10px;
+  line-height: 1.8;
+  margin: 6px 0 10px;
+}

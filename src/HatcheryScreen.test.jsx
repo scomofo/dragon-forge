@@ -3,7 +3,7 @@ import HatcheryScreen from './HatcheryScreen';
 import { PULL_COST } from './gameData';
 import { writeSave, trackStat } from './persistence';
 
-const control = vi.hoisted(() => ({ states: [], refs: [], stateIndex: 0, refIndex: 0, save: null }));
+const control = vi.hoisted(() => ({ states: [], refs: [], stateIndex: 0, refIndex: 0, save: null, gamepad: null, handlers: null, clicks: [] }));
 
 // The node test environment has no DOM. Keep hook state across renders and
 // exercise the screen's real click handlers, async hatch, and pull engine.
@@ -21,7 +21,12 @@ vi.mock('react', async importOriginal => ({
     return control.refs[index] ||= { current: initial };
   },
   useCallback: callback => callback,
+  useEffect: () => {},
 }));
+vi.mock('./useGamepadController', () => ({ default: handlers => {
+  control.handlers = handlers;
+  return control.gamepad;
+} }));
 
 vi.mock('./persistence', () => ({
   loadSave: () => structuredClone(control.save),
@@ -58,12 +63,37 @@ function click(tree, node) {
   return result;
 }
 
+// Minimal button DOM for the controller's native focus/click path. Clicks still
+// execute the real rendered handlers and pull engine, just like mouse controls.
+function connectController(tree) {
+  const text = value => Array.isArray(value) ? value.map(text).join('') : typeof value === 'object' ? text(value?.props?.children) : value ?? '';
+  const elements = nodes(tree, node => node.type === 'button').map(node => ({
+    dataset: { hatcheryCommand: node.props['data-hatchery-command'] },
+    disabled: node.props.disabled,
+    textContent: text(node.props.children),
+    focus: vi.fn(), scrollIntoView: vi.fn(),
+    setAttribute: vi.fn(), removeAttribute: vi.fn(),
+    click: () => { const result = click(tree, node); control.clicks.push(result); return result; },
+  }));
+  const nav = nodes(tree, node => node.props?.activeScreen === 'hatchery')[0];
+  const mapButton = { dataset: {}, textContent: 'MAP', focus: vi.fn(), setAttribute: vi.fn(), removeAttribute: vi.fn(), click: () => nav.props.onNavigate('map') };
+  tree.ref.current = { querySelectorAll: selector => selector === '.tutorial-overlay button'
+    ? elements.filter(button => button.dataset.hatcheryCommand === 'begin')
+    : selector === '[data-hatchery-command="skip"]'
+      ? elements.filter(button => button.dataset.hatcheryCommand === 'skip')
+      : [mapButton, ...elements.filter(button => button.dataset.hatcheryCommand !== 'begin')] };
+  return elements;
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.clearAllMocks();
   vi.spyOn(Math, 'random').mockReturnValue(0.2);
   control.states = [];
   control.refs = [];
+  control.gamepad = null;
+  control.handlers = null;
+  control.clicks = [];
   control.save = {
     dragons: {
       fire: { owned: true, level: 1, xp: 0 },
@@ -72,6 +102,99 @@ beforeEach(() => {
     },
     pityCounter: 0, dataScraps: PULL_COST * 30, inventory: {}, defeatedNpcs: [],
   };
+});
+
+describe('hatchery controller opening', () => {
+  it('takes Begin, free hatch, Skip, Continue and Explore without selecting a paid pull', async () => {
+    control.gamepad = { id: 'test-pad' };
+    control.save.dragons.fire.owned = false;
+    control.save.dataScraps = PULL_COST * 30;
+    const onNavigate = vi.fn();
+    let tree = render(onNavigate);
+    connectController(tree);
+    control.handlers.onButtonPress('A'); // Begin only, even with A + Start together.
+    control.handlers.onButtonPress('START');
+    expect(writeSave).not.toHaveBeenCalled();
+    tree = render(onNavigate);
+    connectController(tree);
+    control.handlers.onButtonPress('A');
+    expect(writeSave).toHaveBeenCalledTimes(1);
+    expect(control.save.dataScraps).toBe(PULL_COST * 30);
+    tree = render(onNavigate);
+    connectController(tree);
+    control.handlers.onButtonPress('A'); // Skip the hatch animation.
+    await vi.runAllTimersAsync();
+    await Promise.all(control.clicks);
+    tree = render(onNavigate);
+    const revealed = connectController(tree);
+    control.handlers.onButtonPress('A'); // Continue, not the previous pull selection.
+    expect(revealed.find(button => button.dataset.hatcheryCommand === 'continue').focus).toHaveBeenCalled();
+    expect(writeSave).toHaveBeenCalledTimes(1);
+    tree = render(onNavigate);
+    connectController(tree);
+    control.handlers.onButtonPress('A'); // First expedition is the new default.
+    expect(onNavigate).toHaveBeenCalledExactlyOnceWith('outerGrid');
+  });
+
+  it('requires an explicit selection for paid pulls and keeps the synchronous payment lock', async () => {
+    control.gamepad = { id: 'test-pad' };
+    control.save.defeatedNpcs = ['firewall_sentinel'];
+    const onNavigate = vi.fn();
+    let tree = render(onNavigate);
+    connectController(tree);
+    control.handlers.onButtonPress('A');
+    expect(onNavigate).toHaveBeenCalledExactlyOnceWith('map');
+    expect(writeSave).not.toHaveBeenCalled();
+    control.handlers.onDirectionPress('DOWN'); // Select PULL x1 after MAP.
+    control.handlers.onButtonPress('A');
+    control.handlers.onButtonPress('START');
+    expect(writeSave).toHaveBeenCalledTimes(1);
+    expect(control.save.dataScraps).toBe(PULL_COST * 29);
+    await vi.runAllTimersAsync();
+    await Promise.all(control.clicks);
+    tree = render(onNavigate);
+    connectController(tree);
+    control.handlers.onButtonPress('START'); // Fresh phase defaults to Continue.
+    expect(writeSave).toHaveBeenCalledTimes(1);
+  });
+
+  it('cycles past unaffordable pulls and reaches native navigation buttons', () => {
+    control.gamepad = { id: 'test-pad' };
+    control.save.dataScraps = 0;
+    const onNavigate = vi.fn();
+    const tree = render(onNavigate);
+    const elements = connectController(tree);
+    control.handlers.onDirectionPress('DOWN'); // Explore wraps to MAP; paid pulls are disabled.
+    control.handlers.onButtonPress('A');
+    expect(onNavigate).toHaveBeenCalledExactlyOnceWith('map');
+    expect(elements.filter(button => button.disabled).every(button => !button.focus.mock.calls.length)).toBe(true);
+    expect(writeSave).not.toHaveBeenCalled();
+  });
+
+  it('keeps navigation and confirmation locked during the ten-pull reveal before the results grid', async () => {
+    control.gamepad = { id: 'test-pad' };
+    const onNavigate = vi.fn();
+    let tree = render(onNavigate);
+    connectController(tree);
+    control.handlers.onDirectionPress('DOWN'); // Explore -> single pull.
+    control.handlers.onDirectionPress('DOWN'); // Single -> ten-pull.
+    control.handlers.onButtonPress('A');
+    await vi.advanceTimersByTimeAsync(3200);
+    tree = render(onNavigate);
+    connectController(tree);
+    control.handlers.onButtonPress('A');
+    control.handlers.onButtonPress('B');
+    expect(onNavigate).not.toHaveBeenCalled();
+    expect(writeSave).toHaveBeenCalledTimes(1);
+    expect(control.save.dataScraps).toBe(PULL_COST * 20);
+    await vi.runAllTimersAsync();
+    await Promise.all(control.clicks);
+    tree = render(onNavigate);
+    expect(byClass(tree, 'pull-grid')).toHaveLength(1);
+    connectController(tree);
+    control.handlers.onButtonPress('B');
+    expect(byClass(render(onNavigate), 'pull-grid')).toHaveLength(0);
+  });
 });
 
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });

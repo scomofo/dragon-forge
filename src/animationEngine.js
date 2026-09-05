@@ -1,8 +1,8 @@
 import gsap from 'gsap';
 import { elementColors, STATUS_EFFECTS } from './gameData';
 
-// Respect the OS "reduce motion" preference for vestibular-heavy screen motion
-// (the battle shakes). Pairs with the CSS prefers-reduced-motion reset in base.css.
+// Respect the OS preference in JS-driven effects too. Keep battle timing and
+// result cues while replacing movement, flashes, and particles with calm holds.
 export function prefersReducedMotion() {
   return typeof window !== 'undefined'
     && typeof window.matchMedia === 'function'
@@ -56,6 +56,7 @@ export function hitStop(duration = 0.08) {
 // === TARGET KNOCKBACK ===
 // Slides target away from attacker, then settles. Layers cleanly with hitSquash.
 export function targetKnockback(el, attackerSide = 'left', intensity = 12) {
+  if (prefersReducedMotion()) return gsap.timeline().to(el, { duration: 0.28 });
   const dir = attackerSide === 'left' ? 1 : -1;
   const tl = gsap.timeline();
   tl.to(el, { x: dir * intensity, duration: 0.06, ease: 'power3.out' });
@@ -124,6 +125,7 @@ export function hitFreeze(tl, duration = 0.1) {
 
 // === ZOOM PUNCH ===
 export function zoomPunch(container, targetSide = 'left') {
+  if (prefersReducedMotion()) return gsap.timeline().to(container, { duration: 0.3 });
   const xShift = targetSide === 'left' ? -15 : 15;
   const tl = gsap.timeline();
   tl.to(container, {
@@ -144,6 +146,15 @@ export function zoomPunch(container, targetSide = 'left') {
 // === CRITICAL HIT (composed timeline) ===
 export function criticalHit(container, targetContainer, targetSide = 'left') {
   const tl = gsap.timeline();
+
+  if (prefersReducedMotion()) {
+    // The damage number and CRITICAL callout carry the result. Preserve the
+    // cinematic's contact pause without whitening or zooming the whole arena.
+    tl.to(container, { duration: 0.05 });
+    hitFreeze(tl, 0.1);
+    tl.to(container, { duration: 0.35 });
+    return tl;
+  }
 
   tl.to(container, { filter: 'saturate(0.3)', duration: 0.05 }, 0);
 
@@ -196,6 +207,10 @@ export function shieldUp(targetContainer, element = 'neutral') {
   targetContainer.appendChild(shield);
 
   const tl = gsap.timeline();
+  if (prefersReducedMotion()) {
+    tl.fromTo(shield, { opacity: 0 }, { opacity: 0.82, duration: 0.28 });
+    return { element: shield, timeline: tl };
+  }
   tl.fromTo(shield,
     { opacity: 0, scale: 0.55 },
     { opacity: 1, scale: 1.07, duration: 0.16, ease: 'back.out(2.6)' }
@@ -208,6 +223,11 @@ export function shieldUp(targetContainer, element = 'neutral') {
 
 // === SHIELD DEFLECT ===
 export function shieldDeflect(shieldEl, targetContainer, attackDir = 'left') {
+  if (prefersReducedMotion()) {
+    return gsap.timeline()
+      .to(shieldEl, { opacity: 1, duration: 0.12 })
+      .to(shieldEl, { opacity: 0.82, duration: 0.14 });
+  }
   const colors = {
     primary: shieldEl.style.getPropertyValue('--shield-primary') || elementColors.neutral.primary,
     glow: shieldEl.style.getPropertyValue('--shield-glow') || elementColors.neutral.glow,
@@ -237,7 +257,7 @@ export function shieldDeflect(shieldEl, targetContainer, attackDir = 'left') {
 export function shieldDismiss(shieldEl, shieldTimeline) {
   if (shieldTimeline) shieldTimeline.kill();
   return gsap.to(shieldEl, {
-    scale: 0.8,
+    ...(prefersReducedMotion() ? {} : { scale: 0.8 }),
     opacity: 0,
     duration: 0.2,
     ease: 'power2.in',
@@ -286,6 +306,17 @@ function createSparks(container, direction = 'left', color = '#ffffff', count = 
 
 // === SHATTER KO ===
 export function shatterKO(spriteEl, element = 'neutral') {
+  if (prefersReducedMotion()) {
+    const previousOpacity = spriteEl.style.opacity;
+    return gsap.timeline()
+      .to(spriteEl, { opacity: 0, duration: 0.35 })
+      .add(() => {
+        // Match the normal KO's final state without leaving an extra opacity
+        // override behind when the sprite is reused for a reserve or phase.
+        spriteEl.style.visibility = 'hidden';
+        spriteEl.style.opacity = previousOpacity;
+      });
+  }
   const rect = spriteEl.getBoundingClientRect();
   const parentRect = spriteEl.parentElement.getBoundingClientRect();
   const offsetX = rect.left - parentRect.left;
@@ -427,6 +458,7 @@ const STATUS_PARTICLE_CONFIG = {
 };
 
 export function statusAuraApply(spriteEl, statusEffect) {
+  const reducedMotion = prefersReducedMotion();
   const tint = STATUS_TINTS[statusEffect];
   const pulse = STATUS_PULSE[statusEffect];
   const particleConfig = STATUS_PARTICLE_CONFIG[statusEffect];
@@ -437,7 +469,7 @@ export function statusAuraApply(spriteEl, statusEffect) {
     timelines.push(tintTl);
   }
 
-  if (pulse) {
+  if (pulse && !reducedMotion) {
     const pulseTl = gsap.timeline({ repeat: -1, yoyo: true });
     if (pulse.prop === 'filter') {
       const baseFilter = tint || '';
@@ -455,7 +487,7 @@ export function statusAuraApply(spriteEl, statusEffect) {
   }
 
   const particles = [];
-  if (particleConfig) {
+  if (particleConfig && !reducedMotion) {
     const container = spriteEl.parentElement;
     for (let i = 0; i < 5; i++) {
       const p = document.createElement('div');
@@ -485,6 +517,10 @@ export function statusAuraApply(spriteEl, statusEffect) {
     kill() {
       timelines.forEach(tl => tl.kill());
       particles.forEach((p, i) => {
+        if (prefersReducedMotion()) {
+          p.remove();
+          return;
+        }
         gsap.to(p, {
           x: (Math.random() - 0.5) * 60,
           y: (Math.random() - 0.5) * 60,
@@ -567,6 +603,7 @@ function createParticleLoop(particle, behavior, container, index) {
 // === NPC LUNGE ===
 // Anticipation pull-back, then forward strike, hold contact, return.
 export function npcLunge(npcEl, direction = 'right') {
+  if (prefersReducedMotion()) return gsap.timeline().to(npcEl, { duration: 0.56 });
   const dx = direction === 'right' ? 30 : -30;
   const pullback = -dx * 0.25;
   const tl = gsap.timeline();
@@ -579,6 +616,7 @@ export function npcLunge(npcEl, direction = 'right') {
 
 // === PLAYER LUNGE ===
 export function playerLunge(spriteEl, direction = 'left') {
+  if (prefersReducedMotion()) return gsap.timeline().to(spriteEl, { duration: 0.35 });
   const dx = direction === 'left' ? -20 : 20;
   const pullback = -dx * 0.3;
   const tl = gsap.timeline();
@@ -590,6 +628,7 @@ export function playerLunge(spriteEl, direction = 'left') {
 
 // === HIT SQUASH ===
 export function hitSquash(el) {
+  if (prefersReducedMotion()) return gsap.timeline().to(el, { duration: 0.15 });
   const tl = gsap.timeline();
   tl.to(el, { scaleY: 0.95, scaleX: 1.05, duration: 0.05, ease: 'power2.in' });
   tl.to(el, { scaleY: 1, scaleX: 1, duration: 0.1, ease: 'back.out(3)' });
@@ -605,6 +644,25 @@ export function eggBurst(container, element = 'fire') {
   if (!container) return;
   const colors = elementColors[element] || elementColors.fire;
   container.style.position = 'relative';
+
+  if (prefersReducedMotion()) {
+    // A local, element-colored outline marks the reveal without a white flash,
+    // rotating rays, or fragments. The hatch screen still owns reveal timing.
+    const halo = document.createElement('div');
+    Object.assign(halo.style, {
+      position: 'absolute', inset: '0', borderRadius: '50%',
+      border: `3px solid ${colors.primary}`, opacity: '0',
+      pointerEvents: 'none', zIndex: '30',
+    });
+    container.appendChild(halo);
+    gsap.fromTo(halo, { opacity: 0 }, {
+      opacity: 0.65, duration: 0.2,
+      onComplete() {
+        gsap.to(halo, { opacity: 0, duration: 0.46, onComplete() { halo.remove(); } });
+      },
+    });
+    return;
+  }
 
   // 1) Light flash
   const flash = document.createElement('div');

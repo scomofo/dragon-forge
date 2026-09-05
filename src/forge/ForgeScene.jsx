@@ -251,7 +251,7 @@ function StationIndex({ nearest, onStationClick }) {
 function ControlsHint({ onExit }) {
   return (
     <div className="forge-controls-hint">
-      WASD / arrows to walk &nbsp;|&nbsp; tap a station or E to interact
+      WASD / arrows / D-pad: walk &nbsp;|&nbsp; E / A: interact &nbsp;|&nbsp; Esc / B: exit
       <button type="button" className="forge-exit-btn" onClick={onExit}>EXIT FORGE</button>
     </div>
   );
