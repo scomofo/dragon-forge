@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { wait } from './utils';
 import { playSound } from './soundEngine';
 import { dragons, elementColors, eggSheets, PULL_COST } from './gameData';
@@ -9,6 +9,7 @@ import { eggBurst } from './animationEngine';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
 import EggSprite from './EggSprite';
+import useGamepadController from './useGamepadController';
 
 const PHASES = {
   IDLE: 'idle',
@@ -47,6 +48,8 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const eggContainerRef = useRef(null);
   const currentElementRef = useRef('fire');
   const burstFiredRef = useRef(false);
+  const screenRef = useRef(null);
+  const controllerSelectionRef = useRef(null);
 
   // Fire the shell-shatter / light burst exactly once per hatch.
   const fireBurst = useCallback((element) => {
@@ -235,9 +238,77 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     }
   };
 
+  // Read the actual rendered buttons, including NavBar's unlocked tabs. This
+  // keeps controller navigation in step with native keyboard controls.
+  const controllerStage = showTutorial ? 'tutorial' : `${phase}:${!!showFirstExpedition}`;
+  const getControllerButtons = useCallback(() => {
+    const selector = showTutorial ? '.tutorial-overlay button' : phase === PHASES.HATCHING || pullPending
+      ? '[data-hatchery-command="skip"]' : '.hatchery-content button, .nav-tabs button, .guidance-chip';
+    return Array.from(screenRef.current?.querySelectorAll(selector) || []).filter(button => !button.disabled);
+  }, [showTutorial, phase, pullPending]);
+
+  const selectControllerButton = useCallback((button) => {
+    controllerSelectionRef.current?.button?.removeAttribute('data-gamepad-focused');
+    controllerSelectionRef.current = button ? { stage: controllerStage, button } : null;
+    if (button) {
+      button.setAttribute('data-gamepad-focused', 'true');
+      button.focus({ preventScroll: true });
+      button.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    }
+  }, [controllerStage]);
+
+  const getControllerSelection = useCallback((buttons) => {
+    const previous = controllerSelectionRef.current;
+    if (previous?.stage === controllerStage && buttons.includes(previous.button)) return previous.button;
+    const defaultCommand = showTutorial ? 'begin' : phase === PHASES.HATCHING ? 'skip'
+      : phase === PHASES.REVEAL || phase === PHASES.GRID ? 'continue'
+        : showFirstExpedition ? 'adventure' : isFirstGame ? 'pull1' : null;
+    // Returning players land on MAP, never on a paid pull. Reveals land on
+    // Continue even when the previously selected pull button is still mounted.
+    return buttons.find(button => button.dataset.hatcheryCommand === defaultCommand)
+      || buttons.find(button => button.textContent.trim() === 'MAP') || buttons[0];
+  }, [controllerStage, showTutorial, phase, showFirstExpedition, isFirstGame]);
+
+  const gamepad = useGamepadController({
+    onDirectionPress(direction) {
+      const buttons = getControllerButtons();
+      if (!buttons.length) return;
+      const selected = getControllerSelection(buttons);
+      const step = direction === 'UP' || direction === 'LEFT' ? -1 : 1;
+      selectControllerButton(buttons[(buttons.indexOf(selected) + step + buttons.length) % buttons.length]);
+    },
+    onButtonPress(button) {
+      if (button === 'B') {
+        if (showTutorial) setShowTutorial(false);
+        else if (phase === PHASES.HATCHING) handleSkip();
+        else if (!pullInFlightRef.current && (phase === PHASES.REVEAL || phase === PHASES.GRID)) handleDismiss();
+        else if (!pullInFlightRef.current) onNavigate('map');
+        return;
+      }
+      if (button !== 'A' && button !== 'START') return;
+      const selected = getControllerSelection(getControllerButtons());
+      selectControllerButton(selected);
+      selected?.click();
+    },
+  });
+
+  useEffect(() => {
+    if (gamepad) selectControllerButton(getControllerSelection(getControllerButtons()));
+    else {
+      controllerSelectionRef.current?.button?.removeAttribute('data-gamepad-focused');
+      controllerSelectionRef.current = null;
+    }
+  }, [gamepad, getControllerButtons, getControllerSelection, selectControllerButton]);
+
   return (
     <div
       className="hatchery-screen"
+      ref={screenRef}
+      onFocusCapture={(event) => {
+        if (gamepad && controllerSelectionRef.current?.button !== event.target && getControllerButtons().includes(event.target)) {
+          selectControllerButton(event.target);
+        }
+      }}
       style={{ '--hatchery-decoration': `url(${assetUrl('/assets/decoration/dragon_bounties.png')})` }}
     >
       <NavBar activeScreen="hatchery" onNavigate={onNavigate} save={save} />
@@ -322,7 +393,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
             <h2>YOUR FIRST EXPEDITION</h2>
             <p>{firstGuardian[1].nickname || dragons[firstGuardian[0]].name} is ready. Reach Signal Breach in the Outer Grid and face the Firewall Sentinel.</p>
             <p>Defend to open its packet shield, then strike. Your route progress stays safe if you fall.</p>
-            <button type="button" className="hatchery-adventure-btn" onClick={(event) => {
+            <button type="button" className="hatchery-adventure-btn" data-hatchery-command="adventure" onClick={(event) => {
               event.stopPropagation();
               playSound('buttonClick');
               onNavigate('outerGrid');
@@ -338,6 +409,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
           <div className="pull-buttons">
             <button
               className="pull-btn"
+              data-hatchery-command="pull1"
               type="button"
               disabled={pullPending || !canPull1}
               onClick={handlePull1}
@@ -346,7 +418,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
               {hasVoidEgg ? '🥚 HATCH VOID EGG' : isFirstGame ? 'FREE PULL' : `PULL x1 — ${PULL_COST}◆`}
             </button>
             {!isFirstGame && (
-              <button type="button" className="pull-btn" disabled={pullPending || !canPull10} onClick={handlePull10}>
+              <button type="button" className="pull-btn" data-hatchery-command="pull10" disabled={pullPending || !canPull10} onClick={handlePull10}>
                 PULL x10 — {PULL_COST * 10}◆
               </button>
             )}
@@ -354,17 +426,18 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
         )}
 
         {(phase === PHASES.REVEAL || phase === PHASES.GRID) && (
-          <button type="button" className="hatchery-text-btn" disabled={pullPending} onClick={(event) => {
+          <button type="button" className="hatchery-text-btn" data-hatchery-command="continue" disabled={pullPending} onClick={(event) => {
             event.stopPropagation();
             handleDismiss();
           }}>CONTINUE</button>
         )}
         {phase === PHASES.HATCHING && (
-          <button type="button" className="hatchery-text-btn" onClick={(event) => {
+          <button type="button" className="hatchery-text-btn" data-hatchery-command="skip" onClick={(event) => {
             event.stopPropagation();
             handleSkip();
           }}>SKIP HATCH ANIMATION</button>
         )}
+        {gamepad && !showTutorial && <p className="hatchery-controller-hint">D-PAD · choose &nbsp; A · confirm &nbsp; B · {phase === PHASES.HATCHING ? 'skip' : phase === PHASES.REVEAL || phase === PHASES.GRID ? 'continue' : 'map'}</p>}
       </div>
 
       {showTutorial && (
@@ -374,7 +447,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
             <div className="tutorial-steps">
               <div className="tutorial-step">Your first hatch is free. Pull a guardian, then take it into battle.</div>
             </div>
-            <button type="button" className="hatchery-text-btn" autoFocus onClick={() => setShowTutorial(false)}>BEGIN</button>
+            <button type="button" className="hatchery-text-btn" data-hatchery-command="begin" autoFocus onClick={() => setShowTutorial(false)}>BEGIN{gamepad ? ' · A' : ''}</button>
           </div>
         </div>
       )}

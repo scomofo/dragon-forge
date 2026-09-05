@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { elementColors } from './gameData';
 import { VFX_FRAMES } from './sprites';
+import { prefersReducedMotion } from './animationEngine';
 
 // Strip playback timing. Travel = projectile flying across the arena (frames
 // 0..n-2), impact = the burst frame held on the target (frame n-1). The
@@ -20,6 +21,12 @@ export default function VfxOverlay({ vfxKey, element, direction, onImpact, onCom
   const travel = travelMs || DEFAULT_TRAVEL_MS;
   const impact = impactMs || DEFAULT_IMPACT_MS;
 
+  if (prefersReducedMotion()) {
+    return <ReducedVfx config={config} element={element} targetSide={targetSide}
+      onImpact={onImpact} onComplete={onComplete} travelMs={travel}
+      impactMs={config?.strip || config?.signature || vfxKey === 'BASIC_ATTACK' ? impact : 0} />;
+  }
+
   if (config?.strip) {
     return <StripVfx config={config} targetSide={targetSide} onImpact={onImpact} onComplete={onComplete} travelMs={travel} impactMs={impact} />;
   }
@@ -37,6 +44,53 @@ export default function VfxOverlay({ vfxKey, element, direction, onImpact, onCom
       travelMs={travel}
       impactMs={impact}
     />
+  );
+}
+
+// Keep contact on the same beat as the full effect, without arena travel,
+// scale pulses, or CSS animation-end events that the reduced-motion reset
+// compresses to near zero. The target gets one stationary impact cue.
+function ReducedVfx({ config, element, targetSide, onImpact, onComplete, travelMs, impactMs }) {
+  const [atImpact, setAtImpact] = useState(false);
+  useEffect(() => {
+    let active = true;
+    setAtImpact(false);
+    const contactTimer = setTimeout(() => {
+      if (!active) return;
+      setAtImpact(true);
+      onImpact?.();
+    }, travelMs);
+    const completeTimer = setTimeout(() => {
+      if (active) onComplete();
+    }, travelMs + impactMs);
+    return () => {
+      active = false;
+      clearTimeout(contactTimer);
+      clearTimeout(completeTimer);
+    };
+  }, [config, element, targetSide, onImpact, onComplete, travelMs, impactMs]);
+
+  const strip = config?.strip;
+  const color = config?.signature?.palette[1] || (elementColors[element] || elementColors.neutral).primary;
+  return (
+    <div className="vfx-reduced-impact" aria-hidden="true" style={{
+      position: 'absolute', top: '50%', left: `${targetSide === 'left' ? NEAR_EDGE : FAR_EDGE}%`,
+      transform: `translate(-50%, -50%)${strip && targetSide === 'left' ? ' scaleX(-1)' : ''}`,
+      pointerEvents: 'none', zIndex: 22,
+      opacity: atImpact ? 0.75 : 0,
+      width: strip ? `${STRIP_DISPLAY}px` : '72px', height: strip ? `${STRIP_DISPLAY}px` : '72px',
+      ...(strip ? {
+        backgroundImage: `url(${strip.src})`,
+        backgroundSize: `${STRIP_DISPLAY * strip.frames}px ${STRIP_DISPLAY}px`,
+        backgroundPosition: `${-(strip.frames - 1) * STRIP_DISPLAY}px 0px`,
+        backgroundRepeat: 'no-repeat',
+      } : {
+        color, border: `2px solid ${color}`, borderRadius: '50%',
+        background: '#111118', display: 'grid', placeItems: 'center', fontSize: '40px',
+      }),
+    }}>
+      {!strip && (SIGNATURE_GLYPHS[config?.signature?.motif] || '✦')}
+    </div>
   );
 }
 

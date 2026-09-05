@@ -6,6 +6,7 @@ import { getSingularityStage } from './singularityProgress';
 import { getTerminalDialogue } from './felixDialogue';
 import { OPENING_BOOT_LINES } from './loreCanon';
 import { markIntroSeen } from './persistence';
+import useGamepadController from './useGamepadController';
 
 export default function TitleScreen({ onStart, save }) {
   const [lines, setLines] = useState([]);
@@ -19,6 +20,7 @@ export default function TitleScreen({ onStart, save }) {
   const skippedRef = useRef(false);
   const containerRef = useRef(null);
   const hasBootedRef = useRef(false);
+  const startedRef = useRef(false);
 
   const scrollToBottom = () => {
     if (containerRef.current) {
@@ -69,6 +71,7 @@ export default function TitleScreen({ onStart, save }) {
     setGlitching(true);
     playSound('terminalGlitch');
     await wait(300);
+    if (skippedRef.current) return;
     setGlitching(false);
 
     setPhase('felix');
@@ -152,10 +155,20 @@ export default function TitleScreen({ onStart, save }) {
 
   const handleStart = (event) => {
     event?.stopPropagation();
+    if (startedRef.current) return;
+    startedRef.current = true;
     playSound('buttonClick');
     markIntroSeen();
     onStart();
   };
+
+  const gamepad = useGamepadController({
+    onButtonPress(button) {
+      if (button !== 'A' && button !== 'START') return;
+      if (phase === 'ready') handleStart();
+      else handleClick();
+    },
+  });
 
   return (
     <div
@@ -173,8 +186,8 @@ export default function TitleScreen({ onStart, save }) {
         <SoundToggle />
       </div>
       {phase !== 'ready' && (
-        <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', fontSize: 16, color: '#bbb', pointerEvents: 'none', userSelect: 'none', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-          ▸ click to skip
+        <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', fontSize: 12, color: '#bbb', pointerEvents: 'none', userSelect: 'none', letterSpacing: '0.05em', width: 'calc(100% - 32px)', textAlign: 'center' }}>
+          {gamepad ? 'A / START · skip introduction' : '▸ click or press Enter to skip'}
         </div>
       )}
 
@@ -221,10 +234,12 @@ export default function TitleScreen({ onStart, save }) {
         )}
 
         {showButton && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
-            <button className="terminal-init-btn" onClick={handleStart}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 20 }}>
+            <button className="terminal-init-btn" onClick={handleStart}
+              style={gamepad ? { outline: '3px solid #ffcc00', outlineOffset: 4 } : undefined}>
               INITIALIZE_SIMULATION.EXE
             </button>
+            {gamepad && <span style={{ color: '#ddd', fontSize: 12 }}>A / START · begin</span>}
           </div>
         )}
       </div>

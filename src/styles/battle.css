@@ -1491,6 +1491,16 @@
 .battle-callout.reflect { color: #b388ff; }
 .battle-callout.ko { color: #ffffff; }
 
+@media (prefers-reduced-motion: reduce) {
+  .battle-callout {
+    /* BattleScreen dismisses this after its reading window. A near-zero CSS
+       duration would otherwise jump straight to the invisible final frame. */
+    animation: none !important;
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
 @keyframes battleCalloutPop {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(0.65); }
   18% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
