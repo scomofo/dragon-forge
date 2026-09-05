@@ -6,7 +6,7 @@
 > **Last Verified**: 2026-06-16
 > **Implements Pillar**: P5 — Earned Mastery, Never Trivialized
 
-> **2026-09-04 update**: Mirror Admin now uses the fixed note arrangement in `musicScores.js` through `scorePlayer.js`. Settings has a Sound Room for that arrangement and the Heartforge motif study; other procedural beds and MP3s remain. Music volume updates every playback type immediately. Mute preserves the requested screen track and resumes it on unmute; explicit `stopMusic` clears that request. Fades are cancelable per audio element, and queued score/arpeggio voices are disposed on navigation. Title interactions use the preserved title MP3 without bubbling over the hatchery transition. The historical line references below predate this pass; `music-identity.md` owns current composition status.
+> **2026-09-04 update**: Scott is handling the soundtrack separately. Existing music assets, track choices, and procedural beds are preserved. This pass fixes playback controls: volume updates playing MP3s and procedural beds immediately; mute preserves the requested screen track and resumes it on unmute; explicit `stopMusic` clears that request. Fades are cancelable per audio element, and arpeggio voices are disposed on navigation. Title Start and keyboard sound-control events no longer bubble over navigation. The historical line references below predate these fixes.
 
 ## Summary
 

@@ -7,7 +7,7 @@
 
 ## Priority order
 
-Work the list in order. Do not expand the roster (P5) or add engines until P1 has real frames.
+Scott is handling P2 (soundtrack) separately. Agent work can proceed from P1 animation/readability polish to P3 gameplay and authored rooms without waiting on soundtrack composition. Do not expand the roster (P5) or add engines until P1 has real frames.
 
 ### P0 — Identity lock
 
@@ -15,9 +15,9 @@ Done in this pass.
 
 - ADR-0011: browser is the 1.0 cartridge; Godot is frozen 2.0 research.
 - Art bible + `src/artBible.js` reject tests.
-- Music identity + `MUSIC_COMMISSION`.
+- Music identity brief (soundtrack owned separately by Scott).
 - Honest animation contract in `src/sprites.js` (stage portraits are single-frame).
-- Four-zone data in `src/worldZones.js` (P3 skeleton, no new nodes yet).
+- Four-zone data in `src/worldZones.js` (Outer Grid rooms implemented; other zones remain skeletons).
 - Boss pattern data in `src/bossPatterns.js` (all 13 patterns now execute in `battleEngine`).
 
 ### P1 — Battles look like battles
@@ -32,13 +32,13 @@ The P1 assets have landed. Battle strips are authored keyframes; in-between anim
 
 ### P2 — Twelve tracks
 
-Commission list in `design/gdd/music-identity.md`. Mirror Admin arrangement first.
-
-First arrangement implemented: a 16-bar Mirror Admin score at 56 BPM and a 112 BPM Heartforge motif study, auditionable in Settings. The original title recording is preserved. Listening, instrument design, mastering, the remaining tracks, and the six-distinct-loops full-run gate remain open.
+Scott owns soundtrack composition separately. The reference brief is in `design/gdd/music-identity.md`. Existing assets, track choices, and procedural beds remain until soundtrack integration is requested. This follow-up removes the agent-authored arrangements and Sound Room from PR #9. Playback reliability fixes are independent of composition.
 
 ### P3 — Four authored zones
 
 `OUTER_GRID` → `FROZEN_CACHE` → `STORM_SPINE` → `ADMIN_CORE`. Each zone: 3-screen path, 1 lab/town room, 1 setpiece, 1 mid-boss, 1 zone boss. Replace the 9-node graph only after rooms exist.
+
+The first Outer Grid route is implemented: Field Locker → Signal Approach → Signal Breach → Firewall Span → optional Maintenance Cache → Overflow Vent → Return Gate. The Sentinel remains the gatekeeper and Buffer Overflow the finale, matching the existing campaign prerequisites. Rooms reuse the shipped art; the span choice is functional, with bespoke setpiece animation still to come. Checkpoints, party selection, both battle returns, a one-time cache, and a one-time return reward are wired into the browser save. The existing map remains available. See `docs/outer-grid-playtest.md` for the pending hands-on acceptance pass.
 
 ### P4 — Combat authorship
 
@@ -52,14 +52,14 @@ Execution is now live for all 13 patterns; dual-tech support and tests also exis
 
 ## What earns the next production milestone
 
-The target is a replayable 15–20 minute opening slice: awaken → first dragon → Outer Grid route → readable boss → meaningful reward → return to the Forge. The current nine-node campaign remains until the replacement rooms exist.
+The target is a replayable 15–20 minute opening slice: awaken → first dragon → Outer Grid route → readable boss → meaningful reward → return to the Forge. The first route is playable alongside the nine-node campaign; its duration and player response have not yet been measured.
 
 | Quality gate | Evidence required before calling the slice polished |
 |---|---|
 | Player purpose | A new player can explain the immediate objective and start making choices in the first two minutes without coaching. |
 | Combat authorship | Test players can explain an enemy tell, choose a counter, and describe why a loss happened. |
 | Animation | At normal and reduced motion, entry/anticipation/contact/recovery remain readable; low-contrast actors separate from their arenas. |
-| Musical identity | The title and Caretaker arrangements are recognizable as related by listening; six distinct authored loops occur in a full run. |
+| Musical identity (Scott's parallel work) | The supplied soundtrack meets the approved brief and is integrated for release. Composition does not block development of the playable slice. |
 | Place and pacing | Outer Grid has a three-room path, a lab, a setpiece, a mid-boss and a boss, with a clear return route and no mandatory repeat-fight grind. |
 | Reliability | Clean install, save/resume, first hatch, first battle, failure/retry, sound controls, keyboard/gamepad and narrow-screen play all pass in real browsers. |
 

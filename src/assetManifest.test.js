@@ -7,6 +7,8 @@ import { SINGULARITY_BOSSES, FINAL_BOSS, MIRROR_ADMIN, CORRUPTION_REMNANTS } fro
 import { SIGNATURE_VFX, VFX_FRAMES } from './sprites';
 import { DRAGON_BATTLE_SETS, NPC_BATTLE_SETS } from './artBible';
 import { BATTLE_POSES, getBattleSetSheetUrl, isBattleSetSheetLive } from './battleSets';
+import { OUTER_GRID_ROOMS } from './worldZones';
+import { assetUrl } from './utils';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -19,6 +21,8 @@ function publicPath(url) {
 
 function collectAssetUrls() {
   const urls = new Set();
+  Object.values(OUTER_GRID_ROOMS).forEach(room => urls.add(assetUrl(room.background)));
+  urls.add(assetUrl('/assets/characters/skye.png'));
   for (const dragon of Object.values(dragons)) {
     urls.add(dragon.spriteSheet);
     Object.values(dragon.stageSprites || {}).forEach((url) => urls.add(url));

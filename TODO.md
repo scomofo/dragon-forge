@@ -12,14 +12,19 @@
   - [x] P1.1 registry — `src/arenas.js` covers the 11 battle arenas (all honest placeholders); grade-only filter allowlist with 7 locked content-filter users; `BattleScreen` resolves through it with debug flags
   - [x] P1.1 art — all 11 battle arenas + the 5 element arenas now authored 1024² (handoff/ARENA_AND_FORGE_BRIEF.md via seedream v4.5); gravity-chamber grid placeholder retired; `KNOWN_PLACEHOLDER_ARENAS` empty; webp in `public/assets/arenas/`
   - [x] P1 art — all done: arenas + dragon/NPC battle sheets + boss phase attack cells (12) + 9 signature VFX strips (vfx_sig_*.webp, wired via `strip:` so the overlay prefers them over the procedural fallback). Notes: battle sheets are keyframe strips (in-between frames future polish); void/protocol_vulture low-contrast; singularity surge/void idles remain the committed vortices (distinctness regen rejected).
-- [ ] P2 Twelve authored tracks — Mirror Admin title-motif arrangement first (`design/gdd/music-identity.md`)
-  - [x] First arrangement — 16-bar Caretaker score at 56 BPM; 112 BPM Heartforge motif study; Settings Sound Room; existing Mirror Admin battle route wired
-  - [x] Playback reliability — live MP3/score volume, immediate mute, destination-aware unmute, cancelable fades, disposed queued notes, title input/music bubbling repaired
-  - [ ] Listening gate — instrument design/mastering, SFX balance, loop seams, and motif correspondence with the preserved title MP3
-  - [ ] Remaining compositions and six-authored-loops full-run acceptance (first arrangement does not close P2)
+- [ ] P2 Soundtrack — handled separately by Scott (`design/gdd/music-identity.md`); parallel work, not a blocker for agent gameplay work
 - [ ] P3 Four authored zones — Outer Grid / Frozen Cache / Storm Spine / Admin Core rooms (`src/worldZones.js`)
+  - [x] Outer Grid gameplay — seven rooms, a saved crossing choice, optional cache, Sentinel/Overflow encounters, room checkpoints, and return reward
+  - [ ] Outer Grid hands-on acceptance — first-time comprehension, both crossings, loss/retry, keyboard/controller/touch, narrow screens, and timed pacing (`docs/outer-grid-playtest.md`)
+  - [ ] Outer Grid presentation — bespoke span animation and room transitions; current route reuses shipped arena/Forge art
 - [x] P4 Execute `bossPatterns.js` in `battleEngine` — **all 13 live** (options-based engine hooks + per-boss screen state; `mirror_admin_reset` via per-phase move history). Depth-axis choice (dual techs **or** 4-move kits) still open
 - [ ] P5 Roster expansion only after P1–P3
+
+## Current reliability pass
+
+- [x] Playback controls — live MP3/procedural volume, immediate mute, destination-aware unmute, cancelable fades, and disposed arpeggio notes
+- [x] Title input — Start no longer bubbles over the next screen's music, and keyboard sound controls no longer trigger Start
+- [ ] Manual browser check — title keyboard controls, volume/mute through navigation, rapid screen changes, and narrow-screen audio controls
 
 ## Recent Browser QA
 - [x] Forge hub refactor: scene/overlays/movement split, CSS extracted, truthful station copy

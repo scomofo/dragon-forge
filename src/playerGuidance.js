@@ -4,6 +4,7 @@ import { getAvailableCampaignNodes } from './campaignMap';
 import { BUY_ITEMS, FORGE_RECIPES, canAffordBuy, canForge } from './shopItems';
 import { REQUIRED_FRAGMENT_IDS } from './loreCanon';
 import { isDailyChallengeCompleted } from './dailyChallenge';
+import { getOuterGridProgress } from './outerGrid';
 
 function getOwnedDragons(save) {
   return Object.entries(save?.dragons || {}).filter(([, dragon]) => dragon?.owned);
@@ -43,15 +44,26 @@ export function getPlayerGuidance(save) {
   if ((save?.defeatedNpcs || []).length === 0) {
     if ((save?.stats?.battlesLost || 0) > 0) {
       return {
-        target: 'map',
+        target: 'outerGrid',
         action: 'RETRY',
         title: "You keep your dragon — keep fighting",
       };
     }
     return {
-      target: 'map',
-      action: 'FIRST BATTLE',
-      title: 'Stabilize Signal Breach',
+      target: 'outerGrid',
+      action: 'EXPLORE',
+      title: 'Enter the Outer Grid with your guardian',
+    };
+  }
+
+  // Once the player enters the authored opening, keep its objective ahead of
+  // daily chores. Existing saves that never entered it retain their guidance.
+  const outerGrid = getOuterGridProgress(save);
+  if (outerGrid.visited.length > 1 && !outerGrid.rewardClaimed) {
+    return {
+      target: 'outerGrid', action: 'CONTINUE ROUTE',
+      title: (save.defeatedNpcs || []).includes('buffer_overflow')
+        ? 'Collect your reward at the Return Gate' : 'Stabilize the Overflow Vent and return home',
     };
   }
 

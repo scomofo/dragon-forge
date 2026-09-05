@@ -137,7 +137,7 @@ export default function TitleScreen({ onStart, save }) {
 
   const handleClick = () => {
     // Retry music on first user interaction (autoplay policy requires click)
-    playMusic('title');
+    playMusic('opening');
     if (phase === 'ready') return;
     skippedRef.current = true;
     setLines(OPENING_BOOT_LINES.map((l) => ({ text: l.text, status: l.status })));

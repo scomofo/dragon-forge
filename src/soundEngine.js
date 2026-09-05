@@ -1,7 +1,5 @@
 // @ts-nocheck
 import { assetUrl } from './utils';
-import { MUSIC_SCORES } from './musicScores';
-import { startScore } from './scorePlayer';
 
 let audioCtx = null;
 
@@ -87,7 +85,6 @@ export function setMusicVolume(vol) {
     if (audio === currentMusic) audio.volume = getMusicVolume();
     else audio.pause();
   }
-  currentScore?.setVolume(getMusicVolume());
   if (proc.master) {
     const spec = PROCEDURAL_BEDS[proc.name];
     proc.master.gain.value = getMusicVolume() * (spec?.gain || 0.22);
@@ -327,8 +324,7 @@ const MUSIC_SCHEMA = {
   journal: { role: 'lore-calm', mood: 'reflective', source: 'procedural' },
   shop: { role: 'shop', mood: 'brisk', source: 'procedural' },
   credits: { role: 'credits', mood: 'resolute', source: 'procedural' },
-  heartforge: { role: 'motif-study', mood: 'reflective', source: 'score', bpm: MUSIC_SCORES.heartforge.bpm },
-  mirrorAdmin: { role: 'true-final', mood: 'tragic', source: 'score', bpm: MUSIC_SCORES.mirrorAdmin.bpm },
+  mirrorAdmin: { role: 'true-final', mood: 'tragic', source: 'procedural' },
 };
 
 const MUSIC_ALIASES = {
@@ -776,7 +772,6 @@ export function playSound(name, options) {
 
 let currentMusic = null;
 let currentTrackName = null;
-let currentScore = null;
 
 const MUSIC_TRACKS = {
   title: '/assets/music/theme.mp3',
@@ -797,6 +792,7 @@ const PROCEDURAL_BEDS = {
   shop:        { bpm: 100, pad: [98, 147],    arp: [294, 330, 392, 330], wave: 'square',   filterFreq: 1600, gain: 0.18 },
   credits:     { bpm: 72,  pad: [87, 130],    arp: [349, 440, 523, 440], wave: 'sine',     filterFreq: 2000, gain: 0.18 },
   singularity: { bpm: 96,  pad: [41, 61],     arp: [82, 98, 61, 123],    wave: 'sawtooth', filterFreq: 700,  gain: 0.20 },
+  mirrorAdmin: { bpm: 108, pad: [49, 73.5],   arp: [147, 156, 196, 185], wave: 'sawtooth', filterFreq: 560,  gain: 0.22 },
 };
 
 const musicCache = new Map();
@@ -931,8 +927,6 @@ function fadeAudio(audio, targetVol, pauseAtEnd = false) {
 
 function silencePlayback() {
   stopProceduralBed();
-  currentScore?.stop();
-  currentScore = null;
   for (const audio of musicCache.values()) {
     cancelFade(audio);
     audio.pause();
@@ -945,21 +939,17 @@ export function playMusic(trackName, immediate = false) {
   // A typo must not silence the valid score already playing.
   if (!MUSIC_SCHEMA[resolvedTrackName]) return;
   const isProc = !!PROCEDURAL_BEDS[resolvedTrackName];
-  const score = MUSIC_SCORES[resolvedTrackName];
   if (prefs.muted) {
     currentTrackName = resolvedTrackName;
     silencePlayback();
     return;
   }
   if (resolvedTrackName === currentTrackName) {
-    if (score && currentScore) return;
     if (isProc && proc.name === resolvedTrackName) return;
     if (!isProc && currentMusic && !currentMusic.paused) return;
   }
 
   stopProceduralBed();
-  currentScore?.stop();
-  currentScore = null;
   if (currentMusic && !currentMusic.paused) {
     if (immediate) {
       cancelFade(currentMusic);
@@ -969,11 +959,6 @@ export function playMusic(trackName, immediate = false) {
   currentMusic = null;
   if (immediate) silencePlayback();
   currentTrackName = resolvedTrackName;
-
-  if (score) {
-    if (typeof window !== 'undefined') currentScore = startScore(getCtx(), score, getMusicVolume());
-    return;
-  }
 
   if (isProc) {
     startProceduralBed(resolvedTrackName);
@@ -997,8 +982,6 @@ export function playMusic(trackName, immediate = false) {
 
 export function stopMusic() {
   stopProceduralBed();
-  currentScore?.stop();
-  currentScore = null;
   for (const audio of musicCache.values()) {
     if (!audio.paused) fadeAudio(audio, 0, true);
   }
