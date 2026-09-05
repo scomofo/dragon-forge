@@ -21,7 +21,24 @@ export default function OuterGridScreen({ save, refreshSave, onNavigate, onBegin
   const [position, setPosition] = useState(28);
   const [activeAction, setActiveAction] = useState(null);
   const [message, setMessage] = useState('');
+  // P3 presentation: room transit (walk off / walk in) and the bespoke
+  // firewall-span crossing animation. transit = { dir, phase: 'out'|'in' }.
+  const [transit, setTransit] = useState(null);
+  const [spanFx, setSpanFx] = useState(null); // 'span' | 'crawlway'
+  const [faceDir, setFaceDir] = useState(1); // 1 = right, -1 = left
+  const transitRef = useRef(null);
+  const timersRef = useRef([]);
   const sceneRef = useRef(null);
+  const reducedMotion = typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+  function later(fn, ms) {
+    const id = setTimeout(fn, ms);
+    timersRef.current.push(id);
+    return id;
+  }
+
+  useEffect(() => () => timersRef.current.forEach(clearTimeout), []);
   const node = getCampaignNodeById(room.nodeId);
   const npc = node ? npcs[node.npcId] : null;
   const cleared = npc && (save.defeatedNpcs || []).includes(npc.id);
@@ -31,10 +48,18 @@ export default function OuterGridScreen({ save, refreshSave, onNavigate, onBegin
   const exits = getOuterGridExits(save);
 
   useEffect(() => {
-    setPosition(28);
     setActiveAction(null);
     setMessage('');
     sceneRef.current?.focus({ preventScroll: true });
+    // Entering from a transit: start at the edge Skye walked in through, then
+    // settle to the default spot. Fresh arrivals (map nav) start settled.
+    if (transitRef.current?.phase === 'in') {
+      setPosition(transitRef.current.dir === 'right' ? 8 : 92);
+      later(() => setPosition(28), 90);
+      later(() => { transitRef.current = null; setTransit(null); }, 560);
+    } else {
+      setPosition(28);
+    }
   }, [room.id]);
 
   function perform(action, value, feedback = '') {
@@ -43,6 +68,36 @@ export default function OuterGridScreen({ save, refreshSave, onNavigate, onBegin
     refreshSave();
     setMessage(feedback);
     return true;
+  }
+
+  // Room transit: Skye walks off through the exit, the scene dims, the move
+  // commits, and she walks in from the opposite edge of the next room.
+  function travelTo(exit) {
+    if (transitRef.current || spanFx) return;
+    if (reducedMotion) { perform('move', exit.to); return; }
+    const dir = exit.x >= 50 ? 'right' : 'left';
+    setFaceDir(dir === 'right' ? 1 : -1);
+    transitRef.current = { dir, phase: 'out' };
+    setTransit(transitRef.current);
+    setActiveAction(null);
+    later(() => {
+      transitRef.current = { dir, phase: 'in' };
+      setTransit(transitRef.current);
+      perform('move', exit.to); // room changes here; the entry effect takes over
+    }, 460);
+  }
+
+  // Bespoke firewall-span crossing: the brace/crawlway animation plays first,
+  // then the choice commits and its message lands.
+  function chooseSpan(route, feedback) {
+    if (spanFx || transitRef.current) return;
+    if (reducedMotion) { perform('choose-route', route, feedback); return; }
+    playSound(route === 'span' ? 'shieldDeflectSting' : 'mapNodeReach');
+    setSpanFx(route);
+    later(() => {
+      perform('choose-route', route, feedback);
+      setSpanFx(null);
+    }, 1500);
   }
 
   function beginBattle() {
@@ -63,8 +118,8 @@ export default function OuterGridScreen({ save, refreshSave, onNavigate, onBegin
   });
   if (room.id === 'field-locker' && !owned.length) actions.push({ id: 'hatch', label: 'Hatch your first guardian', x: 64, run: () => onNavigate('hatchery') });
   if (room.id === 'firewall-span' && !progress.spanRoute) {
-    actions.push({ id: 'brace', label: 'Brace the span · direct route', x: 56, run: () => perform('choose-route', 'span', 'The upper brace holds. The direct crossing is open.') });
-    actions.push({ id: 'crawlway', label: 'Open the crawlway · supply cache', x: 74, run: () => perform('choose-route', 'crawlway', 'You pry open the lower hatch. The maintenance cache lies below.') });
+    actions.push({ id: 'brace', label: 'Brace the span · direct route', x: 56, run: () => chooseSpan('span', 'The upper brace holds. The direct crossing is open.') });
+    actions.push({ id: 'crawlway', label: 'Open the crawlway · supply cache', x: 74, run: () => chooseSpan('crawlway', 'You pry open the lower hatch. The maintenance cache lies below.') });
   }
   if (room.id === 'maintenance-cache' && !progress.cacheClaimed) actions.push({ id: 'cache', label: `Salvage cache · ${OUTER_GRID_CACHE_REWARD} scraps`, x: 60, run: () => perform('claim-cache', null, `Recovered ${OUTER_GRID_CACHE_REWARD} DataScraps. This cache is now empty.`) });
   if (room.id === 'return-gate') {
@@ -75,10 +130,12 @@ export default function OuterGridScreen({ save, refreshSave, onNavigate, onBegin
   for (const exit of exits) {
     // Once the span choice is made, show the selected crossing only.
     if (exit.route && progress.spanRoute && exit.route !== progress.spanRoute) continue;
-    actions.push({ id: `exit-${exit.to}`, label: exit.label, x: exit.x, disabled: !exit.open, hint: exit.reason, run: () => perform('move', exit.to) });
+    actions.push({ id: `exit-${exit.to}`, label: exit.label, x: exit.x, disabled: !exit.open, hint: exit.reason, run: () => travelTo(exit) });
   }
 
   function walk(direction) {
+    if (transitRef.current || spanFx) return;
+    setFaceDir(direction > 0 ? 1 : -1);
     const next = Math.max(10, Math.min(90, position + direction * 6));
     setPosition(next);
     const nearest = actions.filter(action => !action.disabled).reduce((best, action) =>
@@ -96,6 +153,7 @@ export default function OuterGridScreen({ save, refreshSave, onNavigate, onBegin
   }
 
   function activate() {
+    if (transitRef.current || spanFx) return;
     const action = actions.find(item => item.id === activeAction && !item.disabled);
     if (action) action.run();
     else cycleAction(1);
@@ -156,28 +214,46 @@ export default function OuterGridScreen({ save, refreshSave, onNavigate, onBegin
         <div className="outer-grid-body">
           <section className="outer-grid-exploration" aria-label="Room exploration">
             <div
-              ref={sceneRef} className="outer-grid-scene" tabIndex={0} role="group"
+              ref={sceneRef}
+              className={`outer-grid-scene${transit ? ` transit-${transit.phase}-${transit.dir}` : ''}`}
+              tabIndex={0} role="group"
               aria-label={`${room.name}. Left and right to walk, up and down to choose an action, E or Enter to interact.`}
               onKeyDown={handleSceneKey}
               onClick={event => {
-                if (event.target !== event.currentTarget) return;
+                if (event.target !== event.currentTarget || transitRef.current || spanFx) return;
                 sceneRef.current.focus({ preventScroll: true });
                 const bounds = event.currentTarget.getBoundingClientRect();
-                setPosition(Math.max(10, Math.min(90, (event.clientX - bounds.left) / bounds.width * 100)));
+                const next = Math.max(10, Math.min(90, (event.clientX - bounds.left) / bounds.width * 100));
+                setFaceDir(next >= position ? 1 : -1);
+                setPosition(next);
                 setActiveAction(null);
               }}
               style={{ '--room-background': `url(${assetUrl(room.background)})` }}
             >
               <span className="outer-grid-room-kind">{cleared ? 'STABILIZED' : room.kind}</span>
               {npc && !cleared && <div className="outer-grid-enemy" aria-label={npc.name}><NpcSprite actorId={npc.id} idleSprite={npc.idleSprite} size={160} /></div>}
-              <img className="outer-grid-skye" src={assetUrl('/assets/characters/skye.png')} alt="Skye" draggable={false} style={{ left: `${position}%` }} />
+              <img
+                className={`outer-grid-skye${transit ? ` transit-${transit.phase}` : ''}`}
+                src={assetUrl('/assets/characters/skye.png')} alt="Skye" draggable={false}
+                style={{
+                  left: `${transit?.phase === 'out' ? (transit.dir === 'right' ? 106 : -6) : position}%`,
+                  transform: `translateX(-50%) scaleX(${faceDir})`,
+                }}
+              />
+              {spanFx && (
+                <div className={`outer-grid-span-fx outer-grid-span-fx-${spanFx}`} aria-hidden="true">
+                  {spanFx === 'span'
+                    ? (<><span className="span-strut span-strut-left" /><span className="span-strut span-strut-right" /><span className="span-bridge" /></>)
+                    : (<span className="crawlway-hatch" />)}
+                </div>
+              )}
               <div className="outer-grid-room-caption">{cleared ? room.clearedDescription : room.description}</div>
             </div>
             {[...new Set(actions.filter(action => action.disabled && action.hint).map(action => action.hint))].map(hint => <p key={hint} className="outer-grid-note">{hint}</p>)}
             <div className="outer-grid-actions" aria-label="Room actions">
               {actions.map(action => (
                 <button key={action.id} type="button" className={activeAction === action.id ? 'is-selected' : ''}
-                  disabled={action.disabled} title={action.disabled ? action.hint : undefined}
+                  disabled={action.disabled || Boolean(transit) || Boolean(spanFx)} title={action.disabled ? action.hint : undefined}
                   onFocus={() => { setActiveAction(action.id); setPosition(action.x); }}
                   onClick={action.run}>
                   {action.label}

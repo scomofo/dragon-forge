@@ -33,6 +33,62 @@
 .outer-grid-guardian { display: block; width: 150px; height: 120px; object-fit: contain; image-rendering: pixelated; margin: 12px auto; }
 .outer-grid-briefing, .outer-grid-route-summary { border-top: 1px solid #394f60; margin-top: 20px; padding-top: 18px; }
 .outer-grid-briefing p, .outer-grid-route-summary p { margin: 8px 0; }
+
+/* P3 presentation — room transitions: Skye walks off the exit edge while the
+   scene dims, then enters from the opposite edge of the next room. */
+.outer-grid-scene::after {
+  content: ''; position: absolute; inset: 0; background: #0a1019;
+  opacity: 0; pointer-events: none; transition: opacity 380ms ease; z-index: 3;
+}
+.outer-grid-scene.transit-out-left::after, .outer-grid-scene.transit-out-right::after { opacity: 0.92; }
+.outer-grid-skye.transit-out { transition: left 460ms ease-in; }
+.outer-grid-skye.transit-in { transition: left 500ms ease-out; }
+
+/* P3 presentation — bespoke firewall-span crossing. Brace: glowing struts
+   rise and a bridge line forms across the span. Crawlway: the lower hatch
+   slides open and spills teal light. */
+.outer-grid-span-fx { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.span-strut {
+  position: absolute; bottom: 12%; width: 10px; height: 34%;
+  background: linear-gradient(to top, #f0c581, #ffe1a9);
+  box-shadow: 0 0 18px #f0c581aa, 0 0 42px #f0c58155;
+  transform-origin: bottom; animation: span-strut-rise 900ms ease-out both;
+}
+.span-strut-left { left: 34%; }
+.span-strut-right { left: 64%; animation-delay: 180ms; }
+.span-bridge {
+  position: absolute; left: 30%; right: 30%; bottom: 44%; height: 8px;
+  background: linear-gradient(to right, #f0c58100, #ffe1a9, #f0c58100);
+  box-shadow: 0 0 24px #f0c58188;
+  transform-origin: center; animation: span-bridge-form 1100ms 260ms ease-out both;
+}
+.crawlway-hatch {
+  position: absolute; left: 50%; bottom: 10%; width: 22%; height: 16%;
+  transform: translateX(-50%);
+  background: #050b12; border: 2px solid #4a6b7a; border-bottom: none;
+  box-shadow: 0 0 0 #8cccd700;
+  animation: crawlway-open 1200ms ease-in-out both;
+}
+@keyframes span-strut-rise {
+  from { transform: scaleY(0); opacity: 0; }
+  40% { opacity: 1; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+@keyframes span-bridge-form {
+  from { transform: scaleX(0); opacity: 0; }
+  45% { opacity: 1; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+@keyframes crawlway-open {
+  from { transform: translateX(-50%) scaleY(0); box-shadow: 0 0 0 #8cccd700; }
+  55% { transform: translateX(-50%) scaleY(1); }
+  to { transform: translateX(-50%) scaleY(1); box-shadow: 0 0 34px #8cccd799, inset 0 0 18px #8cccd755; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .outer-grid-scene::after { transition: none; }
+  .outer-grid-skye.transit-out, .outer-grid-skye.transit-in { transition: none; }
+  .span-strut, .span-bridge, .crawlway-hatch { animation-duration: 1ms; animation-delay: 0ms; }
+}
 @media (max-width: 800px) {
   .outer-grid-layout { padding: 22px 12px; }
   .outer-grid-body { grid-template-columns: minmax(0, 1fr); }
