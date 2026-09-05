@@ -23,6 +23,7 @@ import { loadSave, getSaveStatus, recordRemnantDefeat, beginSession, accumulateP
 import { getExpedition } from './expeditions';
 import { getSingularityStage, scaleBossForPlayer } from './singularityProgress';
 import { checkMilestones } from './journalMilestones';
+import { getBattleRetryConfig } from './battleRetry';
 
 const SCREENS = {
   TITLE: 'title',
@@ -61,6 +62,7 @@ export default function App() {
   const stage = getSingularityStage(save);
   const [toasts, setToasts] = useState([]);
   const toastIdRef = useRef(0);
+  const [battleAttempt, setBattleAttempt] = useState(0);
 
   function showToast(message) {
     // Monotonic id — Date.now() collided when two toasts fired in the same ms
@@ -235,6 +237,26 @@ export default function App() {
     setScreen(returnScreen || SCREENS.BATTLE_SELECT);
   }
 
+  function handleRetryBattle() {
+    const latestSave = loadSave();
+    if (getSaveStatus().blocked) return;
+    const retry = getBattleRetryConfig(battleConfig, latestSave);
+    if (!retry) {
+      if (battleConfig?.isSingularity) handleSingularityBattleEnd(false);
+      else handleBattleEnd();
+      showToast('Choose an available guardian before trying again.');
+      return;
+    }
+    setSave(latestSave);
+    setBattleConfig(retry);
+    setBattleAttempt(attempt => attempt + 1);
+    playSound('buttonClick');
+    const track = retry.isMirrorAdmin ? 'mirrorAdmin'
+      : retry.npcId === 'singularity' ? 'singularity'
+        : retry.isSingularity || retry.isRemnant || retry.boss ? 'boss' : 'battle';
+    playMusic(track, true);
+  }
+
   function handleSingularityBattleEnd(won) {
     // Credits only on a real Mirror Admin victory — the defeat overlay's
     // TRY AGAIN routes here too, and a loser must not see the epilogue.
@@ -353,9 +375,11 @@ export default function App() {
       {screen === SCREENS.BATTLE && battleConfig && (
         <div className="screen-enter" key="battle">
           <BattleScreen
+            key={battleAttempt}
             dragonId={battleConfig.dragonId}
             npcId={battleConfig.npcId}
             onBattleEnd={battleConfig.isSingularity ? handleSingularityBattleEnd : handleBattleEnd}
+            onRetryBattle={handleRetryBattle}
             save={save}
             refreshSave={refreshSave}
             battleConfig={battleConfig}

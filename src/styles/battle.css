@@ -1172,6 +1172,22 @@
   filter: brightness(1.12);
 }
 
+.result-overlay.defeat .result-card {
+  max-height: calc(100dvh - 44px);
+  overflow-y: auto;
+}
+
+.result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.result-actions .result-btn { min-height: 44px; font-size: 9px; line-height: 1.7; }
+.result-btn.secondary { background: #171d25; color: #d4e2ed; border-color: #79909d; box-shadow: none; }
+.result-btn:focus-visible { outline: 3px solid #9decff; outline-offset: 4px; }
+.defeat-advice { width: 100%; padding: 12px; border: 1px solid #668b9c; background: #101d27; }
+.defeat-advice > strong { display: block; color: #9decff; font-size: 10px; line-height: 1.7; }
+.result-card .defeat-advice p { margin: 8px auto 0; color: #d4e2ed; font-size: 10px; }
+.result-card .result-controls { color: #adbccb; font-size: 8px; }
+
+.move-btn:focus-visible .tooltip { display: block; }
+
 /* === VFX ATTACK EFFECTS === */
 
 /* Travel streak — element-colored glow blob that flies across the arena */

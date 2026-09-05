@@ -41,6 +41,8 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const [showTutorial, setShowTutorial] = useState(() => Object.values(save.dragons).every(d => !d.owned));
   const [currentResult, setCurrentResult] = useState(null);
   const [gridResults, setGridResults] = useState([]);
+  const [pullPending, setPullPending] = useState(false);
+  const pullInFlightRef = useRef(false);
   const skippedRef = useRef(false);
   const eggContainerRef = useRef(null);
   const currentElementRef = useRef('fire');
@@ -58,6 +60,9 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const canPull1 = isFirstGame || hasVoidEgg || save.dataScraps >= PULL_COST;
   const canPull10 = save.dataScraps >= PULL_COST * 10;
   const pityRemaining = 10 - save.pityCounter;
+  const firstGuardian = Object.entries(save.dragons).find(([id, dragon]) => dragon.owned && dragons[id]);
+  const showFirstExpedition = firstGuardian && !(save.defeatedNpcs || []).includes('firewall_sentinel')
+    && !pullPending && phase !== PHASES.HATCHING;
 
   const animateHatch = useCallback(async (element, rarityName = 'Common') => {
     const ceremony = getRarityCeremony(rarityName);
@@ -114,70 +119,91 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     setEggCss('');
   }, [fireBurst]);
 
-  const handlePull1 = async () => {
-    playSound('buttonClick');
+  const handlePull1 = async (event) => {
+    event?.stopPropagation();
+    if (pullInFlightRef.current) return;
     if (phase !== PHASES.IDLE && phase !== PHASES.REVEAL && phase !== PHASES.GRID) return;
 
     let currentSave = loadSave();
     const voidEggPull = !!currentSave.inventory?.voidEgg;
+    const firstPull = Object.values(currentSave.dragons).every(dragon => !dragon.owned);
 
     if (voidEggPull) {
       // The forged Void Egg IS the pull — no scrap cost, deterministic result.
       currentSave.inventory.voidEgg = false;
-    } else if (!isFirstGame) {
+    } else if (!firstPull) {
       if (currentSave.dataScraps < PULL_COST) return;
       currentSave.dataScraps -= PULL_COST;
     }
 
-    const pull = voidEggPull ? executeVoidEggPull() : executePull(currentSave.pityCounter);
-    const result = applyPullResult(currentSave, pull);
-    writeSave(result.save);
-    trackStat('totalPulls');
-    refreshSave();
-    setGridResults([]);
+    // A ref closes the gap before React paints disabled controls. All pull
+    // buttons share it, including the brief reveal before a ten-pull grid.
+    pullInFlightRef.current = true;
+    setPullPending(true);
+    playSound('buttonClick');
+    try {
+      const pull = voidEggPull ? executeVoidEggPull() : executePull(currentSave.pityCounter);
+      const result = applyPullResult(currentSave, pull);
+      writeSave(result.save);
+      trackStat('totalPulls');
+      refreshSave();
+      setGridResults([]);
 
-    await animateHatch(pull.element, pull.rarityName);
+      await animateHatch(pull.element, pull.rarityName);
 
-    setCurrentResult({ pull, apply: result });
-    setPhase(PHASES.REVEAL);
-    const stinger = getRarityCeremony(pull.rarityName).stinger;
-    if (stinger) setTimeout(() => playSound(stinger), 600);
+      setCurrentResult({ pull, apply: result });
+      setPhase(PHASES.REVEAL);
+      const stinger = getRarityCeremony(pull.rarityName).stinger;
+      if (stinger) setTimeout(() => playSound(stinger), 600);
+    } finally {
+      pullInFlightRef.current = false;
+      setPullPending(false);
+    }
   };
 
-  const handlePull10 = async () => {
-    playSound('buttonClick');
+  const handlePull10 = async (event) => {
+    event?.stopPropagation();
+    if (pullInFlightRef.current) return;
     if (phase !== PHASES.IDLE && phase !== PHASES.REVEAL && phase !== PHASES.GRID) return;
 
     let currentSave = loadSave();
     if (currentSave.dataScraps < PULL_COST * 10) return;
     currentSave.dataScraps -= PULL_COST * 10;
 
-    const results = [];
-    for (let i = 0; i < 10; i++) {
-      const pull = executePull(currentSave.pityCounter);
-      const result = applyPullResult(currentSave, pull);
-      currentSave = result.save;
-      results.push({ pull, apply: result });
+    pullInFlightRef.current = true;
+    setPullPending(true);
+    playSound('buttonClick');
+    try {
+      const results = [];
+      for (let i = 0; i < 10; i++) {
+        const pull = executePull(currentSave.pityCounter);
+        const result = applyPullResult(currentSave, pull);
+        currentSave = result.save;
+        results.push({ pull, apply: result });
+      }
+
+      writeSave(currentSave);
+      trackStat('totalPulls', 10);
+      refreshSave();
+
+      // Animate first pull
+      const first = results[0];
+      setGridResults([]);
+      await animateHatch(first.pull.element, first.pull.rarityName);
+
+      setCurrentResult({ pull: first.pull, apply: first.apply });
+      setPhase(PHASES.REVEAL);
+      const stinger = getRarityCeremony(first.pull.rarityName).stinger;
+      if (stinger) setTimeout(() => playSound(stinger), 600);
+
+      // After brief pause, show grid — ordered so the best pull lands last
+      await wait(500);
+      setGridResults(orderGridResults(results));
+      setPhase(PHASES.GRID);
+    } finally {
+      pullInFlightRef.current = false;
+      setPullPending(false);
     }
-
-    writeSave(currentSave);
-    trackStat('totalPulls', 10);
-    refreshSave();
-
-    // Animate first pull
-    const first = results[0];
-    setGridResults([]);
-    await animateHatch(first.pull.element, first.pull.rarityName);
-
-    setCurrentResult({ pull: first.pull, apply: first.apply });
-    setPhase(PHASES.REVEAL);
-    const stinger = getRarityCeremony(first.pull.rarityName).stinger;
-    if (stinger) setTimeout(() => playSound(stinger), 600);
-
-    // After brief pause, show grid — ordered so the best pull lands last
-    await wait(500);
-    setGridResults(orderGridResults(results));
-    setPhase(PHASES.GRID);
   };
 
   const handleSkip = () => {
@@ -191,6 +217,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   };
 
   const handleDismiss = () => {
+    if (pullInFlightRef.current) return;
     setPhase(PHASES.IDLE);
     setCurrentResult(null);
     setGridResults([]);
@@ -290,6 +317,19 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
           )}
         </div>
 
+        {showFirstExpedition && (
+          <section className="hatchery-expedition" aria-label="Your first expedition">
+            <h2>YOUR FIRST EXPEDITION</h2>
+            <p>{firstGuardian[1].nickname || dragons[firstGuardian[0]].name} is ready. Reach Signal Breach in the Outer Grid and face the Firewall Sentinel.</p>
+            <p>Defend to open its packet shield, then strike. Your route progress stays safe if you fall.</p>
+            <button type="button" className="hatchery-adventure-btn" onClick={(event) => {
+              event.stopPropagation();
+              playSound('buttonClick');
+              onNavigate('outerGrid');
+            }}>EXPLORE OUTER GRID</button>
+          </section>
+        )}
+
         {pityRemaining < 10 && pityRemaining > 0 && phase === PHASES.IDLE && (
           <div className="pity-hint">Rare+ guaranteed in {pityRemaining} pulls</div>
         )}
@@ -298,14 +338,15 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
           <div className="pull-buttons">
             <button
               className="pull-btn"
-              disabled={!canPull1}
+              type="button"
+              disabled={pullPending || !canPull1}
               onClick={handlePull1}
               style={hasVoidEgg ? { borderColor: '#aa66ff', color: '#cc88ff', boxShadow: '0 0 12px rgba(170, 102, 255, 0.4)' } : undefined}
             >
               {hasVoidEgg ? '🥚 HATCH VOID EGG' : isFirstGame ? 'FREE PULL' : `PULL x1 — ${PULL_COST}◆`}
             </button>
             {!isFirstGame && (
-              <button className="pull-btn" disabled={!canPull10} onClick={handlePull10}>
+              <button type="button" className="pull-btn" disabled={pullPending || !canPull10} onClick={handlePull10}>
                 PULL x10 — {PULL_COST * 10}◆
               </button>
             )}
@@ -313,10 +354,16 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
         )}
 
         {(phase === PHASES.REVEAL || phase === PHASES.GRID) && (
-          <div style={{ fontSize: 8, color: '#555', marginTop: 8 }}>Click anywhere to dismiss</div>
+          <button type="button" className="hatchery-text-btn" disabled={pullPending} onClick={(event) => {
+            event.stopPropagation();
+            handleDismiss();
+          }}>CONTINUE</button>
         )}
         {phase === PHASES.HATCHING && (
-          <div style={{ fontSize: 8, color: '#555', marginTop: 8 }}>Click to skip</div>
+          <button type="button" className="hatchery-text-btn" onClick={(event) => {
+            event.stopPropagation();
+            handleSkip();
+          }}>SKIP HATCH ANIMATION</button>
         )}
       </div>
 
@@ -327,7 +374,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
             <div className="tutorial-steps">
               <div className="tutorial-step">Your first hatch is free. Pull a guardian, then take it into battle.</div>
             </div>
-            <div style={{ fontSize: 8, color: '#555', marginTop: 12 }}>Tap anywhere to begin</div>
+            <button type="button" className="hatchery-text-btn" autoFocus onClick={() => setShowTutorial(false)}>BEGIN</button>
           </div>
         </div>
       )}

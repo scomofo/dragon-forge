@@ -3,7 +3,7 @@
 ## SNES-AAA quality pass (priority order)
 
 - [x] P0 Identity lock — ADR-0011, art bible, music identity, animation honesty, zone + boss-pattern skeletons
-- [ ] P1 Battle frames — art commissions still open (see below); code contracts landed:
+- [x] P1 Battle frames — authored assets and code contracts landed; hands-on acceptance remains below:
   - [x] P1.2 code — 9 signatures own dedicated VFX keys; `VFX_PLACEHOLDERS` cleared; procedural palette/motif/motion per signature (`src/sprites.js`, `src/VfxOverlay.jsx`)
   - [x] P1.1 code — arena contract (`isBannedArtUrl`, `KNOWN_PLACEHOLDER_ARENAS`); `fire.webp` banned; gravity-chamber grid tracked as the one placeholder; 404 language removed from `handoff/ARENA_AND_FORGE_BRIEF.md`
   - [x] P1.3/P1.4 code — `DRAGON_BATTLE_SETS` (9) + `NPC_BATTLE_SETS` (9) at 96px cell, honestly `portrait-only` until sheets land
@@ -32,11 +32,21 @@
 - [x] Boss HP consistency — Vulture drains and applies Blind on a landed Soul Drain; Great Reset commits capped healing and recognizes techniques executed on the KO turn; overheat self-damage remains in the resolved result
 - [ ] Battle hands-on acceptance — healing before/after enemy hits, guarded entry at 1×/2×, Siren turns 2/5, lethal entry and reserve return, Vulture drain and Mirror Admin reset
 - [ ] Remaining authored-boss contracts — Logic Bomb fuse must override a stored charge and guarantee its turn-seven hit; Data Corruption must rearm after Burn
-- [ ] Save recovery — preserve unreadable progress, recover a last-known-good save, and report failed writes
+- [x] Save recovery — preserve unreadable progress, recover a last-known-good save, and report failed writes (ADR-0012; browser acceptance below)
 - [x] Campaign guidance — remember the last entered expedition across all four zones, keep route objectives and unclaimed rewards ahead of dailies, explain cross-zone prerequisites, and show the correct room-return hint after defeat
 - [x] Playback controls — live MP3/procedural volume, immediate mute, destination-aware unmute, cancelable fades, and disposed arpeggio notes
 - [x] Title input — Start no longer bubbles over the next screen's music, and keyboard sound controls no longer trigger Start
 - [ ] Manual browser check — title keyboard controls, volume/mute through navigation, rapid screen changes, and narrow-screen audio controls
+
+## Fun and playability passes
+
+- [x] First guardian to adventure — prominent Outer Grid handoff and Sentinel counter hint; keyboard-operable Begin/Skip/Continue; repeated hatch clicks cannot overlap paid pulls
+- [x] Learn and retry — defeat offers one encounter-specific tactical tip, a direct full-HP rematch of the same encounter, and a separate route back to change setup
+- [x] Battle command access — keyboard/controller selection includes Swap, skips unavailable actions, preserves command identity, and respects native focused buttons and save controls
+- [ ] Hands-on opening/retry acceptance — first hatch, repeated inputs, defeat/rematch, daily/boss snapshots, keyboard/controller/touch and 390px layout (`docs/playability-playtest.md`)
+- [ ] Complete controller opening — Title/Hatchery gamepad actions, Forge overlay navigation/confirmation, and campaign-map guardian cycling
+- [ ] Reduced-motion completion — audit critical-hit flash/zoom, zoom punch and egg burst, then play the opening under normal and reduced motion
+- [ ] Measured fresh-player opening — record time to first meaningful choice, first fight and Forge return; observe whether players understand the enemy signal and adjust after defeat
 
 ## Recent Browser QA
 

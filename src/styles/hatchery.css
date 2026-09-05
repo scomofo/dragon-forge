@@ -7,14 +7,67 @@
 
 .hatchery-content {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   gap: 20px;
   padding: 20px;
   position: relative;
 }
+
+.hatchery-content > * { flex-shrink: 0; }
+
+.hatchery-expedition {
+  width: min(100%, 520px);
+  padding: 18px;
+  border: 2px solid #44c8dc;
+  background: #14232b;
+  text-align: left;
+  position: relative;
+}
+
+.hatchery-expedition h2 {
+  color: #78e5ed;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.hatchery-expedition p {
+  margin-top: 10px;
+  color: #d6e4e8;
+  font-size: 10px;
+  line-height: 1.9;
+}
+
+.hatchery-adventure-btn, .hatchery-text-btn {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #68848f;
+  background: #172933;
+  color: #d9f5fa;
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.8;
+  cursor: pointer;
+}
+
+.hatchery-adventure-btn {
+  margin-top: 14px;
+  width: 100%;
+  border: 2px solid #78e5ed;
+  color: #78e5ed;
+}
+
+.hatchery-adventure-btn:hover, .hatchery-text-btn:hover:not(:disabled) { background: #24414b; }
+.hatchery-adventure-btn:focus-visible, .hatchery-text-btn:focus-visible, .pull-btn:focus-visible {
+  outline: 3px solid #ffcc00;
+  outline-offset: 4px;
+}
+.hatchery-text-btn:disabled { opacity: 0.5; cursor: wait; }
+.tutorial-card .hatchery-text-btn { margin-top: 14px; }
 
 .hatchery-content::before {
   content: '';
@@ -271,6 +324,8 @@
 
 .pull-buttons {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
 }
 
