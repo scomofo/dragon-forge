@@ -31,7 +31,7 @@ export const BOSS_PATTERNS = {
   phishing_siren: {
     id: 'phishing_siren',
     tell: 'Lure pulse. Bench slot 1 flashes as if already swapped.',
-    rule: 'On turn 2 and 5 the siren forces a bench swap if a reserve exists, then gets a free Toxic Cloud.',
+    rule: 'On turns 2 and 5 a living reserve is forced in and guards instead of the selected command. Both dragons remain in the party; the siren gets an extra Toxic Cloud before its ordinary action.',
     executedByBattleEngine: true,
   },
   glitch_hydra: {

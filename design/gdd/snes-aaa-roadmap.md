@@ -65,4 +65,6 @@ The target is a replayable 15–20 minute opening slice: awaken → first dragon
 | Place and pacing | Outer Grid has a three-room path, a lab, a setpiece, a mid-boss and a boss, with a clear return route and no mandatory repeat-fight grind. |
 | Reliability | Clean install, save/resume, first hatch, first battle, failure/retry, sound controls, keyboard/gamepad and narrow-screen play all pass in real browsers. |
 
+The current battle correctness pass shares turn resolution across normal commands and swaps, preserves party state during Siren's lure, and commits healing and boss HP changes consistently. Its controller regressions complement the pure engine tests. Next reliability work is save recovery, then complete opening input/reduced-motion acceptance and a measured fresh-player playtest. Remaining authored-boss contract checks are tracked in `TODO.md`.
+
 Use observed playtests to decide when the slice is ready. Test counts and asset totals cannot establish that the game is compelling or predict a commercial hit.

@@ -156,6 +156,8 @@ function initBattle(dragonId, npcId, save, battleConfig) {
       playerHp: bStats.hp,
       playerMaxHp: bStats.hp,
       playerStatus: null,
+      playerAtkBuff: null,
+      playerDefBuff: null,
     };
   }
 
@@ -284,6 +286,7 @@ function battleReducer(state, action) {
         npcAttacking: false,
         phase: PHASES.PLAYER_TURN,
         currentPhase: (state.currentPhase || 0) + 1,
+        turnCount: state.turnCount + 1,
         // mirror_admin_reset per-phase constraint resets on phase shift.
         phaseMoveHistory: [],
       };
@@ -303,6 +306,21 @@ function battleReducer(state, action) {
       return { ...state, dualTechUsed: true };
     case 'APPLY_HEAL_TO_PLAYER':
       return { ...state, playerHp: Math.min(state.playerMaxHp, state.playerHp + action.amount) };
+    case 'APPLY_HEAL_TO_NPC':
+      return { ...state, npcHp: Math.min(state.npcMaxHp, state.npcHp + action.amount) };
+    case 'SYNC_BATTLE_RESULT':
+      // Animations show each contact; the resolved turn owns the settled state.
+      return {
+        ...state,
+        playerHp: Math.max(0, Math.min(state.playerMaxHp, action.result.player.hp)),
+        npcHp: Math.max(0, Math.min(state.npcMaxHp, action.result.npc.hp)),
+        playerStatus: action.result.player.status || null,
+        npcStatus: action.result.npc.status || null,
+        playerAtkBuff: action.result.player.atkBuff || null,
+        playerDefBuff: action.result.player.defBuff || null,
+        npcAtkBuff: action.result.npc.atkBuff || null,
+        npcDefBuff: action.result.npc.defBuff || null,
+      };
     case 'SET_NPC_CHARGED_MOVE':
       return { ...state, npcChargedMove: action.value };
     case 'CLEAR_NPC_CHARGED_MOVE':
@@ -324,7 +342,7 @@ function battleReducer(state, action) {
       return swapActiveAndBench(state);
     case 'FAINT_SWAP':
       // The active fell; the reserve steps in (its remaining HP) — the second life.
-      return faintSwap(state, PHASES.PLAYER_TURN);
+      return faintSwap(state, PHASES.PLAYER_TURN, action.advanceTurn !== false);
     default:
       return state;
   }
@@ -404,7 +422,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     };
   }, []);
 
-  const animateEvent = useCallback(async (event, dispatch) => {
+  const animateEvent = useCallback(async (event, dispatch, battleState = state) => {
     const isPlayer = event.attacker === 'player';
     const who = isPlayer ? 'You' : event.moveName ? 'Enemy' : 'Status';
 
@@ -414,7 +432,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       playSound('defend');
       const targetContainer = isPlayer ? playerSpriteContainerRef.current : npcSpriteContainerRef.current;
       if (targetContainer) {
-        const shield = shieldUp(targetContainer, isPlayer ? state.dragon.element : state.npc.element);
+        const shield = shieldUp(targetContainer, isPlayer ? battleState.dragon.element : battleState.npc.element);
         if (isPlayer) {
           shieldRef.current = shield;
         }
@@ -449,7 +467,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       const statLabel = event.buffStat === 'atk' ? 'ATTACK' : 'DEFENSE';
       dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — ${statLabel} raised!` });
       playSound('combatMessage');
-      playSound('statusApply', { element: isPlayer ? state.dragon.element : state.npc.element });
+      playSound('statusApply', { element: isPlayer ? battleState.dragon.element : battleState.npc.element });
       if (isPlayer) {
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
       } else {
@@ -478,9 +496,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     if (event.action === 'heal') {
       const healed = event.healAmount || 0;
+      dispatch({ type: isPlayer ? 'APPLY_HEAL_TO_PLAYER' : 'APPLY_HEAL_TO_NPC', amount: healed });
       dispatch({ type: 'ADD_LOG', text: `${who} used ${event.moveName} — restored ${healed} HP.` });
       playSound('combatMessage');
-      playSound('statusApply', { element: isPlayer ? state.dragon.element : state.npc.element });
+      playSound('statusApply', { element: isPlayer ? battleState.dragon.element : battleState.npc.element });
       if (isPlayer) {
         dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-telegraph' });
       } else {
@@ -555,7 +574,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       if (spriteEl) playerLunge(spriteEl, 'left');
     } else {
       const npcEl = npcSpriteImgRef.current;
-      if (npcEl) npcLunge(npcEl, state.npc.flipSprite ? 'left' : 'right');
+      if (npcEl) npcLunge(npcEl, battleState.npc.flipSprite ? 'left' : 'right');
     }
     // Whip/swoosh at the contact frame (matches lunge anticipation -> strike timing)
     trackedTimeout(() => playSound('lungeContact'), scaleBattleDuration(110));
@@ -597,7 +616,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         ? (playerSpriteRef.current?.getCanvas?.() || playerSpriteContainerRef.current)
         : npcSpriteImgRef.current;
 
-      const targetDefending = isPlayer ? state.npcDefending : state.playerDefending;
+      const targetDefending = isPlayer ? battleState.npcDefending : battleState.playerDefending;
       if (targetDefending && shieldRef.current) {
         shieldDeflect(shieldRef.current.element, targetContainer, isPlayer ? 'right' : 'left');
         playSound('shieldDeflectSting');
@@ -614,7 +633,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         if (targetSpriteEl) hitFlicker(targetSpriteEl, 5);
         if (targetContainer) targetKnockback(targetContainer, incomingSide, 18);
       } else if (container) {
-        const hpRatio = event.damage / (isPlayer ? state.npcMaxHp : state.playerMaxHp);
+        const hpRatio = event.damage / (isPlayer ? battleState.npcMaxHp : battleState.playerMaxHp);
         const isHeavy = event.effectiveness > 1.0 || hpRatio > 0.25;
         // Universal hit-stop: short on normal, longer on super-effective
         await hitStop(profile.impactPauseMs / 1000);
@@ -641,6 +660,15 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       playSound(profile.sound);
     } else {
       playSound('shieldDeflectSting');
+    }
+
+    if (event.lifesteal > 0) {
+      dispatch({ type: isPlayer ? 'APPLY_HEAL_TO_PLAYER' : 'APPLY_HEAL_TO_NPC', amount: event.lifesteal });
+      dispatch({ type: 'ADD_DAMAGE_NUMBER', entry: {
+        id: ++damageIdRef.current, damage: event.lifesteal, effectiveness: 1, hit: true,
+        target: isPlayer ? 'player' : 'npc', variant: 'heal', label: `+${event.lifesteal}`,
+      } });
+      dispatch({ type: 'ADD_LOG', text: `${who} drains ${event.lifesteal} HP.` });
     }
 
     const dmgTarget = event.reflected ? (isPlayer ? 'player' : 'npc') : (isPlayer ? 'npc' : 'player');
@@ -682,7 +710,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     if (event.appliedStatus) {
       dispatch({ type: 'ADD_LOG', text: `${event.appliedStatus} applied!` });
       playSound('combatMessage');
-      playSound('statusApply', { element: isPlayer ? state.dragon.element : state.npc.element });
+      playSound('statusApply', { element: isPlayer ? battleState.dragon.element : battleState.npc.element });
       const statusId = ++damageIdRef.current;
       dispatch({
         type: 'ADD_DAMAGE_NUMBER',
@@ -753,84 +781,82 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     });
   };
 
-  const handleMoveSelect = useCallback(async (moveKey) => {
-    if (!introDone) return; // entrance still stamping in
-    if (animatingRef.current) return;
-    if (moves[moveKey]?.isSignature && state.playerSignatureUsed?.[state.dragonId]) return;
-    playSound('commandSelect', { element: moves[moveKey]?.element });
-    setSelectedMoveKey(moveKey);
+  const handleMoveSelect = useCallback(async (moveKey, { swap = false } = {}) => {
+    if (!introDone || state.phase !== PHASES.PLAYER_TURN || animatingRef.current) return;
+    if (swap && !(state.bench?.playerHp > 0)) return;
+    let turnState = state;
+    const currentTurn = turnState.turnCount + 1;
+    const forcedSwap = turnState.bossPatternId === 'phishing_siren' &&
+      [2, 5].includes(currentTurn) && turnState.bench?.playerHp > 0;
+    const guardOnEntry = swap || forcedSwap;
+    if (!guardOnEntry && moves[moveKey]?.isSignature && turnState.playerSignatureUsed?.[turnState.dragonId]) return;
     animatingRef.current = true;
     dispatch({ type: 'START_ANIMATION' });
+
+    if (guardOnEntry) {
+      turnState = swapActiveAndBench(turnState);
+      dispatch({ type: 'SWAP_DRAGON' });
+      dispatch({ type: 'ADD_LOG', text: forcedSwap
+        ? `${turnState.npc.name} lures ${state.dragon.name} out — ${turnState.dragon.name} guards on entry. Command interrupted; Toxic Cloud incoming!`
+        : `${state.dragon.name} swaps out — ${turnState.dragon.name} guards on entry!` });
+      moveKey = 'defend';
+      // Auras belong to the fighter that left, not to the arena slot.
+      playerAuraRef.current?.kill();
+      playerAuraRef.current = null;
+      playSound('uiConfirm');
+      await battleWait(500);
+    }
+    playSound('commandSelect', { element: moves[moveKey]?.element });
+    setSelectedMoveKey(moveKey);
     playSound('commandExecute', { element: moves[moveKey]?.element });
 
     const relicMods = getRelicBattleModifiers(save?.skye?.relicsEquipped || []);
 
     // resonant_fork: cleanse BEFORE engine so status tick damage is skipped on cleanse turns
     const shouldCleanse = relicMods.autoCleanseTurns > 0 &&
-      state.playerStatus != null &&
-      (state.turnCount + 1) % relicMods.autoCleanseTurns === 0;
+      turnState.playerStatus != null &&
+      (turnState.turnCount + 1) % relicMods.autoCleanseTurns === 0;
 
     const playerState = {
-      name: state.dragon.name,
-      element: state.dragon.element,
-      stage: state.playerStage,
-      hp: state.playerHp,
-      maxHp: state.playerMaxHp,
-      atk: state.playerStats.atk + relicMods.atkBonus,
-      def: Math.floor(state.playerStats.def * relicMods.defMultiplier),
-      spd: state.playerStats.spd + relicMods.spdBonus,
+      name: turnState.dragon.name,
+      element: turnState.dragon.element,
+      stage: turnState.playerStage,
+      hp: turnState.playerHp,
+      maxHp: turnState.playerMaxHp,
+      atk: turnState.playerStats.atk + relicMods.atkBonus,
+      def: Math.floor(turnState.playerStats.def * relicMods.defMultiplier),
+      spd: turnState.playerStats.spd + relicMods.spdBonus,
       defending: false,
-      status: shouldCleanse ? null : state.playerStatus,
-      atkBuff: state.playerAtkBuff,
-      defBuff: state.playerDefBuff,
+      status: shouldCleanse ? null : turnState.playerStatus,
+      atkBuff: turnState.playerAtkBuff,
+      defBuff: turnState.playerDefBuff,
     };
-
-    // phishing_siren: on turns 2 and 5 it forces a bench swap (if a reserve
-    // exists) and fires a free Toxic Cloud before the player's action lands.
-    const currentTurn = state.turnCount + 1;
-    if (state.bossPatternId === 'phishing_siren' && [2, 5].includes(currentTurn) && state.bench?.playerHp > 0) {
-      dispatch({ type: 'ADD_LOG', text: `${state.npc.name} lures your ${state.dragon.name} out — the reserve is forced in!` });
-      dispatch({ type: 'FAINT_SWAP' });
-      // Free Toxic Cloud fires at the incoming dragon (engine handles targeting).
-      const freeCloud = resolveTurn(
-        { ...playerState, hp: state.bench.playerHp, maxHp: state.bench.playerMaxHp },
-        { name: state.npc.name, element: state.npc.element, stage: 3, hp: state.npcHp, maxHp: state.npcMaxHp, atk: state.npc.stats.atk, def: state.npc.stats.def, spd: state.npc.stats.spd, defending: false, status: state.npcStatus },
-        'defend', 'toxic_cloud', ['defend'], ['toxic_cloud']
-      );
-      for (const event of freeCloud.events) {
-        if (event.attacker === 'npc' && shouldAnimateBattleEvent(event)) {
-          await animateEvent(event, dispatch);
-        }
-      }
-      dispatch({ type: 'SET_PLAYER_STATUS', value: freeCloud.player.status || null });
-      playSound('combatMessage');
-    }
 
     // data_corruption: on turn 1 a random non-signature move garbles into
     // basic_attack for 2 turns. Also re-arms whenever Burn applies.
-    if (state.bossPatternId === 'data_corruption' && state.bossState.garbledTurnsLeft === 0 && state.bossState.garbledMoveKey == null && currentTurn === 1) {
-      const nonSig = state.dragon.moveKeys.filter(k => !moves[k]?.isSignature);
+    if (turnState.bossPatternId === 'data_corruption' && turnState.bossState.garbledTurnsLeft === 0 && turnState.bossState.garbledMoveKey == null && currentTurn === 1) {
+      const nonSig = turnState.dragon.moveKeys.filter(k => !moves[k]?.isSignature);
       if (nonSig.length > 0) {
         const garbled = nonSig[Math.floor(Math.random() * nonSig.length)];
         dispatch({ type: 'SET_BOSS_STATE', value: { garbledMoveKey: garbled, garbledTurnsLeft: 2 } });
-        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} corrupts a slot — ${moves[garbled]?.name} garbles into BASIC for 2 turns!` });
+        dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} corrupts a slot — ${moves[garbled]?.name} garbles into BASIC for 2 turns!` });
       }
     }
-    const activeGarble = state.bossPatternId === 'data_corruption' && state.bossState.garbledTurnsLeft > 0 ? state.bossState.garbledMoveKey : null;
+    const activeGarble = turnState.bossPatternId === 'data_corruption' && turnState.bossState.garbledTurnsLeft > 0 ? turnState.bossState.garbledMoveKey : null;
 
     const npcState = {
-      name: state.npc.name,
-      element: state.npc.element,
+      name: turnState.npc.name,
+      element: turnState.npc.element,
       stage: 3,
-      hp: state.npcHp,
-      maxHp: state.npcMaxHp,
-      atk: state.npc.stats.atk,
-      def: state.npc.stats.def,
-      spd: state.npc.stats.spd,
+      hp: turnState.npcHp,
+      maxHp: turnState.npcMaxHp,
+      atk: turnState.npc.stats.atk,
+      def: turnState.npc.stats.def,
+      spd: turnState.npc.stats.spd,
       defending: false,
-      status: state.npcStatus,
-      atkBuff: state.npcAtkBuff,
-      defBuff: state.npcDefBuff,
+      status: turnState.npcStatus,
+      atkBuff: turnState.npcAtkBuff,
+      defBuff: turnState.npcDefBuff,
     };
 
     // data_corruption: if the garbled slot was picked, it fires as basic_attack
@@ -838,84 +864,72 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     let effectivePlayerMoveKey = moveKey;
     if (activeGarble && moveKey === activeGarble) {
       effectivePlayerMoveKey = 'basic_attack';
-      const turnsLeft = state.bossState.garbledTurnsLeft - 1;
+      const turnsLeft = turnState.bossState.garbledTurnsLeft - 1;
       dispatch({ type: 'SET_BOSS_STATE', value: { garbledTurnsLeft: turnsLeft, garbledMoveKey: turnsLeft > 0 ? activeGarble : null } });
-      dispatch({ type: 'ADD_LOG', text: `${state.npc.name}'s corruption holds — your move fires as BASIC.` });
-    }
-
-    // Track this player move for adaptive AI counter-element logic (pre-garble
-    // key — the AI adapts to what you MEANT, not what the corruption let through).
-    dispatch({ type: 'APPEND_PLAYER_MOVE_HISTORY', moveKey });
-    if (moves[moveKey]?.isSignature) {
-      dispatch({ type: 'SET_PLAYER_SIGNATURE_USED', dragonId: state.dragonId });
-    }
-
-    // Dual techs: once-per-battle combo moves mark their use on fire.
-    if (moveKey.startsWith('dual_')) {
-      // Dispatch after the resolve so the combo still fires this turn.
-      trackedTimeout(() => dispatch({ type: 'SET_DUAL_TECH_USED' }), 0);
+      dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name}'s corruption holds — your move fires as BASIC.` });
     }
 
     const battleContext = {
-      playerMoveHistory: state.playerMoveHistory,
-      turnCount: state.turnCount,
-      playerHpRatio: state.playerHp / state.playerMaxHp,
-      enemyHpRatio: state.npcHp / state.npcMaxHp,
-      npcAtkBuff: state.npcAtkBuff,
-      npcDefBuff: state.npcDefBuff,
+      playerMoveHistory: turnState.playerMoveHistory,
+      turnCount: turnState.turnCount,
+      playerHpRatio: turnState.playerHp / turnState.playerMaxHp,
+      enemyHpRatio: turnState.npcHp / turnState.npcMaxHp,
+      npcAtkBuff: turnState.npcAtkBuff,
+      npcDefBuff: turnState.npcDefBuff,
     };
 
     // ---- Signature move check ----
-    const npcData = npcs[state.npc.id] || state.npc;
+    const npcData = npcs[turnState.npc.id] || turnState.npc;
     const sigKey = npcData.signatureMoveKey;
     const sigCondition = npcData.signatureCondition;
-    const npcHpRatio = state.npcHp / state.npcMaxHp;
+    const npcHpRatio = turnState.npcHp / turnState.npcMaxHp;
     const shouldFireSignature = sigKey && sigCondition &&
-      !state.signatureMoveUsed && !state.npcChargedMove &&
+      !turnState.signatureMoveUsed && !turnState.npcChargedMove &&
       npcHpRatio <= sigCondition.hpThreshold;
 
     // ---- Charge / fire logic ----
-    const desperationMode = (state.npcHp / state.npcMaxHp) < 0.30;
+    const desperationMode = (turnState.npcHp / turnState.npcMaxHp) < 0.30;
     let npcMoveKey;
     let previouslyCharged = false;
     let isCharging = false;
 
-    if (state.npcChargedMove) {
+    if (turnState.npcChargedMove) {
       // Fire the stored charged move at 1.4× ATK
-      npcMoveKey = state.npcChargedMove;
+      npcMoveKey = turnState.npcChargedMove;
       previouslyCharged = true;
       dispatch({ type: 'CLEAR_NPC_CHARGED_MOVE' });
     } else if (shouldFireSignature) {
       npcMoveKey = sigKey;
       dispatch({ type: 'SET_SIGNATURE_USED' });
     } else {
-      npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, state.dragon.element, state.playerStatus, battleContext);
+      npcMoveKey = pickNpcMove(turnState.npc.moveKeys, turnState.npc.element, turnState.dragon.element, turnState.playerStatus, battleContext);
 
       // === P4 AUTHORED PATTERNS (per-boss scripts; mirror by id) ===
-      const patternId = state.bossPatternId;
-      const bs = state.bossState;
+      const patternId = turnState.bossPatternId;
+      const bs = turnState.bossState;
 
       // buffer_overflow: 4 heat stacks → Magma Breath is FORCED and burns the
       // user for 10% max HP. The stack counter ticks in the combat feed.
       if (patternId === 'buffer_overflow' && bs.heatStacks >= 4) {
         npcMoveKey = 'magma_breath';
-        const burnDamage = Math.max(1, Math.floor(state.npcMaxHp * 0.1));
+        const burnDamage = Math.max(1, Math.floor(turnState.npcMaxHp * 0.1));
+        npcState.hp = Math.max(0, npcState.hp - burnDamage);
         dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: burnDamage });
-        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} overheats — the heat stack burns it for ${burnDamage}!` });
+        dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} overheats — the heat stack burns it for ${burnDamage}!` });
         dispatch({ type: 'SET_BOSS_STATE', value: { heatStacks: 0 } });
         playSound('statusTick', { element: 'fire' });
       } else if (patternId === 'buffer_overflow') {
         const stacks = bs.heatStacks + 1;
         dispatch({ type: 'SET_BOSS_STATE', value: { heatStacks: stacks } });
-        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} heat stack ${stacks}/4 — Magma Breath forced at 4.` });
+        dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} heat stack ${stacks}/4 — Magma Breath forced at 4.` });
       }
 
       // protocol_vulture: at half HP it perches and forces Soul Drain (heals
       // 40% of damage dealt, guaranteed Blind on hit).
-      if (patternId === 'protocol_vulture' && !bs.perchUsed && state.npcHp / state.npcMaxHp <= 0.5) {
+      if (patternId === 'protocol_vulture' && !bs.perchUsed && turnState.npcHp / turnState.npcMaxHp <= 0.5) {
         npcMoveKey = 'vulture_drain';
         dispatch({ type: 'SET_BOSS_STATE', value: { perchUsed: true } });
-        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} perches — Soul Drain is next!` });
+        dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} perches — Soul Drain is next!` });
       }
 
       // recursive_golem: at 3 harden stacks Tectonic Rupture is FORCED and
@@ -923,14 +937,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       if (patternId === 'recursive_golem' && bs.hardenStacks >= 3) {
         npcMoveKey = npcData.signatureMoveKey || 'golem_rupture';
         dispatch({ type: 'SET_BOSS_STATE', value: { hardenStacks: 0 } });
-        dispatch({ type: 'ADD_LOG', text: `${state.npc.name}'s harden loop ruptures!` });
+        dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name}'s harden loop ruptures!` });
       }
 
       // stack_overflow: after the doublers run out it crashes — skip this turn.
       if (patternId === 'stack_overflow' && bs.spdDoubleTurnsLeft === 0 && bs.crashTurnsLeft > 0) {
         npcMoveKey = 'defend';
         dispatch({ type: 'SET_BOSS_STATE', value: { crashTurnsLeft: bs.crashTurnsLeft - 1 } });
-        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} crashes — it skips the turn recovering.` });
+        dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} crashes — it skips the turn recovering.` });
       }
 
       // logic_bomb: at fuse 0 Final Detonation is FORCED (screen ticks the
@@ -938,7 +952,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       if (patternId === 'logic_bomb' && bs.fuseTurns <= 0 && npcData.signatureMoveKey) {
         npcMoveKey = npcData.signatureMoveKey;
         dispatch({ type: 'SET_SIGNATURE_USED' });
-        dispatch({ type: 'ADD_LOG', text: `${state.npc.name}'s fuse hits zero — FINAL DETONATION!` });
+        dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name}'s fuse hits zero — FINAL DETONATION!` });
       }
 
       const npcMoveData = moves[npcMoveKey];
@@ -956,17 +970,13 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       : npcState;
 
     // P4 pattern-side npcState mutations:
-    // protocol_vulture drain heals 40% of damage and Blinds on hit.
-    if (state.bossPatternId === 'protocol_vulture' && npcMoveKey === 'vulture_drain') {
-      finalNpcState = { ...finalNpcState, lifesteal: 0.4, applyChance: 1 };
-    }
     // stack_overflow: ×2 SPD expires at end of this turn (option-decremented).
-    if (state.bossPatternId === 'stack_overflow' && state.bossState.spdDoubleTurnsLeft > 0) {
-      finalNpcState = { ...finalNpcState, spd: state.npc.stats.spd * 2 };
+    if (turnState.bossPatternId === 'stack_overflow' && turnState.bossState.spdDoubleTurnsLeft > 0) {
+      finalNpcState = { ...finalNpcState, spd: turnState.npc.stats.spd * 2 };
     }
     // recursive_golem harden pip + bit_wraith pierce + memory_leak pips +
     // logic_bomb fuse tick read via options below.
-    const bs = state.bossState;
+    const bs = turnState.bossState;
     // Dual techs resolve via a move override (constructed from the pairing —
     // the moves table never sees the combo keys).
     const dualTechKey = moveKey.startsWith('dual_') ? moveKey.slice(5) : null;
@@ -974,64 +984,82 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       ? Object.values(DUAL_TECHS).find(t => t.key === dualTechKey)
       : null;
     const engineOptions = {
-      playerAccuracyFloor: (state.npc.difficulty === 'Easy' && !(save.defeatedNpcs || []).length) ? 95 : 0,
+      playerGuardOnEntry: guardOnEntry,
+      npcOpeningMoveKey: forcedSwap ? 'toxic_cloud' : undefined,
+      playerAccuracyFloor: (turnState.npc.difficulty === 'Easy' && !(save.defeatedNpcs || []).length) ? 95 : 0,
       playerMoveOverride: dualTechMove || undefined,
 
       // firewall_sentinel packet-shield (pilot)
-      packetShield: state.bossPatternId === 'firewall_sentinel' && moveKey !== 'defend',
+      packetShield: turnState.bossPatternId === 'firewall_sentinel' && moveKey !== 'defend',
       playerDefendedLastTurn: playerDefendedLastTurn.current,
 
       // crypto_crab: encrypted until you repeat your last element
-      cryptoEncrypted: state.bossPatternId === 'crypto_crab' && !bs.decrypted,
+      cryptoEncrypted: turnState.bossPatternId === 'crypto_crab' && !bs.decrypted,
 
       // bit_wraith: miss primes pierce → next hit ignores Defend
-      bitWraithPierce: state.bossPatternId === 'bit_wraith' && bs.pierceNext,
+      bitWraithPierce: turnState.bossPatternId === 'bit_wraith' && bs.pierceNext,
 
       // Three successful super-effective strikes break the head lock.
-      hydraFloor: state.bossPatternId === 'glitch_hydra' && bs.headsBroken < HYDRA_HEAD_COUNT ? HYDRA_HP_FLOOR : 0,
+      hydraFloor: turnState.bossPatternId === 'glitch_hydra' && bs.headsBroken < HYDRA_HEAD_COUNT ? HYDRA_HP_FLOOR : 0,
     };
     // memory_leak: DEF climbs one pip per turn until an ice hit resets it.
-    if (state.bossPatternId === 'memory_leak') {
+    if (turnState.bossPatternId === 'memory_leak') {
       const pips = Math.min(5, (bs.leakPips || 0) + 1);
       finalNpcState = { ...finalNpcState, def: Math.floor(finalNpcState.def * (1 + pips * 0.1)) };
       dispatch({ type: 'SET_BOSS_STATE', value: { leakPips: pips } });
-      dispatch({ type: 'ADD_LOG', text: `${state.npc.name} leak pip ${pips}/5 — DEF +${pips * 10}%.` });
+      dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} leak pip ${pips}/5 — DEF +${pips * 10}%.` });
     }
 
     // On charge turn: NPC defends (takes the player hit while winding up)
     const effectiveNpcMoveKey = isCharging ? 'defend' : npcMoveKey;
 
-    let result = resolveTurn(playerState, finalNpcState, effectivePlayerMoveKey, effectiveNpcMoveKey, state.dragon.moveKeys, state.npc.moveKeys, engineOptions);
-    playerDefendedLastTurn.current = moveKey === 'defend';
+    const availablePlayerMoves = turnState.dragon.moveKeys.filter(key =>
+      !moves[key]?.isSignature || !turnState.playerSignatureUsed?.[turnState.dragonId]);
+    let result = resolveTurn(playerState, finalNpcState, effectivePlayerMoveKey, effectiveNpcMoveKey,
+      guardOnEntry ? ['defend'] : availablePlayerMoves, turnState.npc.moveKeys, engineOptions);
+    // Spend techniques only when the actor actually executes them. A KO,
+    // status skip, or forced swap cannot consume the outgoing dragon's move.
+    const playerAction = result.events.find(e => e.attacker === 'player' && shouldAnimateBattleEvent(e));
+    const executedMoveKey = playerAction?.moveKey || (playerAction?.action === 'defend' ? 'defend' : null);
+    if (executedMoveKey) {
+      dispatch({ type: 'APPEND_PLAYER_MOVE_HISTORY', moveKey: executedMoveKey });
+      turnState = {
+        ...turnState,
+        phaseMoveHistory: [...(turnState.phaseMoveHistory || []), executedMoveKey],
+      };
+      if (moves[executedMoveKey]?.isSignature) dispatch({ type: 'SET_PLAYER_SIGNATURE_USED', dragonId: turnState.dragonId });
+      if (executedMoveKey.startsWith('dual_')) dispatch({ type: 'SET_DUAL_TECH_USED' });
+    }
+    playerDefendedLastTurn.current = playerAction?.action === 'defend';
 
     // === Post-resolve pattern hooks ===
     const playerAttackEvent = result.events.find(e => e.attacker === 'player' && e.action === 'attack');
 
     // crypto_crab encryption: hide type until you repeat the previous element
     // (same-element back-to-back → reveal → damage gates open).
-    if (state.bossPatternId === 'crypto_crab' && playerAttackEvent?.hit) {
+    if (turnState.bossPatternId === 'crypto_crab' && playerAttackEvent?.hit) {
       const el = moves[playerAttackEvent.moveKey]?.element;
       if (el === bs.prevElement && !bs.decrypted) {
         dispatch({ type: 'SET_BOSS_STATE', value: { decrypted: true, prevElement: el } });
-        dispatch({ type: 'ADD_LOG', text: `Encryption cracked — ${state.npc.name}'s type is exposed!` });
+        dispatch({ type: 'ADD_LOG', text: `Encryption cracked — ${turnState.npc.name}'s type is exposed!` });
       } else if (!bs.decrypted) {
         dispatch({ type: 'SET_BOSS_STATE', value: { prevElement: el } });
-        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} reads ENCRYPTED — repeat your last element to crack it.` });
+        dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} reads ENCRYPTED — repeat your last element to crack it.` });
       }
     }
 
     // bit_wraith: any NPC miss primes a one-turn pierce (next hit ignores Defend).
     const npcAttackEvent = result.events.find(e => e.attacker === 'npc' && e.action === 'attack');
-    if (state.bossPatternId === 'bit_wraith') {
+    if (turnState.bossPatternId === 'bit_wraith') {
       if (npcAttackEvent && !npcAttackEvent.hit) {
         dispatch({ type: 'SET_BOSS_STATE', value: { pierceNext: true } });
-        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} phases — its next hit ignores Defend!` });
+        dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} phases — its next hit ignores Defend!` });
       } else if (npcAttackEvent?.hit) {
         dispatch({ type: 'SET_BOSS_STATE', value: { pierceNext: false } });
       }
     }
 
-    if (state.bossPatternId === 'glitch_hydra') {
+    if (turnState.bossPatternId === 'glitch_hydra') {
       const headsBroken = advanceHydraHeads(bs.headsBroken, playerAttackEvent);
       if (headsBroken > bs.headsBroken) {
         dispatch({ type: 'SET_BOSS_STATE', value: { headsBroken } });
@@ -1041,34 +1069,34 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     // logic_bomb: the fuse ticks down one per player turn; at 0 the bomb can
     // force Final Detonation (handled via the signature threshold below).
-    if (state.bossPatternId === 'logic_bomb' && bs.fuseTurns > 0 && npcMoveKey !== 'bomb_detonation') {
+    if (turnState.bossPatternId === 'logic_bomb' && bs.fuseTurns > 0 && npcMoveKey !== 'bomb_detonation') {
       dispatch({ type: 'SET_BOSS_STATE', value: { fuseTurns: bs.fuseTurns - 1 } });
       dispatch({ type: 'ADD_LOG', text: `Fuse ${Math.max(0, bs.fuseTurns - 1)} — Final Detonation at zero.` });
     }
 
     // Ice clears the leak even though the boss resists ice damage.
-    if (state.bossPatternId === 'memory_leak' && resetsMemoryLeak(playerAttackEvent)) {
+    if (turnState.bossPatternId === 'memory_leak' && resetsMemoryLeak(playerAttackEvent)) {
       dispatch({ type: 'SET_BOSS_STATE', value: { leakPips: 0 } });
-      dispatch({ type: 'ADD_LOG', text: `Ice strike resets the ${state.npc.name} leak — DEF climb cleared.` });
+      dispatch({ type: 'ADD_LOG', text: `Ice strike resets the ${turnState.npc.name} leak — DEF climb cleared.` });
     }
 
     // recursive_golem: every harden move builds a stack (the forced rupture
     // at 3 is handled pre-pick). Buff actions don't produce attack events, so
     // count by NPC action type.
-    if (state.bossPatternId === 'recursive_golem') {
+    if (turnState.bossPatternId === 'recursive_golem') {
       const hardenUsed = result.events.some(e => e.attacker === 'npc' && (e.action === 'buff' || e.action === 'defend'));
       if (hardenUsed && bs.hardenStacks < 3) {
         dispatch({ type: 'SET_BOSS_STATE', value: { hardenStacks: bs.hardenStacks + 1 } });
-        dispatch({ type: 'ADD_LOG', text: `${state.npc.name} harden stack ${bs.hardenStacks + 1}/3 — rupture at 3.` });
+        dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} harden stack ${bs.hardenStacks + 1}/3 — rupture at 3.` });
       }
     }
 
     // stack_overflow: once per battle, a Thunder Clap hit arms ×2 SPD for 2t,
     // then the crash lands (skip turn).
-    if (state.bossPatternId === 'stack_overflow' && npcAttackEvent?.hit && npcAttackEvent.moveKey === 'thunder_clap' && !bs.surgeUsed) {
+    if (turnState.bossPatternId === 'stack_overflow' && npcAttackEvent?.hit && npcAttackEvent.moveKey === 'thunder_clap' && !bs.surgeUsed) {
       dispatch({ type: 'SET_BOSS_STATE', value: { spdDoubleTurnsLeft: 2, surgeUsed: true, crashTurnsLeft: 2 } });
-      dispatch({ type: 'ADD_LOG', text: `${state.npc.name} surges — its speed doubles for two turns!` });
-    } else if (state.bossPatternId === 'stack_overflow' && bs.spdDoubleTurnsLeft > 0) {
+      dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} surges — its speed doubles for two turns!` });
+    } else if (turnState.bossPatternId === 'stack_overflow' && bs.spdDoubleTurnsLeft > 0) {
       dispatch({ type: 'SET_BOSS_STATE', value: { spdDoubleTurnsLeft: bs.spdDoubleTurnsLeft - 1 } });
     }
 
@@ -1090,17 +1118,18 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     // hydra_cog: 20% chance for a follow-up hit after a successful player attack
     let chainDamage = 0;
-    if (relicMods.chainHitChance > 0 && result.npc.hp > 0) {
-      const playerHit = result.events.find(e => e.attacker === 'player' && e.action === 'attack' && e.hit && !e.reflected);
+    if (relicMods.chainHitChance > 0 && result.npc.hp > 0 && result.player.hp > 0) {
+      const playerHit = result.events.find(e => e.attacker === 'player' && e.action === 'attack' && e.hit && !e.reflected && !e.blocked && e.damage > 0);
       if (playerHit && Math.random() < relicMods.chainHitChance) {
-        chainDamage = Math.max(1, Math.floor(playerHit.damage * 0.4));
+        const floorHp = Math.ceil(turnState.npcMaxHp * (engineOptions.hydraFloor || 0));
+        chainDamage = Math.min(Math.max(1, Math.floor(playerHit.damage * 0.4)), Math.max(0, result.npc.hp - floorHp));
         result = { ...result, npc: { ...result.npc, hp: Math.max(0, result.npc.hp - chainDamage) } };
       }
     }
 
     for (const event of result.events) {
       if (shouldAnimateBattleEvent(event)) {
-        await animateEvent(event, dispatch);
+        await animateEvent(event, dispatch, { ...turnState, playerDefending: guardOnEntry });
       }
     }
 
@@ -1115,7 +1144,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     // Charge warning log — appears after the player's attack resolves this turn
     if (isCharging) {
       const chargeMoveName = moves[npcMoveKey]?.name || 'a powerful move';
-      dispatch({ type: 'ADD_LOG', text: `${state.npc.name} is winding up ${chargeMoveName}!` });
+      dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} is winding up ${chargeMoveName}!` });
       playSound('combatMessage');
     }
 
@@ -1127,16 +1156,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     // Charged strike callout
     if (previouslyCharged) {
-      dispatch({ type: 'ADD_LOG', text: `${state.npc.name} unleashes a CHARGED STRIKE!` });
-    }
-
-    // Sync NPC buff state from engine result
-    dispatch({ type: 'SET_NPC_ATK_BUFF', value: result.npc.atkBuff || null });
-    dispatch({ type: 'SET_NPC_DEF_BUFF', value: result.npc.defBuff || null });
-    dispatch({ type: 'SET_PLAYER_ATK_BUFF', value: result.player.atkBuff || null });
-    dispatch({ type: 'SET_PLAYER_DEF_BUFF', value: result.player.defBuff || null });
-    if (result.player.hp > state.playerHp) {
-      dispatch({ type: 'APPLY_HEAL_TO_PLAYER', amount: result.player.hp - state.playerHp });
+      dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} unleashes a CHARGED STRIKE!` });
     }
 
     // coolant_core: extend status duration when player applies a NEW status to the NPC
@@ -1148,7 +1168,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
     // resonant_fork: status was cleared pre-turn via shouldCleanse; normalise to null
     const finalPlayerStatus = result.player.status || null;
-    if (shouldCleanse) playSound('statusExpire', { element: state.dragon.element });
+    if (shouldCleanse) playSound('statusExpire', { element: turnState.dragon.element });
+
+    result = { ...result, npc: { ...result.npc, status: finalNpcStatus }, player: { ...result.player, status: finalPlayerStatus } };
 
     // Sync status from engine
     dispatch({ type: 'SET_PLAYER_STATUS', value: finalPlayerStatus || null });
@@ -1179,11 +1201,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     for (const event of result.events) {
       if (event.attacker === 'status') {
         if (event.damage > 0) {
-          playSound('statusTick', { element: event.target === 'player' ? state.dragon.element : state.npc.element });
+          playSound('statusTick', { element: event.target === 'player' ? turnState.dragon.element : turnState.npc.element });
           const dmgId = ++damageIdRef.current;
           dispatch({
             type: 'ADD_DAMAGE_NUMBER',
-            entry: { id: dmgId, damage: event.damage, effectiveness: 1.0, hit: true, target: event.target, isStatusTick: true, statusElement: event.target === 'player' ? state.playerStatus?.effect : state.npcStatus?.effect },
+            entry: { id: dmgId, damage: event.damage, effectiveness: 1.0, hit: true, target: event.target, isStatusTick: true, statusElement: event.target === 'player' ? turnState.playerStatus?.effect : turnState.npcStatus?.effect },
           });
           if (event.target === 'player') {
             dispatch({ type: 'APPLY_DAMAGE_TO_PLAYER', damage: event.damage });
@@ -1193,7 +1215,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           await battleWait(400);
         }
         if (event.expired) {
-          playSound('statusExpire', { element: event.target === 'player' ? state.dragon.element : state.npc.element });
+          playSound('statusExpire', { element: event.target === 'player' ? turnState.dragon.element : turnState.npc.element });
         }
       }
       if (event.action === 'statusSkip') {
@@ -1209,9 +1231,67 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       }
     }
 
+    dispatch({ type: 'SYNC_BATTLE_RESULT', result });
+    const finalPlayerHpPercent = result.player.hp / turnState.playerMaxHp * 100;
+    turnState = {
+      ...turnState,
+      maxDamageDealt: Math.max(turnState.maxDamageDealt, ...result.events
+        .filter(e => e.attacker === 'player' && e.action === 'attack' && e.hit && !e.reflected)
+        .map(e => e.damage)),
+    };
+
+    const settlePlayerFaint = async (advanceTurn = true) => {
+      playSound('ko');
+
+      // mirror_admin_reset (Great Reset): if the player faints in Phase 3
+      // without having spent Restoration or Recompile THIS PHASE, Mirror
+      // Admin heals 25% max HP. Checked before the bench swap so the punish
+      // lands on the phase where the dragon actually fell.
+      if (result.npc.hp > 0 && battleConfig?.isMirrorAdmin && (turnState.currentPhase || 0) === 2) {
+        const healMovesThisPhase = (turnState.phaseMoveHistory || []).filter(k => ['restoration', 'recompile'].includes(k));
+        if (healMovesThisPhase.length === 0 && !turnState.bossState.mirrorHealPunished) {
+          const healAmount = Math.min(turnState.npcMaxHp - result.npc.hp, Math.max(1, Math.floor(turnState.npcMaxHp * 0.25)));
+          result = { ...result, npc: { ...result.npc, hp: Math.min(turnState.npcMaxHp, result.npc.hp + healAmount) } };
+          dispatch({ type: 'SYNC_BATTLE_RESULT', result });
+          dispatch({ type: 'SET_BOSS_STATE', value: { mirrorHealPunished: true } });
+          dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} triggers the Great Reset — heals ${healAmount} HP!` });
+          playSound('statusTick', { element: 'shadow' });
+        }
+      }
+
+      const playerCanvas = playerSpriteRef.current?.getCanvas?.();
+      if (playerCanvas) {
+        await new Promise(resolve => {
+          const tl = shatterKO(playerCanvas, turnState.dragon.element);
+          tl.eventCallback('onComplete', resolve);
+          setTimeout(resolve, 1200);
+        });
+      } else {
+        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-ko' });
+        await battleWait(600);
+      }
+      if (turnState.bench && turnState.bench.playerHp > 0) {
+        // Reserve dragon steps in — the bench is a second life; fight continues.
+        dispatch({ type: 'ADD_LOG', text: `${turnState.dragon.name} fell — ${turnState.bench.dragon.name} steps in!` });
+        dispatch({ type: 'FAINT_SWAP', advanceTurn });
+        playSound('uiConfirm');
+        // Every fight re-opens on its own calm track (remnants included —
+        // previously their theme was stomped by the generic battle loop).
+        playMusic(baseTrack);
+      } else {
+        trackStat('battlesLost');
+        updateRecords({ turns: turnState.turnCount + 1, maxDamage: turnState.maxDamageDealt, won: false });
+        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-defeated' });
+        dispatch({ type: 'SET_DEFEAT' });
+        stopMusic();
+        stopHeartbeat();
+        playSound('defeatDrone');
+      }
+    };
+
     if (result.npc.hp <= 0) {
       const phases = battleConfig?.phases;
-      const currentPhaseIndex = state.currentPhase || 0;
+      const currentPhaseIndex = turnState.currentPhase || 0;
 
       if (phases && currentPhaseIndex < phases.length - 1) {
         // Phase shift — boss transforms
@@ -1220,7 +1300,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         const phaseNpcEl = npcSpriteImgRef.current;
         if (phaseNpcEl) {
           await new Promise(resolve => {
-            const tl = shatterKO(phaseNpcEl, state.npc.element);
+            const tl = shatterKO(phaseNpcEl, turnState.npc.element);
             tl.eventCallback('onComplete', resolve);
             setTimeout(resolve, 1200);
           });
@@ -1248,9 +1328,12 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           dispatch({ type: 'ADD_LOG', text: `${battleConfig.boss.name}: ${nextLine}` });
         }
         await battleWait(1000);
+        // A double KO advances the boss, then brings in the reserve (or ends
+        // the battle). The phase shift already counted this turn.
+        if (result.player.hp <= 0) await settlePlayerFaint(false);
       } else {
         // True victory
-        let xpGained = calculateXpGain(state.npc.baseXP || 50, state.playerLevel, state.npc.level);
+        let xpGained = calculateXpGain(turnState.npc.baseXP || 50, turnState.playerLevel, turnState.npc.level);
         if (save.inventory?.xpBoostBattles > 0) {
           xpGained *= 3;
           decrementXpBoost();
@@ -1274,7 +1357,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
                 ? (save.singularityComplete === true || (sp.replayCounts?.[npcId] || 0) > 0)
                 : ((sp.defeated || []).includes(npcId) || (sp.replayCounts?.[npcId] || 0) > 0)
         );
-        const rawScraps = state.npc.scrapsReward || 0;
+        const rawScraps = turnState.npc.scrapsReward || 0;
         const isSharedSeed = !!battleConfig?.dailyNpc?.shared;
         let scrapsGained;
         // Captured before completeDailyChallenge mutates the streak — the
@@ -1293,10 +1376,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           xpGained = Math.floor(xpGained * (1 + save.ngPlus * 0.25));
           scrapsGained = Math.floor(scrapsGained * (1 + save.ngPlus * 0.25));
         }
-        addDragonXp(state.dragonId, xpGained); // canonical XP curve (persistence.js) — no source-specific leveling
-        if (state.bench?.dragonId) addDragonXp(state.bench.dragonId, Math.max(1, Math.floor(xpGained / 2))); // reserve trains at half rate
-        const newLevel = loadSave().dragons[state.dragonId].level;
-        const leveledUp = newLevel > state.playerLevel;
+        addDragonXp(turnState.dragonId, xpGained); // canonical XP curve (persistence.js) — no source-specific leveling
+        if (turnState.bench?.dragonId) addDragonXp(turnState.bench.dragonId, Math.max(1, Math.floor(xpGained / 2))); // reserve trains at half rate
+        const newLevel = loadSave().dragons[turnState.dragonId].level;
+        const leveledUp = newLevel > turnState.playerLevel;
         if (scrapsGained > 0) addScraps(scrapsGained);
 
         if (battleConfig?.isMirrorAdmin) {
@@ -1320,7 +1403,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
 
         // Core drops
         let coreDropped = null;
-        const npcElement = state.npc.element;
+        const npcElement = turnState.npc.element;
         if (Math.random() < CORE_DROP_CHANCE) {
           const coreCount = Math.random() < CORE_DOUBLE_CHANCE ? 2 : 1;
           addCore(npcElement, coreCount);
@@ -1343,7 +1426,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         const victoryNpcEl = npcSpriteImgRef.current;
         if (victoryNpcEl) {
           await new Promise(resolve => {
-            const tl = shatterKO(victoryNpcEl, state.npc.element);
+            const tl = shatterKO(victoryNpcEl, turnState.npc.element);
             tl.eventCallback('onComplete', resolve);
             setTimeout(resolve, 1200);
           });
@@ -1355,7 +1438,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         if (battleConfig?.isMirrorAdmin && phases) {
           trackStat('battlesWon');
           if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
-          updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: true });
+          updateRecords({ turns: turnState.turnCount + 1, maxDamage: turnState.maxDamageDealt, won: true });
           runFragmentUnlockPass();
           dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-celebrate' });
           dispatch({ type: 'SET_EPILOGUE', xpGained, scrapsGained, isMirrorAdmin: true });
@@ -1365,7 +1448,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         } else if (battleConfig?.isSingularity && phases && !save.singularityComplete) {
           trackStat('battlesWon');
           if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
-          updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: true });
+          updateRecords({ turns: turnState.turnCount + 1, maxDamage: turnState.maxDamageDealt, won: true });
           runFragmentUnlockPass();
           dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-celebrate' });
           dispatch({ type: 'SET_EPILOGUE', xpGained, scrapsGained });
@@ -1375,12 +1458,12 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         } else {
           trackStat('battlesWon');
           if (scrapsGained > 0) trackStat('totalScrapsEarned', scrapsGained);
-          updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: true });
+          updateRecords({ turns: turnState.turnCount + 1, maxDamage: turnState.maxDamageDealt, won: true });
           runFragmentUnlockPass();
-          setLastZone(state.npc.zone ?? null);
+          setLastZone(turnState.npc.zone ?? null);
           dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-celebrate' });
           // Skill pay: S/A/B ranks pay a flat bonus on top of the battle payout.
-          const finalRank = getBattleRank(state.turnCount + 1, state.maxDamageDealt, playerHpPercent);
+          const finalRank = getBattleRank(turnState.turnCount + 1, turnState.maxDamageDealt, finalPlayerHpPercent);
           const rankBonus = getRankBonusScraps(finalRank);
           if (rankBonus > 0) addScraps(rankBonus);
           // B8: persist the best rank per opponent — drives S-rank ribbons on
@@ -1389,7 +1472,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           // Stage-up detection: did this battle's XP push the dragon across a
           // stage threshold (II@8 / III@20 / IV@38)? That's a visual evolution —
           // it deserves a callout, not silence.
-          const preBattleStage = getStageForLevel(state.playerLevel);
+          const preBattleStage = getStageForLevel(turnState.playerLevel);
           const postBattleStage = getStageForLevel(newLevel);
           const stageEvolved = postBattleStage > preBattleStage ? postBattleStage : null;
           dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped, wasRepeat: isRepeatDefeat || isSingularityRepeat, rankBonus, stageEvolved });
@@ -1403,54 +1486,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
         }
       }
     } else if (result.player.hp <= 0) {
-      playSound('ko');
-
-      // mirror_admin_reset (Great Reset): if the player faints in Phase 3
-      // without having spent Restoration or Recompile THIS PHASE, Mirror
-      // Admin heals 25% max HP. Checked before the bench swap so the punish
-      // lands on the phase where the dragon actually fell.
-      if (battleConfig?.isMirrorAdmin && (state.currentPhase || 0) === 2) {
-        const healMovesThisPhase = (state.phaseMoveHistory || []).filter(k => ['restoration', 'recompile'].includes(k));
-        if (healMovesThisPhase.length === 0 && !state.bossState.mirrorHealPunished) {
-          const healAmount = Math.max(1, Math.floor(state.npcMaxHp * 0.25));
-          result = { ...result, npc: { ...result.npc, hp: Math.min(state.npcMaxHp, result.npc.hp + healAmount) } };
-          dispatch({ type: 'SET_BOSS_STATE', value: { mirrorHealPunished: true } });
-          dispatch({ type: 'ADD_LOG', text: `${state.npc.name} triggers the Great Reset — heals ${healAmount} HP!` });
-          playSound('statusTick', { element: 'shadow' });
-        }
-      }
-
-      const playerCanvas = playerSpriteRef.current?.getCanvas?.();
-      if (playerCanvas) {
-        await new Promise(resolve => {
-          const tl = shatterKO(playerCanvas, state.dragon.element);
-          tl.eventCallback('onComplete', resolve);
-          setTimeout(resolve, 1200);
-        });
-      } else {
-        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-ko' });
-        await battleWait(600);
-      }
-      if (state.bench && state.bench.playerHp > 0) {
-        // Reserve dragon steps in — the bench is a second life; fight continues.
-        dispatch({ type: 'ADD_LOG', text: `${state.dragon.name} fell — ${state.bench.dragon.name} steps in!` });
-        dispatch({ type: 'FAINT_SWAP' });
-        playSound('uiConfirm');
-        // Every fight re-opens on its own calm track (remnants included —
-        // previously their theme was stomped by the generic battle loop).
-        playMusic(baseTrack);
-      } else {
-        trackStat('battlesLost');
-        updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
-        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-defeated' });
-        dispatch({ type: 'SET_DEFEAT' });
-        stopMusic();
-        stopHeartbeat();
-        playSound('defeatDrone');
-      }
+      await settlePlayerFaint();
     } else {
-      const playerHpPct = result.player.hp / (result.player.maxHp || state.playerMaxHp);
-      const npcHpPct = result.npc.hp / (result.npc.maxHp || state.npcMaxHp);
+      const playerHpPct = result.player.hp / (result.player.maxHp || turnState.playerMaxHp);
+      const npcHpPct = result.npc.hp / (result.npc.maxHp || turnState.npcMaxHp);
       // Intensity ramp: standard fights open calm, tense below 50%, critical
       // below 25% (battleA -> battleB -> battleElite, the P2 battleB split).
       // Boss/Singularity/Remnant/Mirror fights keep their own entry track —
@@ -1478,83 +1517,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
     setSignatureFocus(false);
   }, [state, animateEvent, save, introDone]);
 
-  // Manual tactical swap — costs the turn: swap the reserve in, then the enemy
-  // gets a free strike on the incoming dragon (which guards as it enters).
-  const handleSwap = useCallback(async () => {
-    if (state.phase !== PHASES.PLAYER_TURN || animatingRef.current) return;
-    if (!state.bench || state.bench.playerHp <= 0) return;
-    animatingRef.current = true;
-    setSelectedMoveKey(null);
-    dispatch({ type: 'START_ANIMATION' });
-
-    const incoming = state.bench; // becomes the active dragon after the swap
-    dispatch({ type: 'SWAP_DRAGON' });
-    dispatch({ type: 'ADD_LOG', text: `${state.dragon.name} swaps out — ${incoming.dragon.name} enters!` });
-    playSound('uiConfirm');
-    await battleWait(500);
-
-    const incomingState = {
-      name: incoming.dragon.name, element: incoming.dragon.element, stage: incoming.playerStage,
-      hp: incoming.playerHp, maxHp: incoming.playerMaxHp,
-      atk: incoming.playerStats.atk, def: incoming.playerStats.def, spd: incoming.playerStats.spd,
-      defending: true, status: incoming.playerStatus,
-    };
-    const npcState = {
-      name: state.npc.name, element: state.npc.element, stage: 3,
-      hp: state.npcHp, maxHp: state.npcMaxHp,
-      atk: state.npc.stats.atk, def: state.npc.stats.def, spd: state.npc.stats.spd,
-      defending: false, status: state.npcStatus,
-    };
-    const swapContext = {
-      turnCount: state.turnCount,
-      playerHpRatio: incoming.playerHp / incoming.playerMaxHp,
-      enemyHpRatio: state.npcHp / state.npcMaxHp,
-      npcAtkBuff: state.npcAtkBuff,
-      npcDefBuff: state.npcDefBuff,
-    };
-    const npcMoveKey = pickNpcMove(state.npc.moveKeys, state.npc.element, incoming.dragon.element, incoming.playerStatus, swapContext);
-    const swapNpcState = { ...npcState, atkBuff: state.npcAtkBuff, defBuff: state.npcDefBuff };
-    const result = resolveTurn(incomingState, swapNpcState, 'defend', npcMoveKey, incoming.dragon.moveKeys, state.npc.moveKeys);
-
-    for (const event of result.events) {
-      if (event.attacker === 'npc' && shouldAnimateBattleEvent(event)) {
-        await animateEvent(event, dispatch);
-      }
-    }
-    const dmg = Math.max(0, incomingState.hp - result.player.hp);
-    if (dmg > 0) {
-      const dmgId = ++damageIdRef.current;
-      dispatch({ type: 'ADD_DAMAGE_NUMBER', entry: { id: dmgId, damage: dmg, effectiveness: 1.0, hit: true, target: 'player' } });
-      dispatch({ type: 'APPLY_DAMAGE_TO_PLAYER', damage: dmg });
-    }
-    dispatch({ type: 'SET_PLAYER_STATUS', value: result.player.status || null });
-    dispatch({ type: 'SET_NPC_STATUS', value: result.npc.status || null });
-    dispatch({ type: 'SET_NPC_ATK_BUFF', value: result.npc.atkBuff || null });
-    dispatch({ type: 'SET_NPC_DEF_BUFF', value: result.npc.defBuff || null });
-    await battleWait(350);
-
-    if (result.player.hp <= 0) {
-      // Rare: the entering dragon is KO'd by the entry strike.
-      playSound('ko');
-      if (state.playerHp > 0) {
-        // The dragon swapped out (now the reserve) is still alive — it returns.
-        dispatch({ type: 'ADD_LOG', text: `${incoming.dragon.name} fell on entry!` });
-        dispatch({ type: 'FAINT_SWAP' });
-        playSound('uiConfirm');
-      } else {
-        trackStat('battlesLost');
-        updateRecords({ turns: state.turnCount + 1, maxDamage: state.maxDamageDealt, won: false });
-        dispatch({ type: 'SET_PLAYER_SPRITE_CLASS', value: 'sprite-defeated' });
-        dispatch({ type: 'SET_DEFEAT' });
-        stopMusic();
-        stopHeartbeat();
-        playSound('defeatDrone');
-      }
-    } else {
-      dispatch({ type: 'RESET_TURN' });
-    }
-    animatingRef.current = false;
-  }, [state, animateEvent]);
+  // Entry guards, enemy scripts, damage, and KO/rewards all use the same turn.
+  const handleSwap = useCallback(() => handleMoveSelect('defend', { swap: true }), [handleMoveSelect]);
 
   const dragon = state.dragon;
   const npc = state.npc;
@@ -1793,7 +1757,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           style={{ '--combatant-color': playerColor.primary, '--combatant-glow': playerColor.glow }}
         >
           <div className="hp-bar-label" style={{ color: playerColor.glow }}>
-            <span style={{ color: '#888' }}>Lv.{state.playerLevel}</span> {playerColor.icon} {save.dragons[dragonId]?.nickname || dragon.name}
+            <span style={{ color: '#888' }}>Lv.{state.playerLevel}</span> {playerColor.icon} {save.dragons[state.dragonId]?.nickname || dragon.name}
           </div>
           <div className="hp-bar-track">
             <div
@@ -1875,7 +1839,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
           <span className="combatant-scan-pad player" aria-hidden="true" />
           <div className="combatant-nameplate player">
             <span>GUARDIAN</span>
-            <strong>{save.dragons[dragonId]?.nickname || dragon.name}</strong>
+            <strong>{save.dragons[state.dragonId]?.nickname || dragon.name}</strong>
           </div>
           <DragonSprite
             battlePlayback
@@ -1886,7 +1850,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             forcedFrame={state.playerForcedFrame}
             className={state.playerSpriteClass}
             element={dragon.element}
-            actorId={dragonId}
+            actorId={state.dragonId}
             pose={playerPose}
           />
           {state.damageNumbers
