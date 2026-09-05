@@ -59,6 +59,7 @@ export function getStormSpineExits(save) {
 export function getStormSpineObjective(save) {
   if (!hasGuardian(save)) return 'Hatch a guardian before stepping onto the wire.';
   if (!hasDefeated(save, 'crypto_crab')) return 'Open the Frozen Cache Crypto Lock first — the spine is fed by it.';
+  if (!hasDefeated(save, 'phishing_siren')) return 'Break the Siren Loop in Frozen Cache first — both it and Crypto Lock must be clear to face the hydra.';
   if (!hasDefeated(save, 'glitch_hydra')) return 'Climb to the ceiling grid. Each hydra head falls to a different element.';
   if (!getStormSpineProgress(save).forkLane) return 'Choose a lane at the fork. The other two arc shut.';
   if (!hasDefeated(save, 'logic_bomb')) return 'Reach the Logic Core and beat the fuse. Six turns — count them.';

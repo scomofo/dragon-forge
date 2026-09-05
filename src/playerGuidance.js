@@ -4,7 +4,7 @@ import { getAvailableCampaignNodes } from './campaignMap';
 import { BUY_ITEMS, FORGE_RECIPES, canAffordBuy, canForge } from './shopItems';
 import { REQUIRED_FRAGMENT_IDS } from './loreCanon';
 import { isDailyChallengeCompleted } from './dailyChallenge';
-import { getOuterGridProgress } from './outerGrid';
+import { getExpeditionGuidance } from './expeditions';
 
 function getOwnedDragons(save) {
   return Object.entries(save?.dragons || {}).filter(([, dragon]) => dragon?.owned);
@@ -56,16 +56,10 @@ export function getPlayerGuidance(save) {
     };
   }
 
-  // Once the player enters the authored opening, keep its objective ahead of
-  // daily chores. Existing saves that never entered it retain their guidance.
-  const outerGrid = getOuterGridProgress(save);
-  if (outerGrid.visited.length > 1 && !outerGrid.rewardClaimed) {
-    return {
-      target: 'outerGrid', action: 'CONTINUE ROUTE',
-      title: (save.defeatedNpcs || []).includes('buffer_overflow')
-        ? 'Collect your reward at the Return Gate' : 'Stabilize the Overflow Vent and return home',
-    };
-  }
+  // Keep the chosen expedition and any cross-zone prerequisite ahead of daily
+  // chores. Saves that have never entered a route keep their existing guidance.
+  const expedition = getExpeditionGuidance(save);
+  if (expedition) return expedition;
 
   // The daily is the highest-value thing on the board while it's open — it
   // pays 3× scraps / 2× XP and feeds the streak, so outrank optional systems.

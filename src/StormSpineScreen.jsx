@@ -294,7 +294,7 @@ export default function StormSpineScreen({ save, refreshSave, onNavigate, onBegi
               {hasGuardian && <p>Element matchup: {getTypeEffectiveness(dragons[guardian].element, npc.element) > 1 ? 'Advantage' : getTypeEffectiveness(dragons[guardian].element, npc.element) < 1 ? 'Resisted — use guard and timing' : 'Even'}</p>}
               <h3>WATCH FOR</h3><p>{pattern?.tell}</p>
               <h3>YOUR OPENING</h3><p>{OPENING_HINTS[npc.id]}</p>
-              {!canBattle && <p>Select an owned guardian to begin.</p>}
+              {!canBattle && <p>{hasGuardian ? 'This encounter is sealed. Follow the objective to open the route.' : 'Select an owned guardian to begin.'}</p>}
             </div>}
             <div className="outer-grid-route-summary"><h2>EXPEDITION</h2><p>{progress.visited.length} rooms visited</p><p>{progress.rewardClaimed ? 'Return reward collected' : `Return reward: ${STORM_SPINE_CLEAR_REWARD} scraps`}</p><p>{progress.forkLane ? LANE_LABELS[progress.forkLane] : 'Fork not yet chosen'}</p></div>
           </aside>

@@ -4,6 +4,7 @@ import DragonSprite from './DragonSprite';
 import { calculateStatsForLevel, getStageForLevel, getTypeEffectiveness } from './battleEngine';
 import { CAMPAIGN_NODES, getCampaignNodeState, getCampaignNodeStates } from './campaignMap';
 import { getZoneForNode } from './worldZones';
+import { getExpeditionForZone } from './expeditions';
 import { dragons, elementColors, npcs } from './gameData';
 import { playSound } from './soundEngine';
 import { assetUrl } from './utils';
@@ -79,9 +80,8 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
   const selectedState = getCampaignNodeState(selectedNode, save);
   const selectedNpc = npcs[selectedNode.npcId];
   // Zones with an authored room route get an EXPLORE entry point.
-  const ZONE_SCREEN_IDS = { outer_grid: 'outerGrid', frozen_cache: 'frozenCache', storm_spine: 'stormSpine', admin_core: 'adminCore' };
-  const zoneScreenId = ZONE_SCREEN_IDS[getZoneForNode(selectedNode.id)?.id] || null;
   const selectedZone = getZoneForNode(selectedNode.id);
+  const zoneScreenId = getExpeditionForZone(selectedZone?.id)?.screen || null;
   const selectedColor = elementColors[selectedNode.element] || elementColors.neutral;
   const clearedCount = Object.values(nodeStates).filter((state) => state === 'cleared').length;
   const availableCount = Object.values(nodeStates).filter((state) => state === 'available').length;

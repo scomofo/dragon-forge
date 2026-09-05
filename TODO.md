@@ -28,6 +28,7 @@
 
 ## Current reliability pass
 
+- [x] Campaign guidance — remember the last entered expedition across all four zones, keep route objectives and unclaimed rewards ahead of dailies, explain cross-zone prerequisites, and show the correct room-return hint after defeat
 - [x] Playback controls — live MP3/procedural volume, immediate mute, destination-aware unmute, cancelable fades, and disposed arpeggio notes
 - [x] Title input — Start no longer bubbles over the next screen's music, and keyboard sound controls no longer trigger Start
 - [ ] Manual browser check — title keyboard controls, volume/mute through navigation, rapid screen changes, and narrow-screen audio controls
