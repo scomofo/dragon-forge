@@ -3,7 +3,7 @@ import { DRAGON_SHEET, STAGE_SCALES, DRAGON_DISPLAY } from './sprites';
 import BattleSetSprite from './BattleSetSprite';
 import { resolveBattleSprite } from './battleSets';
 
-const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, flipX = false, forcedFrame = null, className = '', size = null, shiny = false, element = '', actorId = null, pose = 'idle' }, ref) {
+const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, flipX = false, forcedFrame = null, className = '', size = null, shiny = false, element = '', actorId = null, pose = 'idle', battlePlayback = false }, ref) {
   const canvasRef = useRef(null);
   const sheetCanvasRef = useRef(null);
   const imageRef = useRef(null);
@@ -198,6 +198,7 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
         frames={battleSprite.frames}
         pose={battleSprite.pose}
         flipX={flipX}
+        battlePlayback={battlePlayback}
         width={width}
         height={height}
         className={`dragon-sprite stage-${stage} ${className} ${shiny ? 'shiny-sprite' : ''}`}

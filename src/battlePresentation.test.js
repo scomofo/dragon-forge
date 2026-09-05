@@ -76,15 +76,12 @@ describe('battle presentation profiles', () => {
     expect(heavy.vfxTravelMs).toBeGreaterThan(light.vfxTravelMs);
   });
 
-  test('2x battle speed halves every pacing beat', () => {
+  test('keeps authored durations at 1x so playback boundaries scale only once', () => {
     const event = { action: 'attack', hit: true, damage: 20, effectiveness: 1, targetHp: 40 };
     const normal = getBattlePresentationProfile(event, { power: 40 });
     setBattleSpeed(2);
     const fast = getBattlePresentationProfile(event, { power: 40 });
-    expect(fast.anticipationMs).toBeLessThan(normal.anticipationMs);
-    expect(fast.recoveryMs).toBeLessThan(normal.recoveryMs);
-    expect(fast.vfxTravelMs).toBeLessThan(normal.vfxTravelMs);
-    expect(fast.impactPauseMs).toBeLessThan(normal.impactPauseMs);
+    expect(fast).toEqual(normal);
   });
 });
 

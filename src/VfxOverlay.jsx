@@ -15,16 +15,16 @@ const STRIP_DISPLAY = 200; // px the projectile renders at on screen
 const NEAR_EDGE = 18;
 const FAR_EDGE = 78;
 
-export default function VfxOverlay({ vfxKey, element, direction, onComplete, targetSide, travelMs, impactMs }) {
+export default function VfxOverlay({ vfxKey, element, direction, onImpact, onComplete, targetSide, travelMs, impactMs }) {
   const config = VFX_FRAMES[vfxKey];
   const travel = travelMs || DEFAULT_TRAVEL_MS;
   const impact = impactMs || DEFAULT_IMPACT_MS;
 
   if (config?.strip) {
-    return <StripVfx config={config} targetSide={targetSide} onComplete={onComplete} travelMs={travel} impactMs={impact} />;
+    return <StripVfx config={config} targetSide={targetSide} onImpact={onImpact} onComplete={onComplete} travelMs={travel} impactMs={impact} />;
   }
   if (config?.signature) {
-    return <SignatureVfx config={config} targetSide={targetSide} onComplete={onComplete} travelMs={travel} impactMs={impact} />;
+    return <SignatureVfx config={config} targetSide={targetSide} onImpact={onImpact} onComplete={onComplete} travelMs={travel} impactMs={impact} />;
   }
   return (
     <LegacyVfx
@@ -32,17 +32,23 @@ export default function VfxOverlay({ vfxKey, element, direction, onComplete, tar
       element={element}
       direction={direction}
       targetSide={targetSide}
+      onImpact={onImpact}
       onComplete={onComplete}
+      travelMs={travel}
+      impactMs={impact}
     />
   );
 }
 
 // === Animated projectile strip ===
-function StripVfx({ config, targetSide, onComplete, travelMs, impactMs }) {
+function StripVfx({ config, targetSide, onImpact, onComplete, travelMs, impactMs }) {
   const ref = useRef(null);
   const doneRef = useRef(false);
+  const impactRef = useRef(false);
 
   useEffect(() => {
+    doneRef.current = false;
+    impactRef.current = false;
     const el = ref.current;
     if (!el) {
       onComplete();
@@ -59,8 +65,10 @@ function StripVfx({ config, targetSide, onComplete, travelMs, impactMs }) {
 
     let raf = 0;
     let startTs = null;
+    let active = true;
 
     const tick = (ts) => {
+      if (!active) return;
       if (startTs == null) startTs = ts;
       const t = Math.min(1, (ts - startTs) / total);
 
@@ -87,6 +95,11 @@ function StripVfx({ config, targetSide, onComplete, travelMs, impactMs }) {
       el.style.backgroundPosition = `${-frameIdx * STRIP_DISPLAY}px 0px`;
       el.style.transform = `translate(-50%, -50%) scale(${flip * scale}, ${scale})`;
 
+      if (t >= travelEnd && !impactRef.current) {
+        impactRef.current = true;
+        onImpact?.();
+      }
+      if (!active) return;
       if (t >= 1) {
         if (!doneRef.current) {
           doneRef.current = true;
@@ -98,8 +111,8 @@ function StripVfx({ config, targetSide, onComplete, travelMs, impactMs }) {
     };
 
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [config, targetSide, onComplete, travelMs, impactMs]);
+    return () => { active = false; cancelAnimationFrame(raf); };
+  }, [config, targetSide, onImpact, onComplete, travelMs, impactMs]);
 
   return (
     <div
@@ -131,12 +144,15 @@ const SIGNATURE_GLYPHS = {
   'diamond-weave': '✦',
 };
 
-function SignatureVfx({ config, targetSide, onComplete, travelMs, impactMs }) {
+function SignatureVfx({ config, targetSide, onImpact, onComplete, travelMs, impactMs }) {
   const ref = useRef(null);
   const doneRef = useRef(false);
+  const impactRef = useRef(false);
   const sig = config.signature;
 
   useEffect(() => {
+    doneRef.current = false;
+    impactRef.current = false;
     const el = ref.current;
     if (!el) {
       onComplete();
@@ -149,8 +165,10 @@ function SignatureVfx({ config, targetSide, onComplete, travelMs, impactMs }) {
     const travelEnd = travelMs / total;
     let raf = 0;
     let startTs = null;
+    let active = true;
 
     const tick = (ts) => {
+      if (!active) return;
       if (startTs == null) startTs = ts;
       const t = Math.min(1, (ts - startTs) / total);
       let x;
@@ -170,6 +188,11 @@ function SignatureVfx({ config, targetSide, onComplete, travelMs, impactMs }) {
       el.style.left = `${x}%`;
       el.style.opacity = String(opacity);
       el.style.transform = `translate(-50%, -50%) scale(${scale}, ${scale})`;
+      if (t >= travelEnd && !impactRef.current) {
+        impactRef.current = true;
+        onImpact?.();
+      }
+      if (!active) return;
       if (t >= 1) {
         if (!doneRef.current) {
           doneRef.current = true;
@@ -181,8 +204,8 @@ function SignatureVfx({ config, targetSide, onComplete, travelMs, impactMs }) {
     };
 
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [targetSide, onComplete, travelMs, impactMs]);
+    return () => { active = false; cancelAnimationFrame(raf); };
+  }, [config, targetSide, onImpact, onComplete, travelMs, impactMs]);
 
   const [hi, mid, deep] = sig.palette;
   return (
@@ -211,18 +234,38 @@ function SignatureVfx({ config, targetSide, onComplete, travelMs, impactMs }) {
 }
 
 // === CSS-only fallback (basic attack slash / undefined projectiles) ===
-function LegacyVfx({ vfxKey, element, direction, onComplete, targetSide }) {
+function LegacyVfx({ vfxKey, element, direction, onImpact, onComplete, targetSide, travelMs, impactMs }) {
   const [phase, setPhase] = useState('travel');
+  const impactRef = useRef(false);
+  const doneRef = useRef(false);
+  const activeRef = useRef(true);
   const isLTR = direction === 'left-to-right';
   const colors = elementColors[element] || elementColors.neutral;
 
-  const handleTravelEnd = useCallback(() => {
+  useEffect(() => {
+    impactRef.current = false;
+    doneRef.current = false;
+    activeRef.current = true;
+    setPhase('travel');
+    return () => { activeRef.current = false; };
+  }, [vfxKey, element, direction, targetSide, onImpact, onComplete, travelMs, impactMs]);
+
+  const handleImpactEnd = useCallback(function handleImpactEnd() {
+    if (!activeRef.current || doneRef.current) return;
+    doneRef.current = true;
+    onComplete();
+  }, [onComplete]);
+
+  const handleTravelEnd = useCallback(function handleTravelEnd() {
+    if (!activeRef.current || impactRef.current) return;
+    impactRef.current = true;
+    onImpact?.();
     if (vfxKey === 'BASIC_ATTACK') {
       setPhase('impact');
     } else {
-      onComplete();
+      handleImpactEnd();
     }
-  }, [vfxKey, onComplete]);
+  }, [vfxKey, onImpact, handleImpactEnd]);
 
   return (
     <>
@@ -232,6 +275,7 @@ function LegacyVfx({ vfxKey, element, direction, onComplete, targetSide }) {
           style={{
             background: `radial-gradient(ellipse, ${colors.glow}, ${colors.primary} 60%, transparent 80%)`,
             boxShadow: `${isLTR ? '-20px' : '20px'} 0 20px ${colors.primary}`,
+            animationDuration: `${travelMs}ms`,
           }}
           onAnimationEnd={handleTravelEnd}
         />
@@ -240,8 +284,8 @@ function LegacyVfx({ vfxKey, element, direction, onComplete, targetSide }) {
       {phase === 'impact' && vfxKey === 'BASIC_ATTACK' && (
         <div
           className="vfx-basic-slash vfx-basic-slash-anim"
-          style={{ left: targetSide === 'left' ? '15%' : '85%' }}
-          onAnimationEnd={onComplete}
+          style={{ left: targetSide === 'left' ? '15%' : '85%', animationDuration: `${impactMs}ms` }}
+          onAnimationEnd={handleImpactEnd}
         />
       )}
     </>

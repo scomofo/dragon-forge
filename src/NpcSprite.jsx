@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import BattleSetSprite from './BattleSetSprite';
 import { normalizeBattlePose, resolveBattleSprite } from './battleSets';
 
-const NpcSprite = forwardRef(function NpcSprite({ idleSprite, attackSprite, isAttacking = false, className = '', size = 160, flipX = false, smooth = false, style = {}, actorId = null, pose = null }, ref) {
+const NpcSprite = forwardRef(function NpcSprite({ idleSprite, attackSprite, isAttacking = false, className = '', size = 160, flipX = false, smooth = false, style = {}, actorId = null, pose = null, battlePlayback = false }, ref) {
   // P1 battle-set pipeline: explicit pose wins; otherwise the legacy
   // idle/attack swap decides. Shipped sheets take over the <img> stills.
   const effectivePose = pose || (isAttacking ? 'attack' : 'idle');
@@ -17,6 +17,7 @@ const NpcSprite = forwardRef(function NpcSprite({ idleSprite, attackSprite, isAt
         frames={battleSprite.frames}
         pose={battleSprite.pose}
         flipX={flipX}
+        battlePlayback={battlePlayback}
         width={size}
         height={size}
         className={`npc-sprite ${className}`}

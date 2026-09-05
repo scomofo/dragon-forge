@@ -1,7 +1,7 @@
 // Global battle animation speed. One module-level multiplier so the toggle
 // (BattleScreen SPEED button) can retime every pacing source at once:
-// the wait() choreography, the presentation timing tables, and all GSAP
-// timelines (via gsap.globalTimeline.timeScale).
+// wait choreography and wall-clock sprite/VFX playback. GSAP timelines scale
+// themselves through globalTimeline.timeScale, so receive unscaled durations.
 import gsap from 'gsap';
 
 let battleSpeed = 1;
@@ -16,8 +16,12 @@ export function setBattleSpeed(speed) {
   return battleSpeed;
 }
 
-// Scaled wait — every fixed beat in the battle choreography goes through this
-// so 2x actually halves a turn's wall-clock time.
+// Convert an authored 1× duration exactly once at a wall-clock boundary.
+export function scaleBattleDuration(ms) {
+  return ms / battleSpeed;
+}
+
+// Profile durations and fixed choreography beats are both authored at 1×.
 export function battleWait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms / battleSpeed));
+  return new Promise((resolve) => setTimeout(resolve, scaleBattleDuration(ms)));
 }
