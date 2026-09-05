@@ -1,8 +1,8 @@
 # Music Identity
 
-> **Status**: Binding (commission list). Runtime still uses 5 MP3s + procedural beds.
-> **Runtime**: `src/soundEngine.js` — existing MP3 routing and procedural beds.
-> **Owner**: Scott is handling the soundtrack separately (confirmed 2026-09-04). This brief remains reference material; composition progress is tracked separately. Agent work proceeds on gameplay and presentation without replacing tracks or adding audition features.
+> **Status**: Binding. The 12-track commission has landed (see below).
+> **Runtime**: `src/soundEngine.js` — `MUSIC_COMMISSION` is the code twin of the 12-track list; every entry is an authored file under `public/assets/music/`.
+> **Owner**: the dedicated music pipeline (agent-composed, confirmed 2026-09-04 — "separately" meant separate from the gameplay/presentation agents). Motif-critical tracks (mirrorAdmin, hub, victory, defeat, credits) are composed note-for-note from the written motif and rendered offline (`tools/music/`); atmospheric tracks (mapWander, battleB, battleElite, singularity, boss) are fal.ai Lyria 2 commissions (`tools/asset_gen/gen_music.py`). Gameplay agents must not replace tracks without this owner.
 
 ## Title motif (Heartforge theme)
 

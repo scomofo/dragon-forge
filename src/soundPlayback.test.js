@@ -82,14 +82,16 @@ describe('music controls', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('preserves the existing Mirror Admin bed, with live volume and mute/resume', () => {
-    engine.playMusic('mirrorAdmin', true);
-    expect(engine.getMusicDefinition('mirrorAdmin').source).toBe('procedural');
-    expect(ctx.nodes.filter(node => node.kind === 'oscillator').map(node => node.frequency.value)).toEqual([49, 73.5, 147]);
+  it('drives procedural beds with live volume and mute/resume', () => {
+    // P2: mirrorAdmin is now an authored asset; forge remains the canonical
+    // procedural bed for exercising the WebAudio path.
+    engine.playMusic('forge', true);
+    expect(engine.getMusicDefinition('forge').source).toBe('procedural');
+    expect(ctx.nodes.filter(node => node.kind === 'oscillator').map(node => node.frequency.value)).toEqual([55, 82, 110]);
     engine.setMusicVolume(0.8);
-    expect(ctx.nodes[0].gain.value).toBeCloseTo(0.176);
+    expect(ctx.nodes[0].gain.value).toBeCloseTo(0.16);
     const nodeCount = ctx.nodes.length;
-    engine.playMusic('mirrorAdmin');
+    engine.playMusic('forge');
     expect(ctx.nodes).toHaveLength(nodeCount);
     engine.toggleMute();
     expect(ctx.nodes.every(node => node.disconnect.mock.calls.length === 1)).toBe(true);
