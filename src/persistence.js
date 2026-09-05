@@ -4,6 +4,7 @@ import { applyOuterGridAction, getOuterGridProgress } from './outerGrid';
 import { applyFrozenCacheAction, getFrozenCacheProgress } from './frozenCache';
 import { applyStormSpineAction, getStormSpineProgress } from './stormSpine';
 import { applyAdminCoreAction, getAdminCoreProgress } from './adminCore';
+import { isExpeditionAvailable } from './expeditions';
 
 const STORAGE_KEY = 'dragonforge_save';
 
@@ -52,6 +53,7 @@ const DEFAULT_SAVE = {
     metFelix: false,
     felixGreeted: false,
     lastZone: null,
+    activeExpedition: null,
     fragmentsUnlocked: [],
     journalBriefingSeen: false,
     felixStageHeard: 0,
@@ -172,6 +174,7 @@ function migrateSave(save) {
   save.frozenCache = getFrozenCacheProgress(save);
   save.stormSpine = getStormSpineProgress(save);
   save.adminCore = getAdminCoreProgress(save);
+  if (!isExpeditionAvailable(save.flags.activeExpedition, save)) save.flags.activeExpedition = null;
   return save;
 }
 
@@ -193,36 +196,36 @@ export function writeSave(save) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
 }
 
-export function actInOuterGrid(action, value) {
+export function rememberExpedition(screen) {
   const save = loadSave();
-  const next = applyOuterGridAction(save, action, value);
-  if (next === save) return false;
-  writeSave(next);
+  if (!isExpeditionAvailable(screen, save) || save.flags.activeExpedition === screen) return false;
+  save.flags.activeExpedition = screen;
+  writeSave(save);
   return true;
+}
+
+function actInExpedition(screen, applyAction, action, value) {
+  const save = loadSave();
+  const next = applyAction(save, action, value);
+  if (next === save) return false;
+  writeSave({ ...next, flags: { ...next.flags, activeExpedition: screen } });
+  return true;
+}
+
+export function actInOuterGrid(action, value) {
+  return actInExpedition('outerGrid', applyOuterGridAction, action, value);
 }
 
 export function actInFrozenCache(action, value) {
-  const save = loadSave();
-  const next = applyFrozenCacheAction(save, action, value);
-  if (next === save) return false;
-  writeSave(next);
-  return true;
+  return actInExpedition('frozenCache', applyFrozenCacheAction, action, value);
 }
 
 export function actInStormSpine(action, value) {
-  const save = loadSave();
-  const next = applyStormSpineAction(save, action, value);
-  if (next === save) return false;
-  writeSave(next);
-  return true;
+  return actInExpedition('stormSpine', applyStormSpineAction, action, value);
 }
 
 export function actInAdminCore(action, value) {
-  const save = loadSave();
-  const next = applyAdminCoreAction(save, action, value);
-  if (next === save) return false;
-  writeSave(next);
-  return true;
+  return actInExpedition('adminCore', applyAdminCoreAction, action, value);
 }
 
 export function meltCores(count = 10, scraps = 250) {
@@ -561,7 +564,7 @@ export function applyNewGamePlus(save) {
   save.singularityComplete = false;
   save.mirrorAdminDefeated = false;
   save.remnantDefeated = [];
-  save.flags = { ...(save.flags || {}), currentAct: 1, fragmentsUnlocked: [] };
+  save.flags = { ...(save.flags || {}), currentAct: 1, fragmentsUnlocked: [], activeExpedition: null };
   return save;
 }
 

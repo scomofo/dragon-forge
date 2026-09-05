@@ -53,6 +53,14 @@ describe('battle controller result flow', () => {
     expect(onBattleEnd).not.toHaveBeenCalled();
   });
 
+  it.each(['frozenCache', 'stormSpine', 'adminCore'])('explains the room checkpoint after a %s defeat', screen => {
+    control.phase = 'defeat';
+    const html = renderToStaticMarkup(<BattleScreen dragonId="fire" npcId="firewall_sentinel" save={loadSave()}
+      refreshSave={() => {}} onBattleEnd={() => {}} battleConfig={{ returnScreen: screen }} />);
+    expect(html).toContain('Return to this room to retry');
+    expect(html).not.toContain('Head to the Campaign Map to try a different matchup.');
+  });
+
   it('enters Outer Grid from the map with X', () => {
     const onNavigate = vi.fn();
     renderToStaticMarkup(<CampaignMapScreen save={loadSave()} onNavigate={onNavigate} onBeginCampaignBattle={() => {}} />);

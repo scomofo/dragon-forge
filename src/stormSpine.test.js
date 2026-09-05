@@ -44,6 +44,14 @@ describe('Storm Spine authored route', () => {
     expect(getStormSpineObjective(noFinale)).toContain('Frozen Cache');
   });
 
+  it('explains the missing Siren Loop prerequisite after a direct map clear of Crypto Lock', () => {
+    const save = { ...expedition(), defeatedNpcs: ['firewall_sentinel', 'buffer_overflow', 'crypto_crab'] };
+    const atHydra = walk(save, 'live-wire', 'hydra-spine');
+    expect(getStormSpineBattleConfig(atHydra, 'storm')).toBeNull();
+    expect(getStormSpineObjective(atHydra)).toContain('Siren Loop');
+    expect(getStormSpineObjective(atHydra)).toContain('Frozen Cache');
+  });
+
   it.each(['capacitor', 'archive', 'direct'])('completes the %s lane while the other two arc shut', lane => {
     const original = expedition();
     const snapshot = structuredClone(original);

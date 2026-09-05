@@ -147,6 +147,18 @@ describe('getPlayerGuidance', () => {
     expect(getPlayerGuidance(save)).toMatchObject({ target: 'battleSelect', action: 'DAILY OPEN' });
   });
 
+  it.each([
+    ['frozenCache', 'mute-channel', ['firewall_sentinel']],
+    ['stormSpine', 'live-wire', ['firewall_sentinel', 'buffer_overflow', 'bit_wraith', 'phishing_siren', 'crypto_crab']],
+    ['adminCore', 'processional', ['firewall_sentinel', 'buffer_overflow', 'bit_wraith', 'phishing_siren', 'crypto_crab', 'glitch_hydra', 'logic_bomb']],
+  ])('keeps an entered %s route ahead of the daily on existing saves', (screen, roomId, defeatedNpcs) => {
+    const save = {
+      ...freshSave, dragons: { fire: { owned: true, level: 8 } }, defeatedNpcs,
+      [screen]: { roomId, visited: [roomId] },
+    };
+    expect(getPlayerGuidance(save)).toMatchObject({ target: screen, action: 'CONTINUE ROUTE' });
+  });
+
   it('shows archive-complete guidance after Mirror Admin defeat', () => {
     const save = { ...freshSave, mirrorAdminDefeated: true };
     expect(getPlayerGuidance(save)).toMatchObject({ target: 'journal', action: 'ARCHIVE COMPLETE' });

@@ -11,6 +11,7 @@ import {
 import { loadSave, addDragonXp, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, setLastZone, trackStat, completeDailyChallenge, updateRecords, unlockFragment, getRankBonusScraps, recordBattleRank } from './persistence';
 import { getDailyStreakMultiplier } from './dailyChallenge';
 import { getAvailableCampaignNodes } from './campaignMap';
+import { getExpedition } from './expeditions';
 import { FRAGMENT_TRIGGERS, RELIC_DROPS, getRelic, getRelicBattleModifiers } from './forgeData';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
 import { swapActiveAndBench, faintSwap } from './benchLogic';
@@ -2176,7 +2177,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             <p style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
               {battleConfig?.dailyNpc
                 ? 'The daily card is still open — retry it from Battle Select.'
-                : battleConfig?.returnScreen === 'outerGrid'
+                : getExpedition(battleConfig?.returnScreen)
                   ? 'Return to this room to retry, change your guardian, or retreat. Your route progress is safe.'
                 : (battleConfig?.isSingularity || battleConfig?.isMirrorAdmin)
                   ? 'Return to the Singularity breach to re-engage.'

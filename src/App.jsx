@@ -18,7 +18,8 @@ import SingularityScreen from './SingularityScreen';
 import ForgeScreen from './ForgeScreen';
 import CreditsScreen from './CreditsScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
-import { loadSave, recordRemnantDefeat, beginSession, accumulatePlaytime, grantWelcomeBack } from './persistence';
+import { loadSave, recordRemnantDefeat, beginSession, accumulatePlaytime, grantWelcomeBack, rememberExpedition } from './persistence';
+import { getExpedition } from './expeditions';
 import { getSingularityStage, scaleBossForPlayer } from './singularityProgress';
 import { checkMilestones } from './journalMilestones';
 
@@ -93,6 +94,7 @@ export default function App() {
   }
 
   function handleNavigate(target) {
+    if (getExpedition(target)) rememberExpedition(target);
     refreshSave();
     playSound('navSwitch');
     if (target === 'hatchery') {
