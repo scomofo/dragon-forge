@@ -311,14 +311,14 @@ export const ADMIN_CORE_ROOMS = {
   },
   'reliquary-vault': {
     id: 'reliquary-vault', name: 'Reliquary Vault', kind: 'Hidden room',
-    background: '/assets/arenas/lightning.webp', requiredNpc: 'recursive_golem',
+    background: '/assets/arenas/venom.webp', requiredNpc: 'recursive_golem',
     description: 'A vault of unspent saves — hoarded scraps from runs that never happened, still warm with potential.',
     inspect: 'A reliquary plaque: "Saved for later." Later never came. It can come for you.',
     exits: [{ to: 'cold-lanterns', label: 'Back to the lanterns', x: 12 }, { to: 'protocol-perch', label: 'Carry the light to the perch', x: 88 }],
   },
   'echo-archive': {
     id: 'echo-archive', name: 'Echo Archive', kind: 'Lore room',
-    background: '/assets/arenas/lightning.webp', requiredNpc: 'recursive_golem',
+    background: '/assets/arenas/ice.webp', requiredNpc: 'recursive_golem',
     description: 'The archive holds the first draft of the Great Reset — and the signature at the bottom is not the Admin\'s.',
     inspect: 'Draft zero of the Reset: "Wipe the Grid clean; begin again blameless." The margin note, in Felix\'s hand: "Blameless is not the same as kind."',
     exits: [{ to: 'cold-lanterns', label: 'Back to the lanterns', x: 12 }, { to: 'protocol-perch', label: 'Carry the memory to the perch', x: 88 }],

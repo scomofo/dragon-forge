@@ -1,10 +1,11 @@
 // P1.1 arena registry — battle truth for every arena the cartridge renders.
 //
 // Eleven arenas are referenced by battle code (9 NPC + shadow + the
-// gravity chamber). All eleven are now authored 1024x1024 art from the P1
+// gravity chamber). All eleven are authored 1024x1024 art from the P1
 // pass (handoff/ARENA_AND_FORGE_BRIEF.md), generated + converted to webp.
-// magma and lightning remain authored 1024s and are P3 zone material, not
-// yet assigned to a battle.
+// (The old magma.webp / lightning.webp files were unkeyed dragon sprite
+// sheets posing as arenas — removed 2026-09-05; they were never in this
+// registry or referenced by battle code.)
 //
 // Filter ratchet: grade-only filters (saturate/contrast/brightness) pass
 // through. Hue-rotate/grayscale are content filters — a new actor or arena

@@ -32,6 +32,10 @@ async function main() {
     const dragon = { level: 10, xp: 0, owned: true, discovered: true, shiny: false, fusedBaseStats: null };
     const save = {
       introSeen: true,
+      // Defeating every base NPC pushes the app to corruption stage 5 (a
+      // permanent screen-shake that makes Playwright's stability check hang).
+      // singularityComplete returns the world to stage 0 for QA.
+      singularityComplete: true,
       dragons: { light: dragon },
       defeatedNpcs: ['firewall_sentinel', 'bit_wraith', 'phishing_siren', 'crypto_crab', 'buffer_overflow', 'glitch_hydra', 'logic_bomb', 'recursive_golem'],
       frozenCache: { roomId: 'thaw-gate', visited: ['cold-archive'] },
@@ -43,10 +47,14 @@ async function main() {
 
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
   // The index.html splash clears on window.load + 2s, which can hang when
-  // external fonts stall. In the harness, remove it directly instead.
+  // external fonts stall — remove it in-harness. The terminal's blinking
+  // cursor also never goes 'stable' for Playwright, so dispatch the click
+  // via DOM (the typewriter skip doesn't need a trusted event).
   await page.evaluate(() => document.getElementById('splash')?.remove());
-  await page.locator('.terminal-screen').click({ timeout: 12000 });
-  await page.getByText('INITIALIZE_SIMULATION.EXE').click({ timeout: 30000 });
+  await page.waitForSelector('.terminal-screen', { timeout: 12000 });
+  await page.evaluate(() => document.querySelector('.terminal-screen')?.click());
+  await page.waitForSelector('.terminal-init-btn', { timeout: 30000 });
+  await page.evaluate(() => document.querySelector('.terminal-init-btn')?.click());
   const tutorial = page.locator('.tutorial-overlay');
   if (await tutorial.isVisible({ timeout: 3000 }).catch(() => false)) await tutorial.click({ force: true });
   await page.waitForTimeout(1200);
