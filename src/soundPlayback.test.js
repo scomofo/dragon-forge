@@ -82,10 +82,12 @@ describe('music controls', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('stops sequenced notes on mute and updates their volume live', () => {
+  it('preserves the existing Mirror Admin bed, with live volume and mute/resume', () => {
     engine.playMusic('mirrorAdmin', true);
+    expect(engine.getMusicDefinition('mirrorAdmin').source).toBe('procedural');
+    expect(ctx.nodes.filter(node => node.kind === 'oscillator').map(node => node.frequency.value)).toEqual([49, 73.5, 147]);
     engine.setMusicVolume(0.8);
-    expect(ctx.nodes[0].gain.value).toBeCloseTo(0.272);
+    expect(ctx.nodes[0].gain.value).toBeCloseTo(0.176);
     const nodeCount = ctx.nodes.length;
     engine.playMusic('mirrorAdmin');
     expect(ctx.nodes).toHaveLength(nodeCount);

@@ -1607,6 +1607,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
       }
     },
     onButtonPress: (button) => {
+      if ([PHASES.VICTORY, PHASES.DEFEAT, PHASES.EPILOGUE].includes(state.phase)) {
+        if (button === 'A' || button === 'START') onBattleEnd(state.phase !== PHASES.DEFEAT);
+        return;
+      }
       if (button === 'Y') {
         if (!autoBattleAllowed) return;
         playSound('uiConfirm');
@@ -2159,6 +2163,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             <p style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
               {battleConfig?.dailyNpc
                 ? 'The daily card is still open — retry it from Battle Select.'
+                : battleConfig?.returnScreen === 'outerGrid'
+                  ? 'Return to this room to retry, change your guardian, or retreat. Your route progress is safe.'
                 : (battleConfig?.isSingularity || battleConfig?.isMirrorAdmin)
                   ? 'Return to the Singularity breach to re-engage.'
                   : getAvailableCampaignNodes(save).length <= 1
@@ -2192,7 +2198,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, save, refre
             <div style={{ color: '#44aaff' }}>+{state.xpGained} XP</div>
             {state.scrapsGained > 0 && <div style={{ color: '#ffcc00' }}>+{state.scrapsGained} ◆</div>}
           </div>
-          <button className="epilogue-btn" onClick={() => onBattleEnd(true)}>
+          <button className="epilogue-btn" autoFocus onClick={() => onBattleEnd(true)}>
             RETURN TO THE FORGE
           </button>
         </div>

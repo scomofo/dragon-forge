@@ -30,15 +30,15 @@ describe('getPlayerGuidance', () => {
     });
   });
 
-  it('points players with a dragon at the campaign map', () => {
+  it('points players with a first guardian at the Outer Grid opening', () => {
     const save = {
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 1 } },
     };
 
     expect(getPlayerGuidance(save)).toMatchObject({
-      target: 'map',
-      action: 'FIRST BATTLE',
+      target: 'outerGrid',
+      action: 'EXPLORE',
     });
   });
 
@@ -130,7 +130,21 @@ describe('getPlayerGuidance', () => {
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 1 } },
       stats: { battlesLost: 1, battlesWon: 0 },
     };
-    expect(getPlayerGuidance(save)).toMatchObject({ action: 'RETRY' });
+    expect(getPlayerGuidance(save)).toMatchObject({ target: 'outerGrid', action: 'RETRY' });
+  });
+
+  it('keeps an entered Outer Grid route ahead of the daily until its reward is collected', () => {
+    const save = {
+      ...freshSave,
+      dragons: { fire: { owned: true, level: 3 } },
+      defeatedNpcs: ['firewall_sentinel'],
+      outerGrid: { roomId: 'firewall-span', visited: ['signal-breach'] },
+    };
+    expect(getPlayerGuidance(save)).toMatchObject({ target: 'outerGrid', action: 'CONTINUE ROUTE' });
+    save.defeatedNpcs.push('buffer_overflow');
+    expect(getPlayerGuidance(save).title).toContain('Return Gate');
+    save.outerGrid.rewardClaimed = true;
+    expect(getPlayerGuidance(save)).toMatchObject({ target: 'battleSelect', action: 'DAILY OPEN' });
   });
 
   it('shows archive-complete guidance after Mirror Admin defeat', () => {

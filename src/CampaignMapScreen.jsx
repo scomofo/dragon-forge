@@ -148,6 +148,7 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
       if (nextNode && nextNode.id !== selectedNode.id) selectNode(nextNode);
     },
     onButtonPress: (button) => {
+      if (button === 'X' && selectedNode.zoneId === 'outer_grid') onNavigate('outerGrid');
       if (button === 'LB') cycleDragon(-1);
       if (button === 'RB' || button === 'Y') cycleDragon(1);
       if (button === 'A' || button === 'START') {
@@ -332,6 +333,11 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
         </section>
 
         <aside className="campaign-detail">
+          {selectedNode.zoneId === 'outer_grid' && (
+            <button className="campaign-begin ready" onClick={() => onNavigate('outerGrid')}>
+              EXPLORE OUTER GRID · X
+            </button>
+          )}
           <div className={`detail-state ${selectedState}`}>{selectedState.toUpperCase()}</div>
           <h2>{selectedNode.label}</h2>
           <p>{selectedNode.description}</p>

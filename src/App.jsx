@@ -7,6 +7,7 @@ import HatcheryScreen from './HatcheryScreen';
 import FusionScreen from './FusionScreen';
 import JournalScreen from './JournalScreen';
 import CampaignMapScreen from './CampaignMapScreen';
+import OuterGridScreen from './OuterGridScreen';
 import ShopScreen from './ShopScreen';
 import StatsScreen from './StatsScreen';
 import SettingsScreen from './SettingsScreen';
@@ -26,6 +27,7 @@ const SCREENS = {
   FUSION: 'fusion',
   JOURNAL: 'journal',
   MAP: 'map',
+  OUTER_GRID: 'outerGrid',
   SHOP: 'shop',
   STATS: 'stats',
   SETTINGS: 'settings',
@@ -105,6 +107,9 @@ export default function App() {
     } else if (target === 'map') {
       playMusic('mapWander');
       setScreen(SCREENS.MAP);
+    } else if (target === 'outerGrid') {
+      playMusic('mapWander');
+      setScreen(SCREENS.OUTER_GRID);
     } else if (target === 'stats') {
       playMusic('hatchery');
       setScreen(SCREENS.STATS);
@@ -135,7 +140,7 @@ export default function App() {
       npcId: config.npcId,
       benchDragonId: config.benchDragonId || null,
       campaignNodeId: config.nodeId,
-      returnScreen: SCREENS.MAP,
+      returnScreen: config.returnScreen === SCREENS.OUTER_GRID ? SCREENS.OUTER_GRID : SCREENS.MAP,
     });
     setScreen(SCREENS.BATTLE);
   }
@@ -180,7 +185,7 @@ export default function App() {
   function handleBattleEnd() {
     refreshSave();
     const returnScreen = battleConfig?.returnScreen;
-    playMusic(returnScreen === SCREENS.MAP ? 'mapWander' : 'select');
+    playMusic([SCREENS.MAP, SCREENS.OUTER_GRID].includes(returnScreen) ? 'mapWander' : 'select');
     setBattleConfig(null);
     setScreen(returnScreen || SCREENS.BATTLE_SELECT);
   }
@@ -225,6 +230,9 @@ export default function App() {
         <div className="screen-enter" key="journal">
           <JournalScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} showToast={showToast} />
         </div>
+      )}
+      {screen === SCREENS.OUTER_GRID && (
+        <OuterGridScreen save={save} refreshSave={refreshSave} onNavigate={handleNavigate} onBeginCampaignBattle={handleBeginCampaignBattle} />
       )}
       {screen === SCREENS.MAP && (
         <div className="screen-enter" key="map">

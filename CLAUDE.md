@@ -12,6 +12,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 Outstanding work is the SNES-AAA quality pass in priority order (`design/gdd/snes-aaa-roadmap.md`): identity lock (P0, landed) → battle frames (P1) → twelve tracks (P2) → four zones (P3) → boss scripts (P4) → roster growth (P5). Do not add engines or species before P1 has real frames. Art rejects live in `design/gdd/art-bible.md` and `src/artBible.js`.
 
+**Soundtrack ownership (Scott, 2026-09-04):** Scott is handling the soundtrack separately. P2 runs in parallel and does not block agent work on gameplay, battle readability, animation, exploration, onboarding, or pacing. Preserve existing music assets and track choices unless soundtrack integration is requested; do not compose replacement tracks or build soundtrack audition features. Playback and input defects remain appropriate to fix.
+
 ## Browser build (`src/`)
 
 ### Commands

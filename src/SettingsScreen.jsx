@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { playSound } from './soundEngine';
 import { resetSave } from './persistence';
 import NavBar from './NavBar';
-import SoundRoom from './SoundRoom';
 
 export default function SettingsScreen({ onNavigate, save, refreshSave }) {
   const [confirmReset, setConfirmReset] = useState(false);
@@ -26,8 +25,6 @@ export default function SettingsScreen({ onNavigate, save, refreshSave }) {
 
       <div className="settings-layout">
         <div className="settings-title">SETTINGS</div>
-
-        <SoundRoom />
 
         <div className="settings-section">
           <h3 className="settings-section-title">Save Data</h3>

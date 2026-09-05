@@ -21,8 +21,6 @@
 
 .settings-section {
   width: 100%;
-  box-sizing: border-box;
-  flex-shrink: 0;
   background: #1a1a24;
   border: 1px solid #333;
   border-radius: 3px;
@@ -102,40 +100,3 @@
 @media (max-width: 768px) {
   .settings-option { flex-direction: column; align-items: flex-start; }
 }
-
-.sound-room {
-  border-color: #675337;
-  background: #171a24;
-}
-
-.sound-room .settings-section-title {
-  font-size: 12px;
-  color: #f2c77d;
-  letter-spacing: 0.08em;
-}
-
-.sound-room-label, .sound-room-description, .sound-room-status, .sound-room-tempo {
-  font-family: monospace;
-  font-size: 16px;
-  line-height: 1.6;
-  color: #cbd4e6;
-}
-
-.sound-room-label { display: block; margin-bottom: 8px; }
-.sound-room-tempo { font-size: 14px; color: #aab5ce; }
-.sound-room-status { min-height: 3.2em; margin-bottom: 0; color: #f2c77d; }
-
-.sound-room select {
-  width: 100%;
-  min-height: 44px;
-  padding: 8px;
-  border: 1px solid #77829c;
-  background: #10131c;
-  color: #f4f0e6;
-  font: 16px monospace;
-}
-
-.sound-room-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.sound-room .settings-btn { min-height: 44px; font: 14px monospace; color: #f4f0e6; }
-.sound-room .settings-btn:disabled { opacity: 0.45; cursor: default; }
-.sound-room :is(button, select):focus-visible { outline: 2px solid #f2c77d; outline-offset: 3px; }

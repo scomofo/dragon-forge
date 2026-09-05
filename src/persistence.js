@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { canEquipRelic } from './forgeData';
+import { applyOuterGridAction, getOuterGridProgress } from './outerGrid';
 
 const STORAGE_KEY = 'dragonforge_save';
 
@@ -22,6 +23,7 @@ const DEFAULT_SAVE = {
   pityCounter: 0,
   milestones: [],
   defeatedNpcs: [],
+  outerGrid: getOuterGridProgress({}),
   singularityProgress: { defeated: [], finalBossPhase: 0, replayCounts: {} },
   singularityComplete: false,
   mirrorAdminDefeated: false,
@@ -160,6 +162,7 @@ function migrateSave(save) {
     if (save.skye.bountiesCleared === undefined) save.skye.bountiesCleared = 0;
     if (save.skye.companionDragonId === undefined) save.skye.companionDragonId = null;
   }
+  save.outerGrid = getOuterGridProgress(save);
   return save;
 }
 
@@ -179,6 +182,14 @@ export function loadSave() {
 export function writeSave(save) {
   if (typeof window === 'undefined' || !window.localStorage) return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
+}
+
+export function actInOuterGrid(action, value) {
+  const save = loadSave();
+  const next = applyOuterGridAction(save, action, value);
+  if (next === save) return false;
+  writeSave(next);
+  return true;
 }
 
 export function meltCores(count = 10, scraps = 250) {
@@ -509,6 +520,7 @@ export function completeDailyChallenge(seed) {
 export function applyNewGamePlus(save) {
   save.ngPlus = (save.ngPlus || 0) + 1;
   save.defeatedNpcs = [];
+  save.outerGrid = getOuterGridProgress({});
   save.singularityProgress = { defeated: [], finalBossPhase: 0, replayCounts: {} };
   save.singularityComplete = false;
   save.mirrorAdminDefeated = false;
