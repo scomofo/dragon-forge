@@ -39,6 +39,9 @@
 - [ ] Manual browser check — title keyboard controls, volume/mute through navigation, rapid screen changes, and narrow-screen audio controls
 
 ## Recent Browser QA
+
+- [x] Save recovery — validate before migration, protect the main save with a previous-write backup, preserve damaged originals, retain failed writes in memory with retry/download, and confirm import/restore/reset or conflicting-save replacement (ADR-0012)
+- [ ] Save recovery browser acceptance — damaged/legacy saves, denied/full storage, failed writes during battle, cross-tab conflict, portable import/export, reset, keyboard and 390px layout (`docs/save-recovery-playtest.md`)
 - [x] Forge hub refactor: scene/overlays/movement split, CSS extracted, truthful station copy
 - [x] Browser Playwright smoke: desktop/tablet/mobile screenshots and overflow checks
 - [x] Asset manifest test: runtime dragon, NPC, egg, arena, and boss references checked under public/

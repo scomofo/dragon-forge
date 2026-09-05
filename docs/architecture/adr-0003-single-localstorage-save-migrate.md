@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted, with the corrupt-save fallback and storage-write behavior superseded by [ADR-0012: Protected Saves and Explicit Recovery](adr-0012-protected-save-recovery.md). The canonical schema, additive migrations, and React state ownership remain current; the corresponding storage details below are historical.
 
 ## Date
 
