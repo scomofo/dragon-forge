@@ -68,6 +68,14 @@ STYLE = (
     "no gradient, no scene, no text no borders no frame numbers"
 )
 
+# P1 polish: the first pass left these dark-on-dark (dark violet body on the
+# dark battle backdrop reads muddy in-game). Same design, but force readable
+# separation — brighter rim light and lighter accent highlights.
+ACTOR_PROMPT_OVERRIDE = {
+    "void": "Add strong cool violet-white rim lighting along the silhouette and noticeably lighter lavender accent highlights on the wings, chest, and crest, so the dark body reads clearly against dark backgrounds. ",
+    "protocol_vulture": "Add strong bright cyan-white rim lighting along the silhouette and noticeably lighter silver-lavender highlights on the wings, neck, and head, so the dark body reads clearly against dark backgrounds. ",
+}
+
 
 def anchor_url(actor_id: str) -> str:
     if actor_id in DRAGON_IDS:
@@ -79,6 +87,7 @@ def generate_pose(actor_id: str, pose: str, dest_png: Path) -> None:
     """Call the edit endpoint for one pose keyframe and save the raw JPEG."""
     prompt = (
         f"Repaint this exact same character in a new pose: {POSE_ACTION[pose]}. "
+        f"{ACTOR_PROMPT_OVERRIDE.get(actor_id, '')}"
         f"Keep the identical character design, silhouette, scale/skin pattern, and color "
         f"palette exactly — do not change the design. {STYLE}."
     )
@@ -125,49 +134,30 @@ def checkerboard_to_alpha(img: Image.Image) -> Image.Image:
     """
     from collections import deque
 
+    import numpy as np
+
     img = img.convert("RGB")
     W, H = img.size
-    src = img.load()
-    corners = [src[0, 0], src[W - 1, 0], src[0, H - 1], src[W - 1, H - 1]]
+    arr = np.asarray(img, dtype=np.int16)
+    r, g, b = arr[..., 0], arr[..., 1], arr[..., 2]
 
-    # Chroma-key the requested magenta backdrop. A pixel counts as magenta when
-    # red and blue both clearly dominate green — this catches the bright chroma
-    # AND the darker muted magenta the model sometimes paints in interior pockets.
-    # A dragon body (fire=orange, ice=cyan, stone=brown…) never has r>g AND b>g,
-    # so this stays safe. Keyed GLOBALLY since pockets may not touch the border.
-    def is_magenta(r: int, g: int, b: int) -> bool:
-        return r > 100 and b > 100 and r > g + 50 and b > g + 50
-
+    # Global keys (vectorized): the magenta chroma backdrop — including darker
+    # muted magenta pockets the model sometimes paints inside — keys whenever
+    # red AND blue clearly dominate green. A dragon body (fire=orange,
+    # ice=cyan, stone=brown…) never has r>g AND b>g, so this stays safe.
+    magenta = (r > 100) & (b > 100) & (r > g + 50) & (b > g + 50)
     # Light, desaturated grey checkerboard squares.
-    def is_checker(r: int, g: int, b: int) -> bool:
-        return abs(r - g) < 16 and abs(g - b) < 16 and r > 165
+    checker = (np.abs(r - g) < 16) & (np.abs(g - b) < 16) & (r > 165)
 
-    # Decide which global key applies by how much of the image matches. The
-    # magenta chroma backdrop (and any interior magenta pocket the model paints)
-    # is removed globally whenever magenta is meaningfully present — a dragon
-    # body never carries it. Checkerboard is the model's other default.
-    def image_fraction(pred, step=6) -> float:
-        n = 0
-        hit = 0
-        for y in range(0, H, step):
-            for x in range(0, W, step):
-                n += 1
-                hit += 1 if pred(*src[x, y]) else 0
-        return hit / n if n else 0.0
-
-    for key, thresh in ((is_magenta, 0.02), (is_checker, 0.20)):
-        if image_fraction(key) > thresh:
-            out = Image.new("RGBA", (W, H))
-            opx = out.load()
-            for y in range(H):
-                for x in range(W):
-                    r, g, b = src[x, y]
-                    opx[x, y] = (r, g, b, 0) if key(r, g, b) else (r, g, b, 255)
-            return out
+    for mask, thresh in ((magenta, 0.02), (checker, 0.20)):
+        if float(mask[::6, ::6].mean()) > thresh:
+            alpha = np.where(mask, 0, 255).astype(np.uint8)
+            return Image.fromarray(np.dstack([arr.astype(np.uint8), alpha]), "RGBA")
 
     # Flat backdrop: flood-fill from each corner toward the background colour.
     out = img.convert("RGBA")
     opx = out.load()
+    src = img.load()
 
     # Tolerance scaled to the backdrop brightness: a near-black backdrop next to
     # a near-black dragon body must use a TIGHT tolerance so we only strip the
@@ -200,8 +190,49 @@ def checkerboard_to_alpha(img: Image.Image) -> Image.Image:
     return out
 
 
+def _bbox(img: Image.Image) -> tuple[int, int, int, int]:
+    bbox = img.getchannel("A").getbbox()
+    return bbox if bbox else (0, 0, img.width, img.height)
+
+
+def transform_cell(cell_img: Image.Image, dx: float = 0.0, dy: float = 0.0,
+                   sy: float = 1.0, shear: float = 0.0) -> Image.Image:
+    """Squash-and-stretch in-between: translate/scale/shear the cell content,
+    anchored at the sprite's bottom-center so the feet stay planted. Shear is
+    used for leans (not rotation) — it keeps pixel rows crisp at 96px.
+
+    These programmatic in-betweens are the SNES sprite-translation technique:
+    the authored keyframe is carried; motion comes from per-frame transforms.
+    """
+    x0, y0, x1, y1 = _bbox(cell_img)
+    content = cell_img.crop((x0, y0, x1, y1))
+    w, h = content.size
+    new_h = max(1, round(h * sy))
+    out = content.resize((w, new_h), Image.LANCZOS) if sy != 1.0 else content
+    if shear:
+        nw = max(1, round(w + abs(shear) * new_h))
+        out = out.transform((nw, new_h), Image.AFFINE, (1, -shear, 0, 0, 1, 0), resample=Image.BICUBIC)
+    cell = Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0))
+    # bottom-center anchor, then per-frame offset
+    px = (CELL - out.width) // 2 + round(dx)
+    py = (CELL - out.height) - (CELL - y1) + round(dy)  # preserve original bottom margin
+    cell.paste(out, (px, py), out)
+    return cell
+
+
+# Per-pose in-between programs. The keyframe (index 0 posture) is transformed
+# per frame: idle breathes, attack lunges (wind-up -> strike -> recover),
+# hurt recoils, faint settles. Values are px/scale/shear per frame index.
+INBETWEENS = {
+    "idle":   [{}, {"dy": 1, "sy": 1.025}, {}, {"dy": -1, "sy": 0.98}],
+    "attack": [{"dx": 5}, {"dx": 2}, {}, {"dx": -6, "shear": -0.06}, {"dx": -3, "shear": -0.03}, {}],
+    "hurt":   [{}, {"dx": 5, "shear": 0.07}],
+    "faint":  [{}, {"dy": 1, "sy": 0.97}, {"dy": 2, "sy": 0.94}],
+}
+
+
 def build_strip(keyframe_png: Path, pose: str, out_webp: Path) -> None:
-    """Hold the keyframe across the pose's frame count at 96px cells."""
+    """Build the pose strip at 96px cells: keyframe + programmatic in-betweens."""
     img = Image.open(keyframe_png)
     rgba = checkerboard_to_alpha(img)
     # Downscale the keyframe to one cell, preserving aspect (letterbox into cell).
@@ -213,24 +244,35 @@ def build_strip(keyframe_png: Path, pose: str, out_webp: Path) -> None:
     cell_img.paste(fitted, (ox, oy), fitted)
 
     frames = FRAMES[pose]
+    program = INBETWEENS.get(pose, [])
     strip = Image.new("RGBA", (CELL * frames, CELL), (0, 0, 0, 0))
     for i in range(frames):
-        strip.paste(cell_img, (i * CELL, 0), cell_img)
+        t = program[i % len(program)] if program else {}
+        frame_img = transform_cell(cell_img, **t) if t else cell_img
+        strip.paste(frame_img, (i * CELL, 0), frame_img)
 
     out_webp.parent.mkdir(parents=True, exist_ok=True)
     strip.save(out_webp, format="WEBP", quality=80, method=4)
 
 
-def process_actor(actor_id: str, force: bool = False) -> None:
+def process_actor(actor_id: str, force: bool = False, rebuild: bool = False) -> None:
     tmp = REPO / "assets" / "battle-sets" / "_tmp" / actor_id
     tmp.mkdir(parents=True, exist_ok=True)
     print(f"[{actor_id}]")
     for pose in FRAMES:
         out_webp = OUT_DIR / f"{actor_id}_{pose}.webp"
+        keyframe = tmp / f"{pose}.png"
+        if rebuild:
+            # Rebuild strips from cached keyframes only — no API spend.
+            if not keyframe.exists():
+                print(f"  {pose}: no cached keyframe, skip")
+                continue
+            build_strip(keyframe, pose, out_webp)
+            print(f"  {pose}: rebuilt {out_webp.name}")
+            continue
         if out_webp.exists() and not force:
             print(f"  {pose}: exists, skip")
             continue
-        keyframe = tmp / f"{pose}.png"
         if not keyframe.exists() or force:
             print(f"  {pose}: generating keyframe...")
             generate_pose(actor_id, pose, keyframe)
@@ -240,10 +282,11 @@ def process_actor(actor_id: str, force: bool = False) -> None:
 
 
 def main() -> None:
-    if not FAL_KEY:
-        sys.exit("ERROR: FAL_KEY env var required (https://fal.ai/dashboard/keys)")
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     force = "--force" in sys.argv
+    rebuild = "--rebuild" in sys.argv  # strips from cached keyframes, no API
+    if not rebuild and not FAL_KEY:
+        sys.exit("ERROR: FAL_KEY env var required (https://fal.ai/dashboard/keys)")
     if "--all-dragons" in sys.argv:
         targets = DRAGON_IDS
     elif "--all-npcs" in sys.argv:
@@ -258,7 +301,7 @@ def main() -> None:
         if actor not in DRAGON_IDS + NPC_IDS:
             print(f"  [skip] unknown actor '{actor}'")
             continue
-        process_actor(actor, force)
+        process_actor(actor, force, rebuild=rebuild)
     print("\nDone.")
 
 
