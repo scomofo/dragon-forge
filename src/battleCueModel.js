@@ -39,7 +39,7 @@ function getPatternCue(state, playerDefendedLastTurn, isMirrorAdmin) {
       if (!nextLure) return cue('lure', 'Lure spent', 'Both forced-swap windows have passed.', 'opening');
       if (!(state.bench?.playerHp > 0)) return cue('lure', 'No reserve to lure', 'The forced swap needs a living reserve.', 'neutral');
       return cue('lure', nextLure === turn ? 'Lure this turn' : `Lure on turn ${nextLure}`,
-        'Your reserve will be forced in, followed by Toxic Cloud.', nextLure === turn ? 'danger' : 'warning');
+        'Your command is interrupted. The reserve guards on entry against an extra Toxic Cloud.', nextLure === turn ? 'danger' : 'warning');
     }
     case 'glitch_hydra': {
       const heads = bs.headsBroken || 0;

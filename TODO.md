@@ -28,6 +28,11 @@
 
 ## Current reliability pass
 
+- [x] Battle state integrity — normal commands and guarded swaps share enemy scripts, damage/status resolution, faint handling, and rewards; Restoration/lifesteal animate real healing; settled HP/buffs match the resolved turn; Siren preserves both living dragons and interrupts the outgoing command without spending its technique
+- [x] Boss HP consistency — Vulture drains and applies Blind on a landed Soul Drain; Great Reset commits capped healing and recognizes techniques executed on the KO turn; overheat self-damage remains in the resolved result
+- [ ] Battle hands-on acceptance — healing before/after enemy hits, guarded entry at 1×/2×, Siren turns 2/5, lethal entry and reserve return, Vulture drain and Mirror Admin reset
+- [ ] Remaining authored-boss contracts — Logic Bomb fuse must override a stored charge and guarantee its turn-seven hit; Data Corruption must rearm after Burn
+- [ ] Save recovery — preserve unreadable progress, recover a last-known-good save, and report failed writes
 - [x] Campaign guidance — remember the last entered expedition across all four zones, keep route objectives and unclaimed rewards ahead of dailies, explain cross-zone prerequisites, and show the correct room-return hint after defeat
 - [x] Playback controls — live MP3/procedural volume, immediate mute, destination-aware unmute, cancelable fades, and disposed arpeggio notes
 - [x] Title input — Start no longer bubbles over the next screen's music, and keyboard sound controls no longer trigger Start

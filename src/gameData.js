@@ -69,7 +69,7 @@ export const moves = {
   npc_harden:  { name: 'Harden',  actionType: 'buff', buffStat: 'def', buffMultiplier: 1.4, buffDuration: 2, vfxKey: 'BASIC_ATTACK', accuracy: 100, power: 0, canApplyStatus: false },
   // NPC-only signature moves
   golem_rupture:    { name: 'Tectonic Rupture', element: 'stone',  power: 95, accuracy: 90, vfxKey: 'EARTHQUAKE',       canApplyStatus: true,  canCharge: true, chargeChance: 0.70 },
-  vulture_drain:    { name: 'Soul Drain',        element: 'shadow', power: 90, accuracy: 90, vfxKey: 'VOID_PULSE',       canApplyStatus: true },
+  vulture_drain:    { name: 'Soul Drain',        element: 'shadow', power: 90, accuracy: 90, vfxKey: 'VOID_PULSE',       canApplyStatus: true, applyChance: 1, lifesteal: 0.4 },
   hydra_overcharge: { name: 'Arc Overload',      element: 'storm',  power: 85, accuracy: 85, vfxKey: 'LIGHTNING_STRIKE', canApplyStatus: true },
   bomb_detonation:  { name: 'Final Detonation',  element: 'fire',   power: 90, accuracy: 85, vfxKey: 'MAGMA_BREATH',     canApplyStatus: false },
   wraith_unravel:   { name: 'Void Unravel',      element: 'void',   power: 85, accuracy: 90, vfxKey: 'VOID_RIFT',        canApplyStatus: true },

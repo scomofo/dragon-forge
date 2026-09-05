@@ -207,10 +207,24 @@ export function pickNpcMove(npcMoveKeys, npcElement, playerElement, playerStatus
 }
 
 export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey, playerMoveKeys, npcMoveKeys, options = {}) {
-  let player = { ...playerState, defending: false };
+  let player = { ...playerState, defending: !!options.playerGuardOnEntry };
   let npc = { ...npcState, defending: false };
   const events = [];
 
+  // Entry actions belong to this turn: their damage and ailments carry into the
+  // ordinary actions, and status/buff durations tick only once at the end.
+  if (options.npcOpeningMoveKey && player.hp > 0 && npc.hp > 0) {
+    const chargeMultiplier = npc.chargeMultiplier;
+    resolveAction({ state: { ...npc, chargeMultiplier: 1 }, moveKey: options.npcOpeningMoveKey, label: 'npc' }, events,
+      () => player,
+      (target) => { player = target; },
+      (self) => { npc = { ...self, chargeMultiplier }; },
+      options
+    );
+  }
+
+  // Construct actors after the opener so new Freeze/Paralyze and HP changes
+  // affect the remaining actions, including a faster incoming dragon's turn.
   const playerFirst = player.spd >= npc.spd;
 
   const first = playerFirst
@@ -226,26 +240,28 @@ export function resolveTurn(playerState, npcState, playerMoveKey, npcMoveKey, pl
     const keys = first.label === 'player' ? playerMoveKeys : npcMoveKeys;
     if (keys && keys.length > 0) {
       first.moveKey = keys[Math.floor(Math.random() * keys.length)];
+      first.move = undefined;
     }
   }
   if (second.state.status?.effect === 'void') {
     const keys = second.label === 'player' ? playerMoveKeys : npcMoveKeys;
     if (keys && keys.length > 0) {
       second.moveKey = keys[Math.floor(Math.random() * keys.length)];
+      second.move = undefined;
     }
   }
 
-  // Resolve first attacker
-  resolveAction(first, events,
-    () => first.label === 'player' ? npc : player,
-    (t) => { if (first.label === 'player') npc = t; else player = t; },
-    (s) => { if (first.label === 'player') player = s; else npc = s; },
-    options
-  );
+  if (player.hp > 0 && npc.hp > 0) {
+    resolveAction(first, events,
+      () => first.label === 'player' ? npc : player,
+      (t) => { if (first.label === 'player') npc = t; else player = t; },
+      (s) => { if (first.label === 'player') player = s; else npc = s; },
+      options
+    );
+  }
 
-  // Check if target is KO'd
-  const firstTarget = first.label === 'player' ? npc : player;
-  if (firstTarget.hp > 0) {
+  // Either fighter can be KO'd by an action (reflection hits the attacker).
+  if (player.hp > 0 && npc.hp > 0) {
     second.state = second.label === 'player' ? player : npc;
 
     resolveAction(second, events,
@@ -546,8 +562,10 @@ function resolveAction(actor, events, getTarget, setTarget, setSelf, options = {
   let lifestealHeal = 0;
   if (result.hit && resolvedMove.lifesteal && result.damage > 0) {
     const maxHp = actor.state.maxHp || actor.state.hp;
-    lifestealHeal = Math.max(1, Math.floor(result.damage * resolvedMove.lifesteal));
-    setSelf({ ...actor.state, hp: Math.min(maxHp, actor.state.hp + lifestealHeal) });
+    const healAmount = Math.max(1, Math.floor(result.damage * resolvedMove.lifesteal));
+    const healedHp = Math.min(maxHp, actor.state.hp + healAmount);
+    lifestealHeal = healedHp - actor.state.hp;
+    setSelf({ ...actor.state, hp: healedHp });
   }
 
   // Status application roll
