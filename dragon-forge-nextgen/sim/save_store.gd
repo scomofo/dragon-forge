@@ -15,12 +15,16 @@ func read_progress() -> Dictionary:
 		blocked = true
 		message = "Save could not be read. This session will not overwrite it."
 		return Progress.fresh()
-	var parsed = JSON.parse_string(file.get_as_text())
+	var parser = JSON.new()
+	var parse_error = parser.parse(file.get_as_text())
 	file.close()
+	var parsed = parser.data if parse_error == OK else null
 	if not Progress.validate(parsed):
 		blocked = true
 		message = "Save is unreadable or from another version. Preserved on disk; session-only progress."
 		return Progress.fresh()
+	# JSON numbers are floats; normalize both integer fields before use.
+	parsed.version = 1
 	parsed.clears = int(parsed.clears)
 	return parsed
 

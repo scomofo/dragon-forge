@@ -64,6 +64,10 @@ func _exit_tree() -> void:
 		tell.queue_free()
 
 func _physics_process(delta: float) -> void:
+	# The fixed world-space tell is attached by a deferred call.
+	# Wait until it has entered the tree before assigning global transforms.
+	if not is_instance_valid(tell) or not tell.is_inside_tree():
+		return
 	if not is_instance_valid(target) or target.state.hp <= 0.0 or brain.mode == "dead":
 		if is_instance_valid(tell):
 			tell.visible = false

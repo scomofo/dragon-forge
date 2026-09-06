@@ -44,16 +44,16 @@ jobs:
           mkdir -p dragon-forge-nextgen/artifacts
           python3 dragon-forge-nextgen/tests/validate.py
           timeout 90 godot --headless --path dragon-forge-nextgen --editor --import 2>&1 | tee dragon-forge-nextgen/artifacts/import.log
-          ! grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/import.log; then exit 1; fi
           timeout 90 godot --headless --path dragon-forge-nextgen --script res://tests/run.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/tests.log
-          ! grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/tests.log; then exit 1; fi
           grep 'NEXTGEN_TESTS:.*0 failures' dragon-forge-nextgen/artifacts/tests.log
       - name: Render real scene with software OpenGL
         shell: bash
         run: |
           set -euo pipefail
           timeout 120 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method gl_compatibility --script res://tests/visual_smoke.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/visual.log
-          ! grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/visual.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/visual.log; then exit 1; fi
           grep 'NEXTGEN_VISUAL_SMOKE: failures=0' dragon-forge-nextgen/artifacts/visual.log
       - uses: actions/upload-artifact@v4
         if: always()
