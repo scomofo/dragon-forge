@@ -1,0 +1,60 @@
+name: Nextgen Reconnection campaign
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/campaign/**'
+      - 'dragon-forge-nextgen/project.godot'
+      - '.github/workflows/nextgen-campaign.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nextgen-campaign-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  campaign:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GODOT_SILENCE_ROOT_WARNING: '1'
+      LIBGL_ALWAYS_SOFTWARE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: dragon-forge-nextgen
+      - name: Install pinned engine and software graphics
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri
+          curl --fail --location --retry 3 https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Import, traverse the campaign and play real combat
+        run: |
+          set -euo pipefail
+          cd dragon-forge-nextgen
+          mkdir -p artifacts/campaign
+          timeout 90 godot --headless --editor --import 2>&1 | tee artifacts/campaign/import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' artifacts/campaign/import.log; then exit 1; fi
+          timeout 120 godot --headless --script res://campaign/tests/run.gd -- --test-mode 2>&1 | tee artifacts/campaign/tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' artifacts/campaign/tests.log; then exit 1; fi
+          grep 'CAMPAIGN_TESTS:.*0 failures' artifacts/campaign/tests.log
+          timeout 120 godot --headless --fixed-fps 60 --script res://campaign/tests/play_smoke.gd -- --test-mode 2>&1 | tee artifacts/campaign/controller.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' artifacts/campaign/controller.log; then exit 1; fi
+          grep 'CAMPAIGN_CONTROLLER_PLAY: 0 failures' artifacts/campaign/controller.log
+      - name: Capture actual campaign scenes
+        run: |
+          set -euo pipefail
+          cd dragon-forge-nextgen
+          timeout 180 xvfb-run -a godot --rendering-method gl_compatibility --audio-driver Dummy --script res://campaign/tests/capture.gd -- --test-mode 2>&1 | tee artifacts/campaign/visual.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' artifacts/campaign/visual.log; then exit 1; fi
+          grep 'CAMPAIGN_VISUAL: 0 failures' artifacts/campaign/visual.log
+          git rev-parse HEAD > artifacts/campaign/tested-revision.txt
+          git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reconnection-campaign-evidence
+          path: dragon-forge-nextgen/artifacts/campaign/
+          retention-days: 14
