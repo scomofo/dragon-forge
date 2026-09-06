@@ -241,6 +241,8 @@ func interact() -> void:
 		hud.toast("FORGE RESTORED. Prototype complete. Use Menu to start a new expedition.")
 	elif progress.hatched and at.distance_to(HATCH) < 3.2:
 		dragon.state = Combat.fresh()
+		dragon.buffered_id = ""
+		dragon.buffer_time = 0.0
 		hud.toast("Rested. Health restored and core cooled.")
 	else:
 		hud.toast("Move closer to a hatch ring, dropped core, or Forge socket to interact.")

@@ -336,5 +336,11 @@ func _presence() -> void:
 	await process_frame
 	# Let owned tween lifetimes elapse; errors from freed targets must fail CI.
 	await create_timer(0.85).timeout
+	check(world.hud.toast_label.position.y >= world.hud.top_row.position.y + world.hud.top_row.size.y + 7.0, "notifications remain below objective panel")
+	actor.global_position = world.HATCH
+	actor.buffered_id = "breath"
+	actor.buffer_time = 0.15
+	world.interact()
+	check(actor.buffered_id == "" and actor.state.action == "", "rest clears pending technique and buffered input")
 	world.queue_free()
 	await process_frame

@@ -8,6 +8,8 @@ func _initialize() -> void:
 	_run.call_deferred()
 
 func _capture(name_text: String) -> void:
+	# Let the always-processing HUD sample the same contact state as the scene.
+	await process_frame
 	await RenderingServer.frame_post_draw
 	var image = root.get_texture().get_image()
 	var result = image.save_png("res://artifacts/" + name_text + ".png")
@@ -45,6 +47,9 @@ func _run() -> void:
 	paused = true
 	await _capture("arena")
 	paused = false
+	world.effects.set_calm(true)
+	world.effects.set_calm(false)
+	await process_frame
 	world.dragon.state = Combat.fresh()
 	world.dragon.try_ability("breath")
 	world.dragon.advance_combat(0.24)
@@ -63,6 +68,9 @@ func _run() -> void:
 	# Inspect the actual articulated mesh from an unobstructed three-quarter camera.
 	world.camera_rig.set_process(false)
 	world.hud.visible = false
+	world.enemy.visible = false
+	world.enemy.tell.visible = false
+	world.dragon.aim_marker.visible = false
 	world.dragon.state = Combat.fresh()
 	world.dragon.rig.rotation.y = -0.35
 	world.dragon.rig.animate(0.0, 0.0, false, world.dragon.state)
@@ -77,6 +85,7 @@ func _run() -> void:
 	world.progress.clears = 3
 	world.progress.core = true
 	world.progress.upgraded = true
+	world.hud.toast("FORGE RESTORED. The recovered core powers your home.")
 	world._apply_progress()
 	world.enemy.queue_free()
 	world.enemy = null

@@ -18,6 +18,7 @@ var confirmation: ConfirmationDialog
 var toast_remaining = 0.0
 var root: Control
 var enemy_readout: Label
+var top_row: HBoxContainer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -28,6 +29,7 @@ func _ready() -> void:
 	root.theme.default_font_size = 17
 	add_child(root)
 	var top = HBoxContainer.new()
+	top_row = top
 	root.add_child(top)
 	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	top.offset_left = 24
@@ -55,7 +57,7 @@ func _ready() -> void:
 	toast_label = Label.new()
 	root.add_child(toast_label)
 	toast_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	toast_label.offset_top = 134
+	toast_label.offset_top = 160
 	toast_label.offset_left = 200
 	toast_label.offset_right = -200
 	toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -185,6 +187,8 @@ func _process(delta: float) -> void:
 	if world == null or not is_instance_valid(world.dragon):
 		return
 	var state: Dictionary = world.dragon.state
+	# Follow the actual objective height, including wrapped text and warning rows.
+	toast_label.position.y = top_row.position.y + top_row.size.y + 8.0
 	health.value = state.hp
 	heat.value = state.heat
 	health_text.text = "MAGMA  %d / %d" % [int(state.hp), int(state.max_hp)]
