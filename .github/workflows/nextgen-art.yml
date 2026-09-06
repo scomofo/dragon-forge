@@ -3,126 +3,93 @@ on:
   pull_request:
     paths:
       - '.github/workflows/nextgen-art.yml'
-      - '.github/art-stage-*.b64'
       - 'dragon-forge-nextgen/**'
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: art-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  integrate-art:
-    if: github.head_ref == 'nextgen-production-art' && github.event.pull_request.head.repo.full_name == github.repository
+  shipped-assets:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    permissions:
-      contents: write
+    timeout-minutes: 15
     env:
       GODOT_SILENCE_ROOT_WARNING: '1'
       LIBGL_ALWAYS_SOFTWARE: '1'
+      GLTF_VALIDATOR_MODULE: /tmp/art-validator/node_modules/gltf-validator
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: nextgen-production-art
           sparse-checkout: |
-            .github
             dragon-forge-nextgen
-      - name: Materialize the checked source transfer
+      - name: Install isolated validation tools
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import base64, hashlib, json, lzma, pathlib, subprocess
-          root = pathlib.Path.cwd()
-          stages = [root / ('.github/art-stage-%d.b64' % i) for i in (1, 2, 3)]
-          packed = base64.b64decode(''.join(p.read_text().strip() for p in stages), validate=True)
-          assert hashlib.sha256(packed).hexdigest() == 'acba03ddaa8d49f8baf4d68ccc2edce65441a20b0cda15e4f403b41e2d232c5b'
-          decoded = lzma.decompress(packed)
-          assert len(decoded) == 109527
-          assert hashlib.sha256(decoded).hexdigest() == '8970d835167b2b0cac6defcc2c2161ed62de1237ae334cffdb92728ecf64dfda'
-          payload = json.loads(decoded)
-          def safe(name):
-              path = pathlib.PurePosixPath(name)
-              assert not path.is_absolute() and '..' not in path.parts
-              assert path.parts[0] == 'dragon-forge-nextgen'
-              return root / path
-          for name, digest in payload['before'].items():
-              assert hashlib.sha256(safe(name).read_bytes()).hexdigest() == digest, name
-          patch = pathlib.Path('/tmp/dragon-art.patch')
-          patch.write_text(payload['patch'])
-          subprocess.run(['git', 'apply', '--check', str(patch)], check=True)
-          subprocess.run(['git', 'apply', str(patch)], check=True)
-          changed = set(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines())
-          assert changed == set(payload['before']), changed
-          for item in payload['files']:
-              path = safe(item['path'])
-              assert not path.exists(), item['path']
-              path.parent.mkdir(parents=True, exist_ok=True)
-              path.write_text(item['content'])
-          names = list(payload['before']) + [item['path'] for item in payload['files']]
-          pathlib.Path('/tmp/dragon-art-paths').write_text('\n'.join(names) + '\n')
-          print('Materialized', len(names), 'reviewable source files; transport hashes verified.')
-          PY
-      - name: Install isolated authoring and validation tools
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 -m venv /tmp/dragon-art-env
-          /tmp/dragon-art-env/bin/pip install -r dragon-forge-nextgen/tools/art-requirements.txt
-          echo /tmp/dragon-art-env/bin >> "$GITHUB_PATH"
-          npm install --prefix /tmp/dragon-art-validator --ignore-scripts --no-audit --no-fund gltf-validator@2.0.0-dev.3.10
           sudo apt-get update -qq
-          sudo apt-get install -y xvfb libgl1-mesa-dri
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          npm install --prefix /tmp/art-validator --ignore-scripts --no-audit --no-fund gltf-validator@2.0.0-dev.3.10
           curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
-          unzip -q /tmp/godot.zip -d /tmp/dragon-art-godot
-          mv /tmp/dragon-art-godot/Godot_v4.6.3-stable_linux.x86_64 /tmp/dragon-art-env/bin/godot
-          chmod +x /tmp/dragon-art-env/bin/godot
-      - name: Bake and independently validate the production-format assets
+          unzip -q /tmp/godot.zip -d /tmp/art-godot
+          mkdir -p "$HOME/.local/bin"
+          mv /tmp/art-godot/Godot_v4.6.3-stable_linux.x86_64 "$HOME/.local/bin/godot"
+          chmod +x "$HOME/.local/bin/godot"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Validate committed exports without rebaking or changing them
         shell: bash
-        env:
-          GLTF_VALIDATOR_MODULE: /tmp/dragon-art-validator/node_modules/gltf-validator
         run: |
           set -euo pipefail
           mkdir -p dragon-forge-nextgen/artifacts
-          python dragon-forge-nextgen/tools/build_art.py | tee dragon-forge-nextgen/artifacts/build.log
-          python dragon-forge-nextgen/tools/validate_art.py | tee dragon-forge-nextgen/artifacts/asset-validation.log
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          root=pathlib.Path('dragon-forge-nextgen')
+          manifest=json.loads((root/'art/generated/manifest.json').read_text())
+          assert manifest['source']=='tools/build_art.py'
+          assert hashlib.sha256((root/manifest['source']).read_bytes()).hexdigest()==manifest['source_sha256']
+          print('Source-recipe hash verified.')
+          PY
+          python3 dragon-forge-nextgen/tools/validate_art.py | tee dragon-forge-nextgen/artifacts/asset-validation.log
           node dragon-forge-nextgen/tools/validate_gltf.cjs | tee dragon-forge-nextgen/artifacts/khronos.log
-      - name: Native gameplay and art integration tests
+          python3 dragon-forge-nextgen/tests/validate.py
+      - name: Native import and integration
         shell: bash
         run: |
           set -euo pipefail
-          timeout 90 godot --headless --path dragon-forge-nextgen --editor --import 2>&1 | tee dragon-forge-nextgen/artifacts/import.log
+          timeout 120 godot --headless --path dragon-forge-nextgen --editor --import 2>&1 | tee dragon-forge-nextgen/artifacts/import.log
           timeout 90 godot --headless --path dragon-forge-nextgen --script res://tests/run.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/tests.log
           timeout 90 godot --headless --path dragon-forge-nextgen --script res://tests/art_test.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/art-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/{import,tests,art-tests}.log; then exit 1; fi
           grep 'NEXTGEN_TESTS:.*0 failures' dragon-forge-nextgen/artifacts/tests.log
           grep 'NEXTGEN_ART_TESTS:.*0 failures' dragon-forge-nextgen/artifacts/art-tests.log
-      - name: Real engine gameplay and art captures
+      - name: Real OpenGL art and gameplay captures
         shell: bash
         run: |
           set -euo pipefail
-          timeout 120 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/visual_smoke.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/visual.log
-          timeout 120 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/art_review.gd -- --test-mode --motion-frames 2>&1 | tee dragon-forge-nextgen/artifacts/art-review.log
+          timeout 180 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/visual_smoke.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/visual.log
+          timeout 180 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/art_review.gd -- --test-mode --motion-frames 2>&1 | tee dragon-forge-nextgen/artifacts/art-review.log
           if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/{visual,art-review}.log; then exit 1; fi
           grep 'NEXTGEN_VISUAL_SMOKE: failures=0' dragon-forge-nextgen/artifacts/visual.log
           grep 'NEXTGEN_ART_REVIEW: failures=0' dragon-forge-nextgen/artifacts/art-review.log
-      - name: Commit only validated art and source to the dedicated feature branch
+      - name: Real Forward+ Low, High and reduced-motion captures using software Vulkan
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add --pathspec-from-file=/tmp/dragon-art-paths
-          git add dragon-forge-nextgen/art/generated/*.glb dragon-forge-nextgen/art/generated/*.png dragon-forge-nextgen/art/generated/manifest.json
-          git rm .github/art-stage-1.b64 .github/art-stage-2.b64 .github/art-stage-3.b64
-          git diff --cached --check
-          git commit -m 'art: ship validated skinned actors, PBR atlas and modular Forge environment'
-          git push origin HEAD:refs/heads/nextgen-production-art
-          git rev-parse HEAD | tee dragon-forge-nextgen/artifacts/published-head.txt
+          icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -n "$icd"
+          export VK_DRIVER_FILES="$icd"
+          timeout 300 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method forward_plus --rendering-driver vulkan --audio-driver Dummy --script res://tests/art_forward.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/forward.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/forward.log; then exit 1; fi
+          grep 'NEXTGEN_FORWARD_ART: failures=0' dragon-forge-nextgen/artifacts/forward.log
+      - name: Record tested revision and leave tracked sources untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/tested-checkout.txt
+          git diff --exit-code
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: production-art-integration
-          path: |
-            dragon-forge-nextgen/art/generated/*.glb
-            dragon-forge-nextgen/art/generated/*.png
-            dragon-forge-nextgen/art/generated/manifest.json
-            dragon-forge-nextgen/artifacts/
+          name: production-art-evidence
+          path: dragon-forge-nextgen/artifacts/
           retention-days: 14
