@@ -4,77 +4,41 @@ on:
     paths:
       - 'dragon-forge-nextgen/**'
       - '.github/workflows/nextgen-polish.yml'
+  workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
+concurrency:
+  group: magma-polish-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  bake-checked-polish:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'nextgen-magma-polish'
+  validate-polish:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      GODOT_VERSION: 4.6.3
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
           sparse-checkout: dragon-forge-nextgen
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Apply hash-checked integration source
+      - name: Install isolated validation tools
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import hashlib,json
-          from pathlib import Path
-          root=Path('dragon-forge-nextgen').resolve()
-          transfer=root/'tools/polish-edits.json'
-          edits=json.loads(transfer.read_text())
-          edits['art/README.md']={'base':'f3734e1d59c380f9dd93ae167cd677f60b9ef9b2d5e289eef9b42f94a26f155d','edits':[[0,0,'# Surface / deformation / footwork update\n\nSee `POLISH.md` for the implemented repaint, baked stress-pose corrections, and world-space foot-lock contract. The atlas is now 2048×2048; Magma has 13,388 triangles. Earlier asset-set descriptions below remain historical where they cite the original 1024 atlas or triangle count.\n\n']]}
-          expected={'README.md':'6e0626afc1d2bb338c331fa8a1e2934e976f88b4474a3a60e13ef8517507e459','art/README.md':'246de1ad306fb6671ea824ecc1508740c42b3f784f42c4e76bd5feda5aae24a7','presentation/art_library.gd':'7626f9cc860f34dfb4de1c708ff21e3644e6c6e180f03109fb79baf75888bba6','presentation/dragon_rig.gd':'38f69c2c7a86c935184589e6368eb011eae9155e02fea3bed781ec092121ad19','tools/build_art.py':'2c6ee8c14b01d6098b1324683c516f3683dae3e1602dbf1699af10307a4e4ab4','validation/README.md':'a64bf148267e5ff2e7b655c35562994dcbb25e9e964e244d2e8b742deffd537e','validation/arena_observer.gd':'4747f7c6a857dadb91b9549319bd6f2f1a1127b3e816dd94b0b55079d4ae3739','validation/foot_review.gd':'a4e307388c48956c79cf9f599e040cb0bdd970dcfe338121ba0f87e37444f1f9','validation/gameplay_arena.gd':'836213d4cc65cdd64dc32b2bb3021de98d90fbb994efbd9a4de064bff2daa59f'}
-          assert set(edits)==set(expected)
-          for name,spec in edits.items():
-              path=(root/name).resolve()
-              assert path.is_relative_to(root) and path.is_file(), name
-              data=path.read_bytes()
-              assert hashlib.sha256(data).hexdigest()==spec['base'], 'Base changed: '+name
-              lines=data.decode('utf-8').splitlines(keepends=True)
-              for lo,hi,replacement in reversed(spec['edits']):
-                  assert 0<=lo<=hi<=len(lines)
-                  lines[lo:hi]=replacement.splitlines(keepends=True)
-              new=''.join(lines).encode('utf-8')
-              assert hashlib.sha256(new).hexdigest()==expected[name], 'Transfer mismatch: '+name
-              path.write_bytes(new)
-          extras={'tools/pose_cleanup.py':'1c766e8d48ec62889e299c519b4c7bf26d7575047e19da3d8e8e55fd07989491','presentation/foot_plant.gd':'52fe0e15955c82e38832c8b44c4f18876afe6eb62bf31c87d60f2a0a48e174d0','validation/polish_tests.gd':'8e7432cacbf622884efb0647b258144f781db8c70ab56d1ea8389da344f296f1','validation/capture_polish.gd':'7de5bfe0d7e0fe50cf300b4ca5cd95faafb2f2a369903a65f2d73846f7dd7fa3','art/POLISH.md':'5889e853b9add67f71a06378da66b9665201218b2a5323536c980ee457cd8f4a'}
-          for name,sha in extras.items():
-              assert hashlib.sha256((root/name).read_bytes()).hexdigest()==sha, 'Source mismatch: '+name
-          path=root/'presentation/foot_plant.gd'
-          source=path.read_text()
-          needle='\t\t\t\t\tleg.planted = true\n\t\t\telse:\n'
-          assert source.count(needle)==1
-          source=source.replace(needle,'\t\t\t\t\tleg.planted = true\n\t\t\t\telse:\n\t\t\t\t\t# The previous sole may be over a gap; never solve to Vector3.ZERO.\n\t\t\t\t\tleg.blocked = true\n\t\t\t\t\tleg.from = leg.last\n\t\t\t\t\ttarget = ground.position\n\t\t\telse:\n')
-          assert hashlib.sha256(source.encode()).hexdigest()=='ce465d51f959712660ea07287100a371de46bcd8c1ee3d43d5052f5b248eb144'
-          path.write_text(source)
-          print('All integration source hashes match locally tested files.')
-          PY
-      - name: Install isolated authoring and validation tools
-        run: |
-          set -euo pipefail
-          python -m pip install -r dragon-forge-nextgen/tools/art-requirements.txt
-          npm install --prefix /tmp/gltf-validation gltf-validator@2.0.0-dev.3.10
-          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          curl --fail --location --retry 3 "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -o /tmp/godot.zip
           unzip -q /tmp/godot.zip -d /tmp/godot
           mkdir -p "$HOME/.local/bin"
           mv /tmp/godot/Godot_*_linux.x86_64 "$HOME/.local/bin/godot"
           chmod +x "$HOME/.local/bin/godot"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: Bake actual exported assets and verify all native suites
+          npm install --prefix /tmp/gltf-validation gltf-validator@2.0.0-dev.3.10
+      - name: Verify committed exports and all native regression suites
         run: |
           set -euo pipefail
           cd dragon-forge-nextgen
           mkdir -p artifacts
-          python tools/build_art.py > artifacts/polish-build.log
-          python tools/validate_art.py | tee artifacts/polish-integrity.log
+          python3 tools/validate_art.py | tee artifacts/polish-asset-integrity.log
           GLTF_VALIDATOR_MODULE=/tmp/gltf-validation/node_modules/gltf-validator node tools/validate_gltf.cjs | tee artifacts/polish-gltf.log
           timeout 100 godot --headless --path . --editor --import 2>&1 | tee artifacts/polish-import.log
           for script in tests/run.gd tests/art_test.gd validation/review_tests.gd validation/polish_tests.gd; do
@@ -83,25 +47,28 @@ jobs:
             grep 'checks, 0 failures' "$log"
           done
           if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' artifacts/*.log; then exit 1; fi
-      - name: Commit only validated sources and exports to the dedicated branch
+      - name: Capture both review scenes and real gameplay footwork
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
-          test "$(git ls-remote origin refs/heads/nextgen-magma-polish | cut -f1)" = "$EXPECTED_HEAD"
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add dragon-forge-nextgen/README.md dragon-forge-nextgen/art/README.md dragon-forge-nextgen/art/generated/ dragon-forge-nextgen/presentation/art_library.gd dragon-forge-nextgen/presentation/dragon_rig.gd dragon-forge-nextgen/presentation/foot_plant.gd dragon-forge-nextgen/tools/build_art.py dragon-forge-nextgen/validation/README.md dragon-forge-nextgen/validation/arena_observer.gd dragon-forge-nextgen/validation/foot_review.gd dragon-forge-nextgen/validation/gameplay_arena.gd
-          git rm dragon-forge-nextgen/tools/polish-edits.json
-          git diff --cached --check
-          git commit -m 'art: ship validated repaint, corrected skin and world-space foot planting'
-          git push origin HEAD:refs/heads/nextgen-magma-polish
-          git archive --format=zip HEAD dragon-forge-nextgen run-nextgen.sh run-nextgen.ps1 > /tmp/Magma_Polish_Checked_Source.zip
-          git rev-parse HEAD > dragon-forge-nextgen/artifacts/baked-revision.txt
+          for script in validation/capture_reviews.gd validation/capture_polish.gd; do
+            log="dragon-forge-nextgen/artifacts/polish-$(basename "$script" .gd).log"
+            timeout 240 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method gl_compatibility --audio-driver Dummy --script "res://$script" -- --test-mode 2>&1 | tee "$log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' "$log"; then exit 1; fi
+          done
+          grep 'NEXTGEN_REVIEW_CAPTURES: failures=0' dragon-forge-nextgen/artifacts/polish-capture_reviews.log
+          grep 'NEXTGEN_POLISH_MOTION: 36 frames, 0 failures' dragon-forge-nextgen/artifacts/polish-capture_polish.log
+      - name: Capture Low, High and calm mode in Forward+
+        run: |
+          set -euo pipefail
+          timeout 240 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method forward_plus --rendering-driver vulkan --audio-driver Dummy --script res://tests/art_forward.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/polish-forward.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/polish-forward.log; then exit 1; fi
+          grep 'NEXTGEN_FORWARD_ART: failures=0' dragon-forge-nextgen/artifacts/polish-forward.log
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/tested-revision.txt
+          git diff --exit-code
+          git archive --format=zip --output=dragon-forge-nextgen/artifacts/verified-source.zip HEAD dragon-forge-nextgen run-nextgen.sh run-nextgen.ps1 .github/workflows/nextgen-polish.yml
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: magma-polish-bake
-          path: |
-            /tmp/Magma_Polish_Checked_Source.zip
-            dragon-forge-nextgen/artifacts/
+          name: magma-polish-evidence
+          path: dragon-forge-nextgen/artifacts/
           retention-days: 14
