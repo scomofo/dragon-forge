@@ -78,6 +78,7 @@ func _build_review_controls() -> void:
 	UI.button(row, "Reset", reset_stage)
 	UI.button(row, "Export", export_review)
 	review_status = UI.text(box, "", 12)
+	review_status.tooltip_text = "Skinned-sole clearance above the visible deck; drift is measured during authored planted intervals."
 	review_notice = UI.text(box, "F6 reset • F7 overlay • F8 export\nF9 freeze next contact • F10 resume\nF11: compare foot correction on/off", 12)
 	review_notice.modulate = Color("abc0ca")
 
@@ -154,7 +155,7 @@ func _physics_process(delta: float) -> void:
 func observe_frame(delta: float) -> void:
 	review_clock += delta
 	feet.sample(delta, dragon.rig.sampled_clip, dragon.rig.sampled_time, SCENARIOS[scenario], dragon.rig.feet.samples)
-	review_status.text = feet.readout() + "\nContacts: %d | %s" % [contact_events.size(), "replay at 1x" if replaying else "manual / observation"]
+	review_status.text = feet.readout().trim_prefix("Sole probes / visible surface\n") + "\nContacts: %d | %s" % [contact_events.size(), "replay at 1x" if replaying else "manual / observation"]
 
 	if freeze_pending:
 		freeze_pending = false
