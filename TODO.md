@@ -31,7 +31,8 @@
 - [x] Battle state integrity — normal commands and guarded swaps share enemy scripts, damage/status resolution, faint handling, and rewards; Restoration/lifesteal animate real healing; settled HP/buffs match the resolved turn; Siren preserves both living dragons and interrupts the outgoing command without spending its technique
 - [x] Boss HP consistency — Vulture drains and applies Blind on a landed Soul Drain; Great Reset commits capped healing and recognizes techniques executed on the KO turn; overheat self-damage remains in the resolved result
 - [ ] Battle hands-on acceptance — healing before/after enemy hits, guarded entry at 1×/2×, Siren turns 2/5, lethal entry and reserve return, Vulture drain and Mirror Admin reset
-- [ ] Remaining authored-boss contracts — Logic Bomb fuse must override a stored charge and guarantee its turn-seven hit; Data Corruption must rearm after Burn
+- [x] Remaining authored-boss contracts — Logic Bomb's turn-seven fuse overrides stored charges and status interruption, with Defend/reflection/KO counters preserved; Data Corruption rearms after applied Burn and visibly counts actual corrupted-slot uses
+- [ ] Boss-rule hands-on acceptance — fuse deadline and counters, first-command corruption, Burn refresh, reserve ownership and readable effective move stats (`docs/boss-contracts-playtest.md`)
 - [x] Save recovery — preserve unreadable progress, recover a last-known-good save, and report failed writes (ADR-0012; browser acceptance below)
 - [x] Campaign guidance — remember the last entered expedition across all four zones, keep route objectives and unclaimed rewards ahead of dailies, explain cross-zone prerequisites, and show the correct room-return hint after defeat
 - [x] Playback controls — live MP3/procedural volume, immediate mute, destination-aware unmute, cancelable fades, and disposed arpeggio notes
@@ -44,8 +45,9 @@
 - [x] Learn and retry — defeat offers one encounter-specific tactical tip, a direct full-HP rematch of the same encounter, and a separate route back to change setup
 - [x] Battle command access — keyboard/controller selection includes Swap, skips unavailable actions, preserves command identity, and respects native focused buttons and save controls
 - [ ] Hands-on opening/retry acceptance — first hatch, repeated inputs, defeat/rematch, daily/boss snapshots, keyboard/controller/touch and 390px layout (`docs/playability-playtest.md`)
-- [ ] Complete controller opening — Title/Hatchery gamepad actions, Forge overlay navigation/confirmation, and campaign-map guardian cycling
-- [ ] Reduced-motion completion — audit critical-hit flash/zoom, zoom punch and egg burst, then play the opening under normal and reduced motion
+- [x] Controller opening implementation — Title/Hatchery gamepad actions, Forge overlay navigation/confirmation, campaign primary/reserve cycling, and held-input protection at screen/overlay handoffs
+- [x] Reduced-motion implementation — calm critical/egg and battle effects, stationary contact cues with preserved timing, readable damage/result labels
+- [ ] Controller and motion hands-on acceptance — opening through Forge, paid-pull focus, controller reconnects, normal/reduced motion and 1×/2× combat (`docs/controller-motion-playtest.md`)
 - [ ] Measured fresh-player opening — record time to first meaningful choice, first fight and Forge return; observe whether players understand the enemy signal and adjust after defeat
 
 ## Recent Browser QA

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
 import { calculateStatsForLevel, getStageForLevel, getTypeEffectiveness } from './battleEngine';
@@ -10,6 +10,7 @@ import { playSound } from './soundEngine';
 import { assetUrl } from './utils';
 import { findDirectionalNode } from './gamepadInput';
 import useGamepadController from './useGamepadController';
+import { cycleCampaignPrimary, cycleCampaignReserve } from './campaignParty';
 
 const CONNECTIONS = CAMPAIGN_NODES.flatMap((node) =>
   node.prerequisiteIds.map((fromId) => ({ fromId, toId: node.id }))
@@ -75,6 +76,7 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
   // B7: the tactical bench is now available on campaign nodes too — pick a
   // reserve with click-on-primary (like Battle Select) to bring a second life.
   const [selectedBenchId, setSelectedBenchId] = useState(null);
+  const navigatingRef = useRef(false);
 
   const selectedNode = CAMPAIGN_NODES.find((node) => node.id === selectedNodeId) || firstActionable;
   const selectedState = getCampaignNodeState(selectedNode, save);
@@ -130,7 +132,9 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
   }
 
   function beginBattle() {
-    if (!canBegin) return;
+    if (!canBegin || navigatingRef.current) return;
+    navigatingRef.current = true;
+    queueMicrotask(() => { navigatingRef.current = false; });
     playSound('buttonClick');
     onBeginCampaignBattle({
       nodeId: selectedNode.id,
@@ -140,11 +144,28 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
     });
   }
 
+  function navigateFromController(screen) {
+    if (navigatingRef.current) return;
+    navigatingRef.current = true;
+    queueMicrotask(() => { navigatingRef.current = false; });
+    onNavigate?.(screen);
+  }
+
   function cycleDragon(direction) {
     if (ownedDragons.length === 0) return;
-    const currentIndex = Math.max(0, ownedDragons.findIndex((entry) => entry.id === selectedDragonId));
-    const nextIndex = (currentIndex + direction + ownedDragons.length) % ownedDragons.length;
-    selectDragon(ownedDragons[nextIndex].id);
+    const party = cycleCampaignPrimary(ownedDragons.map(entry => entry.id), selectedDragonId, selectedBenchId, direction);
+    playSound('dragonSelect');
+    setSelectedDragonId(party.primaryId);
+    setSelectedBenchId(party.reserveId);
+  }
+
+  function cycleReserve() {
+    if (!selectedDragonId) {
+      cycleDragon(1);
+      return;
+    }
+    playSound('dragonSelect');
+    setSelectedBenchId(cycleCampaignReserve(ownedDragons.map(entry => entry.id), selectedDragonId, selectedBenchId));
   }
 
   useGamepadController({
@@ -153,9 +174,10 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
       if (nextNode && nextNode.id !== selectedNode.id) selectNode(nextNode);
     },
     onButtonPress: (button) => {
-      if (button === 'X' && zoneScreenId) onNavigate(zoneScreenId);
+      if (button === 'X' && zoneScreenId) navigateFromController(zoneScreenId);
       if (button === 'LB') cycleDragon(-1);
-      if (button === 'RB' || button === 'Y') cycleDragon(1);
+      if (button === 'RB') cycleDragon(1);
+      if (button === 'Y') cycleReserve();
       if (button === 'A' || button === 'START') {
         if (!selectedDragonId && ownedDragons.length > 0) {
           selectDragon(ownedDragons[0].id);
@@ -163,7 +185,7 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
           beginBattle();
         }
       }
-      if (button === 'B') onNavigate?.('battleSelect');
+      if (button === 'B') navigateFromController('battleSelect');
     },
   });
 
@@ -431,6 +453,7 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
           <div style={{ fontSize: 8, color: '#888', margin: '2px 0 6px', letterSpacing: '0.03em' }}>
             Pick a PRIMARY, then optionally a 2nd as RESERVE — it steps in if your primary falls (half XP).
           </div>
+          <p className="campaign-party-controls">LB / RB: primary · Y: reserve / none · A: battle</p>
           <div className="campaign-dragon-list">
             {ownedDragons.length === 0 && (
               <div className="empty-dragons">Pull a dragon from the Hatchery to enter the campaign.</div>

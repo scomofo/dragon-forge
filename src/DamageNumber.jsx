@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
+import { prefersReducedMotion } from './animationEngine';
 
 export default function DamageNumber({ damage, effectiveness, hit, position, onComplete, isCritical = false, isStatusTick = false, statusElement = null, staggerIndex = 0, variant = null, label = null }) {
   const [visible, setVisible] = useState(true);
@@ -20,6 +21,14 @@ export default function DamageNumber({ damage, effectiveness, hit, position, onC
         onComplete?.();
       },
     });
+    if (prefersReducedMotion()) {
+      // Keep the same readable lifetime and completion callback, with no pop,
+      // critical-hit jitter, or upward travel.
+      tl.set(el, { opacity: 1 });
+      tl.to(el, { duration: Math.max(0, duration / 1000 - 0.15) });
+      tl.to(el, { opacity: 0, duration: 0.15 });
+      return () => tl.kill();
+    }
     tl.fromTo(el,
       { scale: 0.3, opacity: 0, y: 6 },
       { scale: popScale, opacity: 1, y: 0, duration: 0.09, ease: 'back.out(3)' }

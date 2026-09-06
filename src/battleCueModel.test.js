@@ -86,10 +86,75 @@ describe('decision-time enemy signals', () => {
     expect(byId(stateFor('logic_bomb', { bossState: { fuseTurns: 0 } }), 'fuse').title).toBe('Detonation armed');
   });
 
+  it('shows the expired fuse instead of a stored charge or threshold signature', () => {
+    const state = stateFor('logic_bomb', {
+      npcHp: 1, npcChargedMove: 'earthquake', bossState: { fuseTurns: 0 },
+    });
+    for (const signatureMoveUsed of [false, true]) {
+      const cues = getBattleCues({ ...state, signatureMoveUsed });
+      expect(cues.map(cue => cue.id)).toEqual(['fuse']);
+      expect(cues[0].detail).toContain('cannot miss');
+      expect(cues[0].detail).toContain('stopped by status');
+      expect(cues[0].detail).toContain('Defend');
+      expect(cues[0].detail).not.toContain('40%');
+    }
+  });
+
+  it('retains the charge warning before the fuse expires', () => {
+    const cues = getBattleCues(stateFor('logic_bomb', {
+      npcChargedMove: 'earthquake', bossState: { fuseTurns: 1 },
+    }));
+    expect(cues.map(cue => cue.id)).toEqual(['charge', 'fuse']);
+    expect(cues[0].detail).toContain('40%');
+    expect(cues.some(cue => cue.detail.includes('cannot miss'))).toBe(false);
+  });
+
+  it('does not promise the early low-HP detonation is guaranteed', () => {
+    const cues = getBattleCues(stateFor('logic_bomb', {
+      npcHp: 1, bossState: { fuseTurns: 4 },
+    }));
+    expect(cues.map(cue => cue.id)).toEqual(['signature', 'fuse']);
+    expect(cues[0].title).toContain('Final Detonation');
+    expect(cues.some(cue => cue.detail.includes('cannot miss'))).toBe(false);
+  });
+
+  it('marks the fuse detonation spent and resumes ordinary charge warnings', () => {
+    const cues = getBattleCues(stateFor('logic_bomb', {
+      signatureMoveUsed: true, npcChargedMove: 'earthquake', bossState: { fuseTurns: 0, fuseDetonated: true },
+    }));
+    expect(cues.map(cue => cue.id)).toEqual(['charge', 'fuse']);
+    expect(cues[1].title).toBe('Detonation spent');
+    expect(cues[1].tone).toBe('opening');
+    expect(cues[1].detail).not.toContain('Defend');
+  });
+
   it('describes corruption duration as uses, since unused slots do not expire', () => {
-    const state = stateFor('data_corruption', { turnCount: 8, bossState: { garbledMoveKey: 'flame_wall', garbledTurnsLeft: 2 } });
+    const state = stateFor('data_corruption', { turnCount: 8, bossState: { garbledDragonId: 'fire', garbledMoveKey: 'flame_wall', garbledTurnsLeft: 2 } });
     expect(byId(state, 'garble').title).toContain('Flame Wall');
     expect(byId(state, 'garble').detail).toContain('2 more uses');
+    expect(byId({ ...state, bossState: { ...state.bossState, garbledTurnsLeft: 1 } }, 'garble').detail).toContain('1 more use.');
+  });
+
+  it('shows the initialized corruption before the first command', () => {
+    const state = stateFor('data_corruption', { bossState: { garbledDragonId: 'fire', garbledMoveKey: 'magma_breath', garbledTurnsLeft: 2 } });
+    expect(byId(state, 'garble').title).toBe('Magma Breath corrupted');
+    expect(byId(state, 'garble').detail).toContain('2 more uses');
+  });
+
+  it('does not attribute the other dragon\'s corruption to the active kit', () => {
+    const state = stateFor('data_corruption', { bossState: { garbledDragonId: 'ice', garbledMoveKey: 'blizzard', garbledTurnsLeft: 2 } });
+    expect(byId(state, 'garble').title).toBe('Slots clear');
+    expect(byId(state, 'garble').detail).toContain('Burn');
+    expect(byId(state, 'garble').detail).not.toContain('Basic Attack');
+    // Fused dragons can share a technique with its owner; a matching move key
+    // alone must not make the incoming dragon's command appear corrupted.
+    expect(byId({ ...state, bossState: { ...state.bossState, garbledDragonId: 'fused_fire', garbledMoveKey: 'flame_wall' } }, 'garble').title).toBe('Slots clear');
+  });
+
+  it('warns that new Burn can corrupt a move again after both uses clear', () => {
+    const state = stateFor('data_corruption', { turnCount: 8, bossState: { garbledDragonId: 'fire', garbledMoveKey: 'flame_wall', garbledTurnsLeft: 0 } });
+    expect(byId(state, 'garble').title).toBe('Slots clear');
+    expect(byId(state, 'garble').detail).toContain('A new Burn');
   });
 
   it('distinguishes a speed surge from guard recovery and the spent burst', () => {

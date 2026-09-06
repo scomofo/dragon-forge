@@ -43,7 +43,7 @@ export const BOSS_PATTERNS = {
   logic_bomb: {
     id: 'logic_bomb',
     tell: 'A live fuse counts down from 6 beside the turn counter.',
-    rule: 'If the fight reaches turn 7 with the bomb alive, Final Detonation hits and cannot miss.',
+    rule: 'At turn 7, the live bomb forces Final Detonation once, overriding a stored charge, Freeze, Paralyze, and Glitch. It cannot miss; Defend and reflection still work. Its low-HP signature can fire earlier with normal accuracy.',
     executedByBattleEngine: true,
   },
   recursive_golem: {
@@ -61,7 +61,7 @@ export const BOSS_PATTERNS = {
   data_corruption: {
     id: 'data_corruption',
     tell: 'The enemy signal names a corrupted move and its remaining uses.',
-    rule: 'On turn 1 and after each Burn apply, a random non-signature move is replaced by basic_attack.',
+    rule: 'Before the first command and whenever the boss applies Burn to the player, one of the active dragon\'s regular moves becomes Basic Attack for its next two uses. Other moves and skipped actions do not consume a use.',
     executedByBattleEngine: true,
   },
   memory_leak: {

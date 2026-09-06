@@ -1,6 +1,6 @@
 import { moves, npcs, typeChart } from './gameData';
 import { CHARGE_ATK_MULTIPLIER } from './battleEngine';
-import { HYDRA_HEAD_COUNT } from './bossMechanics';
+import { getCorruptedMoveKey, HYDRA_HEAD_COUNT, isLogicBombDetonationDue } from './bossMechanics';
 
 const name = value => value ? value[0].toUpperCase() + value.slice(1) : 'Unknown';
 const cue = (id, title, detail, tone = 'warning', meter = null) => ({ id, title, detail, tone, meter });
@@ -49,9 +49,10 @@ function getPatternCue(state, playerDefendedLastTurn, isMirrorAdmin) {
         : `${weaknesses} hits break a head. Repeated elements count.`, heads >= HYDRA_HEAD_COUNT ? 'opening' : 'warning', meter(heads, HYDRA_HEAD_COUNT));
     }
     case 'logic_bomb': {
+      if (bs.fuseDetonated) return cue('fuse', 'Detonation spent', 'The fuse-triggered attack has been used.', 'opening');
       const fuse = bs.fuseTurns ?? 6;
       return cue('fuse', fuse === 0 ? 'Detonation armed' : `Fuse ${fuse}/6`, fuse === 0
-        ? 'Final Detonation is primed. Defend or finish it.'
+        ? 'Final Detonation cannot miss or be stopped by status. Defend or finish it.'
         : 'Attack before the fuse burns out. Low HP can trigger its signature early.', fuse <= 2 ? 'danger' : 'warning', meter(fuse, 6));
     }
     case 'recursive_golem': {
@@ -63,11 +64,12 @@ function getPatternCue(state, playerDefendedLastTurn, isMirrorAdmin) {
     case 'protocol_vulture':
       return cue('perch', bs.perchUsed ? 'Perch spent' : state.npcHp / state.npcMaxHp <= 0.5 ? 'Soul Drain primed' : 'Perch at half HP',
         'Soul Drain is a heavy shadow strike. Defend to soften it.', bs.perchUsed ? 'neutral' : 'warning');
-    case 'data_corruption':
-      return bs.garbledMoveKey && bs.garbledTurnsLeft > 0
-        ? cue('garble', `${moves[bs.garbledMoveKey]?.name || 'Move'} corrupted`, `Fires as Basic Attack for ${bs.garbledTurnsLeft} more ${bs.garbledTurnsLeft === 1 ? 'use' : 'uses'}. Choose another technique.`)
-        : cue('garble', state.turnCount === 0 ? 'Corruption incoming' : 'Slots clear', state.turnCount === 0
-          ? 'One regular move will be replaced by Basic Attack.' : 'Your techniques have their usual effects.', 'neutral');
+    case 'data_corruption': {
+      const corruptedMove = getCorruptedMoveKey(state);
+      return corruptedMove
+        ? cue('garble', `${moves[corruptedMove]?.name || 'Move'} corrupted`, `Fires as Basic Attack for ${bs.garbledTurnsLeft} more ${bs.garbledTurnsLeft === 1 ? 'use' : 'uses'}. A new Burn can corrupt a move again.`)
+        : cue('garble', 'Slots clear', 'Your techniques have their usual effects. A new Burn can corrupt a regular move.', 'neutral');
+    }
     case 'memory_leak': {
       const pips = bs.leakPips || 0;
       return cue('leak', `Leak ${pips}/5`, `DEF +${pips * 10}%; grows each turn. An Ice hit clears the buildup.`, pips >= 4 ? 'danger' : 'warning', meter(pips, 5));
@@ -93,8 +95,12 @@ export function getBattleCues(state, { playerDefendedLastTurn = false, isMirrorA
   if (state.phase !== 'playerTurn') return [];
   const cues = [];
   const npcData = npcs[state.npc.id] || state.npc;
-  const charged = moves[state.npcChargedMove];
-  const signatureReady = !state.signatureMoveUsed && npcData.signatureCondition
+  // The expired fuse overrides stored charges and an already-used signature.
+  // Its own signal describes the forced attack without advertising a charge
+  // boost that will not apply to it.
+  const detonationArmed = isLogicBombDetonationDue(state);
+  const charged = !detonationArmed && moves[state.npcChargedMove];
+  const signatureReady = !detonationArmed && !state.signatureMoveUsed && npcData.signatureCondition
     && state.npcHp / state.npcMaxHp <= npcData.signatureCondition.hpThreshold;
   const signature = signatureReady && moves[npcData.signatureMoveKey];
   const attack = charged || signature;

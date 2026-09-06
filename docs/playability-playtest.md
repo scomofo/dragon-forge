@@ -18,4 +18,4 @@ Use test progress in a separate browser profile. Record browser, viewport, input
 
 Time a fresh run from Start to first hatch, first meaningful route choice, first battle, and return to the Forge. Ask the player to explain their objective and one enemy signal without coaching. After a loss, record whether they change a decision on the next attempt. Use those observations to tune the 15–20 minute opening target.
 
-Controller-only access through Title/Hatchery/Forge and complete reduced-motion coverage remain separate open work in `TODO.md`; this pass does not close those gates.
+Controller opening and reduced-motion implementation follow this pass. Their real-browser and physical-controller gates remain pending in `docs/controller-motion-playtest.md`.
