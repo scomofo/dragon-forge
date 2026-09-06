@@ -1,0 +1,60 @@
+name: Nextgen review scenes
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/**'
+      - '.github/workflows/nextgen-review-scenes.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nextgen-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  scene-validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GODOT_VERSION: 4.6.3
+      LIBGL_ALWAYS_SOFTWARE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: dragon-forge-nextgen
+      - name: Install pinned engine and software graphics
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri
+          curl --fail --location --retry 3 "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          mkdir -p "$HOME/.local/bin"
+          mv /tmp/godot/Godot_*_linux.x86_64 "$HOME/.local/bin/godot"
+          chmod +x "$HOME/.local/bin/godot"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Import and run scene, gameplay, and art regressions
+        run: |
+          set -euo pipefail
+          cd dragon-forge-nextgen
+          mkdir -p artifacts
+          timeout 100 godot --headless --path . --editor --import 2>&1 | tee artifacts/review-import.log
+          for script in validation/review_tests.gd tests/run.gd tests/art_test.gd; do
+            log="artifacts/$(basename "$script" .gd).log"
+            timeout 90 godot --headless --path . --script "res://$script" -- --test-mode 2>&1 | tee "$log"
+            grep 'checks, 0 failures' "$log"
+          done
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' artifacts/*.log; then exit 1; fi
+      - name: Capture the interactive review scenes and baseline diagnostics
+        run: |
+          set -euo pipefail
+          timeout 180 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method gl_compatibility --audio-driver Dummy --script res://validation/capture_reviews.gd 2>&1 | tee dragon-forge-nextgen/artifacts/review-captures.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/review-captures.log; then exit 1; fi
+          grep 'NEXTGEN_REVIEW_CAPTURES: failures=0' dragon-forge-nextgen/artifacts/review-captures.log
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/tested-revision.txt
+          git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nextgen-review-scenes-evidence
+          path: dragon-forge-nextgen/artifacts/
+          retention-days: 14
