@@ -53,9 +53,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	rig.visible = active
 	aim_marker.visible = active
+	input_grace = maxf(0.0, input_grace - delta)
 	if not active:
 		return
-	input_grace = maxf(0.0, input_grace - delta)
 	advance_combat(delta, Input.is_action_pressed("ng_guard") and input_grace <= 0.0)
 	var movement = Input.get_vector("ng_left", "ng_right", "ng_up", "ng_down") if input_grace <= 0.0 else Vector2.ZERO
 	var direction = Vector3(movement.x, 0, movement.y)
@@ -105,7 +105,7 @@ func try_ability(id: String) -> bool:
 		return false
 	if not Combat.cast(state, id):
 		# A single bounded input buffer, never a queue of delayed attacks.
-		if Combat.ABILITIES.has(id) and state.hp > 0.0 and not state.guard and state.dash <= 0.0 and state.heat + Combat.ABILITIES[id].heat <= 100.0:
+		if Combat.ABILITIES.has(id) and state.hp > 0.0 and not state.guard and state.dash <= 0.0 and state.heat + Combat.heat_cost(state, id) <= 100.0:
 			var wait = maxf(Combat.action_remaining(state), state.cooldowns.get(id, 0.0))
 			if wait > 0.0 and wait <= BUFFER_WINDOW:
 				buffered_id = id
@@ -128,8 +128,8 @@ func receive_damage(amount: float) -> float:
 			died.emit()
 	return applied
 
-func respawn(at: Vector3) -> void:
-	state = Combat.fresh()
+func respawn(at: Vector3, module: String = "") -> void:
+	state = Combat.fresh(module)
 	global_position = at
 	velocity = Vector3.ZERO
 	input_grace = 0.2
