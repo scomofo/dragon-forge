@@ -49,8 +49,10 @@ func _ready() -> void:
 	shield = Geo.box(visual, Vector3(0, 1.25, -0.73), Vector3(1.58, 1.63, 0.08), Geo.material(Color(0.35, 0.8, 0.96, 0.40), 0.6, true))
 	if boss:
 		visual.scale = Vector3.ONE * 1.2
-	title = Geo.label(self, Vector3(0, 3.25 if boss else 2.85, 0), "")
-	hp_label = Geo.label(self, Vector3(0, 2.91 if boss else 2.53, 0), "", Geo.CYAN)
+	title = Geo.label(self, Vector3(0, 3.6 if boss else 3.15, 0), "")
+	hp_label = Geo.label(self, Vector3(0, 2.85 if boss else 2.4, 0), "", Geo.CYAN)
+	title.font_size = 40
+	hp_label.font_size = 36
 	# Telegraph is a sibling: it does NOT follow the enemy or player after lock.
 	tell = Node3D.new()
 	get_parent().call_deferred("add_child", tell)
