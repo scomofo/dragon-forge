@@ -1,0 +1,30 @@
+name: Nextgen art validation
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/nextgen-art.yml'
+      - 'dragon-forge-nextgen/art/**'
+      - 'dragon-forge-nextgen/tools/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  renderer:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'nextgen-production-art'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Prepare pinned test renderer
+        run: |
+          set -euo pipefail
+          mkdir -p renderer
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d renderer
+          mv renderer/Godot_v4.6.3-stable_linux.x86_64 renderer/godot
+          chmod +x renderer/godot
+          renderer/godot --headless --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: art-validation-renderer
+          path: renderer/godot
+          retention-days: 1
