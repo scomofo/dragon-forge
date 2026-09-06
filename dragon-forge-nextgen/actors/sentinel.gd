@@ -1,5 +1,6 @@
 extends CharacterBody3D
 const Brain = preload("res://sim/enemy_brain.gd")
+const Rig = preload("res://presentation/sentinel_rig.gd")
 const Geo = preload("res://presentation/geometry.gd")
 signal slam(at: Vector3, radius: float, amount: float)
 signal defeated(encounter: int)
@@ -37,24 +38,12 @@ func _ready() -> void:
 	collision.shape = capsule
 	collision.position.y = 1.2
 	add_child(collision)
-	visual = Node3D.new()
+	visual = Rig.new()
+	visual.boss = boss
 	add_child(visual)
-	var armor = Geo.material(Color("49435c") if boss else Color("354e59"))
-	var trim = Geo.material(Geo.AMBER if boss else Geo.CYAN, 1.6)
-	Geo.box(visual, Vector3(0, 1.2, 0), Vector3(1.15, 1.25, 0.75), armor)
-	Geo.orb(visual, Vector3(0, 1.4, -0.46), 0.29, trim)
-	Geo.box(visual, Vector3(0, 2.1, 0), Vector3(0.64, 0.45, 0.59), armor)
-	Geo.box(visual, Vector3(0, 2.12, -0.32), Vector3(0.45, 0.09, 0.08), trim)
-	for side in [-1.0, 1.0]:
-		var arm = Node3D.new()
-		arm.position = Vector3(side * 0.78, 1.75, 0)
-		visual.add_child(arm)
-		Geo.box(arm, Vector3(0, -0.38, 0), Vector3(0.39, 1.15, 0.50), armor)
-		Geo.box(arm, Vector3(0, -0.91, -0.05), Vector3(0.51, 0.27, 0.61), trim)
-		arms.append(arm)
-		Geo.box(visual, Vector3(side * 0.36, 0.41, 0), Vector3(0.40, 0.80, 0.50), armor)
-		Geo.box(visual, Vector3(side * 0.36, 0.16, -0.18), Vector3(0.49, 0.29, 0.80), armor)
-	shield = Geo.box(visual, Vector3(0, 1.25, -0.73), Vector3(1.58, 1.63, 0.08), Geo.material(Color(0.35, 0.8, 0.96, 0.40), 0.6, true))
+	# Hexagonal energy shield is a combat effect; plated armature is the imported art.
+	shield = Geo.cylinder(visual, Vector3(0, 1.35, -0.83), 1.02, 1.02, 0.025, Geo.material(Color(0.25, 0.75, 0.90, 0.16), 0.35, true), 6)
+	shield.rotation.x = PI / 2.0
 	if boss:
 		visual.scale = Vector3.ONE * 1.2
 	title = Geo.label(self, Vector3(0, 3.6 if boss else 3.15, 0), "")
@@ -64,9 +53,9 @@ func _ready() -> void:
 	# Telegraph is a sibling: it does NOT follow the enemy or player after lock.
 	tell = Node3D.new()
 	get_parent().call_deferred("add_child", tell)
-	tell_ring = Geo.ring(tell, Vector3(0, 0.09, 0), radius, Geo.material(Color("ffcf68"), 1.0, true), 0.09)
-	Geo.cylinder(tell, Vector3(0, 0.045, 0), radius, radius, 0.025, Geo.material(Color(1.0, 0.25, 0.16, 0.2), 0.0, true), 40)
-	Geo.ring(tell, Vector3(0, 0.09, 0), radius, Geo.material(Color("ffe0a0"), 0.5, true), 0.04)
+	tell_ring = Geo.ring(tell, Vector3(0, 0.14, 0), radius, Geo.material(Color("ffcf68"), 1.0, true), 0.09)
+	Geo.cylinder(tell, Vector3(0, 0.115, 0), radius, radius, 0.025, Geo.material(Color(1.0, 0.25, 0.16, 0.2), 0.0, true), 40)
+	Geo.ring(tell, Vector3(0, 0.14, 0), radius, Geo.material(Color("ffe0a0"), 0.5, true), 0.04)
 	tell_label = Geo.label(tell, Vector3(0, 0.2, 0), "IMPACT", Color("ffdf9b"))
 	tell.visible = false
 
@@ -113,9 +102,7 @@ func _physics_process(delta: float) -> void:
 	shield.visible = not brain.vulnerable()
 	hit_time = maxf(0.0, hit_time - delta)
 	visual.rotation.x = hit_time * (0.10 if reduced_motion else 0.60)
-	for arm in arms:
-		var pose = -1.6 * (1.0 - fraction) if brain.mode == "tell" else (0.3 if brain.vulnerable() else 0.0)
-		arm.rotation.x = lerpf(arm.rotation.x, pose, minf(delta * 12.0, 1.0))
+	visual.animate(delta, brain, Vector2(velocity.x, velocity.z).length(), reduced_motion)
 	var name_text = "PACKET WARDEN" if boss else "FIREWALL SENTINEL"
 	var status = "OPEN - COUNTER!" if brain.vulnerable() else ("DODGE / GUARD" if brain.mode == "tell" else "SHIELD CLOSED")
 	title.text = name_text + (" // OVERCLOCK" if brain.enraged else "") + "\n" + status

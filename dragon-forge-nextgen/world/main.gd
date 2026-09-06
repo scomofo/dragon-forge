@@ -5,6 +5,7 @@ const Store = preload("res://sim/save_store.gd")
 const Conduit = preload("res://sim/conduit.gd")
 const Dragon = preload("res://actors/dragon.gd")
 const Sentinel = preload("res://actors/sentinel.gd")
+const Art = preload("res://presentation/art_library.gd")
 const Geo = preload("res://presentation/geometry.gd")
 const Inputs = preload("res://presentation/input_map.gd")
 const Effects = preload("res://presentation/effects.gd")
@@ -87,10 +88,10 @@ func _ready() -> void:
 func _build_lighting() -> void:
 	environment = Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color("081421")
+	environment.background_color = Color("101c22")
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("9bbacb")
-	environment.ambient_light_energy = 0.65
+	environment.ambient_light_color = Color("a8b7bd")
+	environment.ambient_light_energy = 0.40
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	environment.fog_enabled = true
 	environment.fog_light_color = Color("1a3447")
@@ -101,8 +102,8 @@ func _build_lighting() -> void:
 	add_child(world_environment)
 	sun = DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-52, -28, 0)
-	sun.light_color = Color("d2e5f0")
-	sun.light_energy = 1.8
+	sun.light_color = Color("f2d7bc")
+	sun.light_energy = 1.45
 	sun.directional_shadow_max_distance = 65
 	add_child(sun)
 	forge_light = OmniLight3D.new()
@@ -118,55 +119,43 @@ func _build_lighting() -> void:
 	arena_light.omni_range = 17
 	add_child(arena_light)
 
+func _collider(at: Vector3, size: Vector3) -> StaticBody3D:
+	var body = StaticBody3D.new()
+	body.position = at
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var shape = CollisionShape3D.new()
+	shape.shape = BoxShape3D.new()
+	shape.shape.size = size
+	body.add_child(shape)
+	add_child(body)
+	return body
+
 func _build_world() -> void:
-	var floor_mat = Geo.material(Color("152833"))
-	var plate_mat = Geo.material(Color("263e4a"))
-	var dark_mat = Geo.material(Geo.INK)
-	var metal_mat = Geo.material(Geo.METAL)
-	var cyan = Geo.material(Geo.CYAN, 1.1)
-	var amber = Geo.material(Geo.AMBER, 1.4)
-	Geo.solid_box(self, Vector3(0, -0.3, -4), Vector3(20, 0.6, 38), floor_mat)
-	var floor_plates: Array = []
-	var cool_lights: Array = []
-	var warm_lights: Array = []
-	for x in range(-8, 9, 4):
-		for z in range(-20, 13, 4):
-			floor_plates.append(Vector3(x, 0.02, z))
-	Geo.batch_boxes(self, floor_plates, Vector3(3.88, 0.035, 3.88), plate_mat)
+	# Existing arena and combat collision dimensions are preserved. Art never generates physics.
+	_collider(Vector3(0, -0.3, -4), Vector3(20, 0.6, 38))
 	for side in [-1, 1]:
-		Geo.solid_box(self, Vector3(side * 10.1, 1.0, -4), Vector3(0.4, 2.0, 38.5), dark_mat)
-		Geo.solid_box(self, Vector3(side * 6.65, 1.4, 2), Vector3(6.7, 2.8, 0.55), metal_mat)
+		_collider(Vector3(side * 10.1, 1, -4), Vector3(0.4, 2, 38.5))
+		_collider(Vector3(side * 6.65, 1.4, 2), Vector3(6.7, 2.8, 0.55))
 		for z in [-19, -11, -3, 8]:
-			Geo.solid_box(self, Vector3(side * 8.8, 1.75, z), Vector3(1.5, 3.5, 1.65), dark_mat)
-			for y in [0.7, 1.4, 2.1, 2.8]:
-				(cool_lights if z < 2 else warm_lights).append(Vector3(side * 7.99, y, z))
-		Geo.box(self, Vector3(side * 3.0, 0.05, -9), Vector3(0.045, 0.035, 21.5), cyan)
-	Geo.batch_boxes(self, cool_lights, Vector3(0.065, 0.065, 1.18), cyan)
-	Geo.batch_boxes(self, warm_lights, Vector3(0.065, 0.065, 1.18), amber)
-	Geo.solid_box(self, Vector3(0, 1, -23.1), Vector3(20.5, 2, 0.4), dark_mat)
-	Geo.solid_box(self, Vector3(0, 1, 15.1), Vector3(20.5, 2, 0.4), dark_mat)
-	gate = Geo.solid_box(self, Vector3(0, 1.4, 2), Vector3(6.6, 2.8, 0.45), Geo.material(Color(0.25, 0.8, 0.9, 0.42), 0.5))
-	for side in [-1, 1]:
-		Geo.box(self, Vector3(side * 3.35, 1.55, 2), Vector3(0.14, 3.1, 0.65), cyan)
-	Geo.label(self, Vector3(0, 3.5, 2), "OUTER GRID // BREACH", Geo.CYAN)
-	Geo.label(self, Vector3(0, 0.2, 13), "THE FORGE", Color("ffd3a1"))
-	Geo.ring(self, HATCH + Vector3.UP * 0.09, 1.65, amber)
-	Geo.cylinder(self, HATCH + Vector3.UP * 0.08, 1.42, 1.42, 0.12, metal_mat, 12)
-	Geo.label(self, HATCH + Vector3.UP * 2.8, "HATCHERY", Geo.AMBER)
-	hatch_egg = Node3D.new()
-	hatch_egg.position = HATCH
-	add_child(hatch_egg)
-	Geo.orb(hatch_egg, Vector3(0, 0.86, 0), 0.68, Geo.material(Color("734939")))
-	Geo.ring(hatch_egg, Vector3(0, 0.94, 0), 0.69, amber, 0.035)
-	Geo.cylinder(hatch_egg, Vector3(0, 1.2, 0), 0.5, 0.03, 0.65, amber, 6)
-	Geo.ring(self, SOCKET + Vector3.UP * 0.08, 1.6, cyan)
-	Geo.cylinder(self, SOCKET + Vector3.UP * 0.25, 0.9, 0.7, 0.5, metal_mat, 6)
-	Geo.label(self, SOCKET + Vector3.UP * 3.0, "HEART SOCKET", Geo.CYAN)
+			_collider(Vector3(side * 8.8, 1.75, z), Vector3(1.5, 3.5, 1.65))
+	_collider(Vector3(0, 1, -23.1), Vector3(20.5, 2, 0.4))
+	_collider(Vector3(0, 1, 15.1), Vector3(20.5, 2, 0.4))
+	# Fixed simple proxies for the new solid furnishings, independent of quality.
+	for side in [-1.0, 1.0]:
+		var furnace_proxy = _collider(Vector3(side * 6.5, 1.4, 12.68), Vector3(2.2, 2.8, 1.96))
+		furnace_proxy.add_to_group("forge_prop_collision")
+	var anvil_proxy = _collider(Vector3(-6.05, 0.8, 11.1), Vector3(2.06, 1.6, 0.97))
+	anvil_proxy.add_to_group("forge_prop_collision")
+	gate = Geo.solid_box(self, Vector3(0, 1.4, 2), Vector3(6.6, 2.8, 0.45), Geo.material(Color(0.25, 0.8, 0.9, 0.20), 0.35))
+	Art.place(self, "incubator", HATCH)
+	Art.place(self, "core_socket", SOCKET)
+	hatch_egg = Art.place(self, "magma_egg", HATCH)
 	restored_core = _core(SOCKET + Vector3.UP * 1.7, Geo.CYAN)
 	recovered_core = _core(CORE + Vector3.UP * 1.3, Geo.AMBER)
 	_add_conduit(Vector3(-2.1, 0, 4.5), true)
 	_add_conduit(Vector3(4.5, 0, -11), false)
-	Geo.ring(self, Vector3(4.5, 0.045, -11), 5.0, Geo.material(Color(0.18, 0.62, 0.68, 0.45), 0.0, true), 0.025)
+	Geo.ring(self, Vector3(4.5, 0.095, -11), 5.0, Geo.material(Color(0.18, 0.62, 0.68, 0.45), 0.0, true), 0.025)
 
 func _core(at: Vector3, color: Color) -> Node3D:
 	var node = Node3D.new()
@@ -180,16 +169,7 @@ func _core(at: Vector3, color: Color) -> Node3D:
 	return node
 
 func _add_conduit(at: Vector3, opens_gate: bool) -> void:
-	var node = Node3D.new()
-	node.position = at
-	add_child(node)
-	var metal = Geo.material(Geo.METAL)
-	var glow = Geo.material(Geo.CYAN, 1.4)
-	Geo.cylinder(node, Vector3(0, 0.22, 0), 0.8, 0.66, 0.44, metal, 6)
-	Geo.cylinder(node, Vector3(0, 0.95, 0), 0.28, 0.28, 1.25, glow, 6)
-	for side in [-1, 1]:
-		Geo.box(node, Vector3(side * 0.52, 0.9, 0), Vector3(0.16, 1.4, 0.25), metal)
-	Geo.ring(node, Vector3(0, 1.7, 0), 0.65, glow)
+	var node = Art.place(self, "relay_conduit", at)
 	var label = Geo.label(node, Vector3(0, 2.3, 0), "", Geo.CYAN)
 	conduits.append({"node": node, "label": label, "sim": Conduit.new(), "gate": opens_gate})
 
@@ -357,7 +337,11 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 				break
 			visual_reach = step * 0.5
 		if visual_reach > 0.5:
-			effects.attack(id, origin, direction, maxf(0.1, visual_reach - 0.6))
+			dragon.rig.animate(0.0, 0.0, reduced_motion, dragon.state)
+			var muzzle = dragon.rig.muzzle_position()
+			var offset = maxf(0.0, (muzzle - origin).dot(direction))
+			if visual_reach > offset:
+				effects.attack(id, origin, direction, visual_reach - offset, muzzle)
 	else:
 		effects.attack(id, origin, direction, rule.range)
 

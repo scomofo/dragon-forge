@@ -1,0 +1,363 @@
+{
+  "version": 1,
+  "source": "tools/build_art.py",
+  "source_sha256": "7d443d32bad58fc40e4d3031e730b4af12dee9bda030c413459bbf0e49ef98b9",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "-Z",
+  "atlas_size": [
+    1024,
+    1024
+  ],
+  "textures": [
+    "base color",
+    "occlusion/roughness/metallic",
+    "OpenGL normal",
+    "emission"
+  ],
+  "assets": [
+    {
+      "file": "magma_guardian.glb",
+      "triangles": 13340,
+      "vertices": 8446,
+      "surfaces": 1,
+      "bones": 24,
+      "clips": [
+        "idle",
+        "walk",
+        "claw",
+        "breath",
+        "wall",
+        "burst",
+        "guard",
+        "hurt",
+        "defeat"
+      ],
+      "bounds": [
+        [
+          -1.157737135887146,
+          0.0008979120757430792,
+          -1.3897705078125
+        ],
+        [
+          1.157737135887146,
+          2.9728124141693115,
+          2.6526992321014404
+        ]
+      ]
+    },
+    {
+      "file": "firewall_sentinel.glb",
+      "triangles": 2064,
+      "vertices": 1639,
+      "surfaces": 1,
+      "bones": 8,
+      "clips": [
+        "idle",
+        "walk",
+        "tell",
+        "open",
+        "hurt"
+      ],
+      "bounds": [
+        [
+          -1.3899999856948853,
+          0.019999999552965164,
+          -0.6399999856948853
+        ],
+        [
+          1.190000057220459,
+          2.5811879634857178,
+          0.46000000834465027
+        ]
+      ]
+    },
+    {
+      "file": "packet_warden.glb",
+      "triangles": 2344,
+      "vertices": 1903,
+      "surfaces": 1,
+      "bones": 8,
+      "clips": [
+        "idle",
+        "walk",
+        "tell",
+        "open",
+        "hurt"
+      ],
+      "bounds": [
+        [
+          -1.3899999856948853,
+          0.019999999552965164,
+          -0.6399999856948853
+        ],
+        [
+          1.190000057220459,
+          2.9913973808288574,
+          0.574999988079071
+        ]
+      ]
+    },
+    {
+      "file": "deck_panel.glb",
+      "triangles": 1088,
+      "vertices": 1042,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -1.9800000190734863,
+          -0.10999999940395355,
+          -1.9800000190734863
+        ],
+        [
+          1.9800000190734863,
+          0.08799999952316284,
+          1.9800000190734863
+        ]
+      ]
+    },
+    {
+      "file": "bulkhead.glb",
+      "triangles": 1184,
+      "vertices": 938,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -0.8050000071525574,
+          0.0,
+          -0.8299999833106995
+        ],
+        [
+          0.8050000071525574,
+          3.299999952316284,
+          0.8299999833106995
+        ]
+      ]
+    },
+    {
+      "file": "relay_conduit.glb",
+      "triangles": 1960,
+      "vertices": 1387,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -0.7900000214576721,
+          0.0,
+          -0.7900000214576721
+        ],
+        [
+          0.7900000214576721,
+          1.569282054901123,
+          0.7900000214576721
+        ]
+      ]
+    },
+    {
+      "file": "incubator.glb",
+      "triangles": 1980,
+      "vertices": 1448,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -1.5,
+          -0.014999999664723873,
+          -1.5
+        ],
+        [
+          1.5,
+          0.9282029867172241,
+          1.5
+        ]
+      ]
+    },
+    {
+      "file": "core_socket.glb",
+      "triangles": 2028,
+      "vertices": 1493,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -1.5,
+          -0.014999999664723873,
+          -1.5
+        ],
+        [
+          1.5,
+          0.9282029867172241,
+          1.5
+        ]
+      ]
+    },
+    {
+      "file": "magma_egg.glb",
+      "triangles": 1972,
+      "vertices": 1148,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -0.6214383840560913,
+          0.23000000417232513,
+          -0.6173297166824341
+        ],
+        [
+          0.6084215641021729,
+          1.4199999570846558,
+          0.6173297166824341
+        ]
+      ]
+    },
+    {
+      "file": "furnace.glb",
+      "triangles": 1508,
+      "vertices": 1156,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -1.1099964380264282,
+          0.0,
+          -1.0924999713897705
+        ],
+        [
+          1.1099964380264282,
+          2.799999952316284,
+          0.8650000095367432
+        ]
+      ]
+    },
+    {
+      "file": "anvil.glb",
+      "triangles": 396,
+      "vertices": 295,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -1.0806150436401367,
+          0.0,
+          -0.48500001430511475
+        ],
+        [
+          0.9835743308067322,
+          1.6199818849563599,
+          0.48500001430511475
+        ]
+      ]
+    },
+    {
+      "file": "breach_arch.glb",
+      "triangles": 604,
+      "vertices": 484,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -3.6179256439208984,
+          -0.009999999776482582,
+          -0.46000000834465027
+        ],
+        [
+          3.6179256439208984,
+          4.968691349029541,
+          0.39500001072883606
+        ]
+      ]
+    },
+    {
+      "file": "relay_pylon.glb",
+      "triangles": 1548,
+      "vertices": 1267,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -1.25,
+          -1.0,
+          -1.25
+        ],
+        [
+          1.2476942539215088,
+          6.5,
+          1.25
+        ]
+      ]
+    },
+    {
+      "file": "warden_dais.glb",
+      "triangles": 2164,
+      "vertices": 1310,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -4.25,
+          0.035999998450279236,
+          -4.25
+        ],
+        [
+          4.25,
+          0.10251665860414505,
+          4.25
+        ]
+      ]
+    },
+    {
+      "file": "cable_tray.glb",
+      "triangles": 480,
+      "vertices": 432,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -0.25,
+          -0.05000000074505806,
+          -2.0
+        ],
+        [
+          0.25,
+          0.1420000046491623,
+          2.0
+        ]
+      ]
+    }
+  ],
+  "sha256": {
+    "anvil.glb": "3d8a4fbb2bfa1eda19c84cf5fae78ec18373c7900bfc2b17589c08e240afe262",
+    "atlas_base.png": "8f4606c3e41747840e3e2e384c62de2ffff181f5e9b5880c5ec7f9fbb709eea3",
+    "atlas_emission.png": "6e2d70eaaf234835a2bac6990e652146e3e1b93579bf563489bd5a9c0c2ef0bc",
+    "atlas_normal.png": "e169d7723286302518ffeb71046dc6a1282f3e56a30ea78a232a880b4e3ca08b",
+    "atlas_orm.png": "07a274d3e3f732ae69589d3940053f8e4ced4df0e11b87a25eff9bdbbc9b99b5",
+    "breach_arch.glb": "f33ca5094d8265aafd802e73d9c07b2718d2a929500252d4a7603980c588190d",
+    "bulkhead.glb": "a51ea577ab1b293c80b09749dd52cdc891e6186f7946e887ddd0d5aa236d428f",
+    "cable_tray.glb": "509dc0bb0fb2edff0546ea1cd9737259c1d075fd333ff8b8c7ab7241302e1c91",
+    "core_socket.glb": "0e2b7faec9b08e71cbc6bec84907aee26b2dd87764aabaa81b1c5c9db93a78fa",
+    "deck_panel.glb": "76fb037ebc16b604dee1510e14f6e41f3a656f48adce5388d689c1d36ba6c9d3",
+    "firewall_sentinel.glb": "5fe141f0285220e0205cec6aca6e7b0a37655f4b7668f65583b53acf2f30b611",
+    "furnace.glb": "4789191632c1bf557c28dbaa70e668dff80b0b85678d547f47fa56c2eec70a3f",
+    "incubator.glb": "c8a2a6a688861a3206276a31efab904e3296d254c20340146287627d642d7296",
+    "magma_egg.glb": "c982f35efc0e70a6397cf342db7711d899db76cc598f7d4a67881612232fa3cc",
+    "magma_guardian.glb": "9b2ad62a674e4d4686f843a00a130f081ac212556a30c889e5a8058e94ede696",
+    "packet_warden.glb": "20d60f1604ba82655d8c2537473007f4d8d16c55fa4c42b2d40aedb811ef9fb1",
+    "relay_conduit.glb": "b0c55e289cc90b10dc2c2dc725bbfe92157dac9dcb9c759fa1f1ed41e294b014",
+    "relay_pylon.glb": "a2a54265154015f1eaf125c5ea67aa74359fe9d88874db23137960171dbf54a1",
+    "warden_dais.glb": "05b0a4dd5c8d13167519b009644b3b9c15ee4997a1039115c019b81950aed828"
+  }
+}
