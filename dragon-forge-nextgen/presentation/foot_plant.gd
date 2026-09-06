@@ -135,6 +135,11 @@ func apply(delta: float, state: Dictionary) -> void:
 				if not landing.is_empty():
 					leg.anchor = landing.position
 					leg.planted = true
+				else:
+					# The previous sole may be over a gap; never solve to Vector3.ZERO.
+					leg.blocked = true
+					leg.from = leg.last
+					target = ground.position
 			else:
 				# Stop/reversal/reach recovery: explicit small landing, not an endless lock.
 				if was_moving and not moving:

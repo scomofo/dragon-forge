@@ -25,6 +25,10 @@ var markers: Dictionary = {}
 var valid = false
 var error = ""
 var asset_id = ""
+var stance_anchors: Dictionary = {}
+var max_stance_drift = 0.0
+var stance_samples = 0
+var plant_states: Dictionary = {}
 
 func _ready() -> void:
 	geometry = ImmediateMesh.new()
@@ -107,6 +111,10 @@ func reset() -> void:
 	frames.clear()
 	latest.clear()
 	anchors.clear()
+	stance_anchors.clear()
+	max_stance_drift = 0.0
+	stance_samples = 0
+	plant_states.clear()
 	elapsed = 0.0
 	dropped = 0
 	max_drift = 0.0
@@ -132,10 +140,11 @@ func points() -> Dictionary:
 			result[foot].append(skeleton.global_transform * point)
 	return result
 
-func sample(delta: float, clip: String, clip_time: float, label: String = "") -> void:
+func sample(delta: float, clip: String, clip_time: float, label: String = "", authored_plants: Dictionary = {}) -> void:
 	if not valid or not is_inside_tree():
 		return
 	elapsed += maxf(0.0, delta)
+	plant_states = authored_plants.duplicate(true)
 	var world_points = points()
 	for foot in world_points:
 		var center = Vector3.ZERO
@@ -156,9 +165,20 @@ func sample(delta: float, clip: String, clip_time: float, label: String = "") ->
 		max_drift = maxf(max_drift, drift)
 		if is_finite(distance):
 			min_clearance = minf(min_clearance, distance)
-		latest[foot] = {"position": center, "surface_y": hit.position.y if not hit.is_empty() else INF, "clearance": distance, "contact": contact, "drift": drift}
+		var plant: Dictionary = authored_plants.get(foot, {})
+		var stance_drift = 0.0
+		if plant.get("planted", false):
+			var key = str(plant.plant_id)
+			if not stance_anchors.has(key):
+				stance_anchors[key] = center
+				if stance_anchors.size() > 256:
+					stance_anchors.erase(stance_anchors.keys()[0])
+			stance_drift = Vector2(center.x-stance_anchors[key].x,center.z-stance_anchors[key].z).length()
+			max_stance_drift = maxf(max_stance_drift, stance_drift)
+			stance_samples += 1
+		latest[foot] = {"position": center, "surface_y": hit.position.y if not hit.is_empty() else INF, "clearance": distance, "contact": contact, "drift": drift, "authored": not plant.is_empty(), "planted": plant.get("planted", false), "stance_drift": stance_drift}
 		if frames.size() < MAX_SAMPLES:
-			frames.append({"t": elapsed, "foot": foot, "clip": clip, "clip_time": clip_time, "context": label, "world": [center.x, low, center.z], "surface_y": hit.position.y if not hit.is_empty() else null, "clearance_m": distance if is_finite(distance) else null, "near_surface": contact, "drift_m": drift})
+			frames.append({"t": elapsed, "foot": foot, "clip": clip, "clip_time": clip_time, "context": label, "world": [center.x, low, center.z], "surface_y": hit.position.y if not hit.is_empty() else null, "clearance_m": distance if is_finite(distance) else null, "near_surface": contact, "drift_m": drift, "authored_plant": plant.get("planted", false), "plant_id": plant.get("plant_id", -1), "stance_drift_m": stance_drift})
 		else:
 			dropped += 1
 	_draw()
@@ -173,7 +193,10 @@ func _draw() -> void:
 	for foot in latest:
 		var reading = latest[foot]
 		var p: Vector3 = reading.position
-		var tint = Color("ffa46a") if reading.drift > DRIFT_LIMIT or reading.clearance < SINK_LIMIT else Color("75ddca")
+		var displayed_drift = reading.stance_drift if reading.get("authored", false) else reading.drift
+		var tint = Color("ffa46a") if displayed_drift > DRIFT_LIMIT or reading.clearance < SINK_LIMIT else Color("75ddca")
+		if reading.get("authored", false) and not reading.planted and reading.clearance >= SINK_LIMIT:
+			tint = Color("88abda")
 		var marker_y = maxf(p.y, reading.surface_y) if is_finite(reading.surface_y) else p.y
 		markers[foot].global_position = Vector3(p.x, marker_y + 0.025, p.z)
 		markers[foot].material_override.albedo_color = tint
@@ -193,11 +216,16 @@ func readout() -> String:
 		if latest.has(foot):
 			var r = latest[foot]
 			var height = "%+.1f cm" % (r.clearance * 100) if is_finite(r.clearance) else "no surface"
-			words += "\n%s: %s | drift %.1f cm" % [foot, height, r.drift * 100]
+			var d = r.stance_drift if r.get("authored", false) else r.drift
+			words += "\n%s: %s | drift %.1f cm" % [foot, height, d * 100]
+	if not plant_states.is_empty():
+		var left = "LOCK" if plant_states.get("L", {}).get("planted", false) else "SWING"
+		var right = "LOCK" if plant_states.get("R", {}).get("planted", false) else "SWING"
+		return words + "\nAuthored: L %s / R %s\nStance drift max %.2f cm" % [left, right, max_stance_drift*100]
 	return words + "\nNear-surface drift, NOT an IK lock"
 
 func report(context: Dictionary) -> Dictionary:
-	return {"schema": 1, "context": context, "engine": Engine.get_version_info().string, "renderer": RenderingServer.get_current_rendering_method(), "asset": asset_id, "asset_sha256": FileAccess.get_sha256("res://art/generated/" + asset_id + ".glb"), "method": "CPU skin of up to eight lowest-rest sole vertices per foot; vertical ray at centroid against review-only surface mesh. Proximity is not an authored plant window. In-place studio walk cannot certify locomotion planting.", "thresholds_m": {"proximity": PROXIMITY, "max_penetration_for_drift": 0.25, "review_drift": DRIFT_LIMIT, "review_penetration": SINK_LIMIT}, "max_drift_m": max_drift, "min_clearance_m": min_clearance if is_finite(min_clearance) else null, "samples_dropped": dropped, "samples": frames}
+	return {"schema": 1, "context": context, "engine": Engine.get_version_info().string, "renderer": RenderingServer.get_current_rendering_method(), "asset": asset_id, "asset_sha256": FileAccess.get_sha256("res://art/generated/" + asset_id + ".glb"), "method": "CPU skin of up to eight lowest-rest sole vertices per foot; vertical ray at centroid against review-only surface mesh. Proximity is not an authored plant window. In-place studio walk cannot certify locomotion planting.", "thresholds_m": {"proximity": PROXIMITY, "max_penetration_for_drift": 0.25, "review_drift": DRIFT_LIMIT, "review_penetration": SINK_LIMIT}, "max_drift_m": max_drift, "max_authored_stance_drift_m": max_stance_drift, "authored_stance_samples": stance_samples, "min_clearance_m": min_clearance if is_finite(min_clearance) else null, "samples_dropped": dropped, "samples": frames}
 
 static func surface(parent: Node3D, source: Mesh, transform: Transform3D) -> StaticBody3D:
 	var body = StaticBody3D.new()

@@ -1,3 +1,7 @@
+# Updated Magma polish validation
+
+The gameplay arena now reports authored LOCK/SWING states and independent skinned-sole stance drift. `polish_tests.gd` tests the real correction; `../art/POLISH.md` describes limits and paired baseline methodology. The inspector continues to show the exported, baked animation without runtime IK. The original proximity metric below is retained as a separate diagnostic, not the new contact contract.
+
 # Dragon Forge — two real-asset validation scenes
 
 These are executable Godot scenes, not generated concept pictures. They load the

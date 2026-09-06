@@ -1,3 +1,7 @@
+# Latest pass: Magma surfaces and grounded motion
+
+The playable build includes repainted 2048² material maps, corrected shoulder/hip weights and jaw/attack poses, baked stationary-foot corrections and runtime world-space foot locking. See `art/POLISH.md` for exact scope, rebuilding and remaining acceptance. Run `validation/polish_tests.gd` for paired, independently sampled grounding metrics. Existing valid saves and combat timings are unchanged.
+
 # Dragon Forge - next-generation playable prototype
 
 A small, native **3D mechanical slice**, inspired by the existing Dragon Forge browser cartridge. One imported skinned Magma guardian, a modular Forge / Outer Grid environment, four abilities, a shield-cycle enemy, reactive heat conduits, and a persistent return reward with three build choices and a replayable field test. The first textured/skinned asset set is integrated; this is not an accepted final-art build or a finished 15-25 minute vertical slice.

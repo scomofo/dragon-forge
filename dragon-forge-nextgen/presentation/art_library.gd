@@ -25,6 +25,9 @@ static func place(parent: Node3D, id: String, at: Vector3 = Vector3.ZERO) -> Nod
 	node.position = at
 	node.set_meta("art_asset", id)
 	parent.add_child(node)
+	if id == "warden_dais":
+		var mesh: MeshInstance3D = node.find_children("*", "MeshInstance3D", true, false)[0]
+		_ground_surface(node, mesh.mesh, [mesh.transform])
 	return node
 
 static func source_mesh(id: String) -> Mesh:
@@ -48,7 +51,23 @@ static func batch(parent: Node3D, id: String, transforms: Array) -> MultiMeshIns
 	node.set_meta("art_transforms", transforms.duplicate())
 	node.set_meta("art_asset", id)
 	parent.add_child(node)
+	if id == "deck_panel":
+		_ground_surface(node, node.multimesh.mesh, transforms)
 	return node
+
+## Query-only visible surfaces for foot grounding; never included in combat masks.
+static func _ground_surface(parent: Node3D, mesh: Mesh, transforms: Array) -> void:
+	var body = StaticBody3D.new()
+	body.name = "FootSupportSurface"
+	body.collision_layer = 64
+	body.collision_mask = 0
+	var shape = mesh.create_trimesh_shape()
+	for transform in transforms:
+		var collider = CollisionShape3D.new()
+		collider.shape = shape
+		collider.transform = transform
+		body.add_child(collider)
+	parent.add_child(body)
 
 static func sample(player: AnimationPlayer, clip: String, time: float) -> void:
 	assert(player.has_animation(clip), "Missing authored animation: " + clip)

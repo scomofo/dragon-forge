@@ -1,5 +1,8 @@
 extends Node3D
 ## Imported UV-mapped skinned asset. Animation is sampled, never authoritative for damage.
+const FootPlant = preload("res://presentation/foot_plant.gd")
+var feet = FootPlant.new()
+var foot_lock_enabled = true
 const Art = preload("res://presentation/art_library.gd")
 var model: Node3D
 var skeleton: Skeleton3D
@@ -20,12 +23,14 @@ func _ready() -> void:
 	var mesh: MeshInstance3D = model.find_children("*", "MeshInstance3D", true, false)[0]
 	lava = mesh.get_active_material(0).duplicate()
 	mesh.material_override = lava
+	feet.configure(self)
 	reset_pose()
 
 func hurt(guarded: bool) -> void:
 	hurt_time = 0.06 if guarded else 0.24
 
 func reset_pose() -> void:
+	feet.reset()
 	hurt_time = 0.0
 	death_time = 0.0
 	gait = 0.0
@@ -62,6 +67,7 @@ func animate(delta: float, speed: float, reduced: bool, state: Dictionary) -> vo
 	elif speed > 0.15:
 		sampled_clip = "walk"
 		sampled_time = fposmod(gait, 0.8)
+	skeleton.reset_bone_poses()
 	Art.sample(player, sampled_clip, sampled_time)
 	if reduced and sampled_clip not in ["walk", "defeat", "guard"]:
 		# Keep the jaw and attacking limbs readable; quiet only secondary torso/tail motion.
@@ -69,6 +75,10 @@ func animate(delta: float, speed: float, reduced: bool, state: Dictionary) -> vo
 			var index = skeleton.find_bone(bone)
 			var rest = skeleton.get_bone_rest(index).basis.get_rotation_quaternion()
 			skeleton.set_bone_pose_rotation(index, rest.slerp(skeleton.get_bone_pose_rotation(index), 0.65))
+	feet.enabled = foot_lock_enabled
+	feet.apply(dt, state)
+	if feet.initialized and feet.moving:
+		gait = feet.phase * 0.8
 	lava.emission_energy_multiplier = 1.1 + clampf(state.heat / 100.0, 0.0, 1.0) * 0.8
 
 ## The mouth socket follows the actual skinned Head pose, including breath anticipation.
