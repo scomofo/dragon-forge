@@ -25,6 +25,16 @@ Windows PowerShell:
 
 `npm run dev` still launches the original browser game, **not** this 3D prototype. No standalone application export is included yet.
 
+## Presence and combat pass
+
+This version adds articulated head/jaw/shoulder/tail poses, distinct claw/breath/stomp/burst motion, and actual wind-up → contact → recovery timing. Hits happen once at contact; a dodge cancels the pending technique without refunding heat or cooldown. A short **160 ms keyboard/controller ability buffer** accepts a command near the end of recovery or cooldown. It expires rather than firing a surprise attack after a stall, pause or retry. Aim commits when the technique starts; movement remains available at a reduced speed.
+
+Cinder Claw now sweeps an arc, Magma Breath projects a clipped fire jet, Flame Wall leaves a marked persistent field, and Core Burst uses a radial pulse. Enemy tells retain a fixed outer boundary and show a numerical countdown. The objective panel also shows the remaining impact/counter window. No rule depends on particles being enabled.
+
+Outer Grid gains a suspended relay-station backdrop and an octagonal Warden platform; the Forge gains copper machinery and restoration-linked floor circuits. Repeated panels and light strips use shared instancing batches. Optional ornament drops out on Low/Medium. These are **procedural art and presentation improvements**, not final models or a hardware performance claim.
+
+Graphics and reduced-motion preferences now persist in their own `nextgen-preferences.json` file. Missing preferences use Medium and normal motion. Unreadable or future-version preferences are not overwritten; a warning indicates session-only settings. Progress saves keep their existing schema and location.
+
 ## Controls
 
 | Action | Keyboard / mouse | Standard mapped gamepad |
@@ -66,7 +76,7 @@ Heat is an ability budget, not damage. It cools over time; high heat can prevent
 - FPS / draw-call counters, actual simulation pause, focus-loss pause, keyboard/gamepad mappings and clickable abilities.
 - Separate milestone saves with validation, checked temporary writes and a previous-write backup. Unreadable or future-version saves are preserved and not overwritten; the HUD shows a session-only save warning. No automatic backup restoration is claimed.
 
-Quality and reduced-motion settings currently apply **for the current session**. Mid-fight health, heat and exact positions do not persist: resume returns to the Forge with completed milestones retained.
+Quality and reduced-motion settings persist separately from milestones. Mid-fight health, heat and exact positions do not persist: resume returns to the Forge with completed milestones retained.
 
 ## Architecture and boundaries
 
@@ -96,8 +106,15 @@ godot --headless --path . --script res://tests/run.gd -- --test-mode
 godot --path . --rendering-method gl_compatibility --script res://tests/visual_smoke.gd -- --test-mode
 ```
 
-`.github/workflows/nextgen.yml` runs the native checks and software-OpenGL smoke capture on PRs, uploading logs and four screenshots as `nextgen-test-evidence`. It fails on Godot parse/script errors even where the process exit status alone could be misleading. `validate.py` is **only a packaging check**, not an engine test.
+`.github/workflows/nextgen.yml` runs the native checks and software-OpenGL smoke capture on PRs, uploading logs and seven screenshots as `nextgen-test-evidence`. It fails on Godot parse/script errors even where the process exit status alone could be misleading. `validate.py` is **only a packaging check**, not an engine test.
 
 Native tests cover resource loading, ability rules, heat, guard/dodge, target locking, reward idempotency, save roundtrips/corruption protection, actual hatch/conduit/gate/encounter wiring, persistent field damage, pause, graphics-state independence, death/retry and core installation. The scripted completion uses controlled damage to traverse milestones; it does **not** establish that the combat is balanced or enjoyable.
 
 Software-renderer captures do not establish Forward+ performance, finished visual quality, or Mac/Windows compatibility. Before treating the slice as accepted, play it on the target Mac/PC: verify aim and movement, controller feel, normal/reduced-motion readability, UI fit at 1280x720 and 1920x1080, real save/resume and failure behavior, and Low versus High frame times. No target-hardware FPS claim has been measured yet.
+
+
+### Added acceptance checks
+
+The native suite now covers one-and-only-one attack contact (including long frames), recovery lockouts, committed aim, dodge/death cancellation, bounded input buffering, pause/resume grace, presentation-only pose sampling, preference roundtrips and corruption protection, optional detail toggles and transient-effect lifetime bounds. Automated captures include ability contact, reduced motion, menus, a three-quarter guardian inspection and the restored Forge. The close-up is an engine inspection view, not the normal gameplay camera.
+
+Still required on target hardware: physical keyboard/controller feel, actual Forward+ rendering, Low/High frame-time profiling, hands-on save/resume, ability balance and opening pacing. No 15–25 minute duration, production-art finish, audio integration, full rigging pipeline or standalone app export is claimed.

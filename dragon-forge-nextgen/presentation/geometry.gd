@@ -82,3 +82,19 @@ static func solid_box(parent: Node3D, at: Vector3, size: Vector3, mat: Material)
 	collision.shape = shape
 	body.add_child(collision)
 	return body
+
+## One GPU instancing batch per shared box mesh/material, instead of one node per panel.
+static func batch_boxes(parent: Node3D, points: Array, size: Vector3, mat: Material) -> MultiMeshInstance3D:
+	var node = MultiMeshInstance3D.new()
+	var instances = MultiMesh.new()
+	instances.transform_format = MultiMesh.TRANSFORM_3D
+	var resource = BoxMesh.new()
+	resource.size = size
+	instances.mesh = resource
+	instances.instance_count = points.size()
+	for i in range(points.size()):
+		instances.set_instance_transform(i, Transform3D(Basis.IDENTITY, points[i]))
+	node.multimesh = instances
+	node.material_override = mat
+	parent.add_child(node)
+	return node

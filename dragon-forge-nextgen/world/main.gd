@@ -10,6 +10,8 @@ const Inputs = preload("res://presentation/input_map.gd")
 const Effects = preload("res://presentation/effects.gd")
 const CameraRig = preload("res://presentation/camera_rig.gd")
 const Hud = preload("res://presentation/hud.gd")
+const Dressing = preload("res://world/set_dressing.gd")
+const Preferences = preload("res://sim/preferences.gd")
 const Quality = preload("res://presentation/quality.gd")
 const SPAWN = Vector3(0, 0.1, 10)
 const HATCH = Vector3(-2.5, 0, 10)
@@ -37,13 +39,21 @@ var quality_info: Dictionary = {}
 var reduced_motion = false
 var interwave_delay = 0.0
 var clock = 0.0
+var dressing
+var preferences = Preferences.new()
+var preferences_ready = false
 
 func _ready() -> void:
 	Inputs.setup()
 	if not test_mode:
 		progress = store.read_progress()
+		var settings = preferences.read_values()
+		quality_index = settings.quality
+		reduced_motion = settings.reduced_motion
 	_build_lighting()
 	_build_world()
+	dressing = Dressing.new()
+	add_child(dressing)
 	effects = Effects.new()
 	add_child(effects)
 	dragon = Dragon.new()
@@ -59,7 +69,8 @@ func _ready() -> void:
 	dragon.hint.connect(hud.toast)
 	dragon.damaged.connect(_on_player_damaged)
 	dragon.died.connect(func(): hud.toast("Dragon down. Press R, or open Menu and Retry. Completed milestones are safe."))
-	set_quality(quality_index)
+	set_reduced_motion(reduced_motion)
+	preferences_ready = true
 	_apply_progress()
 	hud.toast(store.message if store.message != "" else "Wake the Magma guardian: press E / B at the hatch ring.")
 
@@ -73,7 +84,8 @@ func _build_lighting() -> void:
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	environment.fog_enabled = true
 	environment.fog_light_color = Color("1a3447")
-	environment.fog_density = 0.007
+	environment.fog_density = 0.004
+	environment.fog_sky_affect = 0.18
 	var world_environment = WorldEnvironment.new()
 	world_environment.environment = environment
 	add_child(world_environment)
@@ -104,17 +116,23 @@ func _build_world() -> void:
 	var cyan = Geo.material(Geo.CYAN, 1.1)
 	var amber = Geo.material(Geo.AMBER, 1.4)
 	Geo.solid_box(self, Vector3(0, -0.3, -4), Vector3(20, 0.6, 38), floor_mat)
+	var floor_plates: Array = []
+	var cool_lights: Array = []
+	var warm_lights: Array = []
 	for x in range(-8, 9, 4):
 		for z in range(-20, 13, 4):
-			Geo.box(self, Vector3(x, 0.02, z), Vector3(3.88, 0.035, 3.88), plate_mat)
+			floor_plates.append(Vector3(x, 0.02, z))
+	Geo.batch_boxes(self, floor_plates, Vector3(3.88, 0.035, 3.88), plate_mat)
 	for side in [-1, 1]:
 		Geo.solid_box(self, Vector3(side * 10.1, 1.0, -4), Vector3(0.4, 2.0, 38.5), dark_mat)
 		Geo.solid_box(self, Vector3(side * 6.65, 1.4, 2), Vector3(6.7, 2.8, 0.55), metal_mat)
 		for z in [-19, -11, -3, 8]:
 			Geo.solid_box(self, Vector3(side * 8.8, 1.75, z), Vector3(1.5, 3.5, 1.65), dark_mat)
 			for y in [0.7, 1.4, 2.1, 2.8]:
-				Geo.box(self, Vector3(side * 7.99, y, z), Vector3(0.065, 0.065, 1.18), cyan if z < 2 else amber)
+				(cool_lights if z < 2 else warm_lights).append(Vector3(side * 7.99, y, z))
 		Geo.box(self, Vector3(side * 3.0, 0.05, -9), Vector3(0.045, 0.035, 21.5), cyan)
+	Geo.batch_boxes(self, cool_lights, Vector3(0.065, 0.065, 1.18), cyan)
+	Geo.batch_boxes(self, warm_lights, Vector3(0.065, 0.065, 1.18), amber)
 	Geo.solid_box(self, Vector3(0, 1, -23.1), Vector3(20.5, 2, 0.4), dark_mat)
 	Geo.solid_box(self, Vector3(0, 1, 15.1), Vector3(20.5, 2, 0.4), dark_mat)
 	gate = Geo.solid_box(self, Vector3(0, 1.4, 2), Vector3(6.6, 2.8, 0.45), Geo.material(Color(0.25, 0.8, 0.9, 0.42), 0.5))
@@ -174,6 +192,7 @@ func _apply_progress() -> void:
 	restored_core.visible = progress.upgraded
 	forge_light.light_color = Geo.CYAN if progress.upgraded else Geo.AMBER
 	forge_light.light_energy = 5.0 if progress.upgraded else 2.5
+	dressing.set_restored(progress.upgraded)
 
 func _commit(event: String, encounter: int = -1) -> bool:
 	if not Progress.advance(progress, event, encounter):
@@ -257,12 +276,16 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 					_overload(item)
 				else:
 					hud.toast("Conduit heating: land another Magma Breath to overload it.")
-		for step in range(1, 5):
-			var at = origin + direction * step * 1.25
-			if line_clear(origin, at):
-				effects.pulse(at, 0.35 + step * 0.18)
+		# Stop the visible jet at cover, matching the existing obstruction rule.
+		var visual_reach = 0.0
+		for step in range(1, 15):
+			if not line_clear(origin, origin + direction * step * 0.5):
+				break
+			visual_reach = step * 0.5
+		if visual_reach > 0.5:
+			effects.attack(id, origin, direction, maxf(0.1, visual_reach - 0.6))
 	else:
-		effects.pulse(origin if id == "burst" else origin + direction * 1.5, rule.range if id == "burst" else 0.9)
+		effects.attack(id, origin, direction, rule.range)
 
 func line_clear(origin: Vector3, target: Vector3) -> bool:
 	if origin.distance_squared_to(target) < 0.0001:
@@ -277,7 +300,7 @@ func _place_wall(origin: Vector3, direction: Vector3) -> void:
 	if not collision.is_empty():
 		at = collision.position - direction * 0.6
 	at.y = 0.0
-	var marker = effects.decal(at, Combat.ABILITIES.wall.radius, Geo.AMBER)
+	var marker = effects.flame_field(at, Combat.ABILITIES.wall.radius)
 	walls.append({"at": at, "ttl": 3.6, "tick": 0.0, "node": marker})
 
 func _tick_walls(delta: float) -> void:
@@ -353,12 +376,16 @@ func set_quality(index: int) -> void:
 	quality_index = clampi(index, 0, 3)
 	quality_info = Quality.apply(quality_index, get_viewport(), environment, sun, reduced_motion)
 	effects.particle_budget = quality_info.particles
+	dressing.set_quality(quality_index)
+	_persist_preferences()
 
 func set_reduced_motion(value: bool) -> void:
 	reduced_motion = value
 	dragon.reduced_motion = value
 	camera_rig.reduced_motion = value
-	effects.reduced_motion = value
+	effects.set_calm(value)
+	if value:
+		camera_rig.trauma = 0.0
 	if is_instance_valid(enemy):
 		enemy.reduced_motion = value
 	# Existing persistent fields also become calm; their lifetime/damage is unchanged.
@@ -380,3 +407,9 @@ func objective_text() -> String:
 	if not progress.upgraded:
 		return "Return SOUTH to the Forge. Install the core in the right-hand socket [E / B]."
 	return "FORGE RESTORED. Prototype complete. Menu > New expedition to replay."
+
+func _persist_preferences() -> void:
+	if test_mode or not preferences_ready:
+		return
+	if not preferences.write_values({"version": 1, "quality": quality_index, "reduced_motion": reduced_motion}):
+		hud.toast(preferences.message)

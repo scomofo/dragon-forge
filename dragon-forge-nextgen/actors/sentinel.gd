@@ -19,6 +19,9 @@ var tell_ring: MeshInstance3D
 var title: Label3D
 var hp_label: Label3D
 var clock = 0.0
+var arms: Array = []
+var hit_time = 0.0
+var tell_label: Label3D
 
 func _ready() -> void:
 	max_hp = 260.0 if boss else 100.0
@@ -43,7 +46,12 @@ func _ready() -> void:
 	Geo.box(visual, Vector3(0, 2.1, 0), Vector3(0.64, 0.45, 0.59), armor)
 	Geo.box(visual, Vector3(0, 2.12, -0.32), Vector3(0.45, 0.09, 0.08), trim)
 	for side in [-1.0, 1.0]:
-		Geo.box(visual, Vector3(side * 0.78, 1.37, 0), Vector3(0.39, 1.15, 0.50), armor)
+		var arm = Node3D.new()
+		arm.position = Vector3(side * 0.78, 1.75, 0)
+		visual.add_child(arm)
+		Geo.box(arm, Vector3(0, -0.38, 0), Vector3(0.39, 1.15, 0.50), armor)
+		Geo.box(arm, Vector3(0, -0.91, -0.05), Vector3(0.51, 0.27, 0.61), trim)
+		arms.append(arm)
 		Geo.box(visual, Vector3(side * 0.36, 0.41, 0), Vector3(0.40, 0.80, 0.50), armor)
 		Geo.box(visual, Vector3(side * 0.36, 0.16, -0.18), Vector3(0.49, 0.29, 0.80), armor)
 	shield = Geo.box(visual, Vector3(0, 1.25, -0.73), Vector3(1.58, 1.63, 0.08), Geo.material(Color(0.35, 0.8, 0.96, 0.40), 0.6, true))
@@ -58,7 +66,8 @@ func _ready() -> void:
 	get_parent().call_deferred("add_child", tell)
 	tell_ring = Geo.ring(tell, Vector3(0, 0.09, 0), radius, Geo.material(Color("ffcf68"), 1.0, true), 0.09)
 	Geo.cylinder(tell, Vector3(0, 0.045, 0), radius, radius, 0.025, Geo.material(Color(1.0, 0.25, 0.16, 0.2), 0.0, true), 40)
-	Geo.label(tell, Vector3(0, 0.2, 0), "IMPACT", Color("ffdf9b"))
+	Geo.ring(tell, Vector3(0, 0.09, 0), radius, Geo.material(Color("ffe0a0"), 0.5, true), 0.04)
+	tell_label = Geo.label(tell, Vector3(0, 0.2, 0), "IMPACT", Color("ffdf9b"))
 	tell.visible = false
 
 func _exit_tree() -> void:
@@ -98,22 +107,29 @@ func _physics_process(delta: float) -> void:
 	visual.position.y = 0.0 if reduced_motion else sin(clock * 3.0) * 0.045
 	tell.visible = brain.mode == "tell"
 	# A shrinking ring indicates time, without flashing or shaking the screen.
-	var fraction = clampf(brain.timer / brain.tell_duration(), 0.0, 1.0)
+	var fraction = clampf(brain.timer / brain.locked_duration, 0.0, 1.0)
+	tell_label.text = "IMPACT %.1fs" % brain.timer
 	tell_ring.scale = Vector3.ONE * (1.0 if reduced_motion else maxf(0.1, fraction))
 	shield.visible = not brain.vulnerable()
+	hit_time = maxf(0.0, hit_time - delta)
+	visual.rotation.x = hit_time * (0.10 if reduced_motion else 0.60)
+	for arm in arms:
+		var pose = -1.6 * (1.0 - fraction) if brain.mode == "tell" else (0.3 if brain.vulnerable() else 0.0)
+		arm.rotation.x = lerpf(arm.rotation.x, pose, minf(delta * 12.0, 1.0))
 	var name_text = "PACKET WARDEN" if boss else "FIREWALL SENTINEL"
 	var status = "OPEN - COUNTER!" if brain.vulnerable() else ("DODGE / GUARD" if brain.mode == "tell" else "SHIELD CLOSED")
 	title.text = name_text + (" // OVERCLOCK" if brain.enraged else "") + "\n" + status
 	hp_label.text = "%d / %d" % [int(hp), int(max_hp)]
 
 func take_hit(amount: float, bypass_shield: bool = false) -> float:
-	if hp <= 0.0 or amount <= 0.0:
+	if hp <= 0.0 or amount <= 0.0 or is_queued_for_deletion():
 		return 0.0
 	if not bypass_shield and not brain.vulnerable():
 		hit_feedback.emit(global_position, "SHIELDED", true)
 		return 0.0
 	var applied = minf(hp, amount)
 	hp -= applied
+	hit_time = 0.18
 	hit_feedback.emit(global_position, str(int(applied)), false)
 	if hp <= 0.0:
 		brain.kill()
