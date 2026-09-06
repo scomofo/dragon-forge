@@ -1,6 +1,6 @@
 # Dragon Forge - next-generation playable prototype
 
-A small, native **3D mechanical slice**, inspired by the existing Dragon Forge browser cartridge. One animated procedural Magma guardian, an authored Forge / Outer Grid arena, four abilities, a shield-cycle enemy, reactive heat conduits, and a persistent return reward. This is not the finished 15-25 minute vertical slice or a production-art build.
+A small, native **3D mechanical slice**, inspired by the existing Dragon Forge browser cartridge. One animated procedural Magma guardian, an authored Forge / Outer Grid arena, four abilities, a shield-cycle enemy, reactive heat conduits, and a persistent return reward with three build choices and a replayable field test. This is not the finished 15-25 minute vertical slice or a production-art build.
 
 ## Play
 
@@ -29,11 +29,11 @@ Windows PowerShell:
 
 This version adds articulated head/jaw/shoulder/tail poses, distinct claw/breath/stomp/burst motion, and actual wind-up → contact → recovery timing. Hits happen once at contact; a dodge cancels the pending technique without refunding heat or cooldown. A short **160 ms keyboard/controller ability buffer** accepts a command near the end of recovery or cooldown. It expires rather than firing a surprise attack after a stall, pause or retry. Aim commits when the technique starts; movement remains available at a reduced speed.
 
-Cinder Claw now sweeps an arc, Magma Breath projects a clipped fire jet, Flame Wall leaves a marked persistent field, and Core Burst uses a radial pulse. Enemy tells retain a fixed outer boundary and show a numerical countdown. The objective panel also shows the remaining impact/counter window. No rule depends on particles being enabled.
+Cinder Claw now sweeps an arc, Magma Breath projects a clipped fire jet, Flame Wall leaves a marked persistent field, and Core Burst uses a radial pulse. Enemy tells retain a fixed outer boundary and show a numerical countdown. The dedicated enemy HUD shows the remaining impact/counter window. No rule depends on particles being enabled.
 
 Outer Grid gains a suspended relay-station backdrop and an octagonal Warden platform; the Forge gains copper machinery and restoration-linked floor circuits. Repeated panels and light strips use shared instancing batches. Optional ornament drops out on Low/Medium. These are **procedural art and presentation improvements**, not final models or a hardware performance claim.
 
-Graphics and reduced-motion preferences now persist in their own `nextgen-preferences.json` file. Missing preferences use Medium and normal motion. Unreadable or future-version preferences are not overwritten; a warning indicates session-only settings. Progress saves keep their existing schema and location.
+Graphics and reduced-motion preferences now persist in their own `nextgen-preferences.json` file. Missing preferences use Medium and normal motion. Unreadable or future-version preferences are not overwritten; a warning indicates session-only settings. The clarity-and-core pass migrates prototype progress to schema v2 at the same location, as described below.
 
 ## Controls
 
@@ -49,7 +49,8 @@ Graphics and reduced-motion preferences now persist in their own `nextgen-prefer
 | Guard | Hold Shift | Hold left trigger |
 | Interact / rest | E | B |
 | Pause / graphics | Esc / F1 | Start |
-| Retry after defeat | R, or Menu > Retry | Menu > Retry |
+| Retry after defeat | R, or checkpoint-sheet button | Focused checkpoint-sheet button |
+| Diagnostics | F3, or Pause > Diagnostics | Pause > Diagnostics |
 
 Gamepad names use Xbox-style logical labels; other controllers map through Godot. Physical-controller acceptance is still required. Touch and browser controls are not implemented.
 
@@ -57,11 +58,29 @@ Gamepad names use Xbox-style logical labels; other controllers map through Godot
 
 1. Press E / B at the amber hatch ring to awaken Magma.
 2. Walk north to the cyan conduit. Aim at it and land **two Magma Breaths** to power the gate. Wait for the breath cooldown between casts.
-3. Cross into Outer Grid. Clear two Firewall Sentinels and the larger Packet Warden. The Warden speeds up below half health.
+3. Cross into Outer Grid. Follow the floor marker to two Firewall Sentinels and the larger Packet Warden. Each encounter waits for you to approach its relay; there is no automatic next-wave ambush while you are still at the previous checkpoint. The Warden speeds up below half health.
 4. Shield closed means attacks are blocked. Bait the **fixed-position impact marker**, dodge or guard, then counter during the OPEN window. A successful guard extends that window. Two breath hits on the arena conduit cause an overload that damages and exposes an enemy within its marked radius.
-5. Collect the dropped core at the north end, return south, and install it in the right-hand Forge socket. The Forge's core and lighting change. Menu > New expedition offers a confirmed reset of **prototype-only** progress.
+5. Collect the dropped core at the north end and follow the breach waypoint home. At the right-hand socket, press E / B and choose **Coolant Heart**, **Bastion Shell**, or **Cinder Catalyst**. The game pauses while you choose. Your actor's stats, the Forge core and its lighting change.
+6. Use the socket again to **field-test** the installed module against a Warden. Winning saves a test badge, not another core. Return and swap modules freely. You do not need to reset your expedition to replay combat.
+7. Defeat offers **Retry checkpoint** or **Return to Forge**. Retry restores full health just before the next uncleared relay, preserving all completed milestones and your module. Menu > Reset prototype progress is a separate confirmed destructive action.
 
 Heat is an ability budget, not damage. It cools over time; high heat can prevent casting or dodging. Claw is heat-free. Flame Wall creates a short-lived ground field rather than physical cover. Enemy attacks and combat rules do not depend on particle visibility.
+
+## Forge module choices
+
+| Module | Actual effect | Trade-off / role |
+|---|---|---|
+| Coolant Heart | Cooling 24/sec instead of 16/sec; guarding halves either rate. | Sustained casting and more available dodge heat. |
+| Bastion Shell | 156 max HP instead of 120; guard takes 20% of incoming damage instead of 25%. | More forgiving defense. |
+| Cinder Catalyst | Technique damage ×1.25; technique heat ×1.20. | Stronger counters with less thermal headroom. Claw remains heat-free. |
+
+These are provisional values, not measured balance conclusions. Module effects apply to direct attacks and persistent flame-field damage. World conduit overload damage stays unchanged. Core choices cannot be changed away from the Forge or during a live trial. Field tests repeat the existing Warden; they are not a new zone or enemy species.
+
+## This pass: clarity and reward
+
+A compact objective card replaces the full-width instruction block. Contextual interaction prompts appear only when a valid action is nearby. A quiet destination marker routes through the physical breach. Enemy HP, shield state, impact timer and counter window now have a dedicated fixed HUD position; duplicate floating name/status blocks are hidden. Skill cards keep readable text while cooling and use the same short input buffer as keyboard/controller commands. Diagnostics are optional (F3), rather than occupying the main title panel.
+
+Progress schema **v2** migrates valid v1 milestones on load, without rewriting the old file until the next successful save. That first write retains the old bytes as the previous-write backup. Already restored v1 Forges get a free pending module choice at the socket. Unknown/future or unreadable saves are still preserved and block writes. Progress, chosen module and test badge persist; an unfinished trial resumes at the Forge and can be started again. This does not migrate or alter either original game's saves.
 
 ## What is actually implemented
 
@@ -74,7 +93,7 @@ Heat is an ability budget, not damage. It cools over time; high heat can prevent
 - Low / Medium / High / Ultra graphics controls. Render scale, MSAA, sun shadows, particle budgets, glow, ambient occlusion and volumetric fog vary where supported. Compatibility mode uses a reduced feature set, not fake GPU effects. Changing quality never switches renderer at runtime.
 - Reduced motion disables camera shake, particle bursts and several animated effects; mandatory impact boundaries and counter cues remain visible.
 - FPS / draw-call counters, actual simulation pause, focus-loss pause, keyboard/gamepad mappings and clickable abilities.
-- Separate milestone saves with validation, checked temporary writes and a previous-write backup. Unreadable or future-version saves are preserved and not overwritten; the HUD shows a session-only save warning. No automatic backup restoration is claimed.
+- Separate versioned milestone/module/trial saves with validation, checked temporary writes and a previous-write backup. Unreadable or future-version saves are preserved and not overwritten; the HUD shows a session-only save warning. No automatic backup restoration is claimed. New schema and migration behavior are described above.
 
 Quality and reduced-motion settings persist separately from milestones. Mid-fight health, heat and exact positions do not persist: resume returns to the Forge with completed milestones retained.
 
@@ -106,15 +125,17 @@ godot --headless --path . --script res://tests/run.gd -- --test-mode
 godot --path . --rendering-method gl_compatibility --script res://tests/visual_smoke.gd -- --test-mode
 ```
 
-`.github/workflows/nextgen.yml` runs the native checks and software-OpenGL smoke capture on PRs, uploading logs and seven screenshots as `nextgen-test-evidence`. It fails on Godot parse/script errors even where the process exit status alone could be misleading. `validate.py` is **only a packaging check**, not an engine test.
+`.github/workflows/nextgen.yml` runs the native checks and software-OpenGL smoke capture on PRs, uploading logs and twelve screenshots as `nextgen-test-evidence`. It fails on Godot parse/script errors even where the process exit status alone could be misleading. `validate.py` is **only a packaging check**, not an engine test.
 
 Native tests cover resource loading, ability rules, heat, guard/dodge, target locking, reward idempotency, save roundtrips/corruption protection, actual hatch/conduit/gate/encounter wiring, persistent field damage, pause, graphics-state independence, death/retry and core installation. The scripted completion uses controlled damage to traverse milestones; it does **not** establish that the combat is balanced or enjoyable.
+
+The current capture suite covers opening, relay charge, an enemy tell, burst and breath contact, reduced motion, settings, defeat, module choice, restored Forge and trial completion; the choice screen is also captured at 1920x1080. These are scripted engine states, not proof of balance or enjoyment.
 
 Software-renderer captures do not establish Forward+ performance, finished visual quality, or Mac/Windows compatibility. Before treating the slice as accepted, play it on the target Mac/PC: verify aim and movement, controller feel, normal/reduced-motion readability, UI fit at 1280x720 and 1920x1080, real save/resume and failure behavior, and Low versus High frame times. No target-hardware FPS claim has been measured yet.
 
 
 ### Added acceptance checks
 
-The native suite now covers one-and-only-one attack contact (including long frames), recovery lockouts, committed aim, dodge/death cancellation, bounded input buffering, pause/resume grace, presentation-only pose sampling, preference roundtrips and corruption protection, optional detail toggles and transient-effect lifetime bounds. Automated captures include ability contact, reduced motion, menus, a three-quarter guardian inspection and the restored Forge. The close-up is an engine inspection view, not the normal gameplay camera.
+The native suite now covers one-and-only-one attack contact (including long frames), recovery lockouts, committed aim, dodge/death cancellation, bounded input buffering, pause/resume grace, presentation-only pose sampling, preference roundtrips and corruption protection, optional detail toggles and transient-effect lifetime bounds. Automated captures include ability contact, reduced motion, menus, core choice, the restored Forge and field-test completion.
 
 Still required on target hardware: physical keyboard/controller feel, actual Forward+ rendering, Low/High frame-time profiling, hands-on save/resume, ability balance and opening pacing. No 15–25 minute duration, production-art finish, audio integration, full rigging pipeline or standalone app export is claimed.

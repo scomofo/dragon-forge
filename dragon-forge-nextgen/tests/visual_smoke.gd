@@ -22,6 +22,8 @@ func _run() -> void:
 	world.test_mode = true
 	root.add_child(world)
 	await create_timer(0.5).timeout
+	if world.hud.abilities[0].status.text != "AWAITING HATCH":
+		failures += 1
 	await _capture("forge")
 	world.interact()
 	world.dragon.global_position = Vector3(0, 0.1, 5.5)

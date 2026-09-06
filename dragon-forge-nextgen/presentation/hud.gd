@@ -187,8 +187,13 @@ func _process(delta: float) -> void:
 	heat.value = state.heat
 	health_text.text = "MAGMA                         %d / %d" % [int(state.hp), int(state.max_hp)]
 	heat_text.text = "CORE HEAT    %d / 100" % int(state.heat)
-	module_text.text = Modules.profile(world.progress.module).name.to_upper()
+	module_text.text = Modules.profile(world.progress.module).name.to_upper() + (" / TESTED" if world.progress.trial_cleared else "")
 	defensive_text.text = "GUARD ACTIVE" if state.guard else ("DODGE  %.1fs" % state.dodge_cd if state.dodge_cd > 0.0 else ("DODGE LOCKED  /  COOL CORE" if state.heat > 90.0 else "SPACE  Dodge ready     SHIFT  Guard"))
+	if not world.dragon.active:
+		health_text.text = "MAGMA  /  DORMANT"
+		heat_text.text = "AWAITING A SPARK"
+		module_text.text = "AWAKEN AT THE HATCHERY"
+		defensive_text.text = ""
 	_update_enemy()
 	stats.visible = debug_visible or world.store.message != "" or world.preferences.message != ""
 	stats.text = "%s  /  %d FPS  /  %d draws" % [world.quality_info.get("renderer", ""), int(Performance.get_monitor(Performance.TIME_FPS)), int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))]
@@ -203,6 +208,9 @@ func _process(delta: float) -> void:
 		var hot = state.heat + Combat.heat_cost(state, id) > 100.0
 		card.status.text = "COOLING  %.1fs" % cooldown if cooldown > 0.0 else ("TOO HOT" if hot else "READY")
 		card.status.modulate = GOLD if hot or cooldown > 0.0 else TEAL
+		if not world.dragon.active:
+			card.status.text = "AWAITING HATCH"
+			card.status.modulate = MUTED
 		if state.action == id:
 			card.status.text = Combat.action_phase(state)
 		card.charge.value = 1.0 - cooldown / float(Combat.ABILITIES[id].cooldown)
@@ -278,7 +286,7 @@ func _build_menu() -> void:
 	reduced_check.set_pressed_no_signal(world.reduced_motion)
 	reduced_check.toggled.connect(func(enabled): world.set_reduced_motion(enabled))
 	column.add_child(reduced_check)
-	_label(column, "Saved for next time. Renderer changes require relaunch.", 14, MUTED)
+	_label(column, "Quality and motion persist separately. Renderer changes require relaunch.", 14, MUTED)
 	_label(column, "1 / X  Claw     2 / Y  Breath     3 / LB  Wall     4 / RB  Burst", 15, PAPER)
 	_label(column, "Space / A  Dodge     Shift / LT  Guard     E / B  Interact", 15, PAPER)
 	resume_button = _button(column, "Resume")
@@ -352,7 +360,8 @@ func show_trial_result() -> void:
 	_open_overlay("result")
 	_label(overlay_column, "FIELD TEST COMPLETE", 32, TEAL)
 	_label(overlay_column, Modules.profile(world.progress.module).name + "  /  Warden defeated", 23, PAPER)
-	_label(overlay_column, "Your test badge is saved. Try a different build at the Forge.\nNo extra core was awarded; your original expedition remains complete.", 18, MUTED)
+	_label(overlay_column, "Try a different build at the Forge.\nNo extra core was awarded; your original expedition remains complete.", 18, MUTED)
+	_label(overlay_column, "FIELD-TEST BADGE EARNED" if world.store.message == "" else "SESSION ONLY  /  " + world.store.message, 14, MUTED)
 	var back = _button(overlay_column, "Return to the Forge")
 	back.pressed.connect(func(): world.return_to_forge())
 	back.grab_focus()
