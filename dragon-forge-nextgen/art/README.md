@@ -1,3 +1,7 @@
+# Surface / deformation / footwork update
+
+See `POLISH.md` for the implemented repaint, baked stress-pose corrections, and world-space foot-lock contract. The atlas is now 2048×2048; Magma has 13,388 triangles. Earlier asset-set descriptions below remain historical where they cite the original 1024 atlas or triangle count.
+
 # Dragon Forge — first imported character and environment art set
 
 This pass replaces runtime character primitives and most static scene decoration with **shipped glTF 2.0 meshes, real skin bindings, authored animation clips and a shared PBR texture atlas**. The generator is editable source, not a runtime dependency. Open `project.godot` normally; the exported files are included.

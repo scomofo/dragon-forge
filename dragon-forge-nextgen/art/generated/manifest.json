@@ -1,13 +1,15 @@
 {
-  "version": 1,
+  "version": 2,
   "source": "tools/build_art.py",
-  "source_sha256": "7d443d32bad58fc40e4d3031e730b4af12dee9bda030c413459bbf0e49ef98b9",
+  "pose_source_sha256": "1c766e8d48ec62889e299c519b4c7bf26d7575047e19da3d8e8e55fd07989491",
+  "paint_source_sha256": "3ce557765f0fde7110aac0690d100e757bd6eac2ac25d4ee554d2c96894f5718",
+  "source_sha256": "2c6ee8c14b01d6098b1324683c516f3683dae3e1602dbf1699af10307a4e4ab4",
   "units": "metres",
   "up": "+Y",
   "forward": "-Z",
   "atlas_size": [
-    1024,
-    1024
+    2048,
+    2048
   ],
   "textures": [
     "base color",
@@ -18,8 +20,8 @@
   "assets": [
     {
       "file": "magma_guardian.glb",
-      "triangles": 13340,
-      "vertices": 8446,
+      "triangles": 13388,
+      "vertices": 8498,
       "surfaces": 1,
       "bones": 24,
       "clips": [
@@ -36,7 +38,7 @@
       "bounds": [
         [
           -1.157737135887146,
-          0.0008979120757430792,
+          0.0031845916528254747,
           -1.3897705078125
         ],
         [
@@ -341,10 +343,10 @@
   ],
   "sha256": {
     "anvil.glb": "3d8a4fbb2bfa1eda19c84cf5fae78ec18373c7900bfc2b17589c08e240afe262",
-    "atlas_base.png": "8f4606c3e41747840e3e2e384c62de2ffff181f5e9b5880c5ec7f9fbb709eea3",
-    "atlas_emission.png": "6e2d70eaaf234835a2bac6990e652146e3e1b93579bf563489bd5a9c0c2ef0bc",
-    "atlas_normal.png": "e169d7723286302518ffeb71046dc6a1282f3e56a30ea78a232a880b4e3ca08b",
-    "atlas_orm.png": "07a274d3e3f732ae69589d3940053f8e4ced4df0e11b87a25eff9bdbbc9b99b5",
+    "atlas_base.png": "d17380ff59302e26996c805e4c1dce90e404205c9e2b62fc50fd9f52d8937b39",
+    "atlas_emission.png": "a91697fd648b048be66d86d756c3cbb9999bd8c7810dd1ed8231bb9e886ffa0e",
+    "atlas_normal.png": "faed698220aea8c5b8d6fb857c115d3b9109d05a47836a25bff05e136d949412",
+    "atlas_orm.png": "2ce3e4702c5f400e4ad8748a4e877b8fa8981d1ab975b51805e9840577bf72ce",
     "breach_arch.glb": "f33ca5094d8265aafd802e73d9c07b2718d2a929500252d4a7603980c588190d",
     "bulkhead.glb": "a51ea577ab1b293c80b09749dd52cdc891e6186f7946e887ddd0d5aa236d428f",
     "cable_tray.glb": "509dc0bb0fb2edff0546ea1cd9737259c1d075fd333ff8b8c7ab7241302e1c91",
@@ -354,7 +356,7 @@
     "furnace.glb": "4789191632c1bf557c28dbaa70e668dff80b0b85678d547f47fa56c2eec70a3f",
     "incubator.glb": "c8a2a6a688861a3206276a31efab904e3296d254c20340146287627d642d7296",
     "magma_egg.glb": "c982f35efc0e70a6397cf342db7711d899db76cc598f7d4a67881612232fa3cc",
-    "magma_guardian.glb": "9b2ad62a674e4d4686f843a00a130f081ac212556a30c889e5a8058e94ede696",
+    "magma_guardian.glb": "e98862a3bedd126ee40cdc614f784e1bc8974813cd9e3993dceb2b9833ae7c8d",
     "packet_warden.glb": "20d60f1604ba82655d8c2537473007f4d8d16c55fa4c42b2d40aedb811ef9fb1",
     "relay_conduit.glb": "b0c55e289cc90b10dc2c2dc725bbfe92157dac9dcb9c759fa1f1ed41e294b014",
     "relay_pylon.glb": "a2a54265154015f1eaf125c5ea67aa74359fe9d88874db23137960171dbf54a1",

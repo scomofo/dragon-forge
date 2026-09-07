@@ -1,0 +1,74 @@
+name: Nextgen Magma polish
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/**'
+      - '.github/workflows/nextgen-polish.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: magma-polish-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate-polish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      GODOT_VERSION: 4.6.3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: dragon-forge-nextgen
+      - name: Install isolated validation tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          curl --fail --location --retry 3 "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          mkdir -p "$HOME/.local/bin"
+          mv /tmp/godot/Godot_*_linux.x86_64 "$HOME/.local/bin/godot"
+          chmod +x "$HOME/.local/bin/godot"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          npm install --prefix /tmp/gltf-validation gltf-validator@2.0.0-dev.3.10
+      - name: Verify committed exports and all native regression suites
+        run: |
+          set -euo pipefail
+          cd dragon-forge-nextgen
+          mkdir -p artifacts
+          python3 tools/validate_art.py | tee artifacts/polish-asset-integrity.log
+          GLTF_VALIDATOR_MODULE=/tmp/gltf-validation/node_modules/gltf-validator node tools/validate_gltf.cjs | tee artifacts/polish-gltf.log
+          timeout 100 godot --headless --path . --editor --import 2>&1 | tee artifacts/polish-import.log
+          for script in tests/run.gd tests/art_test.gd validation/review_tests.gd validation/polish_tests.gd; do
+            log="artifacts/polish-$(basename "$script" .gd).log"
+            timeout 100 godot --headless --path . --script "res://$script" -- --test-mode 2>&1 | tee "$log"
+            grep 'checks, 0 failures' "$log"
+          done
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' artifacts/*.log; then exit 1; fi
+      - name: Capture both review scenes and real gameplay footwork
+        run: |
+          set -euo pipefail
+          for script in validation/capture_reviews.gd validation/capture_polish.gd; do
+            log="dragon-forge-nextgen/artifacts/polish-$(basename "$script" .gd).log"
+            timeout 240 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method gl_compatibility --audio-driver Dummy --script "res://$script" -- --test-mode 2>&1 | tee "$log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' "$log"; then exit 1; fi
+          done
+          grep 'NEXTGEN_REVIEW_CAPTURES: failures=0' dragon-forge-nextgen/artifacts/polish-capture_reviews.log
+          grep 'NEXTGEN_POLISH_MOTION: 36 frames, 0 failures' dragon-forge-nextgen/artifacts/polish-capture_polish.log
+      - name: Capture Low, High and calm mode in Forward+
+        run: |
+          set -euo pipefail
+          timeout 240 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method forward_plus --rendering-driver vulkan --audio-driver Dummy --script res://tests/art_forward.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/polish-forward.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/polish-forward.log; then exit 1; fi
+          grep 'NEXTGEN_FORWARD_ART: failures=0' dragon-forge-nextgen/artifacts/polish-forward.log
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/tested-revision.txt
+          git diff --exit-code
+          git archive --format=zip --output=dragon-forge-nextgen/artifacts/verified-source.zip HEAD dragon-forge-nextgen run-nextgen.sh run-nextgen.ps1 .github/workflows/nextgen-polish.yml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: magma-polish-evidence
+          path: dragon-forge-nextgen/artifacts/
+          retention-days: 14

@@ -78,7 +78,8 @@ func _build_review_controls() -> void:
 	UI.button(row, "Reset", reset_stage)
 	UI.button(row, "Export", export_review)
 	review_status = UI.text(box, "", 12)
-	review_notice = UI.text(box, "F6 reset • F7 overlay • F8 export\nF9 freeze next contact • F10 resume\nManual: WASD, 1-4, Space, Shift", 12)
+	review_status.tooltip_text = "Skinned-sole clearance above the visible deck; drift is measured during authored planted intervals."
+	review_notice = UI.text(box, "F6 reset • F7 overlay • F8 export\nF9 freeze next contact • F10 resume\nF11: compare foot correction on/off", 12)
 	review_notice.modulate = Color("abc0ca")
 
 func reset_stage() -> void:
@@ -153,8 +154,8 @@ func _physics_process(delta: float) -> void:
 
 func observe_frame(delta: float) -> void:
 	review_clock += delta
-	feet.sample(delta, dragon.rig.sampled_clip, dragon.rig.sampled_time, SCENARIOS[scenario])
-	review_status.text = feet.readout() + "\nContacts: %d | %s" % [contact_events.size(), "replay at 1x" if replaying else "manual / observation"]
+	feet.sample(delta, dragon.rig.sampled_clip, dragon.rig.sampled_time, SCENARIOS[scenario], dragon.rig.feet.samples)
+	review_status.text = feet.readout().trim_prefix("Sole probes / visible surface\n") + "\nContacts: %d | %s" % [contact_events.size(), "replay at 1x" if replaying else "manual / observation"]
 
 	if freeze_pending:
 		freeze_pending = false
@@ -173,7 +174,7 @@ func _review_contact(id: String, origin: Vector3, direction: Vector3) -> void:
 		contact_events.append({"t": review_clock, "id": id, "action_time": dragon.state.action_time, "authored_windup": Combat.ABILITIES[id].windup, "physics_frame": Engine.get_physics_frames(), "origin": [origin.x, origin.y, origin.z], "aim": [direction.x, direction.y, direction.z]})
 
 func review_report() -> Dictionary:
-	var data = feet.report({"scene": "gameplay_arena", "scenario": SCENARIOS[scenario], "stage": stage_index, "physics_hz": Engine.physics_ticks_per_second, "time_scale": Engine.time_scale, "camera": "res://presentation/camera_rig.gd (unchanged)", "quality": quality_index, "reduced_motion": reduced_motion, "save_writes": false})
+	var data = feet.report({"scene": "gameplay_arena", "scenario": SCENARIOS[scenario], "stage": stage_index, "physics_hz": Engine.physics_ticks_per_second, "time_scale": Engine.time_scale, "camera": "res://presentation/camera_rig.gd (unchanged)", "quality": quality_index, "reduced_motion": reduced_motion, "save_writes": false, "foot_lock_enabled": dragon.rig.foot_lock_enabled})
 	data["ability_starts"] = start_events
 	data["ability_contacts"] = contact_events
 	data["contact_log_limit"] = max_contacts
@@ -198,6 +199,11 @@ func review_key(code: int) -> void:
 			review_notice.text = "Next contact will pause after posing.\nF10 resumes • F8 exports the take." if freeze_next_contact else "Contact pause disarmed. F9 to arm."
 		KEY_F10:
 			hud.close_overlay()
+		KEY_F11:
+			dragon.rig.foot_lock_enabled = not dragon.rig.foot_lock_enabled
+			dragon.rig.feet.reset()
+			feet.reset()
+			review_notice.text = "Foot correction: %s\nF11 compares on/off in this scene only." % ("ON" if dragon.rig.foot_lock_enabled else "OFF")
 
 func _exit_tree() -> void:
 	stop_replay()

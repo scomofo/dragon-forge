@@ -25,47 +25,8 @@ PALETTE = [(66,52,48),(128,58,32),(215,180,119),(255,114,27),
 
 
 def atlas() -> None:
-    """Tiled microstructure and broad edge wear; no baked directional lighting."""
-    size=1024; cell=256
-    base=np.zeros((size,size,4),np.uint8); base[:,:,3]=255
-    orm=np.zeros((size,size,3),np.uint8); normal=np.zeros_like(orm); glow=np.zeros_like(orm)
-    y,x=np.mgrid[0:cell,0:cell].astype(float); u=x/255; v=y/255
-    # Integer hash is repeatable across platforms (no opaque model/seed dependency).
-    h=((x.astype(np.uint32)*374761393+y.astype(np.uint32)*668265263)^0x52FE1A3)
-    h=((h^(h>>13))*1274126177); noise=(h&65535)/65535.-.5
-    for i,c in enumerate(PALETTE):
-        edge=np.minimum.reduce([u,1-u,v,1-v])
-        wear=np.exp(-edge*40)
-        broad=np.sin(u*17+np.cos(v*8))*np.cos(v*14)*.018
-        if i in (BASALT,SCALE):
-            # Staggered scale-cell grooves, deliberately smaller than silhouette plates.
-            distances=[]; row=np.floor(v*11)
-            for dr in [-1,0,1]:
-                ry=row+dr; cx=np.floor(u*10-(ry%2)*.5)
-                for dc in [-1,0,1,2]:
-                    distances.append((u*10-(cx+dc+(ry%2)*.5))**2+((v*11-ry)*.866)**2)
-            close=np.partition(np.stack(distances),1,axis=0)
-            groove=np.exp(-(close[1]-close[0])*37)
-            height=.50-groove*.12+noise*.02
-            variation=1+noise*.09+broad-groove*.14+wear*.20
-        elif i==BONE:
-            height=.5+np.sin(u*130+v*4)*.015+noise*.006
-            variation=.62+.38*v+np.sin(u*130+v*4)*.018+noise*.025
-        else:
-            # Fine brushed grain, weld-like perimeter, scuffed edges.
-            lines=np.sin(u*181+np.sin(v*19))*.012
-            height=.5+lines+noise*.008-wear*.04
-            variation=1+lines+noise*.07+broad+wear*.26
-        rgb=np.clip(np.array(c)[None,None,:]*variation[:,:,None],0,255).astype(np.uint8)
-        rough=.82 if i in (BASALT,SCALE,BONE,SOOT,RUBBER) else .57
-        metal=0 if i in (BASALT,SCALE,BONE,EMBER,CYAN,RUBBER) else .68
-        a=np.stack([np.clip(1-wear*.10,0,1),np.clip(rough+noise*.07-wear*.10,0,1),np.full_like(u,metal)],2)
-        dy,dx=np.gradient(height); n=np.stack([-dx*8,dy*8,np.ones_like(u)],2); n/=np.linalg.norm(n,axis=2)[:,:,None]
-        j,k=divmod(i,4); sl=(slice(j*cell,(j+1)*cell),slice(k*cell,(k+1)*cell))
-        base[sl+(slice(0,3),)]=rgb; orm[sl]=(a*255).astype(np.uint8); normal[sl]=((n*.5+.5)*255).astype(np.uint8)
-        if i in (EMBER,CYAN): glow[sl]=rgb
-    for name,pixels in [('atlas_base',base),('atlas_orm',orm),('atlas_normal',normal),('atlas_emission',glow)]:
-        Image.fromarray(pixels).save(OUT/(name+'.png'),compress_level=9)
+    from paint_surfaces import paint
+    paint(OUT)
 
 
 def unit(a):
@@ -238,7 +199,7 @@ class Mesh:
                     for channel in ['rotation','translation']:
                         vals=[]
                         for pose in poses:
-                            rot,off=pose.get(name,([0,0,0],[0,0,0]));vals.append(quat(rot) if channel=='rotation' else (local+off).tolist())
+                            rot,off=pose.get(name,([0,0,0],[0,0,0]));vals.append((quat(rot) if len(rot)==3 else rot) if channel=='rotation' else (local+off).tolist())
                         a=access(vals,'VEC4' if channel=='rotation' else 'VEC3');si=len(animation['samplers']);animation['samplers'].append({'input':inp,'output':a,'interpolation':'LINEAR'})
                         animation['channels'].append({'sampler':si,'target':{'node':bi+1,'path':channel}})
                 doc['animations'].append(animation)
@@ -263,7 +224,7 @@ class Mesh:
 
 def magma():
     m=Mesh('magma_guardian');root=m.bone('Root',(0,0,0));hips=m.bone('Pelvis',(0,.94,.12),root);chest=m.bone('Chest',(0,1.65,-.02),hips)
-    neck=m.bone('Neck',(0,2.06,-.3),chest);head=m.bone('Head',(0,2.28,-.62),neck);jaw=m.bone('Jaw',(0,2.04,-.60),head)
+    neck=m.bone('Neck',(0,2.06,-.3),chest);head=m.bone('Head',(0,2.28,-.62),neck);jaw=m.bone('Jaw',(0,2.115,-.59),head)
     # Broad diamond chest, tapered pelvis, leaning reptilian neck. Skin joins are weighted.
     path=[(0,.77,.14),(0,.92,.16),(0,1.14,.16),(0,1.40,.10),(0,1.69,-.02),(0,1.90,-.14),(0,2.12,-.32),(0,2.25,-.47)]
     ws=[[(hips,1)],[(hips,1)],[(hips,.85),(chest,.15)],[(hips,.35),(chest,.65)],[(chest,1)],[(chest,.75),(neck,.25)],[(neck,1)],[(neck,.4),(head,.6)]]
@@ -283,6 +244,8 @@ def magma():
     m.plate((0,1.76,-.51),.28,.39,normal=(0,.18,-1),slot=EMBER,bone=chest,depth=.04)
     m.tube([(0,2.29,-.35),(0,2.34,-.58),(0,2.32,-.82),(0,2.25,-1.12),(0,2.21,-1.37)], [.24,.42,.37,.27,.195],[.27,.29,.27,.17,.125],SCALE,head,sides=20)
     m.tube([(0,2.02,-.59),(0,2.0,-.91),(0,2.04,-1.23),(0,2.085,-1.35)],[.28,.27,.21,.15],[.09,.075,.06,.025],BASALT,jaw,sides=16)
+    # Separate rigid palate and lower cavity: opening the hinge cannot stretch upper mouth vertices.
+    m.tube([(0,2.145,-.66),(0,2.14,-1.27)],[.23,.17],[.021,.02],SOOT,head,sides=12)
     # Mouth cavity is dark; enamel teeth and a few ember fissures are visible during breath.
     m.tube([(0,2.07,-.68),(0,2.08,-1.28)],[.245,.18],[.025,.023],SOOT,jaw,sides=12)
     for side in [-1,1]:
@@ -302,7 +265,7 @@ def magma():
         arm=m.bone('Arm.L' if side<0 else 'Arm.R',(side*.66,1.80,-.10),chest)
         fore=m.bone('Forearm.L' if side<0 else 'Forearm.R',(side*.95,1.29,-.17),arm)
         hand=m.bone('Hand.L' if side<0 else 'Hand.R',(side*.88,1.12,-.58),fore)
-        m.tube([(side*.65,1.82,-.08),(side*.84,1.63,-.09),(side*.95,1.29,-.17),(side*.93,1.20,-.35),(side*.88,1.12,-.62)], [.27,.285,.205,.205,.22],slot=BASALT,bone=arm,weights=[[(arm,1)],[(arm,1)],[(arm,.4),(fore,.6)],[(fore,1)],[(hand,1)]])
+        m.tube([(side*.56,1.84,-.06),(side*.84,1.63,-.09),(side*.95,1.29,-.17),(side*.93,1.20,-.35),(side*.88,1.12,-.62)], [.27,.285,.205,.205,.22],slot=BASALT,bone=arm,weights=[[(chest,.65),(arm,.35)],[(chest,.12),(arm,.88)],[(arm,.40),(fore,.60)],[(fore,.88),(hand,.12)],[(hand,1)]])
         m.plate((side*.79,1.75,-.035),.68,.60,(side*.76,.55,.2),(0,0,-1),SCALE,arm,depth=.10)
         m.plate((side*1.02,1.32,-.23),.40,.53,(side*.80,.25,.15),(0,1,0),SCALE,fore,depth=.09)
         for d in range(3):
@@ -312,7 +275,7 @@ def magma():
         thigh=m.bone('Thigh.L' if side<0 else 'Thigh.R',(side*.44,.99,.14),hips)
         hock=m.bone('Hock.L' if side<0 else 'Hock.R',(side*.62,.57,-.10),thigh)
         foot=m.bone('Foot.L' if side<0 else 'Foot.R',(side*.53,.29,.29),hock)
-        m.tube([(side*.43,1.01,.16),(side*.57,.85,.12),(side*.62,.59,-.11),(side*.59,.43,.19),(side*.53,.26,.29),(side*.52,.15,-.28)], [.34,.36,.265,.175,.16,.245],[.31,.33,.25,.17,.16,.13],SCALE,weights=[[(thigh,1)],[(thigh,1)],[(thigh,.35),(hock,.65)],[(hock,1)],[(hock,.3),(foot,.7)],[(foot,1)]],sides=18)
+        m.tube([(side*.36,1.01,.16),(side*.57,.85,.12),(side*.62,.59,-.11),(side*.59,.43,.19),(side*.53,.26,.29),(side*.52,.15,-.28)], [.34,.36,.265,.175,.16,.245],[.31,.33,.25,.17,.16,.13],SCALE,weights=[[(hips,.65),(thigh,.35)],[(hips,.12),(thigh,.88)],[(thigh,.35),(hock,.65)],[(hock,1)],[(hock,.3),(foot,.7)],[(foot,1)]],sides=18)
         m.plate((side*.74,.88,.04),.51,.63,(side*.90,.25,.18),(0,1,0),BASALT,thigh,depth=.09)
         for d in range(3):
             x=side*.52+(d-1)*.19
@@ -351,13 +314,13 @@ def magma():
                 # Contact pose is continuous; no hidden hit callbacks in the asset.
                 strike=max(0,min(1,(t-wind+.025)/.055)); swing=(1-strike)*-1+strike
                 if name=='claw':
-                    setp('Chest',(0,swing*.38*a,0));setp('Arm.R',(-.80*a,-.3*a,swing*.65*a));setp('Forearm.R',(-.40*a,.2*a,0));setp('Hand.R',(0,.25*a,0))
+                    setp('Chest',(0,swing*.38*a,0));setp('Arm.R',(-.72*a,-.22*a,swing*.48*a));setp('Forearm.R',(-.40*a,.2*a,0));setp('Hand.R',(0,.25*a,0))
                 elif name=='breath':
-                    setp('Chest',(-.13*a,0,0));setp('Neck',(.18*a,0,0));setp('Head',(-.08*a,0,0));setp('Jaw',(-.59*a,0,0));setp('Arm.L',(0,0,.18*a));setp('Arm.R',(0,0,-.18*a))
+                    setp('Chest',(-.13*a,0,0));setp('Neck',(.18*a,0,0));setp('Head',(-.08*a,0,0));setp('Jaw',(-.50*a,0,0));setp('Arm.L',(0,0,.18*a));setp('Arm.R',(0,0,-.18*a))
                 elif name=='wall':
-                    setp('Pelvis',(.09*a,0,0),(0,-.14*a,0));setp('Chest',(.21*a,0,0));setp('Arm.L',(-.94*a,0,.2*a));setp('Arm.R',(-.94*a,0,-.2*a));setp('Head',(-.18*a,0,0))
+                    setp('Pelvis',(.035*a,0,0),(0,-.09*a,0));setp('Chest',(.21*a,0,0));setp('Arm.L',(-.94*a,0,.2*a));setp('Arm.R',(-.94*a,0,-.2*a));setp('Head',(-.18*a,0,0))
                 else:
-                    setp('Chest',(-.18*a,0,0));setp('Arm.L',(-.30*a,0,.90*a));setp('Arm.R',(-.30*a,0,-.90*a));setp('Head',(.14*a,0,0));setp('Jaw',(-.38*a,0,0))
+                    setp('Chest',(-.18*a,0,0));setp('Arm.L',(-.28*a,0,.68*a));setp('Arm.R',(-.28*a,0,-.68*a));setp('Head',(.14*a,0,0));setp('Jaw',(-.38*a,0,0))
             elif name=='guard':
                 setp('Chest',(.09,0,0));setp('Arm.L',(-.85,0,.35));setp('Arm.R',(-.85,0,-.35));setp('Forearm.L',(-.35,-.1,0));setp('Forearm.R',(-.35,.1,0));setp('Head',(-.1,0,0))
             elif name=='hurt':
@@ -366,6 +329,17 @@ def magma():
                 a=q*q*(3-2*q);setp('Root',(0,0,-1.3*a),(0,-.17*a,0));setp('Head',(.25*a,0,0));setp('Jaw',(-.2*a,0,0))
             poses.append(pose)
         m.animations[name]=(times,poses)
+    # Sole pads/claws are rigid to the Foot bone; ankle flexion stays above the sole.
+    # This prevents the last 10–20% hock blend from shearing contact vertices under IK.
+    for vi, vertex in enumerate(m.vertices):
+        if vertex[1] <= .21:
+            for ji, weight in zip(m.joints[vi], m.weights[vi]):
+                if weight >= .65 and m.bones[ji][0].startswith('Foot.'):
+                    m.joints[vi] = [ji,0,0,0]
+                    m.weights[vi] = [1.,0.,0.,0.]
+                    break
+    from pose_cleanup import correct
+    correct(m, quat)
     return m
 
 
@@ -516,7 +490,7 @@ def kit():
 def main():
     atlas();report=[m.export() for m in [magma(),sentinel(),sentinel(True),*kit()]]
     files={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(OUT.iterdir()) if p.suffix in ('.png','.glb')}
-    manifest={'version':1,'source':'tools/build_art.py','source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'units':'metres','up':'+Y','forward':'-Z','atlas_size':[1024,1024],'textures':['base color','occlusion/roughness/metallic','OpenGL normal','emission'],'assets':report,'sha256':files}
+    manifest={'version':2,'source':'tools/build_art.py','pose_source_sha256':hashlib.sha256(Path(__file__).with_name('pose_cleanup.py').read_bytes()).hexdigest(),'paint_source_sha256':hashlib.sha256(Path(__file__).with_name('paint_surfaces.py').read_bytes()).hexdigest(),'source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'units':'metres','up':'+Y','forward':'-Z','atlas_size':[2048,2048],'textures':['base color','occlusion/roughness/metallic','OpenGL normal','emission'],'assets':report,'sha256':files}
     (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print(json.dumps(report,indent=2));print('ART_BUILD: %d assets, %d triangles'%(len(report),sum(a['triangles'] for a in report)))
 if __name__=='__main__':main()
