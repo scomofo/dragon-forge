@@ -61,7 +61,9 @@ func fixture() -> Dictionary:
 	s.storm_forged = true
 	s.stone_imprint_recovered = true
 	s.stone_forged = true
-	s.guardians = ["fire","ice","storm","stone"]
+	s.venom_culture_recovered = true
+	s.venom_forged = true
+	s.guardians = ["fire","ice","storm","stone","venom"]
 	s.loadout = ["fire","stone"]
 	s.evolutions = {"fire":"flashfire","ice":"aegis","storm":"overcharge"}
 	return s
@@ -76,7 +78,7 @@ func run() -> void:
 		check(not OS.has_feature("editor"), "running standalone template, not editor")
 		check(not ResourceLoader.exists("res://campaign/tests/run.gd"), "development tests excluded from pack")
 	var info = JSON.parse_string(FileAccess.get_file_as_string("res://release/build_info.json"))
-	check(info is Dictionary and info.get("assets",[]).size() == 58, "pack build identity and 58 art/audio resources present")
+	check(info is Dictionary and info.get("assets",[]).size() == 63, "pack build identity and 63 art/audio resources present")
 	if not info is Dictionary: quit(1); return
 	for path in info.assets:
 		var resource = load(path)
@@ -118,14 +120,14 @@ func run() -> void:
 			paused = false
 	w.campaign = s.duplicate(true)
 	w._enter_room("forge",true)
-	for pair in [["fire","ice"],["fire","storm"],["fire","stone"]]:
+	for pair in [["fire","ice"],["fire","storm"],["fire","stone"],["fire","venom"]]:
 		w.campaign.loadout = pair
 		w.campaign.active_guardian = "fire"
 		w._enter_room("forge",true)
 		w.dragon.input_grace = 0
 		w.party.swap_remaining = 0
 		w.swap_guardian(pair[1])
-		check(w.party.active_id == pair[1] and is_instance_valid(w.dragon.rig), "packed guardian swap " + pair[1])
+		check(w.party.active_id == pair[1] and w.dragon.guardian == pair[1] and is_instance_valid(w.dragon.rig), "packed guardian swap " + pair[1])
 	var audio = Audio.new()
 	audio.test_mode = true
 	root.add_child(audio)
