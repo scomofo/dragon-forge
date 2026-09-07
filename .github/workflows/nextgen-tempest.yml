@@ -1,0 +1,32 @@
+name: Nextgen Tempest and audio
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/**'
+      - '.github/workflows/nextgen-tempest.yml'
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            dragon-forge-nextgen/campaign/audio/music
+            public/assets/music
+            src/soundEngine.js
+      - name: Verify existing soundtrack bytes
+        run: |
+          set -euo pipefail
+          for f in dragon-forge-nextgen/campaign/audio/music/*.mp3; do cmp "$f" "public/assets/music/$(basename "$f")"; done
+          mkdir -p /tmp/audio-source
+          cp dragon-forge-nextgen/campaign/audio/music/*.mp3 /tmp/audio-source/
+          cp src/soundEngine.js /tmp/audio-source/
+          sha256sum /tmp/audio-source/*.mp3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: original-soundtrack-for-integration
+          path: /tmp/audio-source/
+          retention-days: 2
