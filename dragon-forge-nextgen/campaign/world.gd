@@ -13,6 +13,8 @@ const GuardianParty = preload("res://campaign/party.gd")
 const Fusion = preload("res://campaign/fusion.gd")
 const Growth = preload("res://campaign/growth.gd")
 const SoundDirector = preload("res://campaign/audio/director.gd")
+const Trials = preload("res://campaign/trials.gd")
+const TrialStore = preload("res://campaign/trial_store.gd")
 var audio
 var party = GuardianParty.new()
 var campaign = CampaignRules.fresh()
@@ -23,6 +25,15 @@ var entering = false
 var room_clock = 0.0
 var title_open = false
 var has_started = false
+var trial_store
+var trial_records: Dictionary = {}
+var forge_trial_active = false
+var forge_trial_finished = false
+var forge_trial_id = ""
+var forge_trial_waves: Array = []
+var forge_trial_wave = 0
+var forge_trial_clock = 0.0
+var forge_trial_damage = 0.0
 
 func _ready() -> void:
 	Inputs.setup()
@@ -33,6 +44,8 @@ func _ready() -> void:
 		var pad=InputEventJoypadButton.new();pad.button_index=JOY_BUTTON_RIGHT_STICK
 		InputMap.action_add_event("ng_swap",pad)
 	store = CampaignStore.new()
+	trial_store = TrialStore.new()
+	trial_records = trial_store.fresh() if test_mode else trial_store.read_records()
 	if not test_mode:
 		campaign = store.read_campaign()
 		var values = preferences.read_values()
@@ -81,6 +94,8 @@ func _sync_compat() -> void:
 
 func _save() -> void:
 	_sync_compat()
+	if forge_trial_active:
+		return
 	if not test_mode:
 		store.write_campaign(campaign)
 	if is_instance_valid(level):
@@ -160,20 +175,23 @@ func _spawn_encounters() -> void:
 	for spec in Data.ROOMS[campaign.room].enemies:
 		if campaign.cleared.has(spec.id):
 			continue
-		var actor = CampaignEnemy.new()
-		actor.spec = spec.duplicate(true)
-		actor.spec.color = Data.zone(Data.ROOMS[campaign.room].zone).color
-		actor.position = Data.v3(spec.at)
-		actor.target = dragon
-		actor.navigation = self
-		actor.reduced_motion = reduced_motion
-		level.add_child(actor)
-		actor.impact.connect(_on_pattern)
-		actor.attack_warning.connect(func(): sound("warning",CampaignEnemy.BossCatalog.entry(actor.spec.id).get("element","fire"),4))
-		actor.defeated.connect(_campaign_defeat)
-		actor.hit_feedback.connect(_hit_feedback)
-		enemies.append(actor)
+		_spawn_enemy(spec,false)
 	_select_enemy()
+
+func _spawn_enemy(source: Dictionary, as_trial: bool) -> void:
+	var actor = CampaignEnemy.new()
+	actor.spec = source.duplicate(true)
+	actor.spec.color = Data.zone(Data.ROOMS[campaign.room].zone).color if not as_trial else "f0b572"
+	actor.position = Data.v3(actor.spec.at)
+	actor.target = dragon
+	actor.navigation = self
+	actor.reduced_motion = reduced_motion
+	level.add_child(actor)
+	actor.impact.connect(_on_pattern)
+	actor.attack_warning.connect(func(): sound("warning",CampaignEnemy.BossCatalog.entry(actor.spec.id).get("element","fire"),4))
+	actor.defeated.connect(_trial_defeat if as_trial else _campaign_defeat)
+	actor.hit_feedback.connect(_hit_feedback)
+	enemies.append(actor)
 
 func _select_enemy() -> void:
 	var living: Array = []
@@ -202,6 +220,8 @@ func _physics_process(delta: float) -> void:
 	if dragon.input_grace<=0 and Input.is_action_just_pressed("ng_swap"):
 		swap_guardian()
 	room_clock += delta
+	if forge_trial_active and not forge_trial_finished:
+		forge_trial_clock += delta
 	if dragon.global_position.y < -4:
 		retry()
 		return
@@ -271,6 +291,7 @@ func interaction() -> String:
 		"rest":return "Rest / refill repair charges"
 		"upgrade":return "Spend salvage at the Forge"
 		"forge":return "Install cores / configure Magma"
+		"trials":return "Forge Trials / replay challenges"
 		"lore":return "Talk to Felix" if campaign.room=="forge" else "Read the record"
 		"cache":return "Open salvage cache"
 		"core":return "Collect the sector core"
@@ -324,6 +345,7 @@ func interact() -> void:
 				hud.show_party()
 		"rest":rest()
 		"upgrade":hud.show_upgrades()
+		"trials":hud.show_trials()
 		"forge":
 			if CampaignRules.install(campaign)>0:
 				sound("reward","fire",3,true)
@@ -354,7 +376,7 @@ func interact() -> void:
 				hud.show_ending()
 
 func travel(destination: String) -> bool:
-	if entering or title_open or dragon.state.hp<=0.0:
+	if forge_trial_active or entering or title_open or dragon.state.hp<=0.0:
 		return false
 	if not CampaignRules.travel(campaign,destination):
 		hud.toast("Route locked. Clear its guardians, charge its relays, or restore the preceding sector at the Forge.")
@@ -395,10 +417,10 @@ func buy_upgrade(id: String) -> bool:
 	return true
 
 func can_upgrade() -> bool:
-	return campaign.room=="forge" and campaign.hatched and dragon.state.hp>0 and dragon.position.distance_to(Vector3(-7,0,2))<3.4
+	return not forge_trial_active and campaign.room=="forge" and campaign.hatched and dragon.state.hp>0 and dragon.position.distance_to(Vector3(-7,0,2))<3.4
 
 func can_configure() -> bool:
-	return campaign.room=="forge" and campaign.hatched and dragon.state.hp>0 and dragon.position.distance_to(Vector3(5,0,5))<3.4
+	return not forge_trial_active and campaign.room=="forge" and campaign.hatched and dragon.state.hp>0 and dragon.position.distance_to(Vector3(5,0,5))<3.4
 
 func choose_module(id: String) -> bool:
 	if not can_configure() or (campaign.installed.is_empty() and not campaign.legacy_imported) or not Modules.DATA.has(id):
@@ -513,6 +535,9 @@ func _on_pattern(shape: Dictionary, amount: float) -> void:
 			effects.pulse(at,shape.radius,Color("edb15e"))
 
 func _campaign_defeat(id: String) -> void:
+	if forge_trial_active:
+		_trial_defeat(id)
+		return
 	var previous_bond = Growth.points(campaign)
 	if not CampaignRules.defeat(campaign,id):
 		return
@@ -544,6 +569,10 @@ func _clear_encounter() -> void:
 func retry() -> void:
 	if entering or title_open:
 		return
+	if forge_trial_active:
+		hud.close_overlay()
+		_launch_trial(forge_trial_id)
+		return
 	hud.close_overlay()
 	entering=true
 	_enter_room.call_deferred(campaign.room,true)
@@ -551,11 +580,68 @@ func retry() -> void:
 func return_to_forge() -> void:
 	if entering:
 		return
+	if forge_trial_active:
+		leave_trial()
+		return
 	CampaignRules.return_home(campaign)
 	_save()
 	hud.close_overlay()
 	entering=true
 	_enter_room.call_deferred("forge",true)
+
+func can_start_forge_trial(id: String) -> bool:
+	return not forge_trial_active and not entering and not title_open and campaign.room=="forge" and campaign.hatched and dragon.active and dragon.state.hp>0.0 and not is_instance_valid(enemy) and Trials.unlocked(campaign,id)
+
+func start_forge_trial(id: String) -> bool:
+	if not can_start_forge_trial(id):
+		return false
+	_launch_trial(id)
+	return true
+
+func _launch_trial(id: String) -> void:
+	if not Trials.DATA.has(id): return
+	entering=true
+	hud.close_overlay()
+	_clear_encounter()
+	if is_instance_valid(level):
+		remove_child(level);level.queue_free()
+	level=Room.new();add_child(level);level.build(Trials.ROOM);dressing=level
+	forge_trial_active=true;forge_trial_finished=false;forge_trial_id=id;forge_trial_waves=Trials.waves(id);forge_trial_wave=0;forge_trial_clock=0.0;forge_trial_damage=0.0
+	party.rebuild(campaign)
+	dragon.respawn(Data.v3(Trials.ROOM.spawn),campaign.module);dragon.use_guardian(party.active_id,party.states[party.active_id]);dragon.cooling_level=int(campaign.upgrades.cooling);dragon.active=true
+	repairs=0;camera_rig.global_position=dragon.global_position;camera_rig.opponent=null;camera_rig.trauma=0.0;conduits.clear();room_clock=0.0
+	_feedback_lighting("home");set_quality(quality_index);_spawn_forge_trial_wave();entering=false
+	hud.toast(Trials.entry(id).name+"  /  Wave 1 of %d. Trial results never alter campaign salvage, bond or clears." % forge_trial_waves.size())
+
+func _spawn_forge_trial_wave() -> void:
+	if not forge_trial_active or forge_trial_wave>=forge_trial_waves.size(): return
+	for spec in forge_trial_waves[forge_trial_wave]: _spawn_enemy(spec,true)
+	_select_enemy()
+
+func _trial_defeat(_id: String) -> void:
+	if not forge_trial_active:return
+	_select_enemy()
+	if not enemies.is_empty():return
+	if forge_trial_wave+1<forge_trial_waves.size():
+		forge_trial_wave+=1
+		_spawn_forge_trial_wave.call_deferred()
+		hud.toast("TRIAL WAVE %d / %d" % [forge_trial_wave+1,forge_trial_waves.size()])
+	else:
+		_complete_trial.call_deferred()
+
+func _complete_trial() -> void:
+	if not forge_trial_active or forge_trial_finished:return
+	forge_trial_finished=true
+	var ms=maxi(1,roundi(forge_trial_clock*1000.0));var damage=maxi(0,roundi(forge_trial_damage));var pair=Fusion.members(campaign)
+	trial_store.apply_record(trial_records,forge_trial_id,ms,damage,pair)
+	if not test_mode: trial_store.write_records(trial_records)
+	if is_instance_valid(audio):audio.play_stinger("victory")
+	hud.show_forge_trial_result(ms,damage)
+
+func leave_trial() -> void:
+	if not forge_trial_active:return
+	forge_trial_active=false;forge_trial_finished=false;forge_trial_id="";forge_trial_waves=[];forge_trial_wave=0;forge_trial_clock=0.0;forge_trial_damage=0.0
+	hud.close_overlay();entering=true;_enter_room.call_deferred("forge",true)
 
 func new_expedition() -> void:
 	begin_campaign(true)
@@ -575,6 +661,9 @@ func set_reduced_motion(value: bool) -> void:
 			actor.reduced_motion=value
 
 func guidance() -> Dictionary:
+	if forge_trial_active:
+		var info: Dictionary=Trials.entry(forge_trial_id)
+		return {"title":info.get("name","Forge Trial"),"detail":"Wave %d / %d  •  %.1fs  •  %d damage taken" % [forge_trial_wave+1,forge_trial_waves.size(),forge_trial_clock,roundi(forge_trial_damage)],"target":enemy.position if is_instance_valid(enemy) else Vector3.ZERO,"marker":"","index":0}
 	var r: Dictionary=Data.ROOMS[campaign.room]
 	var title="Explore the sector"
 	var detail="Follow the marked portal. E interacts; M opens the route map."
@@ -677,16 +766,22 @@ func swap_guardian(target: String = "", forced: bool = false) -> bool:
 	if not party.swap_to(target,forced):return false
 	dragon.use_guardian(target,party.states[target])
 	sound("swap",target,2)
-	campaign.active_guardian=target
+	if not forge_trial_active:
+		campaign.active_guardian=target
 	get_viewport().gui_release_focus()
-	_save()
+	if not forge_trial_active:
+		_save()
 	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", {"ice":"Chill, then swap to Magma to shatter.", "fire":"Fire shatters chilled enemies on a direct hit.", "storm":"Charge with Arc Lance or Static Well. Discharge with technique 4.", "stone":"Guard landed hits to build Resolve, then Earthshatter [4]."}.get(target, ""))
 	return true
 
 func _on_guardian_down() -> void:
 	if not is_instance_valid(dragon) or dragon.state.hp>0.0:return
 	if not swap_guardian("",true):
-		hud.show_defeat()
+		if forge_trial_active:
+			forge_trial_finished=true
+			hud.show_trial_failed()
+		else:
+			hud.show_defeat()
 
 func _place_frost(origin: Vector3,direction: Vector3) -> void:
 	var at=origin+direction*4.0
@@ -719,7 +814,7 @@ func _ice_contact(id: String,origin: Vector3,direction: Vector3,reach: float) ->
 	node.create_tween().tween_interval(.25).finished.connect(node.queue_free)
 
 func can_evolve() -> bool:
-	return not entering and not title_open and campaign.room == "forge" and campaign.hatched and dragon.active and dragon.state.hp > 0.0 and dragon.state.action == "" and dragon.state.dash <= 0.0 and dragon.position.distance_to(Vector3(6,0,8)) < 3.4
+	return not forge_trial_active and not entering and not title_open and campaign.room == "forge" and campaign.hatched and dragon.active and dragon.state.hp > 0.0 and dragon.state.action == "" and dragon.state.dash <= 0.0 and dragon.position.distance_to(Vector3(6,0,8)) < 3.4
 
 func choose_evolution(guardian: String, specialization: String) -> bool:
 	# UI pause is permitted here; remote, in-combat and duplicated requests are not.
@@ -732,7 +827,7 @@ func choose_evolution(guardian: String, specialization: String) -> bool:
 	return true
 
 func can_fuse() -> bool:
-	return not entering and not title_open and campaign.room == "forge" and dragon.active and dragon.state.hp > 0.0 and dragon.state.action == "" and dragon.state.dash <= 0.0 and dragon.position.distance_to(Fusion.STATION) < 3.4
+	return not forge_trial_active and not entering and not title_open and campaign.room == "forge" and dragon.active and dragon.state.hp > 0.0 and dragon.state.action == "" and dragon.state.dash <= 0.0 and dragon.position.distance_to(Fusion.STATION) < 3.4
 
 func forge_storm() -> bool:
 	if not can_fuse() or not Fusion.forge(campaign): return false
@@ -827,5 +922,7 @@ func _hit_feedback(at: Vector3, text: String, blocked: bool) -> void:
 	sound(cue,party.active_id,3 if cue in ["shatter","discharge"] else 1)
 
 func _on_player_damaged(amount: float, guarded: bool) -> void:
+	if forge_trial_active and not forge_trial_finished:
+		forge_trial_damage += maxf(0.0,amount)
 	super._on_player_damaged(amount,guarded)
 	sound("guard" if guarded else "hurt",party.active_id,3)

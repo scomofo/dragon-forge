@@ -142,6 +142,7 @@ func _interactables() -> void:
 		_station("forge", "CORES / MODULES", Vector3(5,0,5), "core_socket")
 		_station("upgrade", "FORGE UPGRADES", Vector3(-7,0,2), "anvil")
 		_station("lore", "FELIX / RADIO", Vector3(7,0,-5), "relay_conduit")
+		_station("trials", "FORGE TRIALS", Vector3(-7,0,-5), "warden_dais")
 		var ice_ring=_station("hatch_ice", "GUARDIAN NURSERY",Vector3(6,0,8),"incubator")
 		ice_egg=IceEgg.instantiate();ice_ring.add_child(ice_egg)
 		var fusion_ring = _station("fusion", "RESONANCE FUSION", Vector3(-7,0,8), "core_socket")
@@ -171,6 +172,8 @@ func _interactables() -> void:
 			stone_imprint = _station("stone_imprint", "STONE IMPRINT", Vector3(6,0,-4), "core_socket")
 			Geo.orb(stone_imprint,Vector3(0,1.55,0),.34,Geo.material(Color("c7a776"),1.1,true))
 			Geo.ring(stone_imprint,Vector3.UP*.18,1.05,Geo.material(Color("8f7554"),.5,true),.07)
+	elif definition.role == "trial":
+		pass
 	elif definition.role in ["boss","final"]:
 		core_node = _station("finish" if definition.role=="final" else "core", "RECONNECT" if definition.role=="final" else "SECTOR CORE",Vector3(0,0,-19),"core_socket")
 		Geo.orb(core_node,Vector3(0,1.7,0),0.4,Geo.material(color,1.5,true))

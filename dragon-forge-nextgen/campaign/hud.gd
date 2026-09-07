@@ -5,6 +5,8 @@ const Data = preload("res://campaign/data.gd")
 const Rules = preload("res://campaign/progress.gd")
 const BossCatalog = preload("res://campaign/bosses/catalog.gd")
 const Patterns = preload("res://campaign/patterns.gd")
+const Trials = preload("res://campaign/trials.gd")
+const Roles = preload("res://campaign/enemy_roles.gd")
 var audio_return_title = false
 var audio_settings_open = false
 var sector_label: Label
@@ -82,6 +84,13 @@ func _process(delta: float) -> void:
 			if c.relays.has(relay.id):
 				completed+=1
 		route_text.text="%d / %d RELAYS ONLINE" % [completed,r.relays.size()]
+	if world.forge_trial_active:
+		var trial_info: Dictionary=Trials.entry(world.forge_trial_id)
+		sector_label.text="FORGE TRIAL / "+str(trial_info.get("name","Challenge")).to_upper()
+		step_label.text="WAVE %d / %d   •   %.1fs" % [world.forge_trial_wave+1,world.forge_trial_waves.size(),world.forge_trial_clock]
+		route_text.text="NO SALVAGE / NO BOND / %d DAMAGE TAKEN" % roundi(world.forge_trial_damage)
+		module_text.text="PERSONAL-BEST TRAINING / CAMPAIGN SAVE ISOLATED"
+		repair_button.visible=false
 	if world.title_open:
 		prompt.visible=false
 		toast_label.visible=false
@@ -92,8 +101,12 @@ func _update_enemy() -> void:
 		return
 	var foe=world.enemy
 	enemy_name.text=foe.spec.name.to_upper()+"  /  %d / %d" % [int(foe.hp),int(foe.max_hp)]
+	if not foe.boss:
+		enemy_name.text+=" / "+Roles.label(str(foe.spec.get("archetype","bruiser")))
 	if foe.brain.mode=="tell":
 		enemy_readout.text="%.1fs / " % foe.brain.timer+Patterns.tip(foe.pattern)
+		if not foe.boss:
+			enemy_readout.text+=" / "+Roles.tip(str(foe.spec.get("archetype","bruiser")))
 		if BossCatalog.known(foe.spec.id):
 			enemy_name.text += " / " + BossCatalog.move_name(foe.spec.id,foe.pattern)
 	elif not foe.spec.get("shield",true):
@@ -294,6 +307,50 @@ func show_sector_restored() -> void:
 	_button(buttons,"Configure module").pressed.connect(show_modules)
 	_button(buttons,"Open routes").pressed.connect(show_map)
 	_button(buttons,"Back to the Forge").pressed.connect(close_overlay)
+
+func _trial_time(ms: int) -> String:
+	return "%.2fs" % (float(ms)/1000.0)
+
+func show_trials() -> void:
+	if world.title_open or world.campaign.room!="forge" or world.forge_trial_active:return
+	_open_overlay("trials")
+	_label(overlay_column,"FORGE TRIALS / PRACTICE WITHOUT GRIND",30,GOLD)
+	_wrapped(overlay_column,"Replay tactical drills and defeated bosses with your current expedition pair. Trials never grant salvage, bond, cores or campaign clears. Personal bests live in a separate Forge-Trials file.",17,PAPER)
+	var scroll=ScrollContainer.new();scroll.custom_minimum_size=Vector2(970,390);overlay_column.add_child(scroll)
+	var col=_column(scroll,10)
+	for id in Trials.ids():
+		var info: Dictionary=Trials.entry(id);var unlocked=Trials.unlocked(world.campaign,id)
+		var card=_panel(col);var card_col=_column(card,6)
+		_label(card_col,info.name,20,TEAL if unlocked else MUTED)
+		_wrapped(card_col,info.detail,15,PAPER if unlocked else MUTED,880)
+		var record: Dictionary=world.trial_records.records.get(id,{})
+		if not record.is_empty():
+			_label(card_col,"BEST %s   •   %d damage   •   %d clears" % [_trial_time(int(record.best_ms)),int(record.best_damage),int(record.clears)],14,GOLD)
+		var button=_button(card_col,"Start trial" if unlocked else "Locked / defeat its sector boss first")
+		button.disabled=not unlocked or not world.can_start_forge_trial(id)
+		button.pressed.connect(func():world.start_forge_trial(id))
+	if world.trial_store.message!="":_wrapped(overlay_column,world.trial_store.message,15,GOLD)
+	_button(overlay_column,"Back to the Forge").pressed.connect(close_overlay)
+
+func show_forge_trial_result(ms: int, damage: int) -> void:
+	_open_overlay("trial_result")
+	var info:Dictionary=Trials.entry(world.forge_trial_id);var record:Dictionary=world.trial_records.records.get(world.forge_trial_id,{})
+	_label(overlay_column,"TRIAL COMPLETE",32,TEAL)
+	_label(overlay_column,info.name.to_upper(),23,GOLD)
+	_wrapped(overlay_column,"Clear %s   •   %d damage taken
+Personal best %s   •   %d damage" % [_trial_time(ms),damage,_trial_time(int(record.get("best_ms",ms))),int(record.get("best_damage",damage))],19,PAPER)
+	_wrapped(overlay_column,"No campaign salvage, bond, clear flags or core progress changed. The trial record is stored separately.",16,MUTED)
+	var row=HBoxContainer.new();row.add_theme_constant_override("separation",14);overlay_column.add_child(row)
+	_button(row,"Retry trial").pressed.connect(func():world.retry())
+	_button(row,"Return to the Forge").pressed.connect(func():world.leave_trial())
+
+func show_trial_failed() -> void:
+	_open_overlay("trial_failed")
+	_label(overlay_column,"TRIAL ENDED",31,GOLD)
+	_wrapped(overlay_column,"Your selected expedition pair is down. No campaign progress was lost and no trial record was written. Change your pair at the Nursery after returning to the Forge, or retry immediately.",18,PAPER)
+	var row=HBoxContainer.new();row.add_theme_constant_override("separation",14);overlay_column.add_child(row)
+	_button(row,"Retry trial").pressed.connect(func():world.retry())
+	_button(row,"Return to the Forge").pressed.connect(func():world.leave_trial())
 
 func show_defeat() -> void:
 	if not is_instance_valid(world.dragon) or world.dragon.state.hp>0 or dead_presented:
