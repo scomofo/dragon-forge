@@ -1,0 +1,48 @@
+name: Fix Venom migration assertions
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/venom-migration-fix.yml'
+permissions:
+  contents: read
+jobs:
+  fix:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'nextgen-venom-guardian'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nextgen-venom-guardian
+          fetch-depth: 1
+      - name: Change only the two stale schema expectations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('dragon-forge-nextgen/campaign/tests/party_tests.gd')
+          text=p.read_text()
+          replacements={
+            'check(migrated.version==6 and migrated.guardians==["fire"],"version 1 migration initializes exactly Magma")':
+            'check(migrated.version==7 and migrated.guardians==["fire"],"version 1 migration initializes exactly Magma through schema 7")',
+            'check(loaded.version==6,"disk migration readable")':
+            'check(loaded.version==7,"disk migration readable at current schema")',
+          }
+          for old,new in replacements.items():
+              count=text.count(old)
+              assert count==1, f'expected exactly one occurrence, got {count}: {old}'
+              text=text.replace(old,new,1)
+          p.write_text(text)
+          PY
+          rm -f .github/workflows/venom-migration-fix.yml
+          git diff --check
+          git diff --stat
+          git diff -- dragon-forge-nextgen/campaign/tests/party_tests.gd
+          git add -A
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'test: carry legacy party saves through schema 7'
+          git push origin HEAD:nextgen-venom-guardian
