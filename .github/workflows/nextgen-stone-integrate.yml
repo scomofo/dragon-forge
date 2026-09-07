@@ -69,7 +69,7 @@ jobs:
         run: |
           set -euo pipefail
           GODOT=godot bash dragon-forge-nextgen/tools/test_bosses.sh | tee /tmp/tests.log
-          grep 'STONE_TESTS: 0 failures' /tmp/tests.log
+          grep -E 'STONE_TESTS: [0-9]+ checks, 0 failures' /tmp/tests.log
       - name: Render Cairn in OpenGL and Forward+
         shell: bash
         run: |
