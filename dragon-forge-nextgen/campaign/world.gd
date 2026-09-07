@@ -286,6 +286,7 @@ func interaction() -> String:
 		"fusion":return "Resonance Fusion / Fire + Ice = Storm"
 		"lattice":return "Recover the conductor lattice"
 		"stone_imprint":return "Recover the dormant Stone imprint"
+		"venom_culture":return "Recover the preserved Venom culture"
 		"ice_egg":return "Rescue the frozen guardian egg"
 		"hatch_ice":return "Hatch Rime / Ice guardian" if campaign.ice_rescued and not campaign.guardians.has("ice") else "Guardian Nursery / evolution"
 		"rest":return "Rest / refill repair charges"
@@ -330,6 +331,9 @@ func interact() -> void:
 		"stone_imprint":
 			if Fusion.recover_stone(campaign):
 				_save();level.refresh(campaign);hud.show_stone_recovered()
+		"venom_culture":
+			if Fusion.recover_venom(campaign):
+				_save();level.refresh(campaign);hud.show_venom_recovered()
 		"ice_egg":
 			if CampaignRules.rescue_ice(campaign):
 				_save()
@@ -449,7 +453,8 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		if owner_id=="fire": _place_wall(origin,direction)
 		elif owner_id=="ice": _place_frost(origin,direction)
 		elif owner_id=="storm": _place_static(origin,direction)
-		else: _place_bulwark(origin,direction)
+		elif owner_id=="stone": _place_bulwark(origin,direction)
+		else: _place_venom(origin,direction)
 		walls[-1].damage=campaign_damage(id)
 		walls[-1].guardian=owner_id
 		walls[-1].ttl=GuardianCombat.field_duration(dragon.state)
@@ -470,6 +475,8 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		return
 	if owner_id=="stone":
 		_stone_contact(id,origin,direction,rule.range)
+	if owner_id=="venom":
+		_venom_contact(id,origin,direction,rule.range)
 	if owner_id=="ice":
 		_ice_contact(id,origin,direction,rule.range)
 		if id=="breath" and not conduits.is_empty():
@@ -675,6 +682,10 @@ func guidance() -> Dictionary:
 		target=Vector3(-2,0,8)
 		marker="HATCH MAGMA"
 	elif r.role=="forge":
+		if campaign.venom_forged and not campaign.guardians.has("venom"):
+			return {"title":"A Venom guardian is ready to hatch","detail":"Visit Resonance Fusion to awaken Nox. Rime and your current expedition pair are retained.","target":Fusion.STATION,"marker":"HATCH NOX","index":mini(campaign.installed.size(),5)}
+		if campaign.venom_culture_recovered and not campaign.venom_forged and Fusion.venom_reason(campaign)=="" and campaign.cores.size()==campaign.installed.size():
+			return {"title":"The Venom culture can be stabilized","detail":"Rime can stabilize the preserved culture at Resonance Fusion. Canonical Ice + Venom remains Venom; Rime is retained.","target":Fusion.STATION,"marker":"VENOM RESONANCE","index":mini(campaign.installed.size(),5)}
 		if campaign.stone_forged and not campaign.guardians.has("stone"):
 			return {"title":"A Stone guardian is ready to hatch", "detail":"Visit Resonance Fusion on the left to awaken Cairn. Your current expedition pair stays unchanged.","target":Fusion.STATION,"marker":"HATCH CAIRN","index":mini(campaign.installed.size(),5)}
 		if campaign.stone_imprint_recovered and not campaign.stone_forged and Fusion.stone_reason(campaign)=="" and campaign.cores.size()==campaign.installed.size():
@@ -738,6 +749,11 @@ func guidance() -> Dictionary:
 		detail="Rescue the egg from the cyan plinth. Return to the Forge to hatch Rime, your first reserve guardian."
 		target=Vector3(6,0,-4)
 		marker="ICE GUARDIAN EGG"
+	elif r.id=="frozen-vault" and not campaign.venom_culture_recovered:
+		title="A sealed culture beneath the frost"
+		detail="Recover the Venom culture from the separate green plinth. Rime can stabilize it later at Resonance Fusion."
+		target=Fusion.VENOM_CULTURE
+		marker="VENOM CULTURE"
 	elif r.role=="cache" and not campaign.caches.has(r.id):
 		title="Search the abandoned locker"
 		detail="Its salvage funds permanent Forge upgrades. Read the record before returning."
@@ -851,6 +867,14 @@ func hatch_stone() -> bool:
 	if not can_fuse() or not Fusion.hatch_stone(campaign):return false
 	sound("hatch","fire",3,true);_save();hud.show_fusion();return true
 
+func forge_venom() -> bool:
+	if not can_fuse() or not Fusion.forge_venom(campaign):return false
+	sound("fusion","venom",3,true);_save();hud.show_fusion();return true
+
+func hatch_venom() -> bool:
+	if not can_fuse() or not Fusion.hatch_venom(campaign):return false
+	sound("hatch","venom",3,true);_save();hud.show_fusion();return true
+
 func equip_reserve(guardian: String) -> bool:
 	# Only the safe Nursery can change the pair. Opening P elsewhere never grants healing.
 	if not can_evolve() or not Fusion.equip_reserve(campaign,guardian): return false
@@ -900,6 +924,27 @@ func _place_bulwark(origin:Vector3,direction:Vector3)->void:
 	for i in range(8):
 		var a=TAU*i/8.0;var rock=Geo.box(marker,Vector3(sin(a)*1.8,.30,cos(a)*1.8),Vector3(.38,.65,.38),Geo.material(Color("8f8069"),.05));rock.rotation.y=a
 	walls.append({"at":at,"ttl":3.6,"tick":0.0,"damage":campaign_damage("wall"),"guardian":"stone","node":marker})
+
+func _place_venom(origin:Vector3,direction:Vector3)->void:
+	var at=origin+direction*4.0
+	var hit=get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(origin+Vector3.UP,at+Vector3.UP,1))
+	if not hit.is_empty():at=hit.position-direction*.6
+	at.y=0.0
+	var marker=effects.decal(at,2.5,Color("668d42"));Geo.ring(marker,Vector3.UP*.05,2.5,Geo.material(Color("a4dc5d"),.5,true),.06)
+	for i in range(7):
+		var a=TAU*i/7.0;Geo.orb(marker,Vector3(sin(a)*1.65,.12,cos(a)*1.65),.10,Geo.material(Color("9cd855"),.7,true))
+	walls.append({"at":at,"ttl":3.6,"tick":0.0,"damage":campaign_damage("wall"),"guardian":"venom","node":marker})
+
+func _venom_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->void:
+	if id=="burst":effects.pulse(origin,reach,Color("a5dc60"));return
+	var node=Node3D.new();add_child(node);effects._reserve(node);var mat=Geo.material(Color("a8df66"),.65,true)
+	var count=3 if id=="claw" else 11
+	for i in range(count):
+		var d=1.0+i*.52
+		if d>reach or not line_clear(origin,origin+direction*d):break
+		var side=direction.cross(Vector3.UP)*(.10 if i%2 else -.10)
+		Geo.orb(node,origin+direction*d+side+Vector3.UP*(.55+.03*(i%3)),.10 if id=="claw" else .075,mat)
+	node.create_tween().tween_interval(.30).finished.connect(node.queue_free)
 
 func _stone_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->void:
 	if id=="burst":effects.pulse(origin,reach,Color("bba47b"));return

@@ -73,6 +73,10 @@ func _process(delta: float) -> void:
 			if id=="breath":card.cost.text="%d + CHILL / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 			elif id=="wall":card.cost.text="%d/tick + CHILL / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 			elif id=="burst":card.cost.text="55%% protection / %d seconds" % int(GuardianCombat.ward_duration(actor.state))
+		if active_id=="venom":
+			if id in ["claw","breath"]:card.cost.text="%d + TOXIN / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
+			elif id=="wall":card.cost.text="%d/tick + TOXIN / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
+			elif id=="burst":card.cost.text="%d / +25%% per TOXIN / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 		var cd: float=actor.state.cooldowns.get(id,0.0)
 		card.charge.value=1.0-cd/float(rule.cooldown)
 		card.status.text="COOLING %.1fs" % cd if cd>0 else ("TOO HOT" if actor.state.heat+GuardianCombat.heat_cost(actor.state,id)>100 else "READY")
@@ -115,6 +119,8 @@ func _update_enemy() -> void:
 		enemy_readout.text+="  /  CHILLED %.1fs" % foe.chilled
 	if foe.charged>0.0:
 		enemy_readout.text+="  /  CHARGED %.1fs" % foe.charged
+	if foe.toxin>0:
+		enemy_readout.text+="  /  TOXIN x%d %.1fs" % [foe.toxin,foe.toxin_time]
 	if foe.spec.id=="singularity-final":
 		enemy_name.text+="  /  PHASE %d" % (1 if foe.hp>foe.max_hp*0.66 else (2 if foe.hp>foe.max_hp*0.33 else 3))
 
@@ -167,7 +173,7 @@ func show_title() -> void:
 	_label(overlay_column,"DRAGON FORGE",42,GOLD)
 	_label(overlay_column,"RECONNECTION",25,TEAL)
 	_wrapped(overlay_column,"A compact playable campaign through four broken sectors. Restore their cores. Rescue, evolve and fuse guardians. Choose your expedition pair. Stop the Great Reset.",20)
-	_label(overlay_column,"STONE RESONANCE   /   22 ROOMS   /   FOUR GUARDIANS, TWO FIELD SLOTS",14,MUTED)
+	_label(overlay_column,"VENOM RESONANCE   /   22 ROOMS   /   FIVE GUARDIANS, TWO FIELD SLOTS",14,MUTED)
 	var start=_button(overlay_column,"Continue campaign" if world.store.existed or world.has_started else "Begin campaign")
 	start.pressed.connect(func():world.begin_campaign(false))
 	start.grab_focus()
@@ -424,12 +430,12 @@ func show_party() -> void:
 	row.add_theme_constant_override("h_separation",14)
 	row.add_theme_constant_override("v_separation",14)
 	overlay_column.add_child(row)
-	for id in ["fire","ice","storm","stone"]:
+	for id in ["fire","ice","storm","stone","venom"]:
 		var card=_panel(row);card.custom_minimum_size.x=315
 		var col=_column(card,9)
 		var owned: bool=world.campaign.guardians.has(id)
 		var selected: bool=world.party.states.has(id)
-		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa"),"stone":Color("c8ad7c")}[id])
+		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa"),"stone":Color("c8ad7c"),"venom":Color("a8db61")}[id])
 		_label(col,("ACTIVE" if world.party.active_id==id else ("RESERVE" if selected else "AT THE FORGE")) if owned else "NOT RECRUITED",14,MUTED)
 		if owned:
 			if selected:
@@ -439,7 +445,7 @@ func show_party() -> void:
 				_label(col,"Not in the expedition",15,MUTED)
 			for slot in GuardianCombat.ORDER:
 				_label(col,GuardianCombat.rule({"guardian":id,"evolution":Growth.choice(world.campaign,id)},slot).name,17,PAPER)
-			var tips={"fire":"Powers heat relays. Direct Fire hits shatter Chill for +40% once.","ice":"Chills exposed enemies. Aegis protects Rime, even after swapping.","storm":"Lance / Well charge enemies. Discharge consumes Charge for +50% once.","stone":"Guard landed hits to build up to 3 Resolve. Earthshatter gains +20% per Resolve and spends it only on a landed hit."}
+			var tips={"fire":"Powers heat relays. Direct Fire hits shatter Chill for +40% once.","ice":"Chills exposed enemies. Aegis protects Rime, even after swapping.","storm":"Lance / Well charge enemies. Discharge consumes Charge for +50% once.","stone":"Guard landed hits to build up to 3 Resolve. Earthshatter gains +20% per Resolve and spends it only on a landed hit.","venom":"Fang, Spit and Cloud build Toxin. Septic Bloom gains +25% per stack and consumes stacks only when it lands."}
 			_wrapped(col,tips[id],16,MUTED,272)
 			if not selected:
 				var equip=_button(col,"Equip as reserve")
@@ -455,8 +461,11 @@ func show_party() -> void:
 		elif id=="storm":
 			_wrapped(col,"Evolve both parents. Recover the conductor lattice in Capacitor Cache. Fire + Ice creates Storm; neither parent is lost.",17,PAPER,272)
 			_button(col,"View fusion recipes").pressed.connect(show_fusion)
-		else:
+		elif id=="stone":
 			_wrapped(col,"Recover the Stone imprint in Admin Vault, then temper it with Magma at Resonance Fusion. Fire + Stone remains Stone; Magma is retained.",17,PAPER,272)
+			_button(col,"View fusion recipes").pressed.connect(show_fusion)
+		else:
+			_wrapped(col,"Rescue Rime, then recover the preserved Venom culture from Frozen Vault. Canonical Ice + Venom remains Venom; Rime is retained.",17,PAPER,272)
 			_button(col,"View fusion recipes").pressed.connect(show_fusion)
 	_wrapped(overlay_column,"Tab swaps your active/reserve pair, not benched guardians. A benched guardian cannot rescue a downed party. Change the pair only at the right-hand Nursery; keep Magma available for thermal relays.",16,TEAL)
 	_button(overlay_column,"Back to the world / P").pressed.connect(close_overlay)
@@ -523,11 +532,19 @@ func show_stone_recovered()->void:
 	_button(overlay_column,"Return to the Forge").pressed.connect(func():world.return_to_forge())
 	_button(overlay_column,"Keep exploring").pressed.connect(close_overlay)
 
+func show_venom_recovered()->void:
+	_open_overlay("venom")
+	_label(overlay_column,"SOMETHING LIVING UNDER THE ICE",31,Color("a8db61"))
+	_wrapped(overlay_column,"A preserved Venom culture survived beside the frozen guardian archive. It is not Rime's egg and does not replace any cache reward.",21,PAPER)
+	_wrapped(overlay_column,"Return to Resonance Fusion after three sector cores are restored. Rime stabilizes the culture non-destructively: canonical Ice + Venom remains Venom.",18,MUTED)
+	_button(overlay_column,"Return to the Forge").pressed.connect(func():world.return_to_forge())
+	_button(overlay_column,"Keep exploring").pressed.connect(close_overlay)
+
 func show_fusion() -> void:
 	if world.title_open:return
 	_open_overlay("fusion")
 	_label(overlay_column,"RESONANCE FUSION / PRESERVE THE PARENTS",29,Color("c4b1fa"))
-	_wrapped(overlay_column,"The Forge now holds two explicit, non-destructive resonance recipes. No random failure, parent sacrifice or salvage cost.",18,PAPER)
+	_wrapped(overlay_column,"The Forge now holds three explicit, non-destructive resonance recipes. No random failure, parent sacrifice or salvage cost.",18,PAPER)
 	var c:Dictionary=world.campaign
 	_label(overlay_column,"FIRE + ICE = STORM / ARC",22,Color("c4b1fa"))
 	if c.guardians.has("storm"):
@@ -546,6 +563,15 @@ func show_fusion() -> void:
 		_wrapped(overlay_column,Fusion.stone_reason(c) if Fusion.stone_reason(c)!="" else "READY / Recovered Stone imprint + Magma. Canonical Fire + Stone remains Stone.",16,GOLD)
 		var forge2=_button(overlay_column,"Temper Stone imprint / keep Magma");forge2.disabled=Fusion.stone_reason(c)!="" or not world.can_fuse();forge2.pressed.connect(func():world.forge_stone())
 	_wrapped(overlay_column,"CAIRN / Granite Knuckle • Fault Line • Bulwark Field • Earthshatter\nGuard landed hits to build Resolve (max 3). Earthshatter gains +20% damage per Resolve and spends it only when damage lands; a closed shield preserves the stored Resolve.",17,MUTED)
+	_label(overlay_column,"ICE + VENOM CULTURE = VENOM / NOX",22,Color("a8db61"))
+	if c.guardians.has("venom"):
+		_label(overlay_column,"NOX / RECRUITED",18,TEAL)
+	elif c.venom_forged:
+		var hatch3=_button(overlay_column,"Awaken Nox / free");hatch3.disabled=not world.can_fuse();hatch3.pressed.connect(func():world.hatch_venom())
+	else:
+		_wrapped(overlay_column,Fusion.venom_reason(c) if Fusion.venom_reason(c)!="" else "READY / Preserved Venom culture + Rime. Canonical Ice + Venom remains Venom.",16,GOLD)
+		var forge3=_button(overlay_column,"Stabilize Venom culture / keep Rime");forge3.disabled=Fusion.venom_reason(c)!="" or not world.can_fuse();forge3.pressed.connect(func():world.forge_venom())
+	_wrapped(overlay_column,"NOX / Toxin Fang • Acid Spit • Toxic Cloud • Septic Bloom\nBuild up to 3 Toxin stacks. Existing Toxin ticks after shields re-close; Bloom gains +25% per stack and consumes them only when the Bloom lands.",17,MUTED)
 	if world.store.message!="":_wrapped(overlay_column,world.store.message,16,GOLD)
 	_button(overlay_column,"Back to Guardians").pressed.connect(show_party)
 	_button(overlay_column,"Back to the world").pressed.connect(close_overlay)

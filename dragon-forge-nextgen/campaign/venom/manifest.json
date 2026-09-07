@@ -1,0 +1,40 @@
+{
+  "source": "tools/build_venom_guardian.py",
+  "asset": {
+    "file": "venom_guardian.glb",
+    "triangles": 1604,
+    "vertices": 1255,
+    "surfaces": 1,
+    "bones": 22,
+    "clips": [
+      "idle",
+      "walk",
+      "claw",
+      "breath",
+      "wall",
+      "burst",
+      "guard",
+      "hurt",
+      "defeat"
+    ],
+    "bounds": [
+      [
+        -0.6948229074478149,
+        0.08999145776033401,
+        -1.5261366367340088
+      ],
+      [
+        0.7070909738540649,
+        1.9346327781677246,
+        2.9839329719543457
+      ]
+    ]
+  },
+  "files": {
+    "atlas_base.png": "751c72bf9c2bf5f5a661cab67493cd8c91d5af0299580c416b7d4c6cfcd60d58",
+    "atlas_emission.png": "be2d91c2ce2956ef6b709967dcb42566f4ac65bcbcbfe427068830fbe969620c",
+    "atlas_normal.png": "54c3184e646bc456631a00b20f280a52c1803232a932ad35414bae4a6df8f7f3",
+    "atlas_orm.png": "325b25572fbd6d33956624b68f8955fee40ae417d311481ec5914ed5b8a443c6",
+    "venom_guardian.glb": "9df4ce9811637cbd78b46e53f93206025458aba74e5bf2ab7bcf8c825409123d"
+  }
+}
