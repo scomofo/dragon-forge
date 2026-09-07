@@ -154,7 +154,7 @@ func show_title() -> void:
 	_label(overlay_column,"DRAGON FORGE",42,GOLD)
 	_label(overlay_column,"RECONNECTION",25,TEAL)
 	_wrapped(overlay_column,"A compact playable campaign through four broken sectors. Restore their cores. Rescue, evolve and fuse guardians. Choose your expedition pair. Stop the Great Reset.",20)
-	_label(overlay_column,"BOSS IDENTITIES   /   22 ROOMS   /   THREE GUARDIANS, TWO FIELD SLOTS",14,MUTED)
+	_label(overlay_column,"STONE RESONANCE   /   22 ROOMS   /   FOUR GUARDIANS, TWO FIELD SLOTS",14,MUTED)
 	var start=_button(overlay_column,"Continue campaign" if world.store.existed or world.has_started else "Begin campaign")
 	start.pressed.connect(func():world.begin_campaign(false))
 	start.grab_focus()
@@ -362,15 +362,17 @@ func show_party() -> void:
 	_open_overlay("party")
 	_label(overlay_column,"GUARDIANS / CHOOSE YOUR EXPEDITION PAIR",27,TEAL)
 	_label(overlay_column,"BOND %s / %d points   •   One active + one reserve. Bench changes at the Forge Nursery." % [["I","II","III"][Growth.rank(world.campaign)-1],Growth.points(world.campaign)],15,GOLD)
-	var row=HBoxContainer.new()
-	row.add_theme_constant_override("separation",14)
+	var row=GridContainer.new()
+	row.columns=2
+	row.add_theme_constant_override("h_separation",14)
+	row.add_theme_constant_override("v_separation",14)
 	overlay_column.add_child(row)
-	for id in ["fire","ice","storm"]:
+	for id in ["fire","ice","storm","stone"]:
 		var card=_panel(row);card.custom_minimum_size.x=315
 		var col=_column(card,9)
 		var owned: bool=world.campaign.guardians.has(id)
 		var selected: bool=world.party.states.has(id)
-		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa")}[id])
+		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa"),"stone":Color("c8ad7c")}[id])
 		_label(col,("ACTIVE" if world.party.active_id==id else ("RESERVE" if selected else "AT THE FORGE")) if owned else "NOT RECRUITED",14,MUTED)
 		if owned:
 			if selected:
@@ -380,20 +382,26 @@ func show_party() -> void:
 				_label(col,"Not in the expedition",15,MUTED)
 			for slot in GuardianCombat.ORDER:
 				_label(col,GuardianCombat.rule({"guardian":id,"evolution":Growth.choice(world.campaign,id)},slot).name,17,PAPER)
-			var tips={"fire":"Powers heat relays. Direct Fire hits shatter Chill for +40% once.","ice":"Chills exposed enemies. Aegis protects Rime, even after swapping.","storm":"Lance / Well charge enemies. Discharge consumes Charge for +50% once."}
+			var tips={"fire":"Powers heat relays. Direct Fire hits shatter Chill for +40% once.","ice":"Chills exposed enemies. Aegis protects Rime, even after swapping.","storm":"Lance / Well charge enemies. Discharge consumes Charge for +50% once.","stone":"Guard landed hits to build up to 3 Resolve. Earthshatter gains +20% per Resolve and spends it only on a landed hit."}
 			_wrapped(col,tips[id],16,MUTED,272)
 			if not selected:
 				var equip=_button(col,"Equip as reserve")
 				equip.disabled=not world.can_evolve()
 				equip.pressed.connect(func():world.equip_reserve(id))
-			var evolve=_button(col,"Evolution / " + (Growth.TRAITS[Growth.choice(world.campaign,id)].name if Growth.choice(world.campaign,id)!="" else "Requirements"))
-			evolve.pressed.connect(func():show_growth(id))
+			if Growth.OPTIONS.has(id):
+				var evolve=_button(col,"Evolution / " + (Growth.TRAITS[Growth.choice(world.campaign,id)].name if Growth.choice(world.campaign,id)!="" else "Requirements"))
+				evolve.pressed.connect(func():show_growth(id))
+			elif id=="stone":
+				_label(col,"Resolve %d / 3" % int((world.party.states[id].get("resolve",0) if selected else 0)),15,GOLD)
 		elif id=="ice":
 			_wrapped(col,"Rescue the Ice egg in Frozen Vault. Return to the right-hand Nursery to hatch Rime for free.",17,PAPER,272)
-		else:
+		elif id=="storm":
 			_wrapped(col,"Evolve both parents. Recover the conductor lattice in Capacitor Cache. Fire + Ice creates Storm; neither parent is lost.",17,PAPER,272)
-			_button(col,"View fusion recipe").pressed.connect(show_fusion)
-	_wrapped(overlay_column,"Tab swaps your active/reserve pair, not the benched guardian. A benched dragon cannot rescue a downed party. To change the pair, visit the right-hand Nursery; keep Magma for thermal relays.",16,TEAL)
+			_button(col,"View fusion recipes").pressed.connect(show_fusion)
+		else:
+			_wrapped(col,"Recover the Stone imprint in Admin Vault, then temper it with Magma at Resonance Fusion. Fire + Stone remains Stone; Magma is retained.",17,PAPER,272)
+			_button(col,"View fusion recipes").pressed.connect(show_fusion)
+	_wrapped(overlay_column,"Tab swaps your active/reserve pair, not benched guardians. A benched guardian cannot rescue a downed party. Change the pair only at the right-hand Nursery; keep Magma available for thermal relays.",16,TEAL)
 	_button(overlay_column,"Back to the world / P").pressed.connect(close_overlay)
 
 func show_growth(guardian: String) -> void:
@@ -450,30 +458,37 @@ func show_lattice_recovered() -> void:
 	_button(overlay_column,"Return to the Forge").pressed.connect(func():world.return_to_forge())
 	_button(overlay_column,"Keep exploring").pressed.connect(close_overlay)
 
+func show_stone_recovered()->void:
+	_open_overlay("stone")
+	_label(overlay_column,"THE STONE REMEMBERS",31,Color("c8ad7c"))
+	_wrapped(overlay_column,"A dormant Stone imprint survived in Admin Vault. Felix: ‘It is not an egg. It is a pattern waiting for enough heat to become itself again.’",21,PAPER)
+	_wrapped(overlay_column,"Recovery is saved separately from the salvage cache. Return to Resonance Fusion and temper the imprint with Magma. Magma is retained; no guardian or salvage is consumed.",18,MUTED)
+	_button(overlay_column,"Return to the Forge").pressed.connect(func():world.return_to_forge())
+	_button(overlay_column,"Keep exploring").pressed.connect(close_overlay)
+
 func show_fusion() -> void:
 	if world.title_open:return
 	_open_overlay("fusion")
-	_label(overlay_column,"RESONANCE FUSION / FIRE + ICE = STORM",29,Color("c4b1fa"))
-	_wrapped(overlay_column,"Combine a spark from Crowned Magma and Aurora Rime in the conductor lattice to create ARC, a hovering Storm drake. The parents, their evolution choices and your salvage are preserved.",19,PAPER)
-	var c: Dictionary=world.campaign
-	var ready=Fusion.reason(c)
+	_label(overlay_column,"RESONANCE FUSION / PRESERVE THE PARENTS",29,Color("c4b1fa"))
+	_wrapped(overlay_column,"The Forge now holds two explicit, non-destructive resonance recipes. No random failure, parent sacrifice or salvage cost.",18,PAPER)
+	var c:Dictionary=world.campaign
+	_label(overlay_column,"FIRE + ICE = STORM / ARC",22,Color("c4b1fa"))
 	if c.guardians.has("storm"):
-		_label(overlay_column,"ARC HAS JOINED YOUR COLLECTION",23,TEAL)
-		_wrapped(overlay_column,"Your expedition pair has not changed. Visit the Guardian Nursery on the right to equip Arc as reserve, then Tab to take point. Choose Fire + Storm or Ice + Storm; only two guardians travel at once.",19,PAPER)
+		_label(overlay_column,"ARC / RECRUITED",18,TEAL)
 	elif c.storm_forged:
-		_label(overlay_column,"STORM EGG STABILIZED / READY TO HATCH",23,TEAL)
-		var hatch=_button(overlay_column,"Hatch Arc / free")
-		hatch.disabled=not world.can_fuse()
-		hatch.pressed.connect(func():world.hatch_storm())
+		var hatch=_button(overlay_column,"Hatch Arc / free");hatch.disabled=not world.can_fuse();hatch.pressed.connect(func():world.hatch_storm())
 	else:
-		for item in [[Growth.choice(c,"fire")!="","Crowned Magma"],[Growth.choice(c,"ice")!="","Aurora Rime"],[c.lattice_recovered,"Conductor lattice / Capacitor Cache"]]:
-			_label(overlay_column,("READY / " if item[0] else "NEEDED / ")+item[1],18,TEAL if item[0] else MUTED)
-		_wrapped(overlay_column,ready if ready!="" else ("READY / Free, permanent, one-time recipe. No random failure or parent sacrifice." if world.can_fuse() else "Visit Resonance Fusion on the left of the Forge to create the egg."),18,GOLD)
-		var forge=_button(overlay_column,"Create Storm egg / keep both parents")
-		forge.disabled=ready!="" or not world.can_fuse()
-		forge.pressed.connect(func():world.forge_storm())
-	_wrapped(overlay_column,"ARC / Spark Talon • Arc Lance • Static Well • Tempest Discharge
-Lance and Well apply four seconds of Charge on landed hits. Discharge consumes it for +50% damage once. Closed shields still block all three.",17,MUTED)
+		_wrapped(overlay_column,Fusion.reason(c) if Fusion.reason(c)!="" else "READY / Crowned Magma + Aurora Rime + conductor lattice.",16,GOLD)
+		var forge=_button(overlay_column,"Create Storm egg / keep both parents");forge.disabled=Fusion.reason(c)!="" or not world.can_fuse();forge.pressed.connect(func():world.forge_storm())
+	_label(overlay_column,"FIRE + STONE IMPRINT = STONE / CAIRN",22,Color("c8ad7c"))
+	if c.guardians.has("stone"):
+		_label(overlay_column,"CAIRN / RECRUITED",18,TEAL)
+	elif c.stone_forged:
+		var hatch2=_button(overlay_column,"Awaken Cairn / free");hatch2.disabled=not world.can_fuse();hatch2.pressed.connect(func():world.hatch_stone())
+	else:
+		_wrapped(overlay_column,Fusion.stone_reason(c) if Fusion.stone_reason(c)!="" else "READY / Recovered Stone imprint + Magma. Canonical Fire + Stone remains Stone.",16,GOLD)
+		var forge2=_button(overlay_column,"Temper Stone imprint / keep Magma");forge2.disabled=Fusion.stone_reason(c)!="" or not world.can_fuse();forge2.pressed.connect(func():world.forge_stone())
+	_wrapped(overlay_column,"CAIRN / Granite Knuckle • Fault Line • Bulwark Field • Earthshatter\nGuard landed hits to build Resolve (max 3). Earthshatter gains +20% damage per Resolve and spends it only when damage lands; a closed shield preserves the stored Resolve.",17,MUTED)
 	if world.store.message!="":_wrapped(overlay_column,world.store.message,16,GOLD)
 	_button(overlay_column,"Back to Guardians").pressed.connect(show_party)
 	_button(overlay_column,"Back to the world").pressed.connect(close_overlay)

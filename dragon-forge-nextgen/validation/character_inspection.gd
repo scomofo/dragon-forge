@@ -4,7 +4,7 @@ const Art = preload("res://presentation/art_library.gd")
 const UI = preload("res://validation/review_ui.gd")
 const Probe = preload("res://validation/foot_review.gd")
 const BossCatalog = preload("res://campaign/bosses/catalog.gd")
-const ACTORS = ["magma_guardian", "firewall_sentinel", "packet_warden", "ice_guardian", "magma_evolved", "rime_evolved", "storm_guardian", "tempest_arc", "buffer_overflow", "memory_leak", "stack_overflow", "mirror_admin", "singularity"]
+const ACTORS = ["magma_guardian", "firewall_sentinel", "packet_warden", "ice_guardian", "magma_evolved", "rime_evolved", "storm_guardian", "tempest_arc", "stone_guardian", "buffer_overflow", "memory_leak", "stack_overflow", "mirror_admin", "singularity"]
 const VIEWS = ["Full body", "Shoulders", "Hips / feet", "Jaw / head", "Rear / tail"]
 var model: Node3D
 var skeleton: Skeleton3D
@@ -100,7 +100,7 @@ func _build_controls() -> void:
 	var box = UI.panel(layer, Vector2(18, 18), 296)
 	UI.text(box, "CHARACTER / INSPECTION", 19)
 	UI.text(box, "Actual imported art • save-safe", 12)
-	UI.picker(box, ["Magma guardian", "Firewall Sentinel", "Packet Warden", "Rime / Ice guardian", "Crowned Magma / Evolved", "Aurora Rime / Evolved", "Arc / Storm fusion", "Tempest Arc / Evolved", "Buffer Overflow / Boss", "Memory Leak / Boss", "Stack Overflow / Boss", "Mirror Admin / Boss", "Singularity / Final"], load_actor)
+	UI.picker(box, ["Magma guardian", "Firewall Sentinel", "Packet Warden", "Rime / Ice guardian", "Crowned Magma / Evolved", "Aurora Rime / Evolved", "Arc / Storm fusion", "Tempest Arc / Evolved", "Cairn / Stone guardian", "Buffer Overflow / Boss", "Memory Leak / Boss", "Stack Overflow / Boss", "Mirror Admin / Boss", "Singularity / Final"], load_actor)
 	clip_picker = UI.picker(box, [], select_clip)
 	var transport = UI.row(box)
 	play_button = UI.button(transport, "Pause", toggle_play)
@@ -141,8 +141,9 @@ func load_actor(index: int) -> void:
 		model=preload("res://campaign/guardians/ice_guardian.glb").instantiate()
 		add_child(model)
 	elif actor_id in ["storm_guardian", "tempest_arc"]:
-		model = load("res://campaign/tempest/tempest_arc.glb" if actor_id == "tempest_arc" else "res://campaign/fusion_assets/storm_guardian.glb").instantiate()
-		add_child(model)
+		model = load("res://campaign/tempest/tempest_arc.glb" if actor_id == "tempest_arc" else "res://campaign/fusion_assets/storm_guardian.glb").instantiate();add_child(model)
+	elif actor_id == "stone_guardian":
+		model = load("res://campaign/stone/stone_guardian.glb").instantiate();add_child(model)
 	else:
 		model = Art.place(self, actor_id)
 	skeleton = model.find_child("Skeleton3D", true, false)

@@ -18,7 +18,8 @@ var badge_nodes: Array = []
 const IceEgg = preload("res://campaign/guardians/ice_egg.glb")
 var ice_egg: Node3D
 var storm_egg: Node3D
-var lattice: Node3D
+var lattice
+var stone_imprint: Node3D
 
 func build(data: Dictionary) -> void:
 	definition = data
@@ -166,6 +167,10 @@ func _interactables() -> void:
 		if definition.id == "capacitor-cache":
 			lattice = _station("lattice", "CONDUCTOR LATTICE", Vector3(6,0,-4), "relay_conduit")
 			Geo.ring(lattice, Vector3.UP*1.6, .65, Geo.material(Color("b5a0f2"), .6, true), .06)
+		if definition.id == "admin-vault":
+			stone_imprint = _station("stone_imprint", "STONE IMPRINT", Vector3(6,0,-4), "core_socket")
+			Geo.orb(stone_imprint,Vector3(0,1.55,0),.34,Geo.material(Color("c7a776"),1.1,true))
+			Geo.ring(stone_imprint,Vector3.UP*.18,1.05,Geo.material(Color("8f7554"),.5,true),.07)
 	elif definition.role in ["boss","final"]:
 		core_node = _station("finish" if definition.role=="final" else "core", "RECONNECT" if definition.role=="final" else "SECTOR CORE",Vector3(0,0,-19),"core_socket")
 		Geo.orb(core_node,Vector3(0,1.7,0),0.4,Geo.material(color,1.5,true))
@@ -217,6 +222,7 @@ func _art_direction() -> void:
 func refresh(state: Dictionary) -> void:
 	if is_instance_valid(storm_egg): storm_egg.visible = state.get("storm_forged",false) and not state.get("guardians",[]).has("storm")
 	if is_instance_valid(lattice): lattice.visible = not state.get("lattice_recovered",false)
+	if is_instance_valid(stone_imprint): stone_imprint.visible = not state.get("stone_imprint_recovered",false)
 	if is_instance_valid(ice_egg):
 		ice_egg.visible=(not state.get("ice_rescued",false)) if definition.id=="frozen-vault" else (state.get("ice_rescued",false) and not state.get("guardians",["fire"]).has("ice"))
 	for station in stations:

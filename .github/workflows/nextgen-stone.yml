@@ -1,25 +1,74 @@
-name: Nextgen Stone resonance
+name: Nextgen Cairn Stone guardian
 on:
   pull_request:
     paths:
       - 'dragon-forge-nextgen/**'
       - '.github/workflows/nextgen-stone.yml'
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: cairn-stone-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  prepare:
+  stone:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 18
+    env:
+      GODOT_SILENCE_ROOT_WARNING: '1'
+      LIBGL_ALWAYS_SOFTWARE: '1'
     steps:
-      - name: Fetch official pinned editor for isolated development verification
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: dragon-forge-nextgen
+      - name: Install isolated validation tools
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/stone-engine
-          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/stone-engine/Godot.zip
-          sha256sum /tmp/stone-engine/Godot.zip > /tmp/stone-engine/SHA256SUMS.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          npm install --prefix /tmp/stone-validator gltf-validator@2.0.0-dev.3.10
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Validate committed Cairn assets without rebuilding
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dragon-forge-nextgen/artifacts/stone
+          python3 dragon-forge-nextgen/tools/validate_stone.py 2>&1 | tee dragon-forge-nextgen/artifacts/stone/integrity.log
+          GLTF_VALIDATOR_MODULE=/tmp/stone-validator/node_modules/gltf-validator node dragon-forge-nextgen/tools/validate_stone.cjs 2>&1 | tee dragon-forge-nextgen/artifacts/stone/gltf.log
+      - name: Import and run full inherited native stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120 godot --headless --path dragon-forge-nextgen --editor --import 2>&1 | tee dragon-forge-nextgen/artifacts/stone/import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/stone/import.log; then exit 1; fi
+          GODOT=godot bash dragon-forge-nextgen/tools/test_bosses.sh 2>&1 | tee dragon-forge-nextgen/artifacts/stone/tests.log
+          grep -E 'STONE_TESTS: [0-9]+ checks, 0 failures' dragon-forge-nextgen/artifacts/stone/tests.log
+      - name: Capture Cairn through OpenGL and Vulkan Forward+
+        shell: bash
+        run: |
+          set -euo pipefail
+          for mode in gl_compatibility forward_plus; do
+            target="dragon-forge-nextgen/artifacts/stone/$mode"
+            mkdir -p "$target"
+            timeout 240 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method "$mode" --audio-driver Dummy --script res://campaign/tests/stone_capture.gd -- --test-mode 2>&1 | tee "$target/visual.log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|FAIL ' "$target/visual.log"; then exit 1; fi
+            grep 'STONE_VISUAL: 0 failures' "$target/visual.log"
+            mv dragon-forge-nextgen/artifacts/stone/captures/*.png "$target/"
+          done
+      - name: Record exact tested source revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/stone/TESTED_COMMIT.txt
+          git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/stone/TESTED_TREE.txt
+          git archive --format=zip -o dragon-forge-nextgen/artifacts/stone/Cairn_Editor_Project.zip HEAD:dragon-forge-nextgen
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: stone-development-engine
-          path: /tmp/stone-engine/
-          retention-days: 1
+          name: cairn-stone-evidence
+          path: dragon-forge-nextgen/artifacts/stone/
+          retention-days: 14

@@ -35,7 +35,8 @@ jobs:
       - name: Run complete source regressions
         run: |
           set -euo pipefail
-          GODOT="$GODOT" bash dragon-forge-nextgen/tools/test_bosses.sh
+          GODOT="$GODOT" bash dragon-forge-nextgen/tools/test_bosses.sh 2>&1 | tee "$RUNNER_TEMP/df-release/evidence/regressions.log"
+          grep -E 'STONE_TESTS: [0-9]+ checks, 0 failures' "$RUNNER_TEMP/df-release/evidence/regressions.log"
       - uses: actions/upload-artifact@v4
         with:
           name: standalone-candidate-Linux
@@ -52,11 +53,11 @@ jobs:
           path: ${{ runner.temp }}/df-release/Dragon_Forge_Standalone_macOS.zip
           retention-days: 14
       - name: Archive exact source revision for editor users
-        run: git archive --format=zip -o "$RUNNER_TEMP/df-release/Dragon_Forge_Bosses_Source.zip" HEAD:dragon-forge-nextgen
+        run: git archive --format=zip -o "$RUNNER_TEMP/df-release/Dragon_Forge_Cairn_Editor_Project.zip" HEAD:dragon-forge-nextgen
       - uses: actions/upload-artifact@v4
         with:
           name: standalone-source
-          path: ${{ runner.temp }}/df-release/Dragon_Forge_Bosses_Source.zip
+          path: ${{ runner.temp }}/df-release/Dragon_Forge_Cairn_Editor_Project.zip
           retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
@@ -65,7 +66,6 @@ jobs:
           path: |
             ${{ runner.temp }}/df-release/evidence/
             ${{ runner.temp }}/df-release/SHA256SUMS.txt
-            dragon-forge-nextgen/artifacts/bosses/*.log
           retention-days: 14
   native-check:
     needs: export
