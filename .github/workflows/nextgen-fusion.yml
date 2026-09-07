@@ -1,0 +1,115 @@
+name: Nextgen resonance fusion
+on:
+  pull_request:
+    paths:
+      - '.fusion-transfer/**'
+      - 'dragon-forge-nextgen/**'
+      - '.github/workflows/nextgen-fusion.yml'
+permissions:
+  contents: read
+jobs:
+  integrate:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'nextgen-resonance-fusion'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      LP_NUM_THREADS: '2'
+      OMP_NUM_THREADS: '1'
+      GODOT_SILENCE_ROOT_WARNING: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: |
+            dragon-forge-nextgen
+            .fusion-transfer
+      - name: Apply exact checksum-verified source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,hashlib,json,pathlib,subprocess,zlib
+          parts=sorted(pathlib.Path('.fusion-transfer').glob('0?.b64'))
+          assert len(parts)==5, 'Complete transfer required; never reapply after integration'
+          payload=zlib.decompress(base64.b64decode(''.join(p.read_text().strip() for p in parts),validate=True))
+          assert hashlib.sha256(payload).hexdigest()=='070d4b6334982393372dfa6ae56cf9035035e2a56d8625605003e7a857f30773'
+          patch=pathlib.Path('/tmp/fusion.patch');patch.write_bytes(payload)
+          files=[line[6:] for line in payload.decode().splitlines() if line.startswith('+++ b/')]
+          assert len(files)==22 and all(p.startswith('dragon-forge-nextgen/') and '..' not in pathlib.PurePosixPath(p).parts for p in files)
+          pathlib.Path('/tmp/fusion-files.json').write_text(json.dumps(files))
+          subprocess.run(['git','apply','--check',str(patch)],check=True)
+          subprocess.run(['git','apply',str(patch)],check=True)
+          print('Exact locally tested fusion source applied')
+          PY
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated authoring and validation tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          python -m pip install -r dragon-forge-nextgen/tools/art-requirements.txt
+          npm install --prefix /tmp/fusion-validator gltf-validator@2.0.0-dev.3.10
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Bake Storm assets and verify all native suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dragon-forge-nextgen
+          mkdir -p artifacts/fusion
+          python tools/build_storm_guardian.py
+          GLTF_VALIDATOR_MODULE=/tmp/fusion-validator/node_modules/gltf-validator node tools/validate_fusion.cjs 2>&1 | tee artifacts/fusion/exports.log
+          python tools/validate_art.py 2>&1 | tee artifacts/fusion/original-exports.log
+          python tools/validate_evolutions.py 2>&1 | tee artifacts/fusion/evolved-exports.log
+          timeout 100 godot --headless --path . --editor --import 2>&1 | tee artifacts/fusion/import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' artifacts/fusion/import.log; then exit 1; fi
+          for script in tests/run.gd tests/art_test.gd validation/review_tests.gd validation/polish_tests.gd campaign/tests/run.gd campaign/tests/party_tests.gd campaign/tests/evolution_tests.gd campaign/tests/fusion_tests.gd campaign/tests/play_smoke.gd campaign/tests/fusion_play.gd; do
+            log="artifacts/fusion/${script//\//_}.log"
+            timeout 150 godot --headless --fixed-fps 60 --path . --script "res://$script" -- --test-mode 2>&1 | tee "$log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' "$log"; then exit 1; fi
+          done
+          grep 'FUSION_TESTS:.*0 failures' artifacts/fusion/campaign_tests_fusion_tests.gd.log
+      - name: Capture real OpenGL and Forward+ fusion scenes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dragon-forge-nextgen
+          for mode in gl_compatibility forward_plus; do
+            timeout 240 xvfb-run -a godot --path . --rendering-method "$mode" --audio-driver Dummy --script res://campaign/tests/fusion_capture.gd -- --test-mode 2>&1 | tee "artifacts/fusion/$mode.log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' "artifacts/fusion/$mode.log"; then exit 1; fi
+            grep 'FUSION_VISUAL: 0 failures' "artifacts/fusion/$mode.log"
+            mv artifacts/fusion/captures "artifacts/fusion/$mode"
+          done
+      - name: Commit only verified native files and exports to this feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,pathlib,subprocess
+          files=json.loads(pathlib.Path('/tmp/fusion-files.json').read_text())
+          assets=pathlib.Path('dragon-forge-nextgen/campaign/fusion_assets')
+          files += [str(p) for p in assets.iterdir() if p.suffix in ['.glb','.png','.json']]
+          assert len(files)==29
+          subprocess.run(['git','add','--',*files],check=True)
+          subprocess.run(['git','rm','-r','--','.fusion-transfer'],check=True)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: ship stabilized Fire-Ice fusion, Arc and two-slot expedition selection'
+          git push origin HEAD:refs/heads/nextgen-resonance-fusion
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/fusion/TESTED_COMMIT.txt
+          git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/fusion/TESTED_TREE.txt
+          git archive --format=zip -o dragon-forge-nextgen/artifacts/fusion/Fusion_Project_Source.zip HEAD:dragon-forge-nextgen
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resonance-fusion-integration
+          path: dragon-forge-nextgen/artifacts/fusion/
+          retention-days: 14
