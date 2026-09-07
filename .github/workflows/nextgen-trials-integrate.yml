@@ -36,8 +36,8 @@ jobs:
           assert hashlib.sha256(payload).hexdigest()=='0aa6f5349376e1b13139a36e29992b59fbf0d4b703d492b33dbe65a798d25073'
           assert payload.count(b'diff --git ')==11
           patch=pathlib.Path('/tmp/forge-trials.patch');patch.write_bytes(payload)
-          subprocess.run(['git','apply','--check',str(patch)],check=True)
-          subprocess.run(['git','apply',str(patch)],check=True)
+          subprocess.run(['git','apply','--check','--directory=dragon-forge-nextgen',str(patch)],check=True)
+          subprocess.run(['git','apply','--directory=dragon-forge-nextgen',str(patch)],check=True)
           print('TRIAL_SOURCE: checksum verified and 11-file patch applied')
           PY
       - name: Install Godot 4.6.3 and software graphics
