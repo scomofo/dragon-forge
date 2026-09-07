@@ -56,7 +56,7 @@ def guardian():
         z=.78+i*.31;y=.72-.035*i;bone=m.bone('Tail'+str(i),(0,y,z),parent)
         r=max(.04,.22-i*.026)
         m.tube([(0,y,z),(0,y-.035,z+.34)],[r,max(.018,r-.025)],slot=1 if i%2 else 2,bone=bone,sides=9)
-        if i<5:m.plate((0,y+.13,z+.13),.21-i*.018,.27,normal=(0,1,0),slot=3,bone=bone,depth=.038)
+        if i<5:m.plate((0,y+.13,z+.13),.21-i*.018,.27,normal=(0,1,0),up=(0,0,-1),slot=3,bone=bone,depth=.038)
         parent=bone
     durations={'idle':1.7,'walk':.82,'claw':.34,'breath':.58,'wall':.56,'burst':.72,'guard':.76,'hurt':.24,'defeat':.85}
     limbs=['FLeg.L','FLeg.R','BLeg.L','BLeg.R']
