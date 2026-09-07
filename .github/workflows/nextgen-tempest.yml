@@ -2,31 +2,123 @@ name: Nextgen Tempest and audio
 on:
   pull_request:
     paths:
+      - '.tempest-transfer/**'
       - 'dragon-forge-nextgen/**'
       - '.github/workflows/nextgen-tempest.yml'
 permissions:
   contents: read
 jobs:
-  prepare:
+  integrate:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'nextgen-tempest-and-audio'
+    permissions:
+      contents: write
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 15
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      GODOT_SILENCE_ROOT_WARNING: '1'
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           sparse-checkout: |
-            dragon-forge-nextgen/campaign/audio/music
+            dragon-forge-nextgen
+            .tempest-transfer
             public/assets/music
-            src/soundEngine.js
-      - name: Verify existing soundtrack bytes
+      - name: Apply exact verified native source
+        shell: bash
         run: |
           set -euo pipefail
-          for f in dragon-forge-nextgen/campaign/audio/music/*.mp3; do cmp "$f" "public/assets/music/$(basename "$f")"; done
-          mkdir -p /tmp/audio-source
-          cp dragon-forge-nextgen/campaign/audio/music/*.mp3 /tmp/audio-source/
-          cp src/soundEngine.js /tmp/audio-source/
-          sha256sum /tmp/audio-source/*.mp3
-      - uses: actions/upload-artifact@v4
+          python3 - <<'PY'
+          import base64,hashlib,json,lzma,pathlib,subprocess
+          parts=sorted(pathlib.Path('.tempest-transfer').glob('final?.b64'))
+          assert len(parts)==5, 'Missing transfer; do not reapply after integration'
+          patch=lzma.decompress(base64.b64decode(''.join(p.read_text().strip() for p in parts),validate=True))
+          assert hashlib.sha256(patch).hexdigest()=='f537f0b05196f59975342df1edee4548fd7a0be3c4da0b3ff8d6bf71f6e8f18d'
+          files=[line[6:] for line in patch.decode().splitlines() if line.startswith('+++ b/')]
+          assert len(files)==29 and len(set(files))==29
+          assert all(p.startswith('dragon-forge-nextgen/') and '..' not in pathlib.PurePosixPath(p).parts for p in files)
+          pathlib.Path('/tmp/tempest-files.json').write_text(json.dumps(files))
+          p=pathlib.Path('/tmp/tempest.patch');p.write_bytes(patch)
+          subprocess.run(['git','apply','--check',str(p)],check=True)
+          subprocess.run(['git','apply',str(p)],check=True)
+          print('Exact source checksum and allowed paths verified')
+          PY
+      - uses: actions/setup-python@v5
         with:
-          name: original-soundtrack-for-integration
-          path: /tmp/audio-source/
-          retention-days: 2
+          python-version: '3.12'
+      - name: Install isolated authoring and engine tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          python -m pip install -r dragon-forge-nextgen/tools/art-requirements.txt
+          npm install --prefix /tmp/tempest-validator gltf-validator@2.0.0-dev.3.10
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Bake Tempest and verify audio provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dragon-forge-nextgen/artifacts/tempest
+          python dragon-forge-nextgen/tools/build_tempest.py
+          python dragon-forge-nextgen/tools/validate_tempest.py | tee dragon-forge-nextgen/artifacts/tempest/exports.log
+          GLTF_VALIDATOR_MODULE=/tmp/tempest-validator/node_modules/gltf-validator node dragon-forge-nextgen/tools/validate_tempest.cjs
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('dragon-forge-nextgen/campaign/audio')
+          manifest=json.loads((root/'manifest.json').read_text())
+          assert len(manifest['tracks'])==10
+          for track in manifest['tracks']:
+              b=(root/'music'/track['file']).read_bytes()
+              assert len(b)==track['bytes'] and hashlib.sha256(b).hexdigest()==track['sha256']
+              assert b==pathlib.Path(track['source']).read_bytes()
+          print('AUDIO_PROVENANCE: ten original recordings preserved byte-for-byte')
+          PY
+      - name: Native tests and real output-mix capture
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash dragon-forge-nextgen/tools/test_tempest.sh
+          timeout 60 godot --headless --path dragon-forge-nextgen --script res://campaign/tests/audio_capture.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/tempest/audio-capture.log
+          grep 'NATIVE_AUDIO_CAPTURE: 0 failures' dragon-forge-nextgen/artifacts/tempest/audio-capture.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/tempest/audio-capture.log; then exit 1; fi
+      - name: Real OpenGL and Forward+ captures
+        shell: bash
+        run: |
+          set -euo pipefail
+          for mode in gl_compatibility forward_plus; do
+            target="dragon-forge-nextgen/artifacts/tempest/$mode"
+            mkdir -p "$target"
+            timeout 240 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method "$mode" --audio-driver Dummy --script res://campaign/tests/tempest_capture.gd -- --test-mode 2>&1 | tee "$target/visual.log"
+            grep 'TEMPEST_VISUAL: 0 failures' "$target/visual.log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' "$target/visual.log"; then exit 1; fi
+            mv dragon-forge-nextgen/artifacts/tempest/captures/*.png "$target/"
+          done
+      - name: Commit only validated feature-branch files and remove temporary transfer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,pathlib,subprocess
+          files=json.loads(pathlib.Path('/tmp/tempest-files.json').read_text())
+          files+=['dragon-forge-nextgen/campaign/tempest/tempest_arc.glb','dragon-forge-nextgen/campaign/tempest/manifest.json']
+          assert len(files)==31
+          subprocess.run(['git','add','--',*files],check=True)
+          subprocess.run(['git','rm','-r','--','.tempest-transfer'],check=True)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: evolve Tempest Arc and ship native soundtrack and combat audio'
+          git push origin HEAD:refs/heads/nextgen-tempest-and-audio
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/tempest/TESTED_COMMIT.txt
+          git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/tempest/TESTED_TREE.txt
+          git archive --format=zip -o dragon-forge-nextgen/artifacts/tempest/Tempest_Project_Source.zip HEAD:dragon-forge-nextgen
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tempest-audio-integration
+          path: dragon-forge-nextgen/artifacts/tempest/
+          retention-days: 14
