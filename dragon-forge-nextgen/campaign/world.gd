@@ -169,7 +169,7 @@ func _spawn_encounters() -> void:
 		actor.reduced_motion = reduced_motion
 		level.add_child(actor)
 		actor.impact.connect(_on_pattern)
-		actor.attack_warning.connect(func(): sound("warning","fire",4))
+		actor.attack_warning.connect(func(): sound("warning",CampaignEnemy.BossCatalog.entry(actor.spec.id).get("element","fire"),4))
 		actor.defeated.connect(_campaign_defeat)
 		actor.hit_feedback.connect(_hit_feedback)
 		enemies.append(actor)
@@ -183,6 +183,11 @@ func _select_enemy() -> void:
 	enemies = living
 	enemy = enemies[0] if not enemies.is_empty() else null
 	camera_rig.opponent = enemy
+	var boss_frame = is_instance_valid(enemy) and CampaignEnemy.BossCatalog.known(enemy.spec.id)
+	camera_rig.opponent_weight = .44 if boss_frame else .22
+	camera_rig.opponent_limit = 8.0 if boss_frame else 4.0
+	camera_rig.focus_height = 1.65 if boss_frame else .7
+	camera_rig.view_distance = 15.5 if boss_frame else 14.0
 
 func _physics_process(delta: float) -> void:
 	if entering or title_open:
@@ -489,7 +494,10 @@ func _on_pattern(shape: Dictionary, amount: float) -> void:
 	else:
 		hud.feedback("EVADED", "Counter during recovery.")
 	if shape.kind=="beam":
-		effects.attack("breath",shape.origin,shape.direction,shape.length,shape.origin+Vector3.UP)
+		var emitter = shape.origin+Vector3.UP
+		if is_instance_valid(enemy) and enemy.visual is CampaignEnemy.BossRig:
+			emitter = enemy.visual.emission_origin()
+		effects.attack("breath",shape.origin,shape.direction,shape.length,emitter)
 	elif shape.kind=="ring":
 		effects.pulse(shape.origin,shape.outer,Color("cca3ef"))
 	else:

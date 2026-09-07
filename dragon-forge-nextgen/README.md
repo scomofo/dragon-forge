@@ -1,3 +1,13 @@
+## Current pass: Boss Identities
+
+The default campaign now loads five separate sector/final boss models, pattern-specific
+wind-up/contact clips, cosmetic defeat animations and boss-aware camera framing.
+The three guardians, evolution/fusion, ten existing music recordings, routes and saves remain.
+Import the complete project and **Run Project**; the title says **BOSS IDENTITIES**.
+Optional review only: `validation/character_inspection.tscn` now includes all bosses;
+`validation/boss_arena.tscn` exercises their actual rooms/camera/combat without loading saves.
+See [`campaign/BOSSES.md`](campaign/BOSSES.md) for scope and verification.
+
 # Dragon Forge — Reconnection Campaign
 
 **Start here: open `project.godot` in Godot 4.6.3 Standard and press F5.** The title must say **DRAGON FORGE / RECONNECTION**. This build has 22 connected rooms, four sectors, salvage upgrades and an ending; it is not the older small-room art prototype.

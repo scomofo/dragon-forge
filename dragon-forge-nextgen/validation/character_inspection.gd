@@ -3,7 +3,8 @@ extends Node3D
 const Art = preload("res://presentation/art_library.gd")
 const UI = preload("res://validation/review_ui.gd")
 const Probe = preload("res://validation/foot_review.gd")
-const ACTORS = ["magma_guardian", "firewall_sentinel", "packet_warden", "ice_guardian", "magma_evolved", "rime_evolved", "storm_guardian", "tempest_arc"]
+const BossCatalog = preload("res://campaign/bosses/catalog.gd")
+const ACTORS = ["magma_guardian", "firewall_sentinel", "packet_warden", "ice_guardian", "magma_evolved", "rime_evolved", "storm_guardian", "tempest_arc", "buffer_overflow", "memory_leak", "stack_overflow", "mirror_admin", "singularity"]
 const VIEWS = ["Full body", "Shoulders", "Hips / feet", "Jaw / head", "Rear / tail"]
 var model: Node3D
 var skeleton: Skeleton3D
@@ -99,7 +100,7 @@ func _build_controls() -> void:
 	var box = UI.panel(layer, Vector2(18, 18), 296)
 	UI.text(box, "CHARACTER / INSPECTION", 19)
 	UI.text(box, "Actual imported art • save-safe", 12)
-	UI.picker(box, ["Magma guardian", "Firewall Sentinel", "Packet Warden", "Rime / Ice guardian", "Crowned Magma / Evolved", "Aurora Rime / Evolved", "Arc / Storm fusion", "Tempest Arc / Evolved"], load_actor)
+	UI.picker(box, ["Magma guardian", "Firewall Sentinel", "Packet Warden", "Rime / Ice guardian", "Crowned Magma / Evolved", "Aurora Rime / Evolved", "Arc / Storm fusion", "Tempest Arc / Evolved", "Buffer Overflow / Boss", "Memory Leak / Boss", "Stack Overflow / Boss", "Mirror Admin / Boss", "Singularity / Final"], load_actor)
 	clip_picker = UI.picker(box, [], select_clip)
 	var transport = UI.row(box)
 	play_button = UI.button(transport, "Pause", toggle_play)
@@ -130,7 +131,10 @@ func load_actor(index: int) -> void:
 		remove_child(model)
 		model.queue_free()
 	actor_id = ACTORS[index]
-	if actor_id in ["magma_evolved", "rime_evolved"]:
+	if actor_id in BossCatalog.ASSET_IDS:
+		model=load("res://campaign/bosses/assets/"+actor_id+".glb").instantiate()
+		add_child(model)
+	elif actor_id in ["magma_evolved", "rime_evolved"]:
 		model=load("res://campaign/evolutions/"+actor_id+".glb").instantiate()
 		add_child(model)
 	elif actor_id in ["ice_guardian","rime_evolved"]:
@@ -218,6 +222,9 @@ func set_view(index: int) -> void:
 	if actor_id in ["ice_guardian","rime_evolved"]:
 		focus=[Vector3(0,1.0,.3),Vector3(0,1.1,-.5),Vector3(0,.5,.4),Vector3(0,1.2,-1.2),Vector3(0,.9,1.1)][index]
 	distance = [7.3, 3.6, 4.6, 2.8, 7.0][index]
+	if actor_id in BossCatalog.ASSET_IDS:
+		focus = [Vector3(0,1.8,0),Vector3(0,2.1,0),Vector3(0,.8,0),Vector3(0,2.6,-.15),Vector3(0,1.8,.3)][index]
+		distance = [9.2,4.8,5.2,4.2,9.2][index]
 	orbit = 3.7 if index == 4 else 0.55
 	elevation = 0.24
 	_update_camera()
