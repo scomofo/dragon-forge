@@ -59,8 +59,10 @@ func fixture() -> Dictionary:
 	s.ice_rescued = true
 	s.lattice_recovered = true
 	s.storm_forged = true
-	s.guardians = ["fire","ice","storm"]
-	s.loadout = ["fire","storm"]
+	s.stone_imprint_recovered = true
+	s.stone_forged = true
+	s.guardians = ["fire","ice","storm","stone"]
+	s.loadout = ["fire","stone"]
 	s.evolutions = {"fire":"flashfire","ice":"aegis","storm":"overcharge"}
 	return s
 
@@ -98,7 +100,7 @@ func run() -> void:
 	w.hud.close_overlay()
 	w.title_open = false
 	var s = fixture()
-	check(not Rules.normalize(s).is_empty(), "prepared checkpoint is valid schema 5")
+	check(not Rules.normalize(s).is_empty(), "prepared checkpoint is valid schema 6")
 	for room in Data.ROOMS:
 		w.campaign = s.duplicate(true)
 		w.campaign.room = room
@@ -116,14 +118,14 @@ func run() -> void:
 			paused = false
 	w.campaign = s.duplicate(true)
 	w._enter_room("forge",true)
-	for pair in [["fire","ice"],["fire","storm"]]:
+	for pair in [["fire","ice"],["fire","storm"],["fire","stone"]]:
 		w.campaign.loadout = pair
 		w.campaign.active_guardian = "fire"
 		w._enter_room("forge",true)
 		w.dragon.input_grace = 0
 		w.party.swap_remaining = 0
 		w.swap_guardian(pair[1])
-		check(w.party.active_id == pair[1] and is_instance_valid(w.dragon.rig), "packed evolved guardian swap " + pair[1])
+		check(w.party.active_id == pair[1] and is_instance_valid(w.dragon.rig), "packed guardian swap " + pair[1])
 	var audio = Audio.new()
 	audio.test_mode = true
 	root.add_child(audio)
@@ -136,8 +138,13 @@ func run() -> void:
 	store.import_legacy = false
 	store.path = "user://release-check-%s.json" % str(Time.get_ticks_usec())
 	var old = s.duplicate(true)
-	old.version = 4
-	old.evolutions.erase("storm")
+	# Seed a valid schema-5 snapshot: Cairn did not exist yet.
+	old.version = 5
+	old.guardians = ["fire","ice","storm"]
+	old.loadout = ["fire","storm"]
+	old.active_guardian = "fire"
+	old.erase("stone_imprint_recovered")
+	old.erase("stone_forged")
 	var bytes = JSON.stringify(old)
 	var f = FileAccess.open(store.path,FileAccess.WRITE)
 	check(f != null,"temporary save writable")
@@ -145,7 +152,7 @@ func run() -> void:
 		f.store_string(bytes)
 		f.close()
 		var loaded = store.read_campaign()
-		check(loaded.version == 5 and loaded.evolutions.storm == "", "older campaign migration in export")
+		check(loaded.version == 6 and not loaded.stone_imprint_recovered and not loaded.stone_forged, "schema-5 campaign migrates to schema 6 in export")
 		check(FileAccess.get_file_as_string(store.path) == bytes,"load leaves old bytes intact")
 		check(store.write_campaign(loaded),"exported save writes successfully")
 		check(FileAccess.get_file_as_string(store.path+".bak") == bytes,"exported save backs up old bytes")

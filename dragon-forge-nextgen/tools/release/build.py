@@ -63,7 +63,7 @@ def main() -> None:
         shutil.copy2(PROJECT/'campaign/audio/manifest.json',folder/'licenses/SOUNDTRACK-PROVENANCE.json')
         (folder/'BUILD_INFO.json').write_text(json.dumps(info,indent=2)+'\n')
         (folder/'README-FIRST.txt').write_text(
-            'DRAGON FORGE - RECONNECTION / BOSS IDENTITIES\n'
+            'DRAGON FORGE - RECONNECTION / STONE RESONANCE\n'
             'Standalone playtest: the Godot editor, Python and export templates are NOT needed to play.\n'
             'Extract the complete ZIP; keep the executable beside its PCK and bundled libraries.\n'
             f'Open {name}. Choose Continue for an existing campaign under the same OS account.\n'

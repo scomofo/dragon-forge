@@ -154,7 +154,7 @@ func show_title() -> void:
 	_label(overlay_column,"DRAGON FORGE",42,GOLD)
 	_label(overlay_column,"RECONNECTION",25,TEAL)
 	_wrapped(overlay_column,"A compact playable campaign through four broken sectors. Restore their cores. Rescue, evolve and fuse guardians. Choose your expedition pair. Stop the Great Reset.",20)
-	_label(overlay_column,"BOSS IDENTITIES   /   22 ROOMS   /   THREE GUARDIANS, TWO FIELD SLOTS",14,MUTED)
+	_label(overlay_column,"STONE RESONANCE   /   22 ROOMS   /   FOUR GUARDIANS, TWO FIELD SLOTS",14,MUTED)
 	var start=_button(overlay_column,"Continue campaign" if world.store.existed or world.has_started else "Begin campaign")
 	start.pressed.connect(func():world.begin_campaign(false))
 	start.grab_focus()
