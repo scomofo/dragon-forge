@@ -2,16 +2,16 @@ name: Nextgen boss identities
 on:
   pull_request:
     paths:
-      - '.boss-transfer/**'
       - 'dragon-forge-nextgen/**'
       - '.github/workflows/nextgen-bosses.yml'
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: boss-identities-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  integrate:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'nextgen-boss-identities'
-    permissions:
-      contents: write
+  bosses:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -20,53 +20,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          sparse-checkout: |
-            dragon-forge-nextgen
-            .boss-transfer
-      - name: Apply exact checksum-verified source
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import base64, hashlib, json, pathlib, subprocess, zlib
-          parts=sorted(pathlib.Path('.boss-transfer').glob('0?.b64'))
-          assert len(parts)==4, 'Expected complete source transfer; do not reapply after integration'
-          payload=zlib.decompress(base64.b64decode(''.join(p.read_text().strip() for p in parts),validate=True))
-          assert hashlib.sha256(payload).hexdigest()=='0b5d5f93c3acd4abba508bfbaccec026b489f2a7d7af9d57d2a830117bcb151a'
-          files=[line[6:] for line in payload.decode().splitlines() if line.startswith('+++ b/')]
-          assert len(files)==21 and all(p.startswith('dragon-forge-nextgen/') and '..' not in pathlib.PurePosixPath(p).parts for p in files)
-          pathlib.Path('/tmp/boss-files.json').write_text(json.dumps(files))
-          patch=pathlib.Path('/tmp/bosses.patch');patch.write_bytes(payload)
-          subprocess.run(['git','apply','--check',str(patch)],check=True)
-          subprocess.run(['git','apply',str(patch)],check=True)
-          print('BOSS_SOURCE: exact patch verified and applied')
-          PY
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install isolated authoring and engine tools
+          sparse-checkout: dragon-forge-nextgen
+      - name: Install isolated validation tools
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
-          python -m pip install -r dragon-forge-nextgen/tools/art-requirements.txt
           npm install --prefix /tmp/boss-validator gltf-validator@2.0.0-dev.3.10
           curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
           unzip -q /tmp/godot.zip -d /tmp/godot
           sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
-      - name: Bake boss assets and validate original exports
+      - name: Validate committed boss assets and original exports without rebuilding
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dragon-forge-nextgen/artifacts/bosses
-          python dragon-forge-nextgen/tools/build_bosses.py 2>&1 | tee dragon-forge-nextgen/artifacts/bosses/bake.log
           for name in bosses art evolutions tempest; do
-            python dragon-forge-nextgen/tools/validate_$name.py 2>&1 | tee dragon-forge-nextgen/artifacts/bosses/integrity-$name.log
+            python3 dragon-forge-nextgen/tools/validate_$name.py 2>&1 | tee dragon-forge-nextgen/artifacts/bosses/integrity-$name.log
           done
           GLTF_VALIDATOR_MODULE=/tmp/boss-validator/node_modules/gltf-validator node dragon-forge-nextgen/tools/validate_bosses.cjs 2>&1 | tee dragon-forge-nextgen/artifacts/bosses/gltf.log
-      - name: Import and run all native suites and five real boss fights
+      - name: Import and run all native suites plus five real boss fights
         shell: bash
         run: |
           set -euo pipefail
@@ -86,29 +60,17 @@ jobs:
             if [[ "$mode" == forward_plus ]]; then grep 'Forward+' "$target/visual.log"; fi
             mv dragon-forge-nextgen/artifacts/bosses/captures/*.png "$target/"
           done
-      - name: Commit only validated source and exports to the feature branch
+      - name: Record tested revision and archive unchanged project sources
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import json,pathlib,subprocess
-          files=json.loads(pathlib.Path('/tmp/boss-files.json').read_text())
-          assets=pathlib.Path('dragon-forge-nextgen/campaign/bosses/assets')
-          files += [str(p) for p in assets.iterdir() if p.suffix in ['.png','.glb','.json']]
-          assert len(files)==31
-          subprocess.run(['git','add','--',*files],check=True)
-          subprocess.run(['git','rm','-r','--','.boss-transfer'],check=True)
-          PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'feat: ship five distinct campaign bosses with synchronized tells and save-safe rehearsal'
-          git push origin HEAD:refs/heads/nextgen-boss-identities
+          git diff --exit-code
           git rev-parse HEAD > dragon-forge-nextgen/artifacts/bosses/TESTED_COMMIT.txt
           git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/bosses/TESTED_TREE.txt
           git archive --format=zip -o dragon-forge-nextgen/artifacts/bosses/Boss_Project_Source.zip HEAD:dragon-forge-nextgen
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: boss-identities-integration
+          name: boss-identities-evidence
           path: dragon-forge-nextgen/artifacts/bosses/
           retention-days: 14
