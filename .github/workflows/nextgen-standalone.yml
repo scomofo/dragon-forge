@@ -23,6 +23,8 @@ jobs:
         with:
           python-version: '3.12'
       - name: Download official engine/templates with upstream SHA-256 checks
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: python dragon-forge-nextgen/tools/release/install.py
       - name: Build standalone desktop packages
         run: |

@@ -1,13 +1,25 @@
 #!/usr/bin/env python3
 """Fetch official, pinned Godot 4.6.3 engine/templates; verify release asset digests."""
 from __future__ import annotations
-import hashlib,json,os,subprocess,zipfile
+import hashlib,json,os,subprocess,time,urllib.request,zipfile
 from pathlib import Path
 VERSION='4.6.3-stable'
 ROOT=Path(os.environ['RUNNER_TEMP'])/'dragonforge-engine'
 ROOT.mkdir(parents=True,exist_ok=True)
-release=json.loads(subprocess.check_output(['curl','--fail','--location','--retry','3',
-    '--max-time','60',f'https://api.github.com/repos/godotengine/godot-builds/releases/tags/{VERSION}'],text=True))
+# Authenticate only the official metadata request with the ephemeral read-only
+# workflow token, avoiding shared-runner anonymous API rate limits. It is never
+# included in command arguments, download URLs, logs, artifacts or the game.
+headers={'Accept':'application/vnd.github+json','User-Agent':'dragon-forge-release-check'}
+if os.environ.get('GH_TOKEN'): headers['Authorization']='Bearer '+os.environ['GH_TOKEN']
+request=urllib.request.Request(f'https://api.github.com/repos/godotengine/godot-builds/releases/tags/{VERSION}',headers=headers)
+for attempt in range(3):
+    try:
+        with urllib.request.urlopen(request,timeout=60) as response:
+            release=json.load(response)
+        break
+    except (OSError,ValueError):
+        if attempt==2: raise RuntimeError('Official Godot release metadata unavailable') from None
+        time.sleep(2**attempt)
 records=[]
 for name in [f'Godot_v{VERSION}_linux.x86_64.zip',f'Godot_v{VERSION}_export_templates.tpz']:
     asset=next(a for a in release['assets'] if a['name']==name)
