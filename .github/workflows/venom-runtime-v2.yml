@@ -27,7 +27,7 @@ jobs:
       - name: Stage reviewed runtime edits
         run: |
           set -euo pipefail
-          python dragon-forge-nextgen/tools/integrate_venom_runtime.py
+          python dragon-forge-nextgen/tools/run_venom_integrator.py
           git diff --check
       - name: Install pinned authoring and validation tools
         run: |
