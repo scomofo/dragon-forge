@@ -5,6 +5,8 @@ const Brain = preload("res://sim/enemy_brain.gd")
 const Conduit = preload("res://sim/conduit.gd")
 const Store = preload("res://sim/save_store.gd")
 const Prefs = preload("res://sim/preferences.gd")
+const Modules = preload("res://sim/forge_modules.gd")
+const Guidance = preload("res://sim/guidance.gd")
 const Main = preload("res://world/main.tscn")
 var checks = 0
 var failures = 0
@@ -26,6 +28,10 @@ func _run() -> void:
 	_preferences()
 	await _integration()
 	await _presence()
+	_module_rules()
+	_migration()
+	_guidance()
+	await _forge_loop()
 	print("NEXTGEN_TESTS: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
 
@@ -97,8 +103,8 @@ func _progression() -> void:
 		check(not Progress.advance(state, "clear", i), "duplicate defeat %d ignored" % i)
 	check(Progress.advance(state, "core"), "core recovered only after warden")
 	check(not Progress.advance(state, "core"), "core cannot be farmed by repeated input")
-	check(Progress.advance(state, "install"), "core installation")
-	check(not Progress.advance(state, "install") and Progress.validate(state), "upgrade exactly once")
+	check(Progress.select_module(state, "coolant"), "core installation with explicit choice")
+	check(not Progress.select_module(state, "coolant") and Progress.validate(state), "upgrade exactly once")
 	var invalid = state.duplicate(true)
 	invalid.clears = 1
 	check(not Progress.validate(invalid), "inconsistent progress rejected")
@@ -136,6 +142,8 @@ func _integration() -> void:
 	world.set_physics_process(false)
 	world.dragon.set_physics_process(false)
 	check(not world.dragon.active, "scene starts before hatch")
+	world.dragon._physics_process(0.25)
+	check(world.dragon.input_grace == 0.0, "pre-hatch input grace expires instead of blocking first interaction")
 	check(InputMap.has_action("ng_breath") and InputMap.action_get_events("ng_breath").size() >= 2, "keyboard and controller actions installed")
 	world.interact()
 	world.dragon.input_grace = 0.0
@@ -194,7 +202,7 @@ func _integration() -> void:
 	check(world.dragon.state.hp == 120.0 and world.progress.gate_open and world.walls.is_empty(), "retry preserves milestones and clears hazards")
 	for i in range(3):
 		world.interwave_delay = 0.0
-		world.dragon.global_position = Vector3(0, 0.1, -5)
+		world.dragon.global_position = Guidance.APPROACH[i] + Vector3.UP * 0.1
 		world.start_encounter()
 		await process_frame
 		world.enemy.set_physics_process(false)
@@ -206,6 +214,8 @@ func _integration() -> void:
 	check(world.progress.core, "actual core pickup")
 	world.dragon.global_position = world.SOCKET
 	world.interact()
+	check(world.hud.overlay_kind == "modules" and not world.progress.upgraded, "socket pauses for explicit core choice")
+	check(world.choose_module("coolant"), "actual core module installation")
 	check(world.progress.upgraded and world.restored_core.visible, "core visibly upgrades Forge")
 	world.interact()
 	check(world.progress.clears == 3 and world.progress.upgraded, "repeat interaction cannot duplicate progress")
@@ -319,11 +329,11 @@ func _presence() -> void:
 		Combat.tick(state, Combat.ABILITIES[id].windup * 0.8)
 		var before = state.duplicate(true)
 		actor.rig.animate(0.0, 0.0, false, state)
-		pose_samples.append([actor.rig.torso.rotation, actor.rig.right_arm.rotation, actor.rig.jaw.rotation])
+		pose_samples.append(actor.rig.pose_signature())
 		actor.rig.animate(0.0, 0.0, true, state)
 		check(state == before, id + " pose sampling never mutates combat")
 	check(pose_samples[0] != pose_samples[1] and pose_samples[1] != pose_samples[2] and pose_samples[2] != pose_samples[3], "four abilities have distinct sampled joint poses")
-	check(actor.rig.tail_joints.size() == 6, "dragon has a segmented articulated tail")
+	check(actor.rig.skeleton.find_bone("Tail05") >= 0, "dragon has a segmented articulated tail")
 	world.set_quality(0)
 	check(not world.dressing.details.visible, "low quality omits optional ornament")
 	world.set_quality(3)
@@ -336,11 +346,181 @@ func _presence() -> void:
 	await process_frame
 	# Let owned tween lifetimes elapse; errors from freed targets must fail CI.
 	await create_timer(0.85).timeout
-	check(world.hud.toast_label.position.y >= world.hud.top_row.position.y + world.hud.top_row.size.y + 7.0, "notifications remain below objective panel")
+	check(world.hud.toast_label.position.y > world.hud.top_row.position.y + world.hud.top_row.size.y and world.hud.toast_label.position.y < world.hud.prompt.position.y, "notifications stay between header and interaction controls")
 	actor.global_position = world.HATCH
 	actor.buffered_id = "breath"
 	actor.buffer_time = 0.15
 	world.interact()
 	check(actor.buffered_id == "" and actor.state.action == "", "rest clears pending technique and buffered input")
+	world.queue_free()
+	await process_frame
+
+func _module_rules() -> void:
+	for id in Modules.ORDER:
+		var state = Combat.fresh(id)
+		check(state.max_hp == Modules.DATA[id].hp, id + " supplies actual max HP")
+		state.heat = 60.0
+		Combat.tick(state, 1.0)
+		check(is_equal_approx(state.heat, 60.0 - Modules.DATA[id].cooling), id + " supplies actual cooling")
+		state = Combat.fresh(id)
+		Combat.tick(state, 0.0, true)
+		check(is_equal_approx(Combat.damage(state, 20), 20.0 * Modules.DATA[id].guard), id + " supplies actual guard multiplier")
+		state = Combat.fresh(id)
+		check(is_equal_approx(Combat.technique_damage(state, "breath"), 38.0 * Modules.DATA[id].damage), id + " supplies outgoing damage")
+		check(Combat.cast(state, "breath") and is_equal_approx(state.heat, 24.0 * Modules.DATA[id].heat), id + " supplies authoritative heat cost")
+		check(Combat.heat_cost(state, "claw") == 0.0, id + " always retains heat-free basic attack")
+	var catalyst = Combat.fresh("catalyst")
+	catalyst.heat = 75.0
+	check(not Combat.cast(catalyst, "breath"), "catalyst tradeoff uses modified heat for rejection")
+	var state = Progress.fresh()
+	check(not Progress.select_module(state, "coolant"), "cannot get module before earning core")
+	for event in ["hatch", "gate"]:
+		Progress.advance(state, event)
+	for i in range(3):
+		Progress.advance(state, "clear", i)
+	Progress.advance(state, "core")
+	check(not Progress.select_module(state, "invented"), "unknown core module rejected")
+	check(Progress.select_module(state, "bastion"), "earned core installs once")
+	check(Progress.select_module(state, "catalyst") and state.clears == 3 and state.core, "respec does not duplicate or erase earned milestones")
+	check(Progress.advance(state, "trial") and not Progress.advance(state, "trial"), "trial badge idempotent")
+	var before = state.duplicate(true)
+	check(not Progress.advance(state, "clear", 3) and state == before, "trial cannot award a fourth encounter core")
+	state.module = ""
+	check(not Progress.validate(state), "trial badge cannot precede a configured core")
+
+func _migration() -> void:
+	var legacy = {"version": 1, "hatched": true, "gate_open": true, "clears": 3, "core": true, "upgraded": true}
+	var before = legacy.duplicate(true)
+	var migrated = Progress.migrate(legacy)
+	check(legacy == before, "save migration never mutates caller data")
+	check(migrated.version == 2 and migrated.module == "" and migrated.upgraded, "legacy restoration retained with free pending module choice")
+	check(Progress.validate(migrated) and not migrated.trial_cleared, "migrated save validates without inventing trial completion")
+	check(Progress.select_module(migrated, "coolant"), "already restored legacy Forge accepts free module")
+	var future = legacy.duplicate(true)
+	future.version = 999
+	check(Progress.migrate(future).is_empty(), "future progress version rejected")
+	var invalid = legacy.duplicate(true)
+	invalid.clears = NAN
+	check(Progress.migrate(invalid).is_empty(), "nonfinite encounter count rejected without numeric conversion")
+	var store = Store.new()
+	store.path = "user://migration-test-%d.json" % Time.get_ticks_usec()
+	var file = FileAccess.open(store.path, FileAccess.WRITE)
+	var legacy_bytes = JSON.stringify(legacy)
+	file.store_string(legacy_bytes)
+	file.close()
+	var loaded = store.read_progress()
+	check(not store.blocked and loaded.version == 2, "store loads and migrates actual v1 file")
+	check(FileAccess.get_file_as_string(store.path) == legacy_bytes, "load alone does not replace legacy bytes")
+	Progress.select_module(loaded, "bastion")
+	check(store.write_progress(loaded) and store.read_progress() == loaded, "migrated selected module roundtrips")
+	check(FileAccess.get_file_as_string(store.path + ".bak") == legacy_bytes, "first v2 write backs up original v1 bytes")
+	file = FileAccess.open(store.path, FileAccess.WRITE)
+	var future_bytes = JSON.stringify(future)
+	file.store_string(future_bytes)
+	file.close()
+	store.read_progress()
+	check(store.blocked and not store.write_progress(loaded) and FileAccess.get_file_as_string(store.path) == future_bytes, "future-version save blocked and byte-preserved")
+	for suffix in ["", ".bak", ".tmp"]:
+		if FileAccess.file_exists(store.path + suffix):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(store.path + suffix))
+
+func _guidance() -> void:
+	var state = Progress.fresh()
+	check(Guidance.describe(state, Vector3.ZERO, false).index == 0, "opening starts with one hatch objective")
+	Progress.advance(state, "hatch")
+	check(Guidance.describe(state, Vector3.ZERO, false).index == 1, "hatch leads to relay not menus")
+	Progress.advance(state, "gate")
+	check(Guidance.describe(state, Vector3(7, 0, 8), false).target == Vector3(0, 0, 0.5), "outbound guidance routes through physical breach")
+	for i in range(3):
+		Progress.advance(state, "clear", i)
+	check(Guidance.describe(state, Vector3.ZERO, false).index == 3, "boss clear leads to collectible core")
+	Progress.advance(state, "core")
+	check(Guidance.describe(state, Vector3(7, 0, -18), false).target == Vector3(0, 0, 4), "return guidance routes through breach instead of a wall")
+	Progress.select_module(state, "coolant")
+	check(Guidance.describe(state, Vector3.ZERO, false).index == 5, "installed core exposes field-test objective")
+	check(Guidance.describe(state, Vector3.ZERO, true, true).marker == "", "wayfinding never competes with combat tell")
+
+func _forge_loop() -> void:
+	var world = Main.instantiate()
+	world.test_mode = true
+	root.add_child(world)
+	await process_frame
+	world.set_physics_process(false)
+	world.dragon.set_physics_process(false)
+	check(not world.choose_module("bastion") and not world.start_trial(), "world rejects unearned module/trial requests")
+	world.interact()
+	world.progress.gate_open = true
+	world._apply_progress()
+	world.progress.clears = 1
+	world.dragon.global_position = Vector3(0, 0.1, -5)
+	world.start_encounter()
+	check(not is_instance_valid(world.enemy), "second encounter waits until player approaches its relay")
+	world.progress.clears = 3
+	world.progress.core = true
+	world._apply_progress()
+	world.dragon.global_position = Vector3(0, 0.1, -17)
+	check(not world.choose_module("bastion"), "cannot configure remotely from arena")
+	world.dragon.global_position = world.SOCKET
+	world.hud.show_modules()
+	await process_frame
+	check(paused and world.hud.overlay_kind == "modules", "module choice really pauses simulation")
+	check(world.choose_module("bastion") and not paused, "choice applies and closes modal")
+	check(world.dragon.state.hp == 156.0 and world.progress.module == "bastion", "Bastion stats wired to actual actor")
+	world.dragon.global_position = world.HATCH
+	world.interact()
+	check(world.dragon.state.max_hp == 156.0, "rest retains chosen module")
+	world.dragon.global_position = world.SOCKET
+	world.hud.show_modules()
+	check(world.start_trial() and world.trial_active and not paused, "field test starts without erasing progress")
+	world.interwave_delay = 0.0
+	world.start_encounter()
+	await process_frame
+	world.enemy.set_physics_process(false)
+	check(is_instance_valid(world.enemy) and world.enemy.encounter == 3 and world.enemy.boss, "field test spawns a real Warden")
+	check(not world.choose_module("catalyst") and not world.start_trial(), "live trial blocks respec and duplicate trial")
+	world.dragon.receive_damage(999)
+	await process_frame
+	check(paused and world.hud.overlay_kind == "defeat", "death opens actionable checkpoint sheet")
+	world.retry()
+	check(not paused and world.trial_active and world.dragon.state.max_hp == 156.0, "trial retry retains module and exits death pause")
+	world.interwave_delay = 0.0
+	world.start_encounter()
+	await process_frame
+	world.enemy.set_physics_process(false)
+	world.enemy.take_hit(999, true)
+	await process_frame
+	check(world.progress.trial_cleared and world.progress.clears == 3 and world.progress.core, "trial completion retains exactly one recovered core")
+	check(paused and world.hud.overlay_kind == "result", "trial ends in result sheet")
+	world.return_to_forge()
+	check(not paused and not world.trial_active and world.dragon.position == world.SPAWN, "result return brings player safely home")
+	world.dragon.global_position = world.SOCKET
+	check(world.choose_module("catalyst"), "free respec at socket after field test")
+	check(world.progress.trial_cleared and world.dragon.state.max_hp == 120, "respec changes stats while retaining badge")
+	world.start_trial()
+	world.interwave_delay = 0.0
+	world.start_encounter()
+	await process_frame
+	world.enemy.set_physics_process(false)
+	world.enemy.brain.open_window(10)
+	world.dragon.global_position = world.enemy.global_position + Vector3.BACK * 1.8
+	world.dragon.aim = Vector3.FORWARD
+	world.dragon.input_grace = 0.0
+	var hp_before: float = world.enemy.hp
+	world.dragon.try_ability("claw")
+	world.dragon.advance_combat(Combat.ABILITIES.claw.windup)
+	check(is_equal_approx(world.enemy.hp, hp_before - 30.0), "Cinder Catalyst modifier reaches real enemy at contact")
+	world.dragon.state = Combat.fresh("catalyst")
+	world.dragon.global_position = world.enemy.global_position + Vector3.BACK * 4.0
+	world.dragon.try_ability("wall")
+	world.dragon.advance_combat(Combat.ABILITIES.wall.windup)
+	check(is_equal_approx(world.walls[0].damage, 17.5), "persistent flame field snapshots chosen module damage")
+	world.return_to_forge()
+	world.progress.clears = 1
+	world.progress.core = false
+	world.progress.upgraded = false
+	world.progress.module = ""
+	world.progress.trial_cleared = false
+	world.retry()
+	check(world.dragon.position.z == -7 and world.progress.clears == 1, "campaign retry returns to earned relay checkpoint")
 	world.queue_free()
 	await process_frame

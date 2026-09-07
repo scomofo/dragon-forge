@@ -14,5 +14,9 @@ static func apply(index: int, viewport: Viewport, environment: Environment, sun:
 	environment.glow_enabled = forward and level > 0 and not reduced
 	environment.ssao_enabled = forward and level >= 2
 	environment.volumetric_fog_enabled = forward and level >= 2 and not reduced
-	environment.volumetric_fog_density = 0.012
+	# A thin cool atmosphere, not a full-screen gray veil. Keep the background
+	# dark and preserve the copper/basalt material separation at the gameplay camera.
+	environment.volumetric_fog_density = 0.003
+	environment.volumetric_fog_albedo = Color("49636e")
+	environment.volumetric_fog_sky_affect = 0.0
 	return {"level": level, "renderer": renderer, "particles": PARTICLES[level] if forward and not reduced else 0}

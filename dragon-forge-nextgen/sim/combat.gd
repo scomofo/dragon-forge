@@ -2,6 +2,7 @@ extends RefCounted
 ## Deterministic rules only: no scene, input, rendering, or wall-clock access.
 ## Four prototype moves; only Magma Breath / Flame Wall are inherited move names.
 
+const Modules = preload("res://sim/forge_modules.gd")
 const ABILITIES = {
 	"claw": {"name": "Cinder Claw", "damage": 24.0, "heat": 0.0, "cooldown": 0.55, "range": 2.8, "cone": 0.1, "windup": 0.10, "recovery": 0.18},
 	"breath": {"name": "Magma Breath", "damage": 38.0, "heat": 24.0, "cooldown": 2.4, "range": 7.0, "cone": 0.65, "windup": 0.22, "recovery": 0.28},
@@ -10,8 +11,9 @@ const ABILITIES = {
 }
 const ORDER = ["claw", "breath", "wall", "burst"]
 
-static func fresh() -> Dictionary:
-	return {"hp": 120.0, "max_hp": 120.0, "heat": 0.0, "cooldowns": {}, "iframes": 0.0, "dash": 0.0, "dodge_cd": 0.0, "guard": false, "action": "", "action_time": 0.0, "action_hit": false}
+static func fresh(module: String = "") -> Dictionary:
+	var maximum: float = Modules.profile(module).hp
+	return {"module": module if Modules.valid(module) else "", "hp": maximum, "max_hp": maximum, "heat": 0.0, "cooldowns": {}, "iframes": 0.0, "dash": 0.0, "dodge_cd": 0.0, "guard": false, "action": "", "action_time": 0.0, "action_hit": false}
 
 ## Returns one contact event, even when a long frame spans the entire attack.
 static func tick(state: Dictionary, delta: float, guarding: bool = false) -> String:
@@ -29,7 +31,7 @@ static func tick(state: Dictionary, delta: float, guarding: bool = false) -> Str
 		if state.action_time + 0.000001 >= rule.windup + rule.recovery:
 			cancel_action(state)
 	state.guard = guarding and state.hp > 0.0 and state.dash <= 0.0 and state.action == ""
-	state.heat = maxf(0.0, state.heat - dt * (8.0 if state.guard else 16.0))
+	state.heat = maxf(0.0, state.heat - dt * float(Modules.profile(state.get("module", "")).cooling) * (0.5 if state.guard else 1.0))
 	for key in ["iframes", "dash", "dodge_cd"]:
 		state[key] = maxf(0.0, state[key] - dt)
 	for key in state.cooldowns.keys():
@@ -47,14 +49,14 @@ static func rejection(state: Dictionary, id: String) -> String:
 		return "Finishing technique"
 	if state.cooldowns.get(id, 0.0) > 0.0:
 		return "Recharging"
-	if state.heat + ABILITIES[id].heat > 100.0:
+	if state.heat + heat_cost(state, id) > 100.0:
 		return "Too hot - let the core cool"
 	return ""
 
 static func cast(state: Dictionary, id: String) -> bool:
 	if rejection(state, id) != "":
 		return false
-	state.heat += ABILITIES[id].heat
+	state.heat += heat_cost(state, id)
 	state.cooldowns[id] = ABILITIES[id].cooldown
 	state.action = id
 	state.action_time = 0.0
@@ -75,7 +77,7 @@ static func dodge(state: Dictionary) -> bool:
 static func damage(state: Dictionary, amount: float) -> float:
 	if amount <= 0.0 or state.hp <= 0.0 or state.iframes > 0.0:
 		return 0.0
-	var applied = minf(state.hp, amount * (0.25 if state.guard else 1.0))
+	var applied = minf(state.hp, amount * (float(Modules.profile(state.get("module", "")).guard) if state.guard else 1.0))
 	state.hp -= applied
 	if state.hp <= 0.0:
 		cancel_action(state)
@@ -106,3 +108,9 @@ static func action_phase(state: Dictionary) -> String:
 	if state.action == "":
 		return ""
 	return "RECOVER" if state.action_hit else "WIND UP"
+
+static func heat_cost(state: Dictionary, id: String) -> float:
+	return float(ABILITIES.get(id, {}).get("heat", 0.0)) * float(Modules.profile(state.get("module", "")).heat)
+
+static func technique_damage(state: Dictionary, id: String) -> float:
+	return float(ABILITIES.get(id, {}).get("damage", 0.0)) * float(Modules.profile(state.get("module", "")).damage)
