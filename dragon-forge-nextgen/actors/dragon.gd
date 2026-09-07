@@ -1,0 +1,111 @@
+extends CharacterBody3D
+const Combat = preload("res://sim/combat.gd")
+const Rig = preload("res://presentation/dragon_rig.gd")
+const Geo = preload("res://presentation/geometry.gd")
+signal ability_used(id: String, origin: Vector3, direction: Vector3)
+signal damaged(amount: float, guarded: bool)
+signal died
+signal hint(text: String)
+var state = Combat.fresh()
+var active = false
+var reduced_motion = false
+var aim = Vector3.FORWARD
+var dash_direction = Vector3.FORWARD
+var mouse_aim = false
+var input_grace = 0.15
+var rig: Node3D
+var guard_ring: MeshInstance3D
+
+func _ready() -> void:
+	collision_layer = 2
+	collision_mask = 1 | 4
+	var collider = CollisionShape3D.new()
+	var capsule = CapsuleShape3D.new()
+	capsule.radius = 0.58
+	capsule.height = 2.1
+	collider.shape = capsule
+	collider.position.y = 1.05
+	add_child(collider)
+	rig = Rig.new()
+	add_child(rig)
+	guard_ring = Geo.ring(self, Vector3(0, 0.12, 0), 1.05, Geo.material(Geo.CYAN, 1.2, true))
+	guard_ring.visible = false
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion and event.relative.length() > 1.0:
+		mouse_aim = true
+	elif event is InputEventKey and event.pressed and event.physical_keycode in [KEY_W, KEY_A, KEY_S, KEY_D, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]:
+		mouse_aim = false
+	elif event is InputEventJoypadMotion and absf(event.axis_value) > 0.25:
+		mouse_aim = false
+
+func _physics_process(delta: float) -> void:
+	rig.visible = active
+	if not active:
+		return
+	input_grace = maxf(0.0, input_grace - delta)
+	Combat.tick(state, delta, Input.is_action_pressed("ng_guard") and input_grace <= 0.0)
+	var movement = Input.get_vector("ng_left", "ng_right", "ng_up", "ng_down") if input_grace <= 0.0 else Vector2.ZERO
+	var direction = Vector3(movement.x, 0, movement.y)
+	if direction.length() > 0.1 and not mouse_aim:
+		aim = direction.normalized()
+	var stick = Input.get_vector("ng_aim_left", "ng_aim_right", "ng_aim_up", "ng_aim_down")
+	if stick.length() > 0.2:
+		aim = Vector3(stick.x, 0, stick.y).normalized()
+	elif mouse_aim:
+		_update_mouse_aim()
+	if state.hp > 0.0 and input_grace <= 0.0:
+		if Input.is_action_just_pressed("ng_dodge") and Combat.dodge(state):
+			dash_direction = direction.normalized() if direction.length() > 0.1 else aim
+		for id in Combat.ORDER:
+			if Input.is_action_just_pressed("ng_" + id):
+				try_ability(id)
+	var speed = 2.8 if state.guard else 6.2
+	var desired = dash_direction * 17.0 if state.dash > 0.0 else direction * speed
+	if state.hp <= 0.0:
+		desired = Vector3.ZERO
+	velocity.x = move_toward(velocity.x, desired.x, delta * 65.0)
+	velocity.z = move_toward(velocity.z, desired.z, delta * 65.0)
+	velocity.y = -1.0 if is_on_floor() else velocity.y - 25.0 * delta
+	move_and_slide()
+	rig.rotation.y = lerp_angle(rig.rotation.y, atan2(-aim.x, -aim.z), minf(delta * 18.0, 1.0))
+	rig.animate(delta, Vector2(velocity.x, velocity.z).length(), reduced_motion, state.hp <= 0.0)
+	guard_ring.visible = state.guard and state.hp > 0.0
+
+func _update_mouse_aim() -> void:
+	var camera = get_viewport().get_camera_3d()
+	if camera == null:
+		return
+	var pointer = get_viewport().get_mouse_position()
+	var hit = Plane(Vector3.UP, 0.0).intersects_ray(camera.project_ray_origin(pointer), camera.project_ray_normal(pointer))
+	if hit != null:
+		var offset: Vector3 = hit - global_position
+		offset.y = 0.0
+		if offset.length() > 0.4:
+			aim = offset.normalized()
+
+func try_ability(id: String) -> bool:
+	if not active or get_tree().paused:
+		return false
+	if not Combat.cast(state, id):
+		hint.emit(Combat.rejection(state, id))
+		return false
+	rig.act()
+	ability_used.emit(id, global_position, aim)
+	return true
+
+func receive_damage(amount: float) -> float:
+	var guarded: bool = state.guard
+	var applied = Combat.damage(state, amount)
+	if applied > 0.0:
+		damaged.emit(applied, guarded)
+		if state.hp <= 0.0:
+			died.emit()
+	return applied
+
+func respawn(at: Vector3) -> void:
+	state = Combat.fresh()
+	global_position = at
+	velocity = Vector3.ZERO
+	input_grace = 0.2
+	aim = Vector3.FORWARD
