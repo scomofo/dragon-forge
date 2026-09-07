@@ -1,0 +1,122 @@
+name: Nextgen standalone playtests
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/**'
+      - '.github/workflows/nextgen-standalone.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: standalone-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: dragon-forge-nextgen
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download official engine/templates with upstream SHA-256 checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python dragon-forge-nextgen/tools/release/install.py
+      - name: Build standalone desktop packages
+        run: |
+          set -euo pipefail
+          python dragon-forge-nextgen/tools/release/build.py --godot "$GODOT" --output "$RUNNER_TEMP/df-release" --commit "$(git rev-parse HEAD)"
+          cp "$RUNNER_TEMP/dragonforge-engine/download-provenance.json" "$RUNNER_TEMP/df-release/evidence/"
+          git diff --exit-code
+      - name: Run complete source regressions
+        run: |
+          set -euo pipefail
+          GODOT="$GODOT" bash dragon-forge-nextgen/tools/test_bosses.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-candidate-Linux
+          path: ${{ runner.temp }}/df-release/Dragon_Forge_Standalone_Linux.zip
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-candidate-Windows
+          path: ${{ runner.temp }}/df-release/Dragon_Forge_Standalone_Windows.zip
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-candidate-macOS
+          path: ${{ runner.temp }}/df-release/Dragon_Forge_Standalone_macOS.zip
+          retention-days: 14
+      - name: Archive exact source revision for editor users
+        run: git archive --format=zip -o "$RUNNER_TEMP/df-release/Dragon_Forge_Bosses_Source.zip" HEAD:dragon-forge-nextgen
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-source
+          path: ${{ runner.temp }}/df-release/Dragon_Forge_Bosses_Source.zip
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: standalone-build-evidence
+          path: |
+            ${{ runner.temp }}/df-release/evidence/
+            ${{ runner.temp }}/df-release/SHA256SUMS.txt
+            dragon-forge-nextgen/artifacts/bosses/*.log
+          retention-days: 14
+  native-check:
+    needs: export
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: Linux
+            os: ubuntu-24.04
+            render: '--render'
+          - target: Windows
+            os: windows-2022
+            render: ''
+          - target: macOS
+            os: macos-15
+            render: ''
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: dragon-forge-nextgen/tools/release
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: standalone-candidate-${{ matrix.target }}
+          path: incoming
+      - name: Install software graphics for Linux capture
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y xvfb libgl1-mesa-dri
+      - name: Run this platform's own exported executable
+        shell: bash
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: python dragon-forge-nextgen/tools/release/verify.py "incoming/Dragon_Forge_Standalone_${{ matrix.target }}.zip" "${{ runner.temp }}/verified-${{ matrix.target }}" ${{ matrix.render }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-playtest-${{ matrix.target }}
+          path: incoming/Dragon_Forge_Standalone_${{ matrix.target }}.zip
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: standalone-check-${{ matrix.target }}
+          path: |
+            ${{ runner.temp }}/verified-${{ matrix.target }}/*.log
+            ${{ runner.temp }}/verified-${{ matrix.target }}/VERIFIED.json
+            ${{ runner.temp }}/verified-${{ matrix.target }}/report/*.json
+            ${{ runner.temp }}/verified-${{ matrix.target }}/render/*.json
+            ${{ runner.temp }}/verified-${{ matrix.target }}/render/*.png
+          retention-days: 14

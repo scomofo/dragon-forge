@@ -4,6 +4,7 @@ config_version=5
 [application]
 config/name="Dragon Forge - Reconnection Campaign"
 run/main_scene="res://campaign/main.tscn"
+run/main_scene.standalone="res://release/entry.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/use_custom_user_dir=true
 config/custom_user_dir_name="dragon-forge-nextgen-prototype"
@@ -18,6 +19,8 @@ window/stretch/mode="canvas_items"
 [rendering]
 renderer/rendering_method="forward_plus"
 textures/default_filters/use_nearest_mipmap_filter=false
+textures/vram_compression/import_s3tc_bptc=true
+textures/vram_compression/import_etc2_astc=true
 
 [physics]
 common/physics_ticks_per_second=60
