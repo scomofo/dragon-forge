@@ -1,0 +1,30 @@
+name: Cleanup Cairn integration metadata
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stone-cleanup.yml'
+permissions:
+  contents: read
+jobs:
+  cleanup:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'nextgen-stone-guardian'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nextgen-stone-guardian
+          fetch-depth: 1
+      - name: Remove generated import metadata and temporary workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          find dragon-forge-nextgen -type f \( -name '*.uid' -o -name '*.import' \) -print -delete
+          rm -f .github/workflows/stone-decode.yml .github/workflows/stone-guardian-ci.yml .github/workflows/stone-cleanup.yml
+          git add -A
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore: remove generated Godot import metadata and temporary Stone workflows'
+          git push origin HEAD:nextgen-stone-guardian
