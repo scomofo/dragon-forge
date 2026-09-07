@@ -17,6 +17,8 @@ var reduced_check: CheckBox
 var confirmation: ConfirmationDialog
 var toast_remaining = 0.0
 var root: Control
+var enemy_readout: Label
+var top_row: HBoxContainer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -27,6 +29,7 @@ func _ready() -> void:
 	root.theme.default_font_size = 17
 	add_child(root)
 	var top = HBoxContainer.new()
+	top_row = top
 	root.add_child(top)
 	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	top.offset_left = 24
@@ -34,7 +37,7 @@ func _ready() -> void:
 	top.offset_top = 20
 	top.add_theme_constant_override("separation", 16)
 	var brand = _panel(top)
-	brand.custom_minimum_size.x = 320
+	brand.custom_minimum_size.x = 285
 	var column = VBoxContainer.new()
 	brand.add_child(column)
 	_label(column, "DRAGON FORGE", 27, Color("ffd4a1"))
@@ -47,13 +50,14 @@ func _ready() -> void:
 	_label(objective_column, "CURRENT OBJECTIVE", 13, Color("73d6da"))
 	objective = _label(objective_column, "", 18)
 	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	enemy_readout = _label(objective_column, "", 15, Color("ffc677"))
 	var pause_button = _button(top, "MENU\nEsc / Start")
 	pause_button.custom_minimum_size.x = 120
 	pause_button.pressed.connect(func(): set_pause(true))
 	toast_label = Label.new()
 	root.add_child(toast_label)
 	toast_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	toast_label.offset_top = 134
+	toast_label.offset_top = 160
 	toast_label.offset_left = 200
 	toast_label.offset_right = -200
 	toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -162,8 +166,10 @@ func _build_menu() -> void:
 	column.add_child(quality_select)
 	reduced_check = CheckBox.new()
 	reduced_check.text = "Reduced motion / calmer effects"
+	reduced_check.set_pressed_no_signal(world.reduced_motion)
 	reduced_check.toggled.connect(func(enabled): world.set_reduced_motion(enabled))
 	column.add_child(reduced_check)
+	_label(column, "Graphics and reduced motion are saved for next time.", 14, Color("a4b7c4"))
 	_label(column, "1 / X  Claw   2 / Y  Breath   3 / LB  Wall   4 / RB  Burst", 16)
 	_label(column, "Avoid the marked impact. Attack while SHIELD OPEN.\nTwo breath hits overload a conduit and break nearby shields.", 16, Color("73d6da"))
 	resume_button = _button(column, "Resume")
@@ -181,18 +187,33 @@ func _process(delta: float) -> void:
 	if world == null or not is_instance_valid(world.dragon):
 		return
 	var state: Dictionary = world.dragon.state
+	# Follow the actual objective height, including wrapped text and warning rows.
+	toast_label.position.y = top_row.position.y + top_row.size.y + 8.0
 	health.value = state.hp
 	heat.value = state.heat
 	health_text.text = "MAGMA  %d / %d" % [int(state.hp), int(state.max_hp)]
 	heat_text.text = "CORE HEAT  %d / 100" % int(state.heat)
 	objective.text = world.objective_text()
+	enemy_readout.visible = is_instance_valid(world.enemy)
+	if enemy_readout.visible:
+		var foe = world.enemy
+		var instruction = "SHIELD CLOSED - bait a slam"
+		if foe.brain.mode == "tell":
+			instruction = "IMPACT IN %.1fs - dodge / guard" % foe.brain.timer
+		elif foe.brain.vulnerable():
+			instruction = "COUNTER WINDOW %.1fs - attack now" % foe.brain.timer
+		enemy_readout.text = ("WARDEN" if foe.boss else "SENTINEL") + "  |  " + instruction
 	stats.text = "%s | %d FPS | %d draws" % [world.quality_info.get("renderer", ""), int(Performance.get_monitor(Performance.TIME_FPS)), int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))]
 	if world.store.message != "":
 		stats.text += "\nSAVE WARNING - session only"
+	elif world.preferences.message != "":
+		stats.text += "\nSETTINGS - session only"
 	for i in range(abilities.size()):
 		var id: String = Combat.ORDER[i]
 		var cooldown: float = state.cooldowns.get(id, 0.0)
 		var status = "%.1fs" % cooldown if cooldown > 0.0 else ("TOO HOT" if state.heat + Combat.ABILITIES[id].heat > 100.0 else "READY")
+		if state.action == id:
+			status = Combat.action_phase(state)
 		abilities[i].text = "[%d] %s\n%s" % [i + 1, Combat.ABILITIES[id].name, status]
 		abilities[i].disabled = not world.dragon.active or Combat.rejection(state, id) != "" or menu.visible
 	if not menu.visible:
@@ -205,6 +226,9 @@ func toast(text: String) -> void:
 
 func set_pause(value: bool) -> void:
 	menu.visible = value
+	world.dragon.buffered_id = ""
+	quality_select.select(world.quality_index)
+	reduced_check.set_pressed_no_signal(world.reduced_motion)
 	get_tree().paused = value
 	if value:
 		resume_button.grab_focus()

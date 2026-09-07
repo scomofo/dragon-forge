@@ -7,6 +7,7 @@ var timer = 0.0
 var locked_target = Vector3.ZERO
 var enraged = false
 var boss = false
+var locked_duration = 1.35
 
 func tick(delta: float, distance: float, target: Vector3) -> String:
 	if mode == "dead":
@@ -16,6 +17,7 @@ func tick(delta: float, distance: float, target: Vector3) -> String:
 			mode = "tell"
 			locked_target = target
 			timer = tell_duration()
+			locked_duration = timer
 			return "tell"
 		return ""
 	timer = maxf(0.0, timer - maxf(delta, 0.0))

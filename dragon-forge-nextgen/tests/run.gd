@@ -4,6 +4,7 @@ const Progress = preload("res://sim/progression.gd")
 const Brain = preload("res://sim/enemy_brain.gd")
 const Conduit = preload("res://sim/conduit.gd")
 const Store = preload("res://sim/save_store.gd")
+const Prefs = preload("res://sim/preferences.gd")
 const Main = preload("res://world/main.tscn")
 var checks = 0
 var failures = 0
@@ -21,7 +22,10 @@ func _run() -> void:
 	_rules()
 	_progression()
 	_storage()
+	_action_contract()
+	_preferences()
 	await _integration()
+	await _presence()
 	print("NEXTGEN_TESTS: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
 
@@ -134,12 +138,15 @@ func _integration() -> void:
 	check(not world.dragon.active, "scene starts before hatch")
 	check(InputMap.has_action("ng_breath") and InputMap.action_get_events("ng_breath").size() >= 2, "keyboard and controller actions installed")
 	world.interact()
+	world.dragon.input_grace = 0.0
 	check(world.progress.hatched and world.dragon.active, "actual hatch interaction activates dragon")
 	world.dragon.global_position = Vector3(0, 0.1, 4.5)
 	world.dragon.aim = Vector3.LEFT
-	check(world.dragon.try_ability("breath"), "actual ability emits into world")
+	check(world.dragon.try_ability("breath"), "actual ability begins windup")
+	world.dragon.advance_combat(Combat.ABILITIES.breath.windup)
 	Combat.tick(world.dragon.state, 2.5)
 	check(world.dragon.try_ability("breath"), "second actual breath")
+	world.dragon.advance_combat(Combat.ABILITIES.breath.windup)
 	check(world.progress.gate_open and not world.gate.visible, "breaths open gate via heat simulation")
 	await physics_frame
 	check(world.line_clear(Vector3(0, 0, 4.5), Vector3(0, 0, 0)), "gate no longer blocks collision queries")
@@ -153,10 +160,14 @@ func _integration() -> void:
 	world.dragon.global_position = world.enemy.global_position + Vector3.BACK * 1.8
 	world.dragon.aim = Vector3.FORWARD
 	world.dragon.state = Combat.fresh()
-	check(world.dragon.try_ability("claw") and world.enemy.hp == 76.0, "spatial claw damages exposed actor")
+	check(world.dragon.try_ability("claw") and world.enemy.hp == 100.0, "claw does not hit before contact")
+	world.dragon.advance_combat(Combat.ABILITIES.claw.windup)
+	check(world.enemy.hp == 76.0, "spatial claw damages exposed actor on contact")
 	world.dragon.global_position = world.enemy.global_position + Vector3.BACK * 4.0
 	world.dragon.state = Combat.fresh()
-	check(world.dragon.try_ability("wall") and world.walls.size() == 1, "flame wall has persistent world state")
+	world.dragon.try_ability("wall")
+	world.dragon.advance_combat(Combat.ABILITIES.wall.windup)
+	check(world.walls.size() == 1, "flame wall has persistent world state")
 	var previous_hp: float = world.enemy.hp
 	world._tick_walls(0.1)
 	check(world.enemy.hp < previous_hp, "flame wall applies actual periodic damage")
@@ -200,5 +211,136 @@ func _integration() -> void:
 	check(world.progress.clears == 3 and world.progress.upgraded, "repeat interaction cannot duplicate progress")
 	world.new_expedition()
 	check(world.progress == Progress.fresh() and not world.restored_core.visible, "explicit new expedition resets only prototype")
+	world.queue_free()
+	await process_frame
+
+func _action_contract() -> void:
+	for id in Combat.ORDER:
+		var rule: Dictionary = Combat.ABILITIES[id]
+		var state = Combat.fresh()
+		Combat.cast(state, id)
+		check(Combat.tick(state, rule.windup * 0.5) == "" and not state.action_hit, id + " waits for contact")
+		check(not Combat.cast(state, "claw"), id + " prevents overlapping actions")
+		check(Combat.tick(state, rule.windup * 0.5) == id and state.action_hit, id + " emits one contact")
+		check(Combat.tick(state, 0.0) == "", id + " cannot repeat contact on zero delta")
+		check(Combat.tick(state, rule.recovery + 0.01) == "" and state.action == "", id + " recovery completes")
+		state = Combat.fresh()
+		Combat.cast(state, id)
+		check(Combat.tick(state, 2.0) == id and Combat.tick(state, 2.0) == "", id + " long frame neither loses nor duplicates contact")
+	var state = Combat.fresh()
+	Combat.cast(state, "breath")
+	Combat.tick(state, -10.0)
+	check(state.action_time == 0.0, "negative time cannot advance attack")
+	Combat.tick(state, NAN)
+	check(state.action_time == 0.0, "nonfinite time cannot poison attack state")
+	Combat.tick(state, 0.05, true)
+	check(not state.guard, "guard cannot simultaneously protect a committed attack")
+	check(Combat.dodge(state) and state.action == "", "dodge cancels windup")
+	check(Combat.tick(state, 1.0) == "", "cancelled attack has no ghost contact")
+	check(state.cooldowns.breath > 0.0, "dodge cancellation does not refund cooldown")
+	state = Combat.fresh()
+	Combat.cast(state, "burst")
+	Combat.damage(state, 999.0)
+	check(Combat.tick(state, 2.0) == "", "death cancels pending contact")
+	var brain = Brain.new()
+	brain.boss = true
+	brain.tick(0.0, 3.0, Vector3.ZERO)
+	brain.enraged = true
+	check(brain.locked_duration == 1.35, "enrage cannot rescale an already locked tell")
+
+func _preferences() -> void:
+	var store = Prefs.new()
+	store.path = "user://prefs-test-%d.json" % Time.get_ticks_usec()
+	check(store.read_values() == Prefs.defaults(), "missing settings use safe defaults")
+	var wanted = {"version": 1, "quality": 3, "reduced_motion": true}
+	check(store.write_values(wanted) and store.read_values() == wanted, "graphics and motion roundtrip")
+	wanted.quality = 0
+	check(store.write_values(wanted) and store.read_values().quality == 0, "settings replace previous file")
+	check(not Prefs.valid({"version": 1, "quality": 1.5, "reduced_motion": false}), "fractional quality rejected")
+	check(not Prefs.valid({"version": 1, "quality": 99, "reduced_motion": false}), "out of range quality rejected")
+	check(not Prefs.valid({"version": 2, "quality": 1, "reduced_motion": false}), "future settings version rejected")
+	var file = FileAccess.open(store.path, FileAccess.WRITE)
+	file.store_string("keep-corrupt-preferences")
+	file.close()
+	store.read_values()
+	check(store.blocked and not store.write_values(wanted), "unreadable preferences block overwrite")
+	check(FileAccess.get_file_as_string(store.path) == "keep-corrupt-preferences", "unreadable preferences bytes retained")
+	for suffix in ["", ".tmp"]:
+		if FileAccess.file_exists(store.path + suffix):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(store.path + suffix))
+
+func _presence() -> void:
+	var world = Main.instantiate()
+	world.test_mode = true
+	root.add_child(world)
+	await process_frame
+	world.set_physics_process(false)
+	world.dragon.set_physics_process(false)
+	world.interact()
+	var actor = world.dragon
+	actor.input_grace = 0.0
+	var contacts: Array = []
+	actor.ability_used.connect(func(id, at, direction): contacts.append([id, at, direction]))
+	actor.aim = Vector3.LEFT
+	actor.try_ability("breath")
+	actor.aim = Vector3.RIGHT
+	actor.advance_combat(0.21)
+	check(contacts.is_empty(), "actor does not resolve damage in anticipation")
+	actor.advance_combat(0.02)
+	check(contacts.size() == 1 and contacts[0][2] == Vector3.LEFT, "contact retains the committed direction")
+	actor.advance_combat(1.0)
+	check(contacts.size() == 1, "actor emits contact exactly once")
+	actor.state = Combat.fresh()
+	actor.try_ability("claw")
+	actor.advance_combat(0.17)
+	check(not actor.try_ability("breath") and actor.buffered_id == "breath", "near-recovery input is buffered without spending heat")
+	actor.advance_combat(0.12)
+	check(actor.state.action == "breath" and actor.buffered_id == "", "buffer starts exactly one next ability")
+	actor.advance_combat(0.36)
+	actor.try_ability("wall")
+	check(actor.buffered_id == "wall", "recovery can accept a new buffered command")
+	world.hud.set_pause(true)
+	check(actor.buffered_id == "", "pause discards buffered input")
+	world.hud.set_pause(false)
+	actor.input_grace = 0.0
+	actor.state = Combat.fresh()
+	actor.try_ability("burst")
+	actor.advance_combat(0.62)
+	actor.try_ability("breath")
+	actor.advance_combat(0.30)
+	check(actor.buffered_id == "" and actor.state.action == "", "expired buffer cannot fire a late attack")
+	actor.state = Combat.fresh()
+	actor.input_grace = 0.2
+	check(not actor.try_ability("claw"), "resume grace blocks HUD and keyboard casts alike")
+	var pose_samples: Array = []
+	for id in Combat.ORDER:
+		var state = Combat.fresh()
+		Combat.cast(state, id)
+		Combat.tick(state, Combat.ABILITIES[id].windup * 0.8)
+		var before = state.duplicate(true)
+		actor.rig.animate(0.0, 0.0, false, state)
+		pose_samples.append([actor.rig.torso.rotation, actor.rig.right_arm.rotation, actor.rig.jaw.rotation])
+		actor.rig.animate(0.0, 0.0, true, state)
+		check(state == before, id + " pose sampling never mutates combat")
+	check(pose_samples[0] != pose_samples[1] and pose_samples[1] != pose_samples[2] and pose_samples[2] != pose_samples[3], "four abilities have distinct sampled joint poses")
+	check(actor.rig.tail_joints.size() == 6, "dragon has a segmented articulated tail")
+	world.set_quality(0)
+	check(not world.dressing.details.visible, "low quality omits optional ornament")
+	world.set_quality(3)
+	check(world.dressing.details.visible, "high quality enables batched ornament")
+	for i in range(40):
+		world.effects.pulse(Vector3.ZERO, 1.0)
+	check(world.effects.transients.size() <= world.effects.MAX_TRANSIENTS, "transient visual budget enforced")
+	world.set_reduced_motion(true)
+	check(world.effects.transients.is_empty(), "reduced motion clears in-flight decorative effects")
+	await process_frame
+	# Let owned tween lifetimes elapse; errors from freed targets must fail CI.
+	await create_timer(0.85).timeout
+	check(world.hud.toast_label.position.y >= world.hud.top_row.position.y + world.hud.top_row.size.y + 7.0, "notifications remain below objective panel")
+	actor.global_position = world.HATCH
+	actor.buffered_id = "breath"
+	actor.buffer_time = 0.15
+	world.interact()
+	check(actor.buffered_id == "" and actor.state.action == "", "rest clears pending technique and buffered input")
 	world.queue_free()
 	await process_frame
