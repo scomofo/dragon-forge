@@ -67,6 +67,14 @@ signature. Only the runner's native architecture is executed; presence of a seco
 slice is not a second-architecture playtest. Headless Windows/macOS checks do not
 establish rendering performance or physical audio/controller quality.
 
+The final Cairn release gate runs from commit `0a66a02d5d256885b5c32cb5d90b7adb227b02b9`.
+The permanent Stone workflow (`34157714682`) validates the committed Stone GLB with
+zero Khronos errors/warnings, runs the complete native stack, and captures Cairn in
+both OpenGL and Vulkan Forward+. The standalone workflow (`34157714685`) exports all
+three desktop packages and then executes each package on its native CI runner; Linux
+also completes the packaged renderer capture path. These are automated prepared-state
+checks, not a human campaign playthrough or target-GPU performance certification.
+
 Release templates do not support the editor-only `--script` flag. Export presets
 set the `standalone` feature, selecting `release/entry.tscn` as an export-only
 bootstrap. Ordinary launches immediately open the unchanged campaign scene.
