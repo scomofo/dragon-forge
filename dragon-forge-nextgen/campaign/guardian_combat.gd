@@ -31,23 +31,32 @@ const VENOM = {
 	"wall": {"name":"Toxic Cloud", "damage":7.0, "heat":28.0, "cooldown":6.0, "range":4.0, "radius":2.5, "windup":.22, "recovery":.28},
 	"burst": {"name":"Septic Bloom", "damage":46.0, "heat":36.0, "cooldown":8.5, "range":4.5, "cone":-1.0, "windup":.30, "recovery":.38},
 }
+const SHADOW = {
+	# Shadow Strike, Void Pulse and Phase Strike are canonical browser techniques.
+	# Umbral Wake is the bounded native field needed by the four-slot action layout.
+	"claw": {"name":"Shadow Strike", "damage":27.0, "heat":0.0, "cooldown":.46, "range":3.1, "cone":.18, "windup":.09, "recovery":.15},
+	"breath": {"name":"Void Pulse", "damage":36.0, "heat":22.0, "cooldown":2.5, "range":7.8, "cone":.84, "windup":.20, "recovery":.25},
+	"wall": {"name":"Umbral Wake", "damage":8.0, "heat":28.0, "cooldown":5.5, "range":4.0, "radius":2.4, "windup":.18, "recovery":.24},
+	"burst": {"name":"Phase Strike", "damage":50.0, "heat":34.0, "cooldown":7.5, "range":4.8, "cone":-1.0, "windup":.20, "recovery":.30},
+}
 const ORDER = ["claw", "breath", "wall", "burst"]
 const MAX_RESOLVE = 3
 const MAX_TOXIN = 3
+const MAX_PHASE = 2
 
 static func rule(state: Dictionary, id: String) -> Dictionary:
-	var kit: Dictionary = {"fire":ABILITIES, "ice":ICE, "storm":STORM, "stone":STONE, "venom":VENOM}.get(state.get("guardian", "fire"), ABILITIES)
+	var kit: Dictionary = {"fire":ABILITIES, "ice":ICE, "storm":STORM, "stone":STONE, "venom":VENOM, "shadow":SHADOW}.get(state.get("guardian", "fire"), ABILITIES)
 	var move: Dictionary = kit.get(id, {}).duplicate()
 	if not move.is_empty() and id == "breath" and state.get("evolution", "") == "flashfire": move.cooldown = 1.8
 	if not move.is_empty() and id == "burst" and state.get("evolution", "") == "overcharge": move.cooldown = 6.75
 	return move
 
 static func guardian_name(id: String) -> String:
-	return {"fire":"MAGMA", "ice":"RIME", "storm":"ARC", "stone":"CAIRN", "venom":"NOX"}.get(id, "UNKNOWN")
+	return {"fire":"MAGMA", "ice":"RIME", "storm":"ARC", "stone":"CAIRN", "venom":"NOX", "shadow":"UMBRA"}.get(id, "UNKNOWN")
 
 static func fresh(module: String = "", guardian: String = "fire") -> Dictionary:
-	var maximum: float = Modules.profile(module).hp * {"fire":1.0, "ice":.90, "storm":.85, "stone":1.15, "venom":.95}.get(guardian, 1.0)
-	return {"evolution":"", "guardian":guardian, "ward":0.0, "resolve":0, "module":module if Modules.valid(module) else "", "hp":maximum, "max_hp":maximum, "heat":0.0, "cooldowns":{}, "iframes":0.0, "dash":0.0, "dodge_cd":0.0, "guard":false, "action":"", "action_time":0.0, "action_hit":false}
+	var maximum: float = Modules.profile(module).hp * {"fire":1.0, "ice":.90, "storm":.85, "stone":1.15, "venom":.95, "shadow":.82}.get(guardian, 1.0)
+	return {"evolution":"", "guardian":guardian, "ward":0.0, "resolve":0, "phase":0, "module":module if Modules.valid(module) else "", "hp":maximum, "max_hp":maximum, "heat":0.0, "cooldowns":{}, "iframes":0.0, "dash":0.0, "dodge_cd":0.0, "guard":false, "action":"", "action_time":0.0, "action_hit":false}
 
 static func tick(state: Dictionary, delta: float, guarding: bool = false) -> String:
 	var dt = maxf(delta, 0.0) if is_finite(delta) else 0.0
@@ -89,7 +98,11 @@ static func dodge(state: Dictionary) -> bool:
 	return true
 
 static func damage(state: Dictionary, amount: float) -> float:
-	if amount <= 0.0 or state.hp <= 0.0 or state.iframes > 0.0: return 0.0
+	if amount <= 0.0 or state.hp <= 0.0:return 0.0
+	if state.iframes > 0.0:
+		# Phase is earned only when a real incoming hit intersects an active dodge window.
+		if state.get("guardian","") == "shadow":state.phase=mini(MAX_PHASE,int(state.get("phase",0))+1)
+		return 0.0
 	var guarded = state.guard
 	var applied = minf(state.hp, amount * (0.45 if state.get("ward", 0.0) > 0.0 else 1.0) * (float(Modules.profile(state.get("module", "")).guard) if guarded else 1.0))
 	state.hp -= applied
@@ -122,15 +135,19 @@ static func heat_cost(state: Dictionary, id: String) -> float:
 static func technique_damage(state: Dictionary, id: String) -> float:
 	var amount = float(rule(state,id).get("damage", 0.0)) * float(Modules.profile(state.get("module", "")).damage) * (1.10 if state.get("evolution", "") != "" else 1.0)
 	if state.get("guardian","") == "stone" and id == "burst": amount *= 1.0 + 0.20 * float(state.get("resolve",0))
+	if state.get("guardian","") == "shadow" and id == "burst": amount *= 1.0 + 0.30 * float(phase_stacks(int(state.get("phase",0))))
 	return amount
 
-static func toxin_stacks(value: int) -> int: return clampi(value,0,MAX_TOXIN)
-static func toxin_duration() -> float: return 5.0
-static func toxin_tick_damage() -> float: return 4.0
-static func toxin_burst_multiplier(stacks: int) -> float: return 1.0 + 0.25 * float(toxin_stacks(stacks))
+static func toxin_stacks(value: int) -> int:return clampi(value,0,MAX_TOXIN)
+static func toxin_duration() -> float:return 5.0
+static func toxin_tick_damage() -> float:return 4.0
+static func toxin_burst_multiplier(stacks: int) -> float:return 1.0 + 0.25 * float(toxin_stacks(stacks))
+static func phase_stacks(value: int) -> int:return clampi(value,0,MAX_PHASE)
+static func consume_phase(state: Dictionary) -> int:
+	var spent=phase_stacks(int(state.get("phase",0)));state.phase=0;return spent
 static func consume_resolve(state: Dictionary) -> int:
 	var spent = int(state.get("resolve",0)); state.resolve = 0; return spent
-static func field_duration(state: Dictionary) -> float: return 4.8 if state.get("evolution", "") == "furnace" else 3.6
-static func chill_duration(state: Dictionary) -> float: return 4.5 if state.get("evolution", "") == "deepwinter" else 3.0
-static func ward_duration(state: Dictionary) -> float: return 6.0 if state.get("evolution", "") == "aegis" else 4.0
-static func charge_duration(state: Dictionary) -> float: return 6.0 if state.get("evolution", "") == "thunderhead" else 4.0
+static func field_duration(state: Dictionary) -> float:return 4.8 if state.get("evolution", "") == "furnace" else 3.6
+static func chill_duration(state: Dictionary) -> float:return 4.5 if state.get("evolution", "") == "deepwinter" else 3.0
+static func ward_duration(state: Dictionary) -> float:return 6.0 if state.get("evolution", "") == "aegis" else 4.0
+static func charge_duration(state: Dictionary) -> float:return 6.0 if state.get("evolution", "") == "thunderhead" else 4.0
