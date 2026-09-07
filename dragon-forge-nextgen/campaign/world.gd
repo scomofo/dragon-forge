@@ -10,6 +10,7 @@ const CampaignHud = preload("res://campaign/hud.gd")
 const Patterns = preload("res://campaign/patterns.gd")
 const GuardianCombat = preload("res://campaign/guardian_combat.gd")
 const GuardianParty = preload("res://campaign/party.gd")
+const Growth = preload("res://campaign/growth.gd")
 var party = GuardianParty.new()
 var campaign = CampaignRules.fresh()
 var level
@@ -249,7 +250,7 @@ func interaction() -> String:
 	match item.kind:
 		"hatch":return "Rest / refill repair charges" if campaign.hatched else "Hatch Magma and begin your journey"
 		"ice_egg":return "Rescue the frozen guardian egg"
-		"hatch_ice":return "Hatch Rime / Ice guardian" if campaign.ice_rescued and not campaign.guardians.has("ice") else "View guardian collection"
+		"hatch_ice":return "Hatch Rime / Ice guardian" if campaign.ice_rescued and not campaign.guardians.has("ice") else "Guardian Nursery / evolution"
 		"rest":return "Rest / refill repair charges"
 		"upgrade":return "Spend salvage at the Forge"
 		"forge":return "Install cores / configure Magma"
@@ -386,9 +387,9 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 	var owner_id: String=party.active_id
 	var rule: Dictionary=GuardianCombat.rule(dragon.state,id)
 	if id=="burst" and owner_id=="ice":
-		dragon.state.ward=4.0
+		dragon.state.ward=GuardianCombat.ward_duration(dragon.state)
 		effects.pulse(origin,2.0,Color("9edff2"))
-		hud.feedback("CRYSTAL AEGIS", "55% damage reduction for Rime / 4 seconds")
+		hud.feedback("CRYSTAL AEGIS", "55%% damage reduction for Rime / %d seconds" % int(dragon.state.ward))
 		return
 	if id=="wall":
 		if owner_id=="fire":
@@ -397,10 +398,12 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 			_place_frost(origin,direction)
 		walls[-1].damage=campaign_damage(id)
 		walls[-1].guardian=owner_id
+		walls[-1].ttl=GuardianCombat.field_duration(dragon.state)
+		walls[-1].chill_duration=GuardianCombat.chill_duration(dragon.state)
 		return
 	for actor in enemies.duplicate():
 		if is_instance_valid(actor) and Combat.in_cone(origin,direction,actor.global_position,rule.range,rule.cone) and line_clear(origin,actor.global_position):
-			actor.element_hit(campaign_damage(id),owner_id,id)
+			actor.element_hit(campaign_damage(id),owner_id,id,GuardianCombat.chill_duration(dragon.state))
 	if owner_id=="ice":
 		_ice_contact(id,origin,direction,rule.range)
 		if id=="breath" and not conduits.is_empty():
@@ -442,7 +445,7 @@ func _tick_walls(delta: float) -> void:
 			wall.tick+=0.6
 			for foe in enemies.duplicate():
 				if is_instance_valid(foe) and Combat.in_cone(wall.at,Vector3.FORWARD,foe.position,2.3,-1) and line_clear(wall.at,foe.position):
-					foe.element_hit(wall.damage,wall.get("guardian","fire"),"wall")
+					foe.element_hit(wall.damage,wall.get("guardian","fire"),"wall",wall.get("chill_duration",3.0))
 		if wall.ttl<=0:
 			wall.node.queue_free()
 			walls.remove_at(i)
@@ -461,13 +464,14 @@ func _on_pattern(shape: Dictionary, amount: float) -> void:
 			effects.pulse(at,shape.radius,Color("edb15e"))
 
 func _campaign_defeat(id: String) -> void:
+	var previous_bond = Growth.points(campaign)
 	if not CampaignRules.defeat(campaign,id):
 		return
 	_save()
 	dragon.state.hp=minf(dragon.state.max_hp,dragon.state.hp+25)
 	_select_enemy()
 	if Data.room_cleared(campaign,campaign.room):
-		hud.feedback("AREA SECURED", "+25 health. Salvage saved.")
+		hud.feedback("AREA SECURED", "+25 health / +%d shared bond / salvage saved" % (Growth.points(campaign)-previous_bond))
 		hud.toast("The pedestal is active. Collect the core." if Data.ROOMS[campaign.room].role in ["boss","final"] else "Path clear. Explore the room, read its record, and follow the next portal.")
 
 func _clear_encounter() -> void:
@@ -534,6 +538,8 @@ func guidance() -> Dictionary:
 	elif r.role=="forge":
 		if campaign.ice_rescued and not campaign.guardians.has("ice"):
 			return {"title":"Awaken the Ice guardian", "detail":"Bring the rescued egg to the cyan incubator on the right. Rime joins Magma without replacing him.","target":Vector3(6,0,8),"marker":"HATCH RIME","index":mini(campaign.installed.size(),5)}
+		if Growth.ready_guardian(campaign) != "" and campaign.cores.size() == campaign.installed.size():
+			return {"title":"Your guardians are ready to evolve", "detail":"Visit the cyan Nursery on the right. Choose an evolved form and a free specialization. P opens Guardians.","target":Vector3(6,0,8),"marker":"EVOLUTION READY","index":mini(campaign.installed.size(),5)}
 		if campaign.cores.size()>campaign.installed.size():
 			title="Install the recovered core"
 			detail="The core socket reconnects a sector and unlocks your next destination."
@@ -642,3 +648,15 @@ func _ice_contact(id: String,origin: Vector3,direction: Vector3,reach: float) ->
 			point.y=muzzle.y
 			Geo.cylinder(node,point,.09,0,.50,frost,5).rotation.x=PI/2
 	node.create_tween().tween_interval(.25).finished.connect(node.queue_free)
+
+func can_evolve() -> bool:
+	return not entering and not title_open and campaign.room == "forge" and campaign.hatched and dragon.active and dragon.state.hp > 0.0 and dragon.state.action == "" and dragon.state.dash <= 0.0 and dragon.position.distance_to(Vector3(6,0,8)) < 3.4
+
+func choose_evolution(guardian: String, specialization: String) -> bool:
+	# UI pause is permitted here; remote, in-combat and duplicated requests are not.
+	if not can_evolve() or not Growth.select(campaign, guardian, specialization):
+		return false
+	_save()
+	rest()
+	hud.show_evolution_result(guardian)
+	return true

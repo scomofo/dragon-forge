@@ -1,4 +1,5 @@
 extends "res://presentation/hud.gd"
+const Growth = preload("res://campaign/growth.gd")
 const Data = preload("res://campaign/data.gd")
 const Rules = preload("res://campaign/progress.gd")
 const Patterns = preload("res://campaign/patterns.gd")
@@ -39,7 +40,7 @@ func _process(delta: float) -> void:
 	repair_button.disabled=world.repairs<=0 or not world.dragon.active or world.dragon.state.hp<=0 or world.dragon.state.hp>=world.dragon.state.max_hp or overlay.visible or menu.visible
 	var actor=world.dragon
 	var active_id: String=world.party.active_id
-	health_text.text=GuardianCombat.guardian_name(active_id)+"   /   %d / %d" % [roundi(actor.state.hp),roundi(actor.state.max_hp)]
+	health_text.text=Growth.form_name(active_id,actor.state.get("evolution", "") != "").to_upper()+"   /   %d / %d" % [roundi(actor.state.hp),roundi(actor.state.max_hp)]
 	if not actor.active:health_text.text="MAGMA / DORMANT"
 	if actor.state.get("ward",0.0)>0.0:
 		defensive_text.text="CRYSTAL AEGIS  /  %.1fs" % actor.state.ward
@@ -62,7 +63,7 @@ func _process(delta: float) -> void:
 		if active_id=="ice":
 			if id=="breath":card.cost.text="%d + CHILL / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 			elif id=="wall":card.cost.text="%d/tick + CHILL / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
-			elif id=="burst":card.cost.text="55% protection / 4 seconds"
+			elif id=="burst":card.cost.text="55%% protection / %d seconds" % int(GuardianCombat.ward_duration(actor.state))
 		var cd: float=actor.state.cooldowns.get(id,0.0)
 		card.charge.value=1.0-cd/float(rule.cooldown)
 		card.status.text="COOLING %.1fs" % cd if cd>0 else ("TOO HOT" if actor.state.heat+GuardianCombat.heat_cost(actor.state,id)>100 else "READY")
@@ -141,7 +142,7 @@ func show_title() -> void:
 	_label(overlay_column,"DRAGON FORGE",42,GOLD)
 	_label(overlay_column,"RECONNECTION",25,TEAL)
 	_wrapped(overlay_column,"A compact playable campaign through four broken sectors. Restore their cores. Rescue a second guardian. Fight together. Stop the Great Reset.",20)
-	_label(overlay_column,"TWO GUARDIANS   /   22 ROOMS   /   ICE + FIRE TEAM COMBAT",14,MUTED)
+	_label(overlay_column,"GUARDIAN EVOLUTION   /   22 ROOMS   /   ICE + FIRE TEAM COMBAT",14,MUTED)
 	var start=_button(overlay_column,"Continue campaign" if world.store.existed or world.has_started else "Begin campaign")
 	start.pressed.connect(func():world.begin_campaign(false))
 	start.grab_focus()
@@ -252,7 +253,7 @@ func show_modules() -> void:
 	if world.campaign.installed.is_empty() and not world.campaign.legacy_imported:
 		_wrapped(overlay_column,"Recover the Outer Grid core and bring it here to unlock modules. The anvil already offers salvage upgrades.",19,PAPER)
 	else:
-		_wrapped(overlay_column,"Modules change your fighting style. Reconfigure for free whenever you return to the Forge.",17,MUTED)
+		_wrapped(overlay_column,"Modules change both guardians. Reconfigure for free whenever you return to the Forge.",17,MUTED)
 		var row=HBoxContainer.new()
 		overlay_column.add_child(row)
 		row.add_theme_constant_override("separation",12)
@@ -342,7 +343,8 @@ func show_egg_rescued() -> void:
 func show_party() -> void:
 	if world.title_open:return
 	_open_overlay("party")
-	_label(overlay_column,"YOUR GUARDIANS",30,TEAL)
+	_label(overlay_column,"YOUR GUARDIANS / BOND %s" % ["I", "II", "III"][Growth.rank(world.campaign)-1],28,TEAL)
+	_label(overlay_column,"%d bond / 280 to evolve   •   First clears, caches and restored cores count for both guardians." % Growth.points(world.campaign),15,GOLD)
 	_wrapped(overlay_column,"Tab or right-stick click swaps in combat. Each guardian keeps its own health, core heat and cooldowns. No reserve healing. Shelters revive the whole party.",16,PAPER)
 	var row=HBoxContainer.new()
 	row.add_theme_constant_override("separation",18)
@@ -351,16 +353,64 @@ func show_party() -> void:
 		var card=_panel(row);card.custom_minimum_size.x=477
 		var col=_column(card,10)
 		var owned: bool=world.campaign.guardians.has(id)
-		_label(col,GuardianCombat.guardian_name(id)+(" / FIRE" if id=="fire" else " / ICE"),26,GOLD if id=="fire" else TEAL)
+		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),24,GOLD if id=="fire" else TEAL)
 		_label(col,("ACTIVE" if world.party.active_id==id else "RESERVE") if owned else ("EGG RESCUED" if world.campaign.ice_rescued else "UNDISCOVERED"),14,MUTED)
 		if owned:
 			var state: Dictionary=world.party.states.get(id,{})
 			if not state.is_empty():_label(col,"%d/%d health  /  %d heat" % [roundi(state.hp),roundi(state.max_hp),roundi(state.heat)],16,PAPER)
 			for slot in GuardianCombat.ORDER:
-				var kit: Dictionary=GuardianCombat.rule({"guardian":id},slot)
+				var kit: Dictionary=GuardianCombat.rule({"guardian":id,"evolution":Growth.choice(world.campaign,id)},slot)
 				_label(col,kit.name,17,PAPER)
-			_wrapped(col,"Fire powers the heat relays. Direct fire hits shatter CHILLED for 40% bonus damage once." if id=="fire" else "Rime Lance and Permafrost chill on a landed hit. Crystal Aegis reduces Rime's damage taken by 55% for 4 seconds.",16,MUTED,436)
+			_wrapped(col,"Fire powers the heat relays. Direct fire hits shatter CHILLED for 40% bonus damage once." if id=="fire" else "Rime Lance and Permafrost chill on a landed hit. Crystal Aegis protects Rime for %d seconds." % (6 if Growth.choice(world.campaign,id)=="aegis" else 4),16,MUTED,436)
+			var evolve_button = _button(col, "Evolution / " + (Growth.TRAITS[Growth.choice(world.campaign,id)].name if Growth.choice(world.campaign,id) != "" else ("READY" if Growth.reason(world.campaign,id) == "" else "View requirements")))
+			evolve_button.pressed.connect(func():show_growth(id))
 		else:
 			_wrapped(col,"Bring the rescued egg to the cyan nursery on the right of the Forge, then press E." if world.campaign.ice_rescued else "Restore Outer Grid. In Frozen Cache, defeat the Thaw Guardian and explore the side passage to Frozen Vault. Rescue its egg and hatch it at the Forge.",18,PAPER,436)
 	_wrapped(overlay_column,"COMBO / Land Ice on an exposed enemy → swap to Magma → land a direct Fire hit before the chill expires. Shields still block both elements. The two guardians share repair charges and permanent Forge upgrades.",16,TEAL)
 	_button(overlay_column,"Back to the world / P").pressed.connect(close_overlay)
+
+func show_growth(guardian: String) -> void:
+	if world.title_open or not Growth.OPTIONS.has(guardian):
+		return
+	_open_overlay("growth")
+	var chosen = Growth.choice(world.campaign,guardian)
+	_label(overlay_column,Growth.form_name(guardian,true).to_upper(),30,GOLD if guardian == "fire" else TEAL)
+	_wrapped(overlay_column,"Evolution adds a new armored crest and +10% maximum health and technique damage. Keep the same movement, reach and contact timings. Choose one specialization below.",18,PAPER)
+	var score = Growth.points(world.campaign)
+	_label(overlay_column,"BOND %s / %d points   •   %d / 2 cores restored" % [["I","II","III"][Growth.rank(world.campaign)-1],score,world.campaign.installed.size()],17,TEAL)
+	var bar = ProgressBar.new()
+	bar.max_value = 280
+	bar.value = mini(score,280)
+	bar.show_percentage = false
+	bar.custom_minimum_size.y = 14
+	overlay_column.add_child(bar)
+	var reason = Growth.reason(world.campaign,guardian)
+	if reason == "" and not world.can_evolve():
+		reason = "Visit the Guardian Nursery on the right of the Forge to evolve or change specialization."
+	_wrapped(overlay_column,reason if reason != "" else "READY AT THE NURSERY / Free evolution. Change specialization here later at no cost.",17,GOLD)
+	var row = HBoxContainer.new()
+	row.add_theme_constant_override("separation",16)
+	overlay_column.add_child(row)
+	for specialization in Growth.OPTIONS[guardian]:
+		var info: Dictionary = Growth.TRAITS[specialization]
+		var card = _panel(row)
+		card.custom_minimum_size.x = 477
+		var col = _column(card,12)
+		_label(col,info.name,23,TEAL)
+		_wrapped(col,info.detail,18,PAPER,436)
+		var button = _button(col,"Equipped" if chosen == specialization else (("Evolve / " if chosen == "" else "Reconfigure / ") + info.name))
+		button.disabled = reason != "" or chosen == specialization
+		button.pressed.connect(func():world.choose_evolution(guardian,specialization))
+	_wrapped(overlay_column,"Shared bond comes from unique achievements: patrol 20, shield guardian 35, boss 70, final 100, cache 15, core installation 25. Recruits inherit your journey; revisiting or retrying never farms points.",15,MUTED)
+	_button(overlay_column,"Back to Guardians").pressed.connect(show_party)
+
+func show_evolution_result(guardian: String) -> void:
+	_open_overlay("evolved")
+	_label(overlay_column,"A GUARDIAN TRANSFORMED",32,TEAL)
+	_label(overlay_column,Growth.form_name(guardian,true).to_upper(),27,GOLD)
+	var specialization = Growth.choice(world.campaign,guardian)
+	_wrapped(overlay_column,Growth.TRAITS[specialization].name+" / "+Growth.TRAITS[specialization].detail,20,PAPER)
+	_wrapped(overlay_column,"+10% maximum health and technique damage. The new form stays with this guardian through swaps, defeat and Continue. Both guardians are rested at the Nursery.",18,MUTED)
+	if world.store.message != "":
+		_wrapped(overlay_column,world.store.message,16,GOLD)
+	_button(overlay_column,"Return to the Forge").pressed.connect(close_overlay)

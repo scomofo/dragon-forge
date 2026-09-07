@@ -2,10 +2,11 @@ extends RefCounted
 ## Save-safe campaign rules; no scene side effects, RNG, or wall-clock dependencies.
 const Data = preload("res://campaign/data.gd")
 const Modules = preload("res://sim/forge_modules.gd")
+const Growth = preload("res://campaign/growth.gd")
 const UPGRADE_IDS = ["plating", "power", "cooling"]
 
 static func fresh() -> Dictionary:
-	return {"version": 2, "guardians": ["fire"], "active_guardian": "fire", "ice_rescued": false, "hatched": false, "room": "forge", "visited": ["forge"], "cleared": [], "relays": [], "caches": [], "journals": [], "cores": [], "installed": [], "salvage": 0, "upgrades": {"plating": 0, "power": 0, "cooling": 0}, "module": "", "finished": false, "legacy_imported": false}
+	return {"version": 3, "evolutions": {"fire": "", "ice": ""}, "guardians": ["fire"], "active_guardian": "fire", "ice_rescued": false, "hatched": false, "room": "forge", "visited": ["forge"], "cleared": [], "relays": [], "caches": [], "journals": [], "cores": [], "installed": [], "salvage": 0, "upgrades": {"plating": 0, "power": 0, "cooling": 0}, "module": "", "finished": false, "legacy_imported": false}
 
 static func normalize(value: Variant) -> Dictionary:
 	if not value is Dictionary:
@@ -16,6 +17,9 @@ static func normalize(value: Variant) -> Dictionary:
 		s.guardians = ["fire"]
 		s.active_guardian = "fire"
 		s.ice_rescued = false
+	if s.get("version", 0) == 2:
+		s.version = 3
+		s.evolutions = {"fire": "", "ice": ""}
 	var template = fresh()
 	for key in template:
 		if not s.has(key):
@@ -24,7 +28,7 @@ static func normalize(value: Variant) -> Dictionary:
 		if not _integer(s[key], 0, 1000000):
 			return {}
 		s[key] = int(s[key])
-	if s.version != 2:
+	if s.version != 3:
 		return {}
 	for key in ["hatched", "finished", "legacy_imported", "ice_rescued"]:
 		if not s[key] is bool:
@@ -76,6 +80,14 @@ static func normalize(value: Variant) -> Dictionary:
 		return {}
 	if s.guardians.has("ice") and not s.ice_rescued:
 		return {}
+	if not s.evolutions is Dictionary or s.evolutions.size() != 2:
+		return {}
+	for guardian in ["fire", "ice"]:
+		var specialization: Variant = s.evolutions.get(guardian)
+		if not specialization is String or (specialization != "" and not Growth.OPTIONS[guardian].has(specialization)):
+			return {}
+		if specialization != "" and Growth.reason(s, guardian) != "":
+			return {}
 	return s
 
 static func _integer(v: Variant, lo: int, hi: int) -> bool:
