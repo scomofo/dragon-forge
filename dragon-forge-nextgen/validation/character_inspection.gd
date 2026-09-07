@@ -3,7 +3,7 @@ extends Node3D
 const Art = preload("res://presentation/art_library.gd")
 const UI = preload("res://validation/review_ui.gd")
 const Probe = preload("res://validation/foot_review.gd")
-const ACTORS = ["magma_guardian", "firewall_sentinel", "packet_warden"]
+const ACTORS = ["magma_guardian", "firewall_sentinel", "packet_warden", "ice_guardian"]
 const VIEWS = ["Full body", "Shoulders", "Hips / feet", "Jaw / head", "Rear / tail"]
 var model: Node3D
 var skeleton: Skeleton3D
@@ -99,7 +99,7 @@ func _build_controls() -> void:
 	var box = UI.panel(layer, Vector2(18, 18), 296)
 	UI.text(box, "CHARACTER / INSPECTION", 19)
 	UI.text(box, "Actual imported art • save-safe", 12)
-	UI.picker(box, ["Magma guardian", "Firewall Sentinel", "Packet Warden"], load_actor)
+	UI.picker(box, ["Magma guardian", "Firewall Sentinel", "Packet Warden", "Rime / Ice guardian"], load_actor)
 	clip_picker = UI.picker(box, [], select_clip)
 	var transport = UI.row(box)
 	play_button = UI.button(transport, "Pause", toggle_play)
@@ -130,7 +130,11 @@ func load_actor(index: int) -> void:
 		remove_child(model)
 		model.queue_free()
 	actor_id = ACTORS[index]
-	model = Art.place(self, actor_id)
+	if actor_id=="ice_guardian":
+		model=preload("res://campaign/guardians/ice_guardian.glb").instantiate()
+		add_child(model)
+	else:
+		model = Art.place(self, actor_id)
 	skeleton = model.find_child("Skeleton3D", true, false)
 	player = model.find_child("AnimationPlayer", true, false)
 	player.process_mode = Node.PROCESS_MODE_DISABLED
@@ -205,6 +209,8 @@ func set_view(index: int) -> void:
 	view_index = index
 	view_picker.select(index)
 	focus = [Vector3(0, 1.4, 0.1), Vector3(0, 1.85, -0.18), Vector3(0, 0.65, 0.0), Vector3(0, 2.24, -0.75), Vector3(0, 1.3, 0.6)][index]
+	if actor_id=="ice_guardian":
+		focus=[Vector3(0,1.0,.3),Vector3(0,1.1,-.5),Vector3(0,.5,.4),Vector3(0,1.2,-1.2),Vector3(0,.9,1.1)][index]
 	distance = [7.3, 3.6, 4.6, 2.8, 7.0][index]
 	orbit = 3.7 if index == 4 else 0.55
 	elevation = 0.24

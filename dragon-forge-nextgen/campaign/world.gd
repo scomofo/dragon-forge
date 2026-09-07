@@ -8,6 +8,9 @@ const CampaignDragon = preload("res://campaign/dragon.gd")
 const CampaignEnemy = preload("res://campaign/enemy.gd")
 const CampaignHud = preload("res://campaign/hud.gd")
 const Patterns = preload("res://campaign/patterns.gd")
+const GuardianCombat = preload("res://campaign/guardian_combat.gd")
+const GuardianParty = preload("res://campaign/party.gd")
+var party = GuardianParty.new()
 var campaign = CampaignRules.fresh()
 var level
 var enemies: Array = []
@@ -19,6 +22,12 @@ var has_started = false
 
 func _ready() -> void:
 	Inputs.setup()
+	if not InputMap.has_action("ng_swap"):
+		InputMap.add_action("ng_swap")
+		var key=InputEventKey.new();key.physical_keycode=KEY_TAB
+		InputMap.action_add_event("ng_swap",key)
+		var pad=InputEventJoypadButton.new();pad.button_index=JOY_BUTTON_RIGHT_STICK
+		InputMap.action_add_event("ng_swap",pad)
 	store = CampaignStore.new()
 	if not test_mode:
 		campaign = store.read_campaign()
@@ -47,7 +56,7 @@ func _ready() -> void:
 	dragon.ability_used.connect(resolve_ability)
 	dragon.hint.connect(hud.toast)
 	dragon.damaged.connect(_on_player_damaged)
-	dragon.died.connect(func(): hud.show_defeat.call_deferred())
+	dragon.died.connect(func(): _on_guardian_down.call_deferred())
 	set_reduced_motion(reduced_motion)
 	preferences_ready = not test_mode
 	_enter_room(campaign.room, true)
@@ -81,7 +90,8 @@ func begin_campaign(fresh: bool = false) -> void:
 
 func _enter_room(id: String, restore: bool = false) -> void:
 	entering = true
-	var old_hp = dragon.state.hp
+	if not party.states.is_empty():
+		party.states[party.active_id] = dragon.state
 	_clear_encounter()
 	if is_instance_valid(level):
 		remove_child(level)
@@ -90,12 +100,18 @@ func _enter_room(id: String, restore: bool = false) -> void:
 	add_child(level)
 	level.build(Data.ROOMS[id])
 	dressing = level
+	# Traveling cancels old-room windups, not heat/cooldown commitments.
+	for saved_state in party.states.values():
+		GuardianCombat.cancel_action(saved_state)
+		saved_state.guard=false
+		saved_state.dash=0.0
 	var info: Dictionary = Data.ROOMS[id]
 	var safe = info.role in ["forge","shelter"]
+	if party.states.is_empty() or safe or restore:
+		party.rebuild(campaign)
 	dragon.respawn(Data.v3(info.spawn), campaign.module)
-	_apply_build()
-	if not safe and not restore:
-		dragon.state.hp = minf(dragon.state.max_hp, maxf(1.0, old_hp))
+	dragon.use_guardian(party.active_id,party.states[party.active_id])
+	dragon.cooling_level = int(campaign.upgrades.cooling)
 	dragon.active = campaign.hatched
 	if safe or restore:
 		repairs = 2
@@ -166,6 +182,10 @@ func _physics_process(delta: float) -> void:
 		interact()
 	if not dragon.active or dragon.state.hp<=0.0:
 		return
+	party.states[party.active_id] = dragon.state
+	party.tick_reserve(delta,int(campaign.upgrades.cooling))
+	if dragon.input_grace<=0 and Input.is_action_just_pressed("ng_swap"):
+		swap_guardian()
 	room_clock += delta
 	if dragon.global_position.y < -4:
 		retry()
@@ -228,6 +248,8 @@ func interaction() -> String:
 		return ""
 	match item.kind:
 		"hatch":return "Rest / refill repair charges" if campaign.hatched else "Hatch Magma and begin your journey"
+		"ice_egg":return "Rescue the frozen guardian egg"
+		"hatch_ice":return "Hatch Rime / Ice guardian" if campaign.ice_rescued and not campaign.guardians.has("ice") else "View guardian collection"
 		"rest":return "Rest / refill repair charges"
 		"upgrade":return "Spend salvage at the Forge"
 		"forge":return "Install cores / configure Magma"
@@ -260,6 +282,18 @@ func interact() -> void:
 				hud.toast("Magma is awake. Head north to EXPEDITIONS or press M to choose Outer Grid.")
 			else:
 				rest()
+		"ice_egg":
+			if CampaignRules.rescue_ice(campaign):
+				_save()
+				hud.show_egg_rescued()
+		"hatch_ice":
+			if CampaignRules.hatch_ice(campaign):
+				_save()
+				rest()
+				hud.show_party()
+				hud.toast("RIME AWAKENED / Tab or right-stick click swaps guardians. Chill with Rime, then shatter with Magma.")
+			else:
+				hud.show_party()
 		"rest":rest()
 		"upgrade":hud.show_upgrades()
 		"forge":
@@ -303,12 +337,13 @@ func travel(destination: String) -> bool:
 func rest() -> void:
 	if not Data.ROOMS[campaign.room].role in ["forge","shelter"] or is_instance_valid(enemy):
 		return
-	dragon.state=Combat.fresh(campaign.module)
-	_apply_build()
+	party.rebuild(campaign)
+	dragon.use_guardian(party.active_id,party.states[party.active_id])
+	dragon.cooling_level=int(campaign.upgrades.cooling)
 	dragon.buffered_id=""
 	dragon.buffer_time=0.0
 	repairs=2
-	hud.toast("Rested. Full health, cool core, two repair charges.")
+	hud.toast("Rested. Both guardians revived, cores cooled, two shared repair charges.")
 
 func repair() -> bool:
 	if get_tree().paused or title_open or not dragon.active or repairs<=0 or dragon.state.hp<=0 or dragon.state.hp>=dragon.state.max_hp:
@@ -343,19 +378,34 @@ func choose_module(id: String) -> bool:
 	return true
 
 func campaign_damage(id: String) -> float:
-	return Combat.technique_damage(dragon.state,id)*(1.0+0.12*float(campaign.upgrades.power))
+	return GuardianCombat.technique_damage(dragon.state,id)*(1.0+0.12*float(campaign.upgrades.power))
 
 func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 	if entering or title_open or not campaign.hatched:
 		return
-	if id=="wall":
-		_place_wall(origin,direction)
-		walls[-1].damage=campaign_damage(id)
+	var owner_id: String=party.active_id
+	var rule: Dictionary=GuardianCombat.rule(dragon.state,id)
+	if id=="burst" and owner_id=="ice":
+		dragon.state.ward=4.0
+		effects.pulse(origin,2.0,Color("9edff2"))
+		hud.feedback("CRYSTAL AEGIS", "55% damage reduction for Rime / 4 seconds")
 		return
-	var rule: Dictionary=Combat.ABILITIES[id]
+	if id=="wall":
+		if owner_id=="fire":
+			_place_wall(origin,direction)
+		else:
+			_place_frost(origin,direction)
+		walls[-1].damage=campaign_damage(id)
+		walls[-1].guardian=owner_id
+		return
 	for actor in enemies.duplicate():
 		if is_instance_valid(actor) and Combat.in_cone(origin,direction,actor.global_position,rule.range,rule.cone) and line_clear(origin,actor.global_position):
-			actor.take_hit(campaign_damage(id))
+			actor.element_hit(campaign_damage(id),owner_id,id)
+	if owner_id=="ice":
+		_ice_contact(id,origin,direction,rule.range)
+		if id=="breath" and not conduits.is_empty():
+			hud.toast("Ice cannot power heat relays. Swap to Magma [Tab], or rest at a shelter if Magma is down.")
+		return
 	if id=="breath":
 		for item in conduits:
 			if campaign.relays.has(item.id):
@@ -392,7 +442,7 @@ func _tick_walls(delta: float) -> void:
 			wall.tick+=0.6
 			for foe in enemies.duplicate():
 				if is_instance_valid(foe) and Combat.in_cone(wall.at,Vector3.FORWARD,foe.position,2.3,-1) and line_clear(wall.at,foe.position):
-					foe.take_hit(wall.damage)
+					foe.element_hit(wall.damage,wall.get("guardian","fire"),"wall")
 		if wall.ttl<=0:
 			wall.node.queue_free()
 			walls.remove_at(i)
@@ -482,6 +532,8 @@ func guidance() -> Dictionary:
 		target=Vector3(-2,0,8)
 		marker="HATCH MAGMA"
 	elif r.role=="forge":
+		if campaign.ice_rescued and not campaign.guardians.has("ice"):
+			return {"title":"Awaken the Ice guardian", "detail":"Bring the rescued egg to the cyan incubator on the right. Rime joins Magma without replacing him.","target":Vector3(6,0,8),"marker":"HATCH RIME","index":mini(campaign.installed.size(),5)}
 		if campaign.cores.size()>campaign.installed.size():
 			title="Install the recovered core"
 			detail="The core socket reconnects a sector and unlocks your next destination."
@@ -518,6 +570,11 @@ func guidance() -> Dictionary:
 		detail="The reset has stopped. Reconnect its heart at the pedestal."
 		target=Vector3(0,0,-19)
 		marker="RECONNECT"
+	elif r.id=="frozen-vault" and not campaign.ice_rescued:
+		title="A second heartbeat in the ice"
+		detail="Rescue the egg from the cyan plinth. Return to the Forge to hatch Rime, your first reserve guardian."
+		target=Vector3(6,0,-4)
+		marker="ICE GUARDIAN EGG"
 	elif r.role=="cache" and not campaign.caches.has(r.id):
 		title="Search the abandoned locker"
 		detail="Its salvage funds permanent Forge upgrades. Read the record before returning."
@@ -530,3 +587,58 @@ func guidance() -> Dictionary:
 				marker=exit.label
 				break
 	return {"title":title,"detail":detail,"target":target,"marker":marker,"index":mini(campaign.installed.size(),5)}
+
+func swap_guardian(target: String = "", forced: bool = false) -> bool:
+	if entering or title_open or not dragon.active or get_tree().paused or (not forced and dragon.input_grace>0.0):
+		return false
+	party.states[party.active_id]=dragon.state
+	if target=="":target=party.reserve_id()
+	# Forced handoff is ONLY allowed after the active guardian actually falls.
+	if forced and dragon.state.hp>0.0:
+		return false
+	var reason=party.rejection(target,forced)
+	if reason!="":
+		hud.toast(reason)
+		return false
+	if not party.swap_to(target,forced):return false
+	dragon.use_guardian(target,party.states[target])
+	campaign.active_guardian=target
+	get_viewport().gui_release_focus()
+	_save()
+	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", "Chill, then swap to Magma to shatter." if target=="ice" else "Fire shatters chilled enemies on a direct hit.")
+	return true
+
+func _on_guardian_down() -> void:
+	if not is_instance_valid(dragon) or dragon.state.hp>0.0:return
+	if not swap_guardian("",true):
+		hud.show_defeat()
+
+func _place_frost(origin: Vector3,direction: Vector3) -> void:
+	var at=origin+direction*4.0
+	var query=PhysicsRayQueryParameters3D.create(origin+Vector3.UP,at+Vector3.UP,1)
+	var collision=get_world_3d().direct_space_state.intersect_ray(query)
+	if not collision.is_empty():at=collision.position-direction*.6
+	at.y=0.0
+	var marker=effects.decal(at,2.3,Color("78c9ec"))
+	Geo.ring(marker,Vector3.UP*.04,2.3,Geo.material(Color("b8f1ff"),.4,true),.06)
+	# This field lives in the world, not on the active actor. Swaps do not recolor/reassign it.
+	walls.append({"at":at,"ttl":3.6,"tick":0.0,"damage":campaign_damage("wall"),"guardian":"ice","node":marker})
+
+func _ice_contact(id: String,origin: Vector3,direction: Vector3,reach: float) -> void:
+	var node=Node3D.new()
+	add_child(node)
+	effects._reserve(node)
+	var frost=Geo.material(Color("aff0fc"),.7,true)
+	if id=="claw":
+		for i in range(3):
+			var point=origin+direction*(1.4+i*.25)+Vector3.UP*.65
+			Geo.cylinder(node,point,.12,0,.6,frost,5).rotation.x=PI/2
+	else:
+		# Segmented, narrow lance: clipped with the same static line-of-sight query as hits.
+		var muzzle=dragon.rig.muzzle_position()
+		for i in range(1,17):
+			var point=origin+direction*(i*.5)
+			if i*.5>reach or not line_clear(origin,point):break
+			point.y=muzzle.y
+			Geo.cylinder(node,point,.09,0,.50,frost,5).rotation.x=PI/2
+	node.create_tween().tween_interval(.25).finished.connect(node.queue_free)

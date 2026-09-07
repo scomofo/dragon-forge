@@ -25,6 +25,7 @@ var markers: Dictionary = {}
 var valid = false
 var error = ""
 var asset_id = ""
+var foot_ids = ["L", "R"]
 var stance_anchors: Dictionary = {}
 var max_stance_drift = 0.0
 var stance_samples = 0
@@ -38,12 +39,13 @@ func _ready() -> void:
 	lines.material_override.vertex_color_use_as_albedo = true
 	lines.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(lines)
-	for foot in ["L", "R"]:
+	for foot in ["L", "R", "FL", "FR", "RL", "RR"]:
 		markers[foot] = Geo.ring(self, Vector3.ZERO, 0.16, Geo.material(Color("75ddca"), 0, true), 0.015)
 		markers[foot].visible = false
 
 func configure(model: Node3D, id: String) -> bool:
 	asset_id = id
+	foot_ids = ["FL", "FR", "RL", "RR"] if id=="ice_guardian" else ["L", "R"]
 	valid = false
 	probes.clear()
 	binds.clear()
@@ -72,7 +74,7 @@ func configure(model: Node3D, id: String) -> bool:
 	if stride not in [4, 8]:
 		error = "Unsupported skin influence count"
 		return false
-	for side in ["L", "R"]:
+	for side in foot_ids:
 		var bone = skeleton.find_bone("Foot." + side)
 		if bone < 0:
 			error = "Foot." + side + " not present\nSole diagnostics unavailable for this rig"
@@ -212,20 +214,20 @@ func readout() -> String:
 	if not valid:
 		return error
 	var words = "Sole probes / visible surface"
-	for foot in ["L", "R"]:
+	for foot in foot_ids:
 		if latest.has(foot):
 			var r = latest[foot]
 			var height = "%+.1f cm" % (r.clearance * 100) if is_finite(r.clearance) else "no surface"
 			var d = r.stance_drift if r.get("authored", false) else r.drift
 			words += "\n%s: %s | drift %.1f cm" % [foot, height, d * 100]
 	if not plant_states.is_empty():
-		var left = "LOCK" if plant_states.get("L", {}).get("planted", false) else "SWING"
-		var right = "LOCK" if plant_states.get("R", {}).get("planted", false) else "SWING"
-		return words + "\nAuthored: L %s / R %s\nStance drift max %.2f cm" % [left, right, max_stance_drift*100]
+		var tags=[]
+		for id in foot_ids:tags.append(id+" "+("LOCK" if plant_states.get(id,{}).get("planted",false) else "SWING"))
+		return words+"\nAuthored: "+" / ".join(tags)+"\nStance drift max %.2f cm" % (max_stance_drift*100)
 	return words + "\nNear-surface drift, NOT an IK lock"
 
 func report(context: Dictionary) -> Dictionary:
-	return {"schema": 1, "context": context, "engine": Engine.get_version_info().string, "renderer": RenderingServer.get_current_rendering_method(), "asset": asset_id, "asset_sha256": FileAccess.get_sha256("res://art/generated/" + asset_id + ".glb"), "method": "CPU skin of up to eight lowest-rest sole vertices per foot; vertical ray at centroid against review-only surface mesh. Proximity is not an authored plant window. In-place studio walk cannot certify locomotion planting.", "thresholds_m": {"proximity": PROXIMITY, "max_penetration_for_drift": 0.25, "review_drift": DRIFT_LIMIT, "review_penetration": SINK_LIMIT}, "max_drift_m": max_drift, "max_authored_stance_drift_m": max_stance_drift, "authored_stance_samples": stance_samples, "min_clearance_m": min_clearance if is_finite(min_clearance) else null, "samples_dropped": dropped, "samples": frames}
+	return {"schema": 1, "context": context, "engine": Engine.get_version_info().string, "renderer": RenderingServer.get_current_rendering_method(), "asset": asset_id, "asset_sha256": FileAccess.get_sha256(("res://campaign/guardians/" if asset_id=="ice_guardian" else "res://art/generated/") + asset_id + ".glb"), "method": "CPU skin of up to eight lowest-rest sole vertices per foot; vertical ray at centroid against review-only surface mesh. Proximity is not an authored plant window. In-place studio walk cannot certify locomotion planting.", "thresholds_m": {"proximity": PROXIMITY, "max_penetration_for_drift": 0.25, "review_drift": DRIFT_LIMIT, "review_penetration": SINK_LIMIT}, "max_drift_m": max_drift, "max_authored_stance_drift_m": max_stance_drift, "authored_stance_samples": stance_samples, "min_clearance_m": min_clearance if is_finite(min_clearance) else null, "samples_dropped": dropped, "samples": frames}
 
 static func surface(parent: Node3D, source: Mesh, transform: Transform3D) -> StaticBody3D:
 	var body = StaticBody3D.new()
