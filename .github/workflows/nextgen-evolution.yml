@@ -2,16 +2,16 @@ name: Nextgen guardian evolution
 on:
   pull_request:
     paths:
-      - '.evolution-transfer/**'
       - 'dragon-forge-nextgen/**'
       - '.github/workflows/nextgen-evolution.yml'
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: guardian-evolution-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  integrate:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'nextgen-guardian-evolution'
-    permissions:
-      contents: write
+  evolution:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -21,83 +21,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          sparse-checkout: |
-            dragon-forge-nextgen
-            .evolution-transfer
-      - name: Apply checksum-verified locally tested source
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import base64,hashlib,json,pathlib,subprocess,zlib
-          parts=sorted(pathlib.Path('.evolution-transfer').glob('0?.b64'))
-          assert len(parts)==5,'Integration is one-time only; complete transfer required'
-          hashes=['7a11f67837ed4114dbca5624a9821499b87b4f9b','fadf9e8815115079371e5719cf69bd5133a0199a','7ca65ab0360acf3c027cb6715694a680f76865ad','6fdca436bc43850aa1f4ddb09484af4465e25464','2b9f897092e97de31408f6682adc260446bfca64']
-          chunks=[]
-          for i,p in enumerate(parts):
-              text=p.read_text()
-              if i==0:
-                  # Two known transcription insertions in the transport, not in source.
-                  text=text.replace('ZhpHtJYpY0XnpLy','ZhpHtJYp0XnpLy').replace('NZ0TYqqJbT8jp','NZ0TYqJbT8jp')
-              raw=text.encode()
-              actual=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
-              assert actual==hashes[i],f'Transfer part {i} mismatch; refuse to apply'
-              chunks.append(text.strip())
-          payload=zlib.decompress(base64.b64decode(''.join(chunks),validate=True))
-          assert hashlib.sha256(payload).hexdigest()=='a6ed02de212d87982f8e6dfa91477632e1fa464b741ce2aa3b3e55ce63267606'
-          paths=[line[6:] for line in payload.decode().splitlines() if line.startswith('+++ b/')]
-          assert len(paths)==22 and all(p.startswith('dragon-forge-nextgen/') and '..' not in pathlib.PurePosixPath(p).parts for p in paths)
-          pathlib.Path('/tmp/evolution-files.json').write_text(json.dumps(paths))
-          patch=pathlib.Path('/tmp/evolution.patch');patch.write_bytes(payload)
-          subprocess.run(['git','apply','--check',str(patch)],check=True)
-          subprocess.run(['git','apply',str(patch)],check=True)
-          print('EVOLUTION_SOURCE: exact locally tested patch verified')
-          PY
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install isolated authoring and validation tools
+          sparse-checkout: dragon-forge-nextgen
+      - name: Install isolated validation tools
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
-          python -m pip install -r dragon-forge-nextgen/tools/art-requirements.txt
           npm install --prefix /tmp/evolution-validator gltf-validator@2.0.0-dev.3.10
           curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
           unzip -q /tmp/godot.zip -d /tmp/godot
           sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
-      - name: Export evolved forms and validate campaign, saves, feet and rendering
+      - name: Verify shipped forms, campaign rules, saves, feet and both rendering paths
         working-directory: dragon-forge-nextgen
         shell: bash
-        run: |
-          set -euo pipefail
-          python tools/build_evolutions.py
-          bash tools/test_evolution.sh
-      - name: Commit only tested sources and exports to dedicated feature branch
+        run: bash tools/test_evolution.sh
+      - name: Record exact tested revision without changing tracked sources
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import json,pathlib,subprocess
-          paths=json.loads(pathlib.Path('/tmp/evolution-files.json').read_text())
-          root=pathlib.Path('dragon-forge-nextgen/campaign/evolutions')
-          paths += [str(p) for p in root.iterdir() if p.suffix in ['.glb','.json']]
-          assert len(paths)==25
-          subprocess.run(['git','add','--',*paths],check=True)
-          subprocess.run(['git','rm','-r','--','.evolution-transfer'],check=True)
-          PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'feat: earn guardian evolution, specialize both kits and ship evolved forms'
-          git push origin HEAD:refs/heads/nextgen-guardian-evolution
+          git diff --exit-code
           git rev-parse HEAD > dragon-forge-nextgen/artifacts/evolution/TESTED_COMMIT.txt
           git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/evolution/TESTED_TREE.txt
           git archive --format=zip -o dragon-forge-nextgen/artifacts/evolution/Evolution_Project_Source.zip HEAD:dragon-forge-nextgen
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: guardian-evolution-integration
+          name: guardian-evolution-evidence
           path: dragon-forge-nextgen/artifacts/evolution/
           retention-days: 14
