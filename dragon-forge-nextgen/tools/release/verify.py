@@ -44,7 +44,7 @@ def main()->None:
     env={**os.environ,'HOME':str(home),'XDG_DATA_HOME':str(home/'data'),
          'XDG_CONFIG_HOME':str(home/'config'),'APPDATA':str(home/'AppData/Roaming'),
          'LOCALAPPDATA':str(home/'AppData/Local'),'USERPROFILE':str(home),'GODOT_SILENCE_ROOT_WARNING':'1'}
-    for label,extra in [('normal-start',['--quit-after','8']),('package-check',['--script','res://release/export_smoke.gd','--','--ci-release-check','--expect-export','--report-dir='+str(out/'report')])]:
+    for label,extra in [('normal-start',['--quit-after','8']),('package-check',['--','--ci-release-check','--expect-export','--report-dir='+str(out/'report')])]:
         log=out/(label+'.log')
         command=[str(executable),'--headless','--log-file',str(log),*extra]
         p=subprocess.run(command,cwd=files,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=180)
@@ -56,7 +56,7 @@ def main()->None:
     if args.render:
         log=out/'render.log'
         cmd=[str(executable),'--rendering-method','gl_compatibility','--audio-driver','Dummy','--log-file',str(log),
-             '--script','res://release/export_smoke.gd','--','--ci-release-check','--expect-export','--report-dir='+str(out/'render')]
+             '--','--ci-release-check','--expect-export','--report-dir='+str(out/'render')]
         p=subprocess.run(['xvfb-run','-a',*cmd],cwd=files,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=240)
         text=p.stdout+log.read_text(errors='replace')
         (out/'render-console.log').write_text(p.stdout)

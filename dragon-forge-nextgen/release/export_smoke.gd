@@ -1,4 +1,4 @@
-extends SceneTree
+extends Node
 ## Explicit opt-in package check. Never loads or writes the player's campaign/preferences.
 const World = preload("res://campaign/world.gd")
 const Rules = preload("res://campaign/progress.gd")
@@ -11,8 +11,16 @@ var failures = 0
 var checks = 0
 var output = ""
 var w
+var root: Window
+var paused: bool:
+	get: return get_tree().paused
+	set(value): get_tree().paused = value
 
-func _initialize() -> void:
+func quit(code: int = 0) -> void: get_tree().quit(code)
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	root = get_tree().root
 	if not OS.get_cmdline_user_args().has("--ci-release-check"):
 		printerr("Package check requires explicit --ci-release-check.")
 		quit(2)
@@ -32,7 +40,7 @@ func check(ok: bool, label: String) -> void:
 	print(("PASS " if ok else "FAIL ") + label)
 
 func frames(n: int = 4) -> void:
-	for i in range(n): await process_frame
+	for i in range(n): await get_tree().process_frame
 
 func shot(label: String) -> void:
 	if DisplayServer.get_name() == "headless": return
@@ -58,7 +66,9 @@ func fixture() -> Dictionary:
 
 func run() -> void:
 	DirAccess.make_dir_recursive_absolute(output)
-	check(ProjectSettings.get_setting("application/run/main_scene") == "res://campaign/main.tscn", "default entry is full campaign")
+	check(ProjectSettings.get_setting("application/run/main_scene") == "res://campaign/main.tscn", "editor default entry is full campaign")
+	if OS.has_feature("standalone"):
+		check(get_parent().get_meta("standalone_entry",false), "export-only bootstrap dispatched explicit package check")
 	check(ProjectSettings.get_setting("application/config/custom_user_dir_name") == "dragon-forge-nextgen-prototype", "original save-directory identity retained")
 	if OS.get_cmdline_user_args().has("--expect-export"):
 		check(not OS.has_feature("editor"), "running standalone template, not editor")
@@ -146,7 +156,7 @@ func run() -> void:
 	w.queue_free()
 	await frames(5)
 	# Silent mixer drain before process teardown.
-	await create_timer(.3,true).timeout
+	await get_tree().create_timer(.3,true).timeout
 	var result = {"checks":checks,"failures":failures,"os":OS.get_name(),"architecture":Engine.get_architecture_name(),"editor":OS.has_feature("editor"),"renderer":RenderingServer.get_current_rendering_method(),"engine":Engine.get_version_info(),"build":info,"note":"Finite prepared-state package checks, not a human playthrough or target-device benchmark."}
 	f = FileAccess.open(output.path_join("package-check.json"),FileAccess.WRITE)
 	if f != null: f.store_string(JSON.stringify(result,"  ")); f.close()

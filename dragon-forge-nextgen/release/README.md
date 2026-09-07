@@ -3,8 +3,8 @@
 These exports contain the complete Reconnection campaign with the Boss Identities,
 Tempest, soundtrack, evolution and fusion work. They are not editor launchers or
 empty test rooms. Gameplay, save schema 5 and the custom userdata directory are
-unchanged. No user save, credentials, editor cache, authoring tools or font files
-are bundled. Godot's license and dependency notices accompany each package.
+unchanged. No user save, credentials, authoring tools or font files are bundled.
+Godot's license and dependency notices accompany each package.
 
 ## Playing
 
@@ -22,10 +22,10 @@ backup before a playtest. Save location is the existing custom Godot user direct
 Moving between operating systems does not copy saves automatically.
 
 Windows is unsigned. macOS uses Godot's built-in ad-hoc signature, not Developer ID
-signing or Apple notarization. These private playtest builds may show OS security
-warnings. Do not turn off system security or antivirus. For a trusted Mac build,
-attempt to open it, then use the per-app Open Anyway option in Privacy & Security
-where available. Public distribution still needs proper signing/notarization.
+signing or Apple notarization. These playtest builds may show OS security warnings.
+Do not turn off system security or antivirus. For a trusted Mac build, attempt to
+open it, then use the per-app Open Anyway option in Privacy & Security where
+available. Public distribution still needs proper signing/notarization.
 
 ## Building
 
@@ -37,19 +37,24 @@ python /path/to/dragon-forge-nextgen/tools/release/build.py \
 ```
 
 The output directory must not exist; the script will not overwrite prior builds.
-Three presets live in `export_presets.cfg`. It imports source assets and generates
-`release/build_info.json` for that build before exporting. No prior runtime source
-or asset is modified. The GUI Export dialog can also use these presets after metadata
-is generated. Runtime dependency discovery includes dynamically loaded boss models,
-guardian variants and soundtrack; validation rejects missing packed assets.
+Three presets live in `export_presets.cfg`. Both desktop S3TC/BPTC and Apple
+Silicon ETC2/ASTC texture import formats are enabled in project settings. The build
+imports source assets and generates `release/build_info.json` before exporting.
+No prior gameplay source or asset is modified. The GUI Export dialog can also use
+these presets after metadata is generated. Runtime dependency discovery includes
+dynamically loaded boss models, guardian variants and soundtrack; validation
+rejects missing packed assets.
 
 GitHub Actions downloads exact 4.6.3 release assets from Godot's official repository,
 checks their upstream SHA-256 digests, and records the URLs, sizes and hashes. It
 exports all platforms on Linux, then checks each ZIP with its own executable on a
 native runner. Linux additionally renders actual game captures with software OpenGL.
-The workflow is read-only: no commits, tags, GitHub Releases, secrets or signing
-credentials. After merging the workflow to the default branch, Run workflow can
-select a branch; PR runs also work without merging. Artifacts expire after 14 days.
+The workflow has read-only repository permissions, with no commits, tags, GitHub
+Releases or developer signing credentials. An ephemeral built-in workflow token
+authenticates only the official public release metadata request, avoiding shared
+runner anonymous API rate limits. It is not stored in artifacts or executables.
+After merging the workflow to the default branch, Run workflow can select a branch;
+PR runs also work without merging. Artifacts expire after 14 days.
 
 ## What the checks establish
 
@@ -61,9 +66,14 @@ Only the runner's native architecture is executed; presence of a second slice is
 not a second-architecture playtest. Headless Windows/macOS checks do not establish
 rendering performance or physical audio/controller quality.
 
-The opt-in `release/export_smoke.gd` is shipped solely for repeatable pack checks.
-It runs only with an explicit `--ci-release-check` argument and absolute report
-folder, instantiates a test-mode world, and uses a uniquely named temporary save.
+Release templates do not support the editor-only `--script` flag. Export presets
+set the `standalone` feature, selecting `release/entry.tscn` as an export-only
+bootstrap. Ordinary launches immediately open the unchanged campaign scene.
+Editor Run Project still opens `campaign/main.tscn` directly.
+
+The opt-in `release/export_smoke.gd` Node is dispatched by this bootstrap only
+with an explicit `--ci-release-check` argument and absolute report folder. It
+instantiates a test-mode world and uses a uniquely named temporary save.
 It neither loads nor overwrites the player's campaign. Ordinary startup does not
 run these tests. Development tests/validation scenes are excluded from player builds;
 use the full source project to inspect characters or rehearse bosses.
