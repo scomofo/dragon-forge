@@ -49,7 +49,10 @@ func run() -> void:
 	paused=true;await shot("08-fire-shatter")
 	paused=false;w.queue_free();await frames()
 	var studio=Studio.new();root.add_child(studio);await frames()
-	studio.load_actor(3);studio.set_view(0);studio.scrub(0.0)
+	# Drive the actual picker so its selected label matches the inspected asset.
+	var actor_choice: OptionButton=studio.find_children("*","OptionButton",true,false)[0]
+	actor_choice.select(3);actor_choice.item_selected.emit(3)
+	studio.set_view(0);studio.scrub(0.0)
 	await shot("09-rime-inspection")
 	studio.set_view(3);studio.select_clip(studio.clips.find("breath"));studio.scrub(.28)
 	await shot("10-rime-jaw")
