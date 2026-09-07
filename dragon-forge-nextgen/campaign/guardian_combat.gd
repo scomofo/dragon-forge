@@ -26,6 +26,8 @@ static func rule(state: Dictionary, id: String) -> Dictionary:
 	var move: Dictionary = kit.get(id, {}).duplicate()
 	if not move.is_empty() and id == "breath" and state.get("evolution", "") == "flashfire":
 		move.cooldown = 1.8
+	if not move.is_empty() and id == "burst" and state.get("evolution", "") == "overcharge":
+		move.cooldown = 6.75
 	return move
 
 static func guardian_name(id: String) -> String:
@@ -146,3 +148,6 @@ static func chill_duration(state: Dictionary) -> float:
 
 static func ward_duration(state: Dictionary) -> float:
 	return 6.0 if state.get("evolution", "") == "aegis" else 4.0
+
+static func charge_duration(state: Dictionary) -> float:
+	return 6.0 if state.get("evolution", "") == "thunderhead" else 4.0

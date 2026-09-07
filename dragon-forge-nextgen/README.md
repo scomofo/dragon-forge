@@ -32,3 +32,10 @@ Cache, evolve both parents, and visit Resonance Fusion on the left of the Forge.
 one reserve at the right-hand Nursery; only two of the three owned guardians join a trip.
 Existing campaign progress migrates without a reset. See `campaign/FUSION.md` for the
 recruitment route, four Storm techniques, two-slot rules, testing and limitations.
+
+## Tempest & Sound
+Arc can evolve after the third restored core, and the campaign now plays the
+existing soundtrack with native effects. Audio settings are on the title and
+pause menus. Continue retains valid older progress. See
+[`campaign/TEMPEST_AUDIO.md`](campaign/TEMPEST_AUDIO.md) for the unlock route,
+controls, source provenance and validation boundaries.

@@ -4,6 +4,7 @@ const Brain = preload("res://sim/enemy_brain.gd")
 const Rig = preload("res://presentation/sentinel_rig.gd")
 const Geo = preload("res://presentation/geometry.gd")
 const Patterns = preload("res://campaign/patterns.gd")
+signal attack_warning
 signal defeated(id: String)
 signal impact(payload: Dictionary, amount: float)
 signal hit_feedback(at: Vector3, text: String, blocked: bool)
@@ -116,6 +117,7 @@ func _begin_attack() -> void:
 		tell.remove_child(n)
 		n.queue_free()
 	_draw_shape(shape)
+	attack_warning.emit()
 
 func _draw_shape(data: Dictionary) -> void:
 	var edge = Geo.material(Color("ffcc7e"), 0.3, true)
@@ -166,7 +168,7 @@ func overload() -> void:
 	brain.open_window(2.4)
 	take_hit(55.0, true)
 
-func element_hit(amount: float,guardian: String,id: String,chill_duration: float = 3.0) -> float:
+func element_hit(amount: float,guardian: String,id: String,chill_duration: float = 3.0, charge_duration: float = 4.0) -> float:
 	var shatter = guardian=="fire" and id!="wall" and chilled>0.0
 	var discharge = guardian == "storm" and id == "burst" and charged > 0.0
 	var actual=take_hit(amount*(1.4 if shatter else (1.5 if discharge else 1.0)))
@@ -175,7 +177,7 @@ func element_hit(amount: float,guardian: String,id: String,chill_duration: float
 		charged = 0.0
 		hit_feedback.emit(global_position, "DISCHARGE", false)
 	elif guardian == "storm" and id in ["breath", "wall"] and hp > 0.0:
-		charged = 4.0
+		charged = maxf(charged, clampf(charge_duration, 0.0, 6.0))
 	if shatter:
 		chilled=0.0
 		hit_feedback.emit(global_position,"SHATTER",false)

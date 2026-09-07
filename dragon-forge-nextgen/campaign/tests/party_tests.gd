@@ -29,7 +29,7 @@ func run() -> void:
 	var legacy=c.duplicate(true);legacy.version=1
 	for key in ["guardians","active_guardian","ice_rescued"]:legacy.erase(key)
 	var migrated=Rules.normalize(legacy)
-	check(migrated.version==4 and migrated.guardians==["fire"],"version 1 migration initializes exactly Magma")
+	check(migrated.version==5 and migrated.guardians==["fire"],"version 1 migration initializes exactly Magma")
 	for key in legacy:
 		if key!="version":check(migrated[key]==legacy[key],"migration preserves "+key)
 	var future=c.duplicate(true);future.version=99
@@ -47,7 +47,7 @@ func run() -> void:
 	var store=Store.new();store.path="user://party-test-migration.json";store.import_legacy=false
 	var f=FileAccess.open(store.path,FileAccess.WRITE);var bytes=JSON.stringify(legacy);f.store_string(bytes);f.close()
 	var loaded=store.read_campaign()
-	check(loaded.version==4,"disk migration readable")
+	check(loaded.version==5,"disk migration readable")
 	check(FileAccess.get_file_as_string(store.path)==bytes,"load never overwrites original version-1 bytes")
 	check(store.write_campaign(loaded),"migrated save commits")
 	check(FileAccess.get_file_as_string(store.path+".bak")==bytes,"migration backs up exact original bytes")

@@ -4,6 +4,8 @@ const Growth = preload("res://campaign/growth.gd")
 const Data = preload("res://campaign/data.gd")
 const Rules = preload("res://campaign/progress.gd")
 const Patterns = preload("res://campaign/patterns.gd")
+var audio_return_title = false
+var audio_settings_open = false
 var sector_label: Label
 var repair_button: Button
 var reserve_button: Button
@@ -123,6 +125,7 @@ func _build_menu() -> void:
 	col.add_child(reduced_check)
 	_label(col,"1–4 Techniques    Space Dodge    Shift Guard    Q Repair",15,PAPER)
 	_label(col,"E Interact    M Routes    N Journal    P Guardians    Tab Swap",15,PAPER)
+	_button(col,"Audio / music, effects and mute").pressed.connect(show_audio)
 	resume_button=_button(col,"Resume campaign")
 	resume_button.pressed.connect(func():set_pause(false))
 	_button(col,"Retry current room / retain earned progress").pressed.connect(func():world.retry())
@@ -148,10 +151,11 @@ func show_title() -> void:
 	_label(overlay_column,"DRAGON FORGE",42,GOLD)
 	_label(overlay_column,"RECONNECTION",25,TEAL)
 	_wrapped(overlay_column,"A compact playable campaign through four broken sectors. Restore their cores. Rescue, evolve and fuse guardians. Choose your expedition pair. Stop the Great Reset.",20)
-	_label(overlay_column,"RESONANCE FUSION   /   22 ROOMS   /   THREE GUARDIANS, TWO FIELD SLOTS",14,MUTED)
+	_label(overlay_column,"TEMPEST & SOUND   /   22 ROOMS   /   THREE GUARDIANS, TWO FIELD SLOTS",14,MUTED)
 	var start=_button(overlay_column,"Continue campaign" if world.store.existed or world.has_started else "Begin campaign")
 	start.pressed.connect(func():world.begin_campaign(false))
 	start.grab_focus()
+	_button(overlay_column,"Audio settings").pressed.connect(show_audio)
 	if world.store.existed or world.has_started:
 		_button(overlay_column,"New campaign...").pressed.connect(func():confirmation.popup_centered())
 	if world.campaign.legacy_imported and not world.store.existed:
@@ -313,6 +317,10 @@ func show_ending() -> void:
 	_button(overlay_column,"Return home").pressed.connect(func():world.return_to_forge())
 
 func _unhandled_input(event: InputEvent) -> void:
+	if audio_settings_open and event.is_action_pressed("ng_menu") and not event.is_echo():
+		_leave_audio()
+		get_viewport().set_input_as_handled()
+		return
 	if world.title_open:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -375,11 +383,8 @@ func show_party() -> void:
 				var equip=_button(col,"Equip as reserve")
 				equip.disabled=not world.can_evolve()
 				equip.pressed.connect(func():world.equip_reserve(id))
-			if id!="storm":
-				var evolve=_button(col,"Evolution / " + (Growth.TRAITS[Growth.choice(world.campaign,id)].name if Growth.choice(world.campaign,id)!="" else "Requirements"))
-				evolve.pressed.connect(func():show_growth(id))
-			else:
-				_label(col,"Fusion form / no evolution yet",14,MUTED)
+			var evolve=_button(col,"Evolution / " + (Growth.TRAITS[Growth.choice(world.campaign,id)].name if Growth.choice(world.campaign,id)!="" else "Requirements"))
+			evolve.pressed.connect(func():show_growth(id))
 		elif id=="ice":
 			_wrapped(col,"Rescue the Ice egg in Frozen Vault. Return to the right-hand Nursery to hatch Rime for free.",17,PAPER,272)
 		else:
@@ -396,7 +401,7 @@ func show_growth(guardian: String) -> void:
 	_label(overlay_column,Growth.form_name(guardian,true).to_upper(),30,GOLD if guardian == "fire" else TEAL)
 	_wrapped(overlay_column,"Evolution adds a new armored crest and +10% maximum health and technique damage. Keep the same movement, reach and contact timings. Choose one specialization below.",18,PAPER)
 	var score = Growth.points(world.campaign)
-	_label(overlay_column,"BOND %s / %d points   •   %d / 2 cores restored" % [["I","II","III"][Growth.rank(world.campaign)-1],score,world.campaign.installed.size()],17,TEAL)
+	_label(overlay_column,"BOND %s / %d points   •   %d / %d cores restored" % [["I","II","III"][Growth.rank(world.campaign)-1],score,world.campaign.installed.size(),3 if guardian == "storm" else 2],17,TEAL)
 	var bar = ProgressBar.new()
 	bar.max_value = 280
 	bar.value = mini(score,280)
@@ -469,3 +474,64 @@ Lance and Well apply four seconds of Charge on landed hits. Discharge consumes i
 	if world.store.message!="":_wrapped(overlay_column,world.store.message,16,GOLD)
 	_button(overlay_column,"Back to Guardians").pressed.connect(show_party)
 	_button(overlay_column,"Back to the world").pressed.connect(close_overlay)
+
+func _button(parent: Node, text: String) -> Button:
+	var button = super._button(parent,text)
+	button.pressed.connect(func(): world.sound("ui","fire",0,true))
+	return button
+
+func show_audio() -> void:
+	audio_return_title = world.title_open
+	audio_settings_open = true
+	_open_overlay("audio")
+	_label(overlay_column,"SOUND OF THE FORGE",30,TEAL)
+	_wrapped(overlay_column,"The original Dragon Forge soundtrack, now in the campaign. Controls take effect immediately. Music fades between exploration and combat; opening menus lowers the music.",18,PAPER)
+	if not is_instance_valid(world.audio):
+		_wrapped(overlay_column,"Audio is disabled in this isolated validation scene. Launch the normal campaign to hear it.",18,GOLD)
+	else:
+		var audio = world.audio
+		for key in ["master","music","sfx"]:
+			var row = HBoxContainer.new()
+			overlay_column.add_child(row)
+			var label = _label(row,{"master":"Master","music":"Music","sfx":"Sound effects"}[key],18,PAPER)
+			label.custom_minimum_size.x = 180
+			var slider = HSlider.new()
+			slider.name = "Audio_"+key
+			slider.min_value=0;slider.max_value=100;slider.step=1
+			slider.custom_minimum_size=Vector2(560,38)
+			slider.value=roundi(audio.values[key]*100)
+			row.add_child(slider)
+			var number = _label(row,str(int(slider.value))+"%",18,TEAL)
+			slider.value_changed.connect(func(v): audio.set_value(key,v/100.0);number.text=str(int(v))+"%")
+		for key in ["muted","mute_unfocused"]:
+			var toggle=CheckBox.new()
+			toggle.name="Audio_"+key
+			toggle.text="Mute all sound" if key=="muted" else "Silence and pause music when this window loses focus"
+			toggle.button_pressed=audio.values[key]
+			toggle.toggled.connect(func(v): audio.set_value(key,v))
+			overlay_column.add_child(toggle)
+		_button(overlay_column,"Test Fire / Ice / Storm effects").pressed.connect(_test_audio)
+		if audio.settings.message!="": _wrapped(overlay_column,audio.settings.message,16,GOLD)
+	_button(overlay_column,"Save / back to title" if audio_return_title else "Save / back to pause").pressed.connect(_leave_audio)
+
+func _test_audio() -> void:
+	if not audio_settings_open or not is_instance_valid(world.audio): return
+	world.sound("breath",["fire","ice","storm"][_audio_test_index%3],2,true)
+	_audio_test_index+=1
+
+var _audio_test_index = 0
+
+func _leave_audio() -> void:
+	if is_instance_valid(world.audio): world.audio.save_settings()
+	audio_settings_open=false
+	if audio_return_title:
+		show_title()
+	else:
+		close_overlay()
+		set_pause(true)
+
+func close_overlay() -> void:
+	if audio_settings_open:
+		_leave_audio()
+		return
+	super.close_overlay()

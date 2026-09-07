@@ -12,6 +12,8 @@ const GuardianCombat = preload("res://campaign/guardian_combat.gd")
 const GuardianParty = preload("res://campaign/party.gd")
 const Fusion = preload("res://campaign/fusion.gd")
 const Growth = preload("res://campaign/growth.gd")
+const SoundDirector = preload("res://campaign/audio/director.gd")
+var audio
 var party = GuardianParty.new()
 var campaign = CampaignRules.fresh()
 var level
@@ -52,10 +54,15 @@ func _ready() -> void:
 	add_child(level)
 	level.build(Data.ROOMS[campaign.room])
 	dressing = level
+	if not test_mode:
+		audio = SoundDirector.new()
+		audio.source = self
+		add_child(audio)
 	hud = CampaignHud.new()
 	hud.world = self
 	add_child(hud)
 	dragon.ability_used.connect(resolve_ability)
+	dragon.ability_started.connect(func(_id): sound("launch",party.active_id))
 	dragon.hint.connect(hud.toast)
 	dragon.damaged.connect(_on_player_damaged)
 	dragon.died.connect(func(): _on_guardian_down.call_deferred())
@@ -162,6 +169,7 @@ func _spawn_encounters() -> void:
 		actor.reduced_motion = reduced_motion
 		level.add_child(actor)
 		actor.impact.connect(_on_pattern)
+		actor.attack_warning.connect(func(): sound("warning","fire",4))
 		actor.defeated.connect(_campaign_defeat)
 		actor.hit_feedback.connect(_hit_feedback)
 		enemies.append(actor)
@@ -279,6 +287,7 @@ func interact() -> void:
 		"hatch":
 			if not campaign.hatched:
 				CampaignRules.hatch(campaign)
+				sound("hatch","fire",3)
 				dragon.active=true
 				_save()
 				level.refresh(campaign)
@@ -297,6 +306,7 @@ func interact() -> void:
 				hud.show_egg_rescued()
 		"hatch_ice":
 			if CampaignRules.hatch_ice(campaign):
+				sound("hatch","ice",3,true)
 				_save()
 				rest()
 				hud.show_party()
@@ -307,6 +317,7 @@ func interact() -> void:
 		"upgrade":hud.show_upgrades()
 		"forge":
 			if CampaignRules.install(campaign)>0:
+				sound("reward","fire",3,true)
 				_save()
 				rest()
 				effects.pulse(item.node.position,3.0,Geo.CYAN)
@@ -320,10 +331,12 @@ func interact() -> void:
 			hud.show_record(campaign.room)
 		"cache":
 			if CampaignRules.cache(campaign):
+				sound("reward","fire",2)
 				_save()
 				hud.toast("CACHE RECOVERED  /  +%d salvage. Spend it at the Forge anvil." % Data.ROOMS[campaign.room].reward)
 		"core":
 			if CampaignRules.collect_core(campaign):
+				sound("reward","fire",3,true)
 				_save()
 				hud.toast("CORE RECOVERED  /  Follow the north return portal. Install it in the Forge to unlock the next sector.")
 		"finish":
@@ -358,6 +371,7 @@ func repair() -> bool:
 	if get_tree().paused or title_open or not dragon.active or repairs<=0 or dragon.state.hp<=0 or dragon.state.hp>=dragon.state.max_hp:
 		return false
 	repairs-=1
+	sound("repair",party.active_id,2)
 	dragon.state.hp=minf(dragon.state.max_hp,dragon.state.hp+60)
 	effects.pulse(dragon.position,1.3,Geo.CYAN)
 	hud.toast("REPAIRED  /  +60 health. Refill at the Forge or a rest lantern.")
@@ -393,6 +407,7 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 	if entering or title_open or not campaign.hatched:
 		return
 	var owner_id: String=party.active_id
+	sound(id,owner_id,2)
 	var rule: Dictionary=GuardianCombat.rule(dragon.state,id)
 	if id=="burst" and owner_id=="ice":
 		dragon.state.ward=GuardianCombat.ward_duration(dragon.state)
@@ -410,10 +425,11 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		walls[-1].guardian=owner_id
 		walls[-1].ttl=GuardianCombat.field_duration(dragon.state)
 		walls[-1].chill_duration=GuardianCombat.chill_duration(dragon.state)
+		walls[-1].charge_duration=GuardianCombat.charge_duration(dragon.state)
 		return
 	for actor in enemies.duplicate():
 		if is_instance_valid(actor) and Combat.in_cone(origin,direction,actor.global_position,rule.range,rule.cone) and line_clear(origin,actor.global_position):
-			actor.element_hit(campaign_damage(id),owner_id,id,GuardianCombat.chill_duration(dragon.state))
+			actor.element_hit(campaign_damage(id),owner_id,id,GuardianCombat.chill_duration(dragon.state),GuardianCombat.charge_duration(dragon.state))
 	if owner_id=="storm":
 		_storm_contact(id,origin,direction,rule.range)
 		if id=="breath" and not conduits.is_empty():
@@ -431,6 +447,7 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 			var at: Vector3=item.node.global_position
 			if Combat.in_cone(origin,direction,at,rule.range,rule.cone) and line_clear(origin,at) and item.sim.add_heat(38):
 				CampaignRules.charge(campaign,item.id)
+				sound("relay","fire",3)
 				_save()
 				effects.pulse(at,5.0,Geo.CYAN)
 				for foe in enemies:
@@ -460,12 +477,13 @@ func _tick_walls(delta: float) -> void:
 			wall.tick+=0.6
 			for foe in enemies.duplicate():
 				if is_instance_valid(foe) and Combat.in_cone(wall.at,Vector3.FORWARD,foe.position,2.3,-1) and line_clear(wall.at,foe.position):
-					foe.element_hit(wall.damage,wall.get("guardian","fire"),"wall",wall.get("chill_duration",3.0))
+					foe.element_hit(wall.damage,wall.get("guardian","fire"),"wall",wall.get("chill_duration",3.0),wall.get("charge_duration",4.0))
 		if wall.ttl<=0:
 			wall.node.queue_free()
 			walls.remove_at(i)
 
 func _on_pattern(shape: Dictionary, amount: float) -> void:
+	sound("impact","fire",3)
 	if Patterns.contains(shape,dragon.global_position) and line_clear(shape.origin,dragon.global_position):
 		dragon.receive_damage(amount)
 	else:
@@ -486,6 +504,7 @@ func _campaign_defeat(id: String) -> void:
 	dragon.state.hp=minf(dragon.state.max_hp,dragon.state.hp+25)
 	_select_enemy()
 	if Data.room_cleared(campaign,campaign.room):
+		if is_instance_valid(audio): audio.play_stinger("victory")
 		hud.feedback("AREA SECURED", "+25 health / +%d shared bond / salvage saved" % (Growth.points(campaign)-previous_bond))
 		hud.toast("The pedestal is active. Collect the core." if Data.ROOMS[campaign.room].role in ["boss","final"] else "Path clear. Explore the room, read its record, and follow the next portal.")
 
@@ -632,6 +651,7 @@ func swap_guardian(target: String = "", forced: bool = false) -> bool:
 		return false
 	if not party.swap_to(target,forced):return false
 	dragon.use_guardian(target,party.states[target])
+	sound("swap",target,2)
 	campaign.active_guardian=target
 	get_viewport().gui_release_focus()
 	_save()
@@ -682,6 +702,7 @@ func choose_evolution(guardian: String, specialization: String) -> bool:
 		return false
 	_save()
 	rest()
+	sound("evolve",guardian,3,true)
 	hud.show_evolution_result(guardian)
 	return true
 
@@ -690,12 +711,14 @@ func can_fuse() -> bool:
 
 func forge_storm() -> bool:
 	if not can_fuse() or not Fusion.forge(campaign): return false
+	sound("fusion","storm",3,true)
 	_save()
 	hud.show_fusion()
 	return true
 
 func hatch_storm() -> bool:
 	if not can_fuse() or not Fusion.hatch(campaign): return false
+	sound("hatch","storm",3,true)
 	_save()
 	hud.show_fusion()
 	return true
@@ -739,3 +762,17 @@ func _storm_contact(id: String, origin: Vector3, direction: Vector3, reach: floa
 		if previous.distance_to(point)>.001: link.look_at(point,Vector3.UP)
 		previous=point
 	node.create_tween().tween_interval(.22).finished.connect(node.queue_free)
+
+func sound(cue: String, guardian: String = "fire", priority: int = 1, ui: bool = false) -> void:
+	if is_instance_valid(audio): audio.play_cue(cue,guardian,priority,ui)
+
+func _hit_feedback(at: Vector3, text: String, blocked: bool) -> void:
+	super._hit_feedback(at,text,blocked)
+	var cue = "blocked" if blocked else "hit"
+	if text == "SHATTER": cue = "shatter"
+	elif text == "DISCHARGE": cue = "discharge"
+	sound(cue,party.active_id,3 if cue in ["shatter","discharge"] else 1)
+
+func _on_player_damaged(amount: float, guarded: bool) -> void:
+	super._on_player_damaged(amount,guarded)
+	sound("guard" if guarded else "hurt",party.active_id,3)

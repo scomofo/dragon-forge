@@ -13,8 +13,7 @@ var hurt_time = 0.0
 var death_time = 0.0
 
 func _ready() -> void:
-	model = Scene.instantiate()
-	add_child(model)
+	model = _make_model()
 	skeleton = model.find_child("Skeleton3D", true, false)
 	player = model.find_child("AnimationPlayer", true, false)
 	player.process_mode = Node.PROCESS_MODE_DISABLED
@@ -57,3 +56,8 @@ func pose_signature() -> Array:
 
 func muzzle_position() -> Vector3:
 	return skeleton.global_transform * (skeleton.get_bone_global_pose(skeleton.find_bone("Head")) * Vector3(0, -.04, -.48))
+
+func _make_model() -> Node3D:
+	var imported = Scene.instantiate()
+	add_child(imported)
+	return imported

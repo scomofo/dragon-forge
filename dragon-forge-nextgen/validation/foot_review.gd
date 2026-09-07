@@ -50,7 +50,7 @@ func configure(model: Node3D, id: String) -> bool:
 	probes.clear()
 	binds.clear()
 	reset()
-	if id == "storm_guardian":
+	if id in ["storm_guardian","tempest_arc"]:
 		error = "Arc hovers above the deck.\nNo planted-foot contract applies."
 		return false
 	skeleton = model.find_child("Skeleton3D", true, false)
