@@ -65,7 +65,7 @@ jobs:
             if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' "$log"; then exit 1; fi
           done
           grep 'FUSION_TESTS:.*0 failures' artifacts/fusion/campaign_tests_fusion_tests.gd.log
-          grep 'FUSION_PLAY:.*0 failures' artifacts/fusion/campaign_tests_fusion_play.gd.log
+          grep 'STORM_CONTROLLER_PLAY:.*0 failures' artifacts/fusion/campaign_tests_fusion_play.gd.log
       - name: Real OpenGL and Forward+ fusion captures
         shell: bash
         run: |
