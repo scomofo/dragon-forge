@@ -1,6 +1,6 @@
 # Dragon Forge - next-generation playable prototype
 
-A small, native **3D mechanical slice**, inspired by the existing Dragon Forge browser cartridge. One animated procedural Magma guardian, an authored Forge / Outer Grid arena, four abilities, a shield-cycle enemy, reactive heat conduits, and a persistent return reward with three build choices and a replayable field test. This is not the finished 15-25 minute vertical slice or a production-art build.
+A small, native **3D mechanical slice**, inspired by the existing Dragon Forge browser cartridge. One imported skinned Magma guardian, a modular Forge / Outer Grid environment, four abilities, a shield-cycle enemy, reactive heat conduits, and a persistent return reward with three build choices and a replayable field test. The first textured/skinned asset set is integrated; this is not an accepted final-art build or a finished 15-25 minute vertical slice.
 
 ## Play
 
@@ -25,13 +25,19 @@ Windows PowerShell:
 
 `npm run dev` still launches the original browser game, **not** this 3D prototype. No standalone application export is included yet.
 
+## Imported character and environment art
+
+This version ships **15 GLB assets and a shared four-map 1024px PBR atlas**: a 24-bone, nine-clip Magma guardian; separately exported plated Sentinel and crowned Warden; and twelve environment/station modules. Most static decoration and all character primitives have been replaced. The game needs no Python, Blender, npm install or asset-generation step to play.
+
+The models and textures are original, offline, parametrically authored assets. They are skinned/UV-mapped production-format files, **not hand-sculpted final art**. `art/README.md` documents asset counts, rig/UV/material contracts, provenance, editable build source, and remaining art review. Combat rules and saves are unchanged. The new furnaces/anvil have explicit collision proxies; graphics settings never remove these. Ground telegraphs clear the deck/dais and breath starts at the animated mouth attachment point.
+
 ## Presence and combat pass
 
 This version adds articulated head/jaw/shoulder/tail poses, distinct claw/breath/stomp/burst motion, and actual wind-up → contact → recovery timing. Hits happen once at contact; a dodge cancels the pending technique without refunding heat or cooldown. A short **160 ms keyboard/controller ability buffer** accepts a command near the end of recovery or cooldown. It expires rather than firing a surprise attack after a stall, pause or retry. Aim commits when the technique starts; movement remains available at a reduced speed.
 
 Cinder Claw now sweeps an arc, Magma Breath projects a clipped fire jet, Flame Wall leaves a marked persistent field, and Core Burst uses a radial pulse. Enemy tells retain a fixed outer boundary and show a numerical countdown. The dedicated enemy HUD shows the remaining impact/counter window. No rule depends on particles being enabled.
 
-Outer Grid gains a suspended relay-station backdrop and an octagonal Warden platform; the Forge gains copper machinery and restoration-linked floor circuits. Repeated panels and light strips use shared instancing batches. Optional ornament drops out on Low/Medium. These are **procedural art and presentation improvements**, not final models or a hardware performance claim.
+Outer Grid gains a suspended relay-station backdrop and an octagonal Warden platform; the Forge gains copper machinery and restoration-linked floor circuits. Repeated panels and light strips use shared instancing batches. Optional ornament drops out on Low/Medium. These structures now use the imported modular asset set described above; they are not a hardware performance claim.
 
 Graphics and reduced-motion preferences now persist in their own `nextgen-preferences.json` file. Missing preferences use Medium and normal motion. Unreadable or future-version preferences are not overwritten; a warning indicates session-only settings. The clarity-and-core pass migrates prototype progress to schema v2 at the same location, as described below.
 
@@ -86,7 +92,7 @@ Progress schema **v2** migrates valid v1 milestones on load, without rewriting t
 
 - CharacterBody3D movement and collision, directional aiming, dodge invulnerability, guard, cooldowns and heat.
 - Elevated smoothed camera with bounded optional impact motion.
-- A geometric Magma biped with independently moving legs, tail, idle and attack motion. **This is a procedural blockout, not a finished rigged dragon asset.**
+- An imported, UV-mapped 24-bone Magma mesh with nine animation clips, full shared PBR textures, and simulation-clock pose sampling. **First-pass parametric art, not final visual approval.**
 - Reusable Sentinel actor, a telegraph/strike/recovery state machine, and a stronger Warden variant. The spatial shield mechanic deliberately adapts, rather than claims identical balance to, `src/bossPatterns.js`.
 - Authored 3D Forge / arena layout, blocked gate, two heat conduits, line-of-sight checks, staged encounters, defeat/retry, core pickup and visible home upgrade.
 - Emissive materials, dynamic lights, shader ground effects and bounded GPU particle bursts under Forward+.
@@ -104,12 +110,14 @@ This folder is a separate Godot project with its own `res://` and `user://` name
 - `sim/`: combat rules, enemy state machine, heat, progression and storage.
 - `actors/`: collision/movement and scene adapters for those rules.
 - `world/`: authored geometry, encounters and milestone orchestration.
-- `presentation/`: replaceable geometry/rig, camera, VFX, UI, input and quality profiles.
+- `presentation/`: imported asset library/rig adapters, camera, VFX, UI, input and quality profiles.
+- `art/`: shipped GLBs, shared PBR atlas, manifest and art contract.
+- `tools/`: optional offline art authoring and validation; not required to play.
 - `tests/`: native rule/integration checks, real-renderer smoke capture and packaging checks.
 
 Canonical inheritance: Magma's hex-scale biped silhouette (`src/artBible.js` / `design/gdd/art-bible.md`); Magma Breath and Flame Wall; Forge / Outer Grid identity; Firewall Sentinel's shield-and-counter philosophy; restoration as a meaningful return reward. Cinder Claw, Core Burst, the Packet Warden variant, spatial timings and heat values are **prototype additions**, not changes to cartridge balance.
 
-The repository's soundtrack remains untouched. This prototype is currently silent. Reserve swapping, fusion/evolution, the other zones, imported models/animation, production audio integration, rebinding, exports and a measured opening-duration playtest are later work, not implemented features.
+The repository's soundtrack remains untouched. This prototype is currently silent. Reserve swapping, fusion/evolution, the other zones, final art polish, production audio integration, rebinding, exports and a measured opening-duration playtest are later work, not implemented features.
 
 ## Tests and evidence
 
@@ -138,4 +146,4 @@ Software-renderer captures do not establish Forward+ performance, finished visua
 
 The native suite now covers one-and-only-one attack contact (including long frames), recovery lockouts, committed aim, dodge/death cancellation, bounded input buffering, pause/resume grace, presentation-only pose sampling, preference roundtrips and corruption protection, optional detail toggles and transient-effect lifetime bounds. Automated captures include ability contact, reduced motion, menus, core choice, the restored Forge and field-test completion.
 
-Still required on target hardware: physical keyboard/controller feel, actual Forward+ rendering, Low/High frame-time profiling, hands-on save/resume, ability balance and opening pacing. No 15–25 minute duration, production-art finish, audio integration, full rigging pipeline or standalone app export is claimed.
+Still required on target hardware: physical keyboard/controller feel, actual Forward+ rendering, Low/High frame-time profiling, hands-on save/resume, ability balance and opening pacing. No 15–25 minute duration, final production-art finish, audio integration or standalone app export is claimed. The imported mesh/skin/clip pipeline is now implemented and documented in `art/README.md`.

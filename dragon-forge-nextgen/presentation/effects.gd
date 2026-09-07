@@ -24,7 +24,7 @@ func decal(at: Vector3, radius: float, color: Color) -> MeshInstance3D:
 	mat.set_shader_parameter("tint", color)
 	mat.set_shader_parameter("strength", 0.42 if reduced_motion else 0.8)
 	mat.set_shader_parameter("motion", 0.0 if reduced_motion else 1.0)
-	return Geo.mesh(self, resource, Vector3(at.x, 0.07, at.z), mat)
+	return Geo.mesh(self, resource, Vector3(at.x, 0.12, at.z), mat)
 
 func pulse(at: Vector3, radius: float, color: Color = Geo.AMBER) -> void:
 	var node = decal(at, radius, color)
@@ -77,12 +77,13 @@ func number(at: Vector3, text: String, blocked: bool = false) -> void:
 
 ## Contact effects have separate silhouettes; not four recolored explosion circles.
 ## reach is clipped by the caller's world ray queries before drawing breath geometry.
-func attack(id: String, origin: Vector3, direction: Vector3, reach: float) -> void:
+func attack(id: String, origin: Vector3, direction: Vector3, reach: float, muzzle: Vector3 = Vector3.INF) -> void:
 	if id == "burst":
 		pulse(origin, reach, Geo.AMBER)
 		return
 	var node = Node3D.new()
-	node.position = origin
+	node.position = muzzle if muzzle.is_finite() else origin
+	node.set_meta("contact_effect", id)
 	node.rotation.y = atan2(-direction.x, -direction.z)
 	add_child(node)
 	_reserve(node)
@@ -95,10 +96,12 @@ func attack(id: String, origin: Vector3, direction: Vector3, reach: float) -> vo
 	else:
 		# A tapering column from the muzzle, with discrete embers at the tip.
 		var fire = Geo.material(Color(1.0, 0.32, 0.06, 0.50), 1.0, true)
-		var cone = Geo.cylinder(node, Vector3(0, 1.35, -reach * 0.5 - 0.6), 0.10, 0.70, reach, fire, 7)
+		var height = 0.0 if muzzle.is_finite() else 1.35
+		var front = 0.0 if muzzle.is_finite() else 0.6
+		var cone = Geo.cylinder(node, Vector3(0, height, -reach * 0.5 - front), 0.10, 0.58, reach, fire, 12)
 		cone.rotation.x = -PI / 2.0
 		for i in range(4):
-			Geo.orb(node, Vector3(sin(i * 2.3) * 0.28, 1.30 + (i % 2) * 0.20, -reach * (0.3 + i * 0.2)), 0.12 + i * 0.045, hot)
+			Geo.orb(node, Vector3(sin(i * 2.3) * 0.28, height + (i % 2) * 0.12, -reach * (0.3 + i * 0.2)), 0.12 + i * 0.045, hot)
 	var tween = node.create_tween()
 	if not reduced_motion:
 		tween.tween_property(node, "scale", Vector3(1.0, 0.30, 1.0), 0.20)

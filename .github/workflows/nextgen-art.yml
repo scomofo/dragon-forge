@@ -1,0 +1,95 @@
+name: Nextgen art validation
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/nextgen-art.yml'
+      - 'dragon-forge-nextgen/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: art-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  shipped-assets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GODOT_SILENCE_ROOT_WARNING: '1'
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      GLTF_VALIDATOR_MODULE: /tmp/art-validator/node_modules/gltf-validator
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            dragon-forge-nextgen
+      - name: Install isolated validation tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          npm install --prefix /tmp/art-validator --ignore-scripts --no-audit --no-fund gltf-validator@2.0.0-dev.3.10
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/art-godot
+          mkdir -p "$HOME/.local/bin"
+          mv /tmp/art-godot/Godot_v4.6.3-stable_linux.x86_64 "$HOME/.local/bin/godot"
+          chmod +x "$HOME/.local/bin/godot"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Validate committed exports without rebaking or changing them
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dragon-forge-nextgen/artifacts
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          root=pathlib.Path('dragon-forge-nextgen')
+          manifest=json.loads((root/'art/generated/manifest.json').read_text())
+          assert manifest['source']=='tools/build_art.py'
+          assert hashlib.sha256((root/manifest['source']).read_bytes()).hexdigest()==manifest['source_sha256']
+          print('Source-recipe hash verified.')
+          PY
+          python3 dragon-forge-nextgen/tools/validate_art.py | tee dragon-forge-nextgen/artifacts/asset-validation.log
+          node dragon-forge-nextgen/tools/validate_gltf.cjs | tee dragon-forge-nextgen/artifacts/khronos.log
+          python3 dragon-forge-nextgen/tests/validate.py
+      - name: Native import and integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120 godot --headless --path dragon-forge-nextgen --editor --import 2>&1 | tee dragon-forge-nextgen/artifacts/import.log
+          timeout 90 godot --headless --path dragon-forge-nextgen --script res://tests/run.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/tests.log
+          timeout 90 godot --headless --path dragon-forge-nextgen --script res://tests/art_test.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/art-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/{import,tests,art-tests}.log; then exit 1; fi
+          grep 'NEXTGEN_TESTS:.*0 failures' dragon-forge-nextgen/artifacts/tests.log
+          grep 'NEXTGEN_ART_TESTS:.*0 failures' dragon-forge-nextgen/artifacts/art-tests.log
+      - name: Real OpenGL art and gameplay captures
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 180 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/visual_smoke.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/visual.log
+          timeout 180 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/art_review.gd -- --test-mode --motion-frames 2>&1 | tee dragon-forge-nextgen/artifacts/art-review.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/{visual,art-review}.log; then exit 1; fi
+          grep 'NEXTGEN_VISUAL_SMOKE: failures=0' dragon-forge-nextgen/artifacts/visual.log
+          grep 'NEXTGEN_ART_REVIEW: failures=0' dragon-forge-nextgen/artifacts/art-review.log
+      - name: Real Forward+ Low, High and reduced-motion captures using software Vulkan
+        shell: bash
+        run: |
+          set -euo pipefail
+          icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -n "$icd"
+          export VK_DRIVER_FILES="$icd"
+          timeout 300 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method forward_plus --rendering-driver vulkan --audio-driver Dummy --script res://tests/art_forward.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/forward.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/forward.log; then exit 1; fi
+          grep 'NEXTGEN_FORWARD_ART: failures=0' dragon-forge-nextgen/artifacts/forward.log
+      - name: Record tested revision and leave tracked sources untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/tested-checkout.txt
+          git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-art-evidence
+          path: dragon-forge-nextgen/artifacts/
+          retention-days: 14
