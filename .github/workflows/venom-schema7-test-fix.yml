@@ -1,0 +1,52 @@
+name: Update inherited tests for schema 7
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/venom-schema7-test-fix.yml'
+permissions:
+  contents: read
+jobs:
+  update:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'nextgen-venom-guardian'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nextgen-venom-guardian
+          fetch-depth: 1
+      - name: Update only stale current-schema assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          replacements={
+            'dragon-forge-nextgen/campaign/tests/evolution_tests.gd':[
+              ('check(migrated.version==6 and migrated.evolutions=={"fire":"","ice":"","storm":""}, "version %d migrates without auto-evolving" % version)',
+               'check(migrated.version==7 and migrated.evolutions=={"fire":"","ice":"","storm":""}, "version %d migrates without auto-evolving through schema 7" % version)'),
+              ('check(FileAccess.get_file_as_string(store.path)==bytes and loaded.version==6, "migration never writes on load")',
+               'check(FileAccess.get_file_as_string(store.path)==bytes and loaded.version==7, "migration reaches schema 7 without writing on load")'),
+            ],
+            'dragon-forge-nextgen/campaign/tests/fusion_tests.gd':[
+              ('check(migrated.version==6 and not migrated.storm_forged and not migrated.lattice_recovered,"old version %d grants no unearned fusion"%version)',
+               'check(migrated.version==7 and not migrated.storm_forged and not migrated.lattice_recovered,"old version %d reaches schema 7 with no unearned fusion"%version)'),
+            ],
+          }
+          for name,pairs in replacements.items():
+              p=Path(name);text=p.read_text()
+              for old,new in pairs:
+                  count=text.count(old)
+                  assert count==1,f'{name}: expected one occurrence, got {count}: {old}'
+                  text=text.replace(old,new,1)
+              p.write_text(text)
+          PY
+          rm -f .github/workflows/venom-schema7-test-fix.yml
+          git add dragon-forge-nextgen/campaign/tests/evolution_tests.gd dragon-forge-nextgen/campaign/tests/fusion_tests.gd .github/workflows/venom-schema7-test-fix.yml
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'test: carry evolution and fusion migrations through schema 7'
+          git push origin HEAD:nextgen-venom-guardian
