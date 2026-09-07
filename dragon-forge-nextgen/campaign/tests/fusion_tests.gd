@@ -59,7 +59,7 @@ func run() -> void:
 		var bytes=JSON.stringify(old,"  ")
 		var f=FileAccess.open(store.path,FileAccess.WRITE);f.store_string(bytes);f.close()
 		var migrated=store.read_campaign()
-		check(migrated.version==6 and not migrated.storm_forged and not migrated.lattice_recovered,"old version %d grants no unearned fusion"%version)
+		check(migrated.version==7 and not migrated.storm_forged and not migrated.lattice_recovered,"old version %d reaches schema 7 with no unearned fusion"%version)
 		check(migrated.salvage==old.salvage and migrated.cleared==old.cleared,"old version %d keeps existing journey"%version)
 		check(FileAccess.get_file_as_string(store.path)==bytes,"load preserves exact bytes version %d"%version)
 		check(store.write_campaign(migrated) and FileAccess.get_file_as_string(store.path+".bak")==bytes,"first new write backs up old bytes version %d"%version)
