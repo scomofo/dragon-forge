@@ -1,0 +1,38 @@
+{
+  "source": "tools/build_tempest.py",
+  "assets": [
+    {
+      "file": "tempest_arc.glb",
+      "triangles": 2556,
+      "vertices": 1967,
+      "surfaces": 1,
+      "bones": 17,
+      "clips": [
+        "idle",
+        "walk",
+        "claw",
+        "breath",
+        "wall",
+        "burst",
+        "guard",
+        "hurt",
+        "defeat"
+      ],
+      "bounds": [
+        [
+          -2.0439999103546143,
+          0.7573920488357544,
+          -1.4423339366912842
+        ],
+        [
+          2.055999994277954,
+          2.5432653427124023,
+          2.6364328861236572
+        ]
+      ],
+      "parent_asset": "campaign/fusion_assets/storm_guardian.glb",
+      "parent_sha256": "9f930cca476a741f3a64bdfd0fdfd5b09c7f606dc31afb9a009b21b36636097d",
+      "sha256": "c52f9a48ec248e6021f7b68c7b99750829c6622805a990685b5d1250a200fcbe"
+    }
+  ]
+}

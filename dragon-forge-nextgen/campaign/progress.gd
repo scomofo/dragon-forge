@@ -7,7 +7,7 @@ const Fusion = preload("res://campaign/fusion.gd")
 const UPGRADE_IDS = ["plating", "power", "cooling"]
 
 static func fresh() -> Dictionary:
-	return {"version": 4, "lattice_recovered": false, "storm_forged": false, "loadout": [], "evolutions": {"fire": "", "ice": ""}, "guardians": ["fire"], "active_guardian": "fire", "ice_rescued": false, "hatched": false, "room": "forge", "visited": ["forge"], "cleared": [], "relays": [], "caches": [], "journals": [], "cores": [], "installed": [], "salvage": 0, "upgrades": {"plating": 0, "power": 0, "cooling": 0}, "module": "", "finished": false, "legacy_imported": false}
+	return {"version": 5, "lattice_recovered": false, "storm_forged": false, "loadout": [], "evolutions": {"fire": "", "ice": "", "storm": ""}, "guardians": ["fire"], "active_guardian": "fire", "ice_rescued": false, "hatched": false, "room": "forge", "visited": ["forge"], "cleared": [], "relays": [], "caches": [], "journals": [], "cores": [], "installed": [], "salvage": 0, "upgrades": {"plating": 0, "power": 0, "cooling": 0}, "module": "", "finished": false, "legacy_imported": false}
 
 static func normalize(value: Variant) -> Dictionary:
 	if not value is Dictionary:
@@ -26,6 +26,12 @@ static func normalize(value: Variant) -> Dictionary:
 		s.lattice_recovered = false
 		s.storm_forged = false
 		s.loadout = []
+	if s.get("version", 0) == 4:
+		# Validate the old shape before adding a key; malformed saves stay protected.
+		if not s.get("evolutions") is Dictionary or s.evolutions.size() != 2 or not s.evolutions.has("fire") or not s.evolutions.has("ice"):
+			return {}
+		s.version = 5
+		s.evolutions.storm = ""
 	var template = fresh()
 	for key in template:
 		if not s.has(key):
@@ -34,7 +40,7 @@ static func normalize(value: Variant) -> Dictionary:
 		if not _integer(s[key], 0, 1000000):
 			return {}
 		s[key] = int(s[key])
-	if s.version != 4:
+	if s.version != 5:
 		return {}
 	for key in ["hatched", "finished", "legacy_imported", "ice_rescued", "lattice_recovered", "storm_forged"]:
 		if not s[key] is bool:
@@ -86,9 +92,9 @@ static func normalize(value: Variant) -> Dictionary:
 		return {}
 	if s.guardians.has("ice") and not s.ice_rescued:
 		return {}
-	if not s.evolutions is Dictionary or s.evolutions.size() != 2:
+	if not s.evolutions is Dictionary or s.evolutions.size() != 3:
 		return {}
-	for guardian in ["fire", "ice"]:
+	for guardian in ["fire", "ice", "storm"]:
 		var specialization: Variant = s.evolutions.get(guardian)
 		if not specialization is String or (specialization != "" and not Growth.OPTIONS[guardian].has(specialization)):
 			return {}
