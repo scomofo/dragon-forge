@@ -27,14 +27,15 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import base64,hashlib,pathlib,zlib,subprocess
-          parts=[pathlib.Path(f'.stone-transfer/{i:02d}.b64') for i in range(3)]
-          assert all(p.exists() for p in parts), 'three transfer chunks required'
-          encoded=''.join(p.read_text().strip() for p in parts)
+          names=['00.b64','01.b64','02a.b64','02b.b64','02c.b64','02d.b64']
+          parts=[pathlib.Path('.stone-transfer')/n for n in names]
+          assert all(p.exists() for p in parts), 'complete verified transfer chunks required'
+          encoded=''.join(p.read_text() for p in parts)
+          assert len(encoded)==33116, f'unexpected encoded length {len(encoded)}'
           payload=zlib.decompress(base64.b64decode(encoded,validate=True))
           expected='1879012713a4ba7517eca0094bae7c91d725b83b74ecb13d999ff53a662a91db'
           assert hashlib.sha256(payload).hexdigest()==expected, 'source patch checksum mismatch'
           patch=pathlib.Path('/tmp/stone-source.patch'); patch.write_bytes(payload)
-          project=pathlib.Path('dragon-forge-nextgen')
           subprocess.run(['git','apply','--check','--directory=dragon-forge-nextgen',str(patch)],check=True)
           subprocess.run(['git','apply','--directory=dragon-forge-nextgen',str(patch)],check=True)
           print('CAIRN_SOURCE: checksum verified and applied')
