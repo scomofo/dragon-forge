@@ -13,7 +13,7 @@ concurrency:
 jobs:
   venom:
     runs-on: ubuntu-24.04
-    timeout-minutes: 18
+    timeout-minutes: 20
     env:
       GODOT_SILENCE_ROOT_WARNING: '1'
       LIBGL_ALWAYS_SOFTWARE: '1'
@@ -22,32 +22,59 @@ jobs:
         with:
           persist-credentials: false
           sparse-checkout: dragon-forge-nextgen
-      - name: Install Godot 4.6.3
+      - name: Install isolated validation tools
         shell: bash
         run: |
           set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          npm install --prefix /tmp/venom-validator --ignore-scripts --no-audit --no-fund gltf-validator@2.0.0-dev.3.10
           curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
           unzip -q /tmp/godot.zip -d /tmp/godot
           sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
-      - name: Import and run complete inherited stack plus Venom contract
+      - name: Validate committed Nox assets without rebuilding
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dragon-forge-nextgen/artifacts/venom
+          python3 dragon-forge-nextgen/tools/validate_venom.py 2>&1 | tee dragon-forge-nextgen/artifacts/venom/integrity.log
+          GLTF_VALIDATOR_MODULE=/tmp/venom-validator/node_modules/gltf-validator node dragon-forge-nextgen/tools/validate_venom.cjs 2>&1 | tee dragon-forge-nextgen/artifacts/venom/gltf.log
+      - name: Import and run complete inherited stack plus Nox routing
+        shell: bash
+        run: |
+          set -euo pipefail
           timeout 120 godot --headless --path dragon-forge-nextgen --editor --import 2>&1 | tee dragon-forge-nextgen/artifacts/venom/import.log
           if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/venom/import.log; then exit 1; fi
           GODOT=godot bash dragon-forge-nextgen/tools/test_bosses.sh 2>&1 | tee dragon-forge-nextgen/artifacts/venom/tests.log
           grep -E 'VENOM_TESTS: [0-9]+ checks, 0 failures' dragon-forge-nextgen/artifacts/venom/tests.log
-      - name: Record tested revision
+          grep -E 'VENOM_RUNTIME_TESTS: [0-9]+ checks, 0 failures' dragon-forge-nextgen/artifacts/venom/tests.log
+          grep -E 'BOSS_TESTS: [0-9]+ checks, 0 failures' dragon-forge-nextgen/artifacts/venom/tests.log
+      - name: Capture Nox through OpenGL and Vulkan Forward+
+        shell: bash
+        run: |
+          set -euo pipefail
+          for mode in gl_compatibility forward_plus; do
+            target="dragon-forge-nextgen/artifacts/venom/$mode"; mkdir -p "$target"
+            rm -rf dragon-forge-nextgen/artifacts/venom/captures
+            timeout 240 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method "$mode" --audio-driver Dummy --script res://campaign/tests/venom_capture.gd -- --test-mode 2>&1 | tee "$target/visual.log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' "$target/visual.log"; then exit 1; fi
+            grep 'VENOM_VISUAL: 0 failures' "$target/visual.log"
+            if [[ "$mode" == forward_plus ]]; then grep 'Forward+' "$target/visual.log"; fi
+            cp dragon-forge-nextgen/artifacts/venom/captures/*.png "$target/"
+          done
+      - name: Record exact read-only revision
         shell: bash
         run: |
           set -euo pipefail
           git diff --exit-code
+          git status --porcelain --untracked-files=no | tee dragon-forge-nextgen/artifacts/venom/tracked-status.txt
+          test ! -s dragon-forge-nextgen/artifacts/venom/tracked-status.txt
           git rev-parse HEAD > dragon-forge-nextgen/artifacts/venom/TESTED_COMMIT.txt
           git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/venom/TESTED_TREE.txt
+          git archive --format=zip -o dragon-forge-nextgen/artifacts/venom/Venom_Project_Source.zip HEAD:dragon-forge-nextgen
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: venom-contract-evidence
+          name: venom-release-evidence
           path: dragon-forge-nextgen/artifacts/venom/
           retention-days: 14
