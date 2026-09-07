@@ -15,19 +15,26 @@ const ICE = {
 	"wall": {"name":"Permafrost", "damage":8.0, "heat":30.0, "cooldown":6.0, "range":4.0, "radius":2.3, "windup":0.24, "recovery":0.26},
 	"burst": {"name":"Crystal Aegis", "damage":0.0, "heat":36.0, "cooldown":10.0, "range":0.0, "cone":-1.0, "windup":0.20, "recovery":0.24},
 }
+const STORM = {
+	"claw": {"name":"Spark Talon", "damage":20.0, "heat":0.0, "cooldown":.55, "range":2.8, "cone":.2, "windup":.12, "recovery":.21},
+	"breath": {"name":"Arc Lance", "damage":32.0, "heat":22.0, "cooldown":2.6, "range":8.0, "cone":.83, "windup":.26, "recovery":.34},
+	"wall": {"name":"Static Well", "damage":10.0, "heat":30.0, "cooldown":6.0, "range":4.0, "radius":2.3, "windup":.24, "recovery":.30},
+	"burst": {"name":"Tempest Discharge", "damage":52.0, "heat":40.0, "cooldown":9.0, "range":4.5, "cone":-1.0, "windup":.34, "recovery":.42},
+}
 static func rule(state: Dictionary, id: String) -> Dictionary:
-	var move: Dictionary = (ICE if state.get("guardian", "fire") == "ice" else ABILITIES).get(id, {}).duplicate()
+	var kit: Dictionary = {"fire":ABILITIES, "ice":ICE, "storm":STORM}.get(state.get("guardian", "fire"), ABILITIES)
+	var move: Dictionary = kit.get(id, {}).duplicate()
 	if not move.is_empty() and id == "breath" and state.get("evolution", "") == "flashfire":
 		move.cooldown = 1.8
 	return move
 
 static func guardian_name(id: String) -> String:
-	return "RIME" if id == "ice" else "MAGMA"
+	return {"fire":"MAGMA", "ice":"RIME", "storm":"ARC"}.get(id, "UNKNOWN")
 
 const ORDER = ["claw", "breath", "wall", "burst"]
 
 static func fresh(module: String = "", guardian: String = "fire") -> Dictionary:
-	var maximum: float = Modules.profile(module).hp * (0.90 if guardian == "ice" else 1.0)
+	var maximum: float = Modules.profile(module).hp * {"fire":1.0, "ice":.90, "storm":.85}.get(guardian, 1.0)
 	return {"evolution": "", "guardian": guardian, "ward": 0.0, "module": module if Modules.valid(module) else "", "hp": maximum, "max_hp": maximum, "heat": 0.0, "cooldowns": {}, "iframes": 0.0, "dash": 0.0, "dodge_cd": 0.0, "guard": false, "action": "", "action_time": 0.0, "action_hit": false}
 
 ## Returns one contact event, even when a long frame spans the entire attack.

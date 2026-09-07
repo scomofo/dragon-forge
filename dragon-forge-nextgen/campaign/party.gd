@@ -2,6 +2,7 @@ extends RefCounted
 ## Runtime HP/heat/cooldowns are separate per guardian. No healing by swapping.
 const Rules = preload("res://campaign/guardian_combat.gd")
 const Growth = preload("res://campaign/growth.gd")
+const Fusion = preload("res://campaign/fusion.gd")
 const SWAP_COOLDOWN = 2.5
 var states: Dictionary = {}
 var active_id = "fire"
@@ -10,7 +11,7 @@ var swap_remaining = 0.0
 func rebuild(campaign: Dictionary) -> void:
 	states.clear()
 	active_id = campaign.get("active_guardian", "fire")
-	for id in campaign.get("guardians", ["fire"]):
+	for id in Fusion.members(campaign):
 		var state = Rules.fresh(campaign.module, id)
 		state.max_hp += int(campaign.upgrades.plating) * 20.0
 		state.evolution = Growth.choice(campaign, id)

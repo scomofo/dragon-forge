@@ -25,6 +25,7 @@ var pattern = "slam"
 var warmup = 0.8
 var hit_time = 0.0
 var chilled = 0.0
+var charged = 0.0
 
 func _ready() -> void:
 	boss = spec.get("boss", false)
@@ -64,7 +65,8 @@ func _physics_process(delta: float) -> void:
 		tell.visible = false
 		return
 	chilled=maxf(0.0,chilled-delta)
-	label.text=spec.get("name","Guardian")+(" / CHILLED" if chilled>0.0 else "")
+	charged=maxf(0.0,charged-delta)
+	label.text=spec.get("name","Guardian")+(" / CHILLED" if chilled>0.0 else "") + (" / CHARGED" if charged>0.0 else "")
 	warmup = maxf(0, warmup - delta)
 	brain.enraged = boss and hp <= max_hp * 0.5
 	var toward: Vector3 = target.global_position - global_position
@@ -166,8 +168,14 @@ func overload() -> void:
 
 func element_hit(amount: float,guardian: String,id: String,chill_duration: float = 3.0) -> float:
 	var shatter = guardian=="fire" and id!="wall" and chilled>0.0
-	var actual=take_hit(amount*(1.4 if shatter else 1.0))
+	var discharge = guardian == "storm" and id == "burst" and charged > 0.0
+	var actual=take_hit(amount*(1.4 if shatter else (1.5 if discharge else 1.0)))
 	if actual<=0.0:return 0.0
+	if discharge:
+		charged = 0.0
+		hit_feedback.emit(global_position, "DISCHARGE", false)
+	elif guardian == "storm" and id in ["breath", "wall"] and hp > 0.0:
+		charged = 4.0
 	if shatter:
 		chilled=0.0
 		hit_feedback.emit(global_position,"SHATTER",false)

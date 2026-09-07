@@ -17,6 +17,8 @@ var egg: Node3D
 var badge_nodes: Array = []
 const IceEgg = preload("res://campaign/guardians/ice_egg.glb")
 var ice_egg: Node3D
+var storm_egg: Node3D
+var lattice: Node3D
 
 func build(data: Dictionary) -> void:
 	definition = data
@@ -141,6 +143,11 @@ func _interactables() -> void:
 		_station("lore", "FELIX / RADIO", Vector3(7,0,-5), "relay_conduit")
 		var ice_ring=_station("hatch_ice", "GUARDIAN NURSERY",Vector3(6,0,8),"incubator")
 		ice_egg=IceEgg.instantiate();ice_ring.add_child(ice_egg)
+		var fusion_ring = _station("fusion", "RESONANCE FUSION", Vector3(-7,0,8), "core_socket")
+		storm_egg = preload("res://campaign/fusion_assets/storm_egg.glb").instantiate()
+		storm_egg.position.y = .45
+		fusion_ring.add_child(storm_egg)
+		Geo.ring(fusion_ring, Vector3.UP*.20, 1.4, Geo.material(Color("b5a0f2"), .6, true), .06)
 		_add_door({"to":"map", "at":[0,0,-14], "label":"EXPEDITIONS  [E]"})
 		for i in range(4):
 			var p = Vector3(-5+i*3.3,0,-8)
@@ -156,6 +163,9 @@ func _interactables() -> void:
 		if definition.id=="frozen-vault":
 			var plinth=_station("ice_egg","RESCUE ICE EGG",Vector3(6,0,-4),"incubator")
 			ice_egg=IceEgg.instantiate();plinth.add_child(ice_egg)
+		if definition.id == "capacitor-cache":
+			lattice = _station("lattice", "CONDUCTOR LATTICE", Vector3(6,0,-4), "relay_conduit")
+			Geo.ring(lattice, Vector3.UP*1.6, .65, Geo.material(Color("b5a0f2"), .6, true), .06)
 	elif definition.role in ["boss","final"]:
 		core_node = _station("finish" if definition.role=="final" else "core", "RECONNECT" if definition.role=="final" else "SECTOR CORE",Vector3(0,0,-19),"core_socket")
 		Geo.orb(core_node,Vector3(0,1.7,0),0.4,Geo.material(color,1.5,true))
@@ -205,6 +215,8 @@ func _art_direction() -> void:
 			Geo.ring(self,Vector3(side*13,5,-22.3),1.6,Geo.material(color,0.5,true)).rotation.x=PI/2
 
 func refresh(state: Dictionary) -> void:
+	if is_instance_valid(storm_egg): storm_egg.visible = state.get("storm_forged",false) and not state.get("guardians",[]).has("storm")
+	if is_instance_valid(lattice): lattice.visible = not state.get("lattice_recovered",false)
 	if is_instance_valid(ice_egg):
 		ice_egg.visible=(not state.get("ice_rescued",false)) if definition.id=="frozen-vault" else (state.get("ice_rescued",false) and not state.get("guardians",["fire"]).has("ice"))
 	for station in stations:
