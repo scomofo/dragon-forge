@@ -44,6 +44,8 @@ static func batch(parent: Node3D, id: String, transforms: Array) -> MultiMeshIns
 	node.multimesh.instance_count = transforms.size()
 	for i in range(transforms.size()):
 		node.multimesh.set_instance_transform(i, transforms[i])
+	# Retain authoring transforms for CPU-side review; dummy renderers have no readback.
+	node.set_meta("art_transforms", transforms.duplicate())
 	node.set_meta("art_asset", id)
 	parent.add_child(node)
 	return node
