@@ -16,7 +16,10 @@ const ICE = {
 	"burst": {"name":"Crystal Aegis", "damage":0.0, "heat":36.0, "cooldown":10.0, "range":0.0, "cone":-1.0, "windup":0.20, "recovery":0.24},
 }
 static func rule(state: Dictionary, id: String) -> Dictionary:
-	return (ICE if state.get("guardian", "fire") == "ice" else ABILITIES).get(id, {})
+	var move: Dictionary = (ICE if state.get("guardian", "fire") == "ice" else ABILITIES).get(id, {}).duplicate()
+	if not move.is_empty() and id == "breath" and state.get("evolution", "") == "flashfire":
+		move.cooldown = 1.8
+	return move
 
 static func guardian_name(id: String) -> String:
 	return "RIME" if id == "ice" else "MAGMA"
@@ -25,7 +28,7 @@ const ORDER = ["claw", "breath", "wall", "burst"]
 
 static func fresh(module: String = "", guardian: String = "fire") -> Dictionary:
 	var maximum: float = Modules.profile(module).hp * (0.90 if guardian == "ice" else 1.0)
-	return {"guardian": guardian, "ward": 0.0, "module": module if Modules.valid(module) else "", "hp": maximum, "max_hp": maximum, "heat": 0.0, "cooldowns": {}, "iframes": 0.0, "dash": 0.0, "dodge_cd": 0.0, "guard": false, "action": "", "action_time": 0.0, "action_hit": false}
+	return {"evolution": "", "guardian": guardian, "ward": 0.0, "module": module if Modules.valid(module) else "", "hp": maximum, "max_hp": maximum, "heat": 0.0, "cooldowns": {}, "iframes": 0.0, "dash": 0.0, "dodge_cd": 0.0, "guard": false, "action": "", "action_time": 0.0, "action_hit": false}
 
 ## Returns one contact event, even when a long frame spans the entire attack.
 static func tick(state: Dictionary, delta: float, guarding: bool = false) -> String:
@@ -126,4 +129,13 @@ static func heat_cost(state: Dictionary, id: String) -> float:
 	return float(rule(state,id).get("heat", 0.0)) * float(Modules.profile(state.get("module", "")).heat)
 
 static func technique_damage(state: Dictionary, id: String) -> float:
-	return float(rule(state,id).get("damage", 0.0)) * float(Modules.profile(state.get("module", "")).damage)
+	return float(rule(state,id).get("damage", 0.0)) * float(Modules.profile(state.get("module", "")).damage) * (1.10 if state.get("evolution", "") != "" else 1.0)
+
+static func field_duration(state: Dictionary) -> float:
+	return 4.8 if state.get("evolution", "") == "furnace" else 3.6
+
+static func chill_duration(state: Dictionary) -> float:
+	return 4.5 if state.get("evolution", "") == "deepwinter" else 3.0
+
+static func ward_duration(state: Dictionary) -> float:
+	return 6.0 if state.get("evolution", "") == "aegis" else 4.0

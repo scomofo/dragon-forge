@@ -1,0 +1,52 @@
+name: Nextgen guardian evolution
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/**'
+      - '.github/workflows/nextgen-evolution.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: guardian-evolution-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  evolution:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      GODOT_SILENCE_ROOT_WARNING: '1'
+      GLTF_VALIDATOR_MODULE: /tmp/evolution-validator/node_modules/gltf-validator
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: dragon-forge-nextgen
+      - name: Install isolated validation tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          npm install --prefix /tmp/evolution-validator gltf-validator@2.0.0-dev.3.10
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Verify shipped forms, campaign rules, saves, feet and both rendering paths
+        working-directory: dragon-forge-nextgen
+        shell: bash
+        run: bash tools/test_evolution.sh
+      - name: Record exact tested revision without changing tracked sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/evolution/TESTED_COMMIT.txt
+          git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/evolution/TESTED_TREE.txt
+          git archive --format=zip -o dragon-forge-nextgen/artifacts/evolution/Evolution_Project_Source.zip HEAD:dragon-forge-nextgen
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: guardian-evolution-evidence
+          path: dragon-forge-nextgen/artifacts/evolution/
+          retention-days: 14

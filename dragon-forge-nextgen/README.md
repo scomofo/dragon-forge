@@ -15,3 +15,11 @@ This is a compact playable campaign using two earnable guardians and the existin
 ## First guardian pair
 
 The campaign now includes an earned Ice guardian, party swapping, chill/shatter combat and save migration. See [campaign/GUARDIANS.md](campaign/GUARDIANS.md). F5 still launches Reconnection.
+
+## Guardian evolution
+
+The campaign now supports earned **Crowned Magma** and **Aurora Rime** forms. Reach
+Bond III (280 shared achievement points), restore two sector cores, then visit the
+Forge's Guardian Nursery. Choose between two specializations per guardian, with
+free later reconfiguration. Existing v1/v2 campaign saves retain milestones; no
+restart is needed. See `campaign/EVOLUTION.md` for exact effects and limitations.

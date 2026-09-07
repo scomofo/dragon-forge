@@ -164,7 +164,7 @@ func overload() -> void:
 	brain.open_window(2.4)
 	take_hit(55.0, true)
 
-func element_hit(amount: float,guardian: String,id: String) -> float:
+func element_hit(amount: float,guardian: String,id: String,chill_duration: float = 3.0) -> float:
 	var shatter = guardian=="fire" and id!="wall" and chilled>0.0
 	var actual=take_hit(amount*(1.4 if shatter else 1.0))
 	if actual<=0.0:return 0.0
@@ -172,5 +172,5 @@ func element_hit(amount: float,guardian: String,id: String) -> float:
 		chilled=0.0
 		hit_feedback.emit(global_position,"SHATTER",false)
 	elif guardian=="ice" and id in ["breath","wall"] and hp>0.0:
-		chilled=3.0
+		chilled=maxf(chilled,clampf(chill_duration,0.0,4.5))
 	return actual

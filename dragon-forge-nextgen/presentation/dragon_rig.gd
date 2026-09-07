@@ -16,7 +16,7 @@ var sampled_clip = "idle"
 var sampled_time = 0.0
 
 func _ready() -> void:
-	model = Art.place(self, "magma_guardian")
+	model = _make_model()
 	skeleton = model.find_child("Skeleton3D", true, false)
 	player = model.find_child("AnimationPlayer", true, false)
 	player.process_mode = Node.PROCESS_MODE_DISABLED
@@ -85,3 +85,6 @@ func animate(delta: float, speed: float, reduced: bool, state: Dictionary) -> vo
 func muzzle_position() -> Vector3:
 	var head = skeleton.find_bone("Head")
 	return skeleton.global_transform * (skeleton.get_bone_global_pose(head) * Vector3(0, -0.10, -0.74))
+
+func _make_model() -> Node3D:
+	return Art.place(self, "magma_guardian")
