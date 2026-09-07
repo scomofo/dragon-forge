@@ -22,4 +22,8 @@ Cairn has 15% higher base maximum health than Magma before permanent plating. Ex
 
 Save schema 6 adds `stone_imprint_recovered` and `stone_forged`. Valid schema-5 saves migrate in memory with both false; load does not write. The next normal write uses the existing backup behavior. Existing guardians, evolutions, loadout, salvage and milestones are retained.
 
-Release verification runs the complete inherited native suite plus Cairn-specific tests, validates the committed Stone GLB independently, reviews both OpenGL and Forward+ captures, and exercises the exported desktop packages without using a player's real save.
+## Release gate
+
+The complete inherited native stack plus Cairn-specific tests passes with 1,757 assertions and zero failures. The committed Stone GLB passes independent Khronos validation with zero errors/warnings. Scripted campaign/inspection captures pass in both OpenGL and Vulkan Forward+.
+
+Standalone workflow 34157714685 exports macOS, Windows and Linux packages and executes each package on its native CI runner; Linux also exercises the packaged OpenGL renderer path. Permanent Stone workflow 34157714682 validates the exact Cairn source/assets. These checks use prepared states and automation; they are not a human balance playthrough or target-hardware performance certification.
