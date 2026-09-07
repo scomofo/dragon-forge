@@ -100,7 +100,7 @@ func run() -> void:
 	w.hud.close_overlay()
 	w.title_open = false
 	var s = fixture()
-	check(not Rules.normalize(s).is_empty(), "prepared checkpoint is valid schema 6")
+	check(not Rules.normalize(s).is_empty(), "prepared checkpoint is valid schema 7")
 	for room in Data.ROOMS:
 		w.campaign = s.duplicate(true)
 		w.campaign.room = room
@@ -138,13 +138,15 @@ func run() -> void:
 	store.import_legacy = false
 	store.path = "user://release-check-%s.json" % str(Time.get_ticks_usec())
 	var old = s.duplicate(true)
-	# Seed a valid schema-5 snapshot: Cairn did not exist yet.
+	# Seed a valid schema-5 snapshot: Cairn and Nox did not exist yet.
 	old.version = 5
 	old.guardians = ["fire","ice","storm"]
 	old.loadout = ["fire","storm"]
 	old.active_guardian = "fire"
 	old.erase("stone_imprint_recovered")
 	old.erase("stone_forged")
+	old.erase("venom_culture_recovered")
+	old.erase("venom_forged")
 	var bytes = JSON.stringify(old)
 	var f = FileAccess.open(store.path,FileAccess.WRITE)
 	check(f != null,"temporary save writable")
@@ -152,7 +154,7 @@ func run() -> void:
 		f.store_string(bytes)
 		f.close()
 		var loaded = store.read_campaign()
-		check(loaded.version == 6 and not loaded.stone_imprint_recovered and not loaded.stone_forged, "schema-5 campaign migrates to schema 6 in export")
+		check(loaded.version == 7 and not loaded.stone_imprint_recovered and not loaded.stone_forged and not loaded.venom_culture_recovered and not loaded.venom_forged, "schema-5 campaign migrates through Stone to schema 7 in export")
 		check(FileAccess.get_file_as_string(store.path) == bytes,"load leaves old bytes intact")
 		check(store.write_campaign(loaded),"exported save writes successfully")
 		check(FileAccess.get_file_as_string(store.path+".bak") == bytes,"exported save backs up old bytes")
