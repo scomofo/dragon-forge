@@ -21,3 +21,5 @@ Cairn builds one Resolve (maximum 3) when a real incoming hit lands while Cairn 
 Cairn has 15% higher base maximum health than Magma before permanent plating. Existing modules/upgrades apply. Current numbers are provisional until human balance review.
 
 Save schema 6 adds `stone_imprint_recovered` and `stone_forged`. Valid schema-5 saves migrate in memory with both false; load does not write. The next normal write uses the existing backup behavior. Existing guardians, evolutions, loadout, salvage and milestones are retained.
+
+Release verification runs the complete inherited native suite plus Cairn-specific tests, validates the committed Stone GLB independently, reviews both OpenGL and Forward+ captures, and exercises the exported desktop packages without using a player's real save.
