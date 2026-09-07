@@ -8,7 +8,15 @@ for script in tests/run.gd tests/art_test.gd validation/review_tests.gd validati
   log="artifacts/bosses/$(echo "$script" | tr / _).log"
   clock_args=(--fixed-fps 60)
   if [[ "$script" == campaign/tests/audio_tests.gd ]]; then clock_args=(); fi
-  timeout 150 "$GODOT" --headless "${clock_args[@]}" --script "res://$script" -- --test-mode > "$log" 2>&1
-  if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' "$log"; then exit 1; fi
+  if ! timeout 150 "$GODOT" --headless "${clock_args[@]}" --script "res://$script" -- --test-mode > "$log" 2>&1; then
+    echo "NATIVE_SCRIPT_FAILED: $script"
+    cat "$log"
+    exit 1
+  fi
+  if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' "$log"; then
+    echo "NATIVE_SCRIPT_LOG_ERROR: $script"
+    cat "$log"
+    exit 1
+  fi
   grep -E 'checks, 0 failures|PLAY: 0 failures' "$log"
 done
