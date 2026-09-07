@@ -5,6 +5,7 @@ const Growth = preload("res://campaign/growth.gd")
 const STATION = Vector3(-7, 0, 8)
 const LATTICE = Vector3(6, 0, -4)
 const STONE_IMPRINT = Vector3(6, 0, -4)
+const VENOM_CULTURE = Vector3(-5, 0, -4)
 
 static func reason(c: Dictionary) -> String:
 	if not c.get("hatched", false) or not c.get("guardians", []).has("ice"):
@@ -28,6 +29,17 @@ static func stone_reason(c: Dictionary) -> String:
 		return "Restore three sector cores before tempering the imprint."
 	return ""
 
+static func venom_reason(c: Dictionary) -> String:
+	if not c.get("hatched", false):
+		return "Awaken Magma first."
+	if not c.get("venom_culture_recovered", false):
+		return "Recover the preserved Venom culture in Frozen Vault."
+	if not c.get("guardians", []).has("ice"):
+		return "Rime is required to stabilize the Venom culture."
+	if c.get("installed", []).size() < 3:
+		return "Restore three sector cores before stabilizing the culture."
+	return ""
+
 static func recover(c: Dictionary) -> bool:
 	if c.get("room", "") != "capacitor-cache" or c.get("lattice_recovered", false) or not c.get("hatched", false):
 		return false
@@ -38,6 +50,12 @@ static func recover_stone(c: Dictionary) -> bool:
 	if c.get("room", "") != "admin-vault" or c.get("stone_imprint_recovered", false) or not c.get("hatched", false):
 		return false
 	c.stone_imprint_recovered = true
+	return true
+
+static func recover_venom(c: Dictionary) -> bool:
+	if c.get("room", "") != "frozen-vault" or c.get("venom_culture_recovered", false) or not c.get("hatched", false):
+		return false
+	c.venom_culture_recovered = true
 	return true
 
 static func forge(c: Dictionary) -> bool:
@@ -52,6 +70,12 @@ static func forge_stone(c: Dictionary) -> bool:
 	c.stone_forged = true
 	return true
 
+static func forge_venom(c: Dictionary) -> bool:
+	if c.get("room", "") != "forge" or venom_reason(c) != "" or c.get("venom_forged", false):
+		return false
+	c.venom_forged = true
+	return true
+
 static func hatch(c: Dictionary) -> bool:
 	if c.get("room", "") != "forge" or reason(c) != "" or not c.get("storm_forged", false) or c.guardians.has("storm"):
 		return false
@@ -64,6 +88,13 @@ static func hatch_stone(c: Dictionary) -> bool:
 		return false
 	c.loadout = members(c)
 	c.guardians.append("stone")
+	return true
+
+static func hatch_venom(c: Dictionary) -> bool:
+	if c.get("room", "") != "forge" or venom_reason(c) != "" or not c.get("venom_forged", false) or c.guardians.has("venom"):
+		return false
+	c.loadout = members(c)
+	c.guardians.append("venom")
 	return true
 
 static func members(c: Dictionary) -> Array:
