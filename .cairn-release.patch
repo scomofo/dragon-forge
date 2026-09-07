@@ -75,40 +75,6 @@
  		check(FileAccess.get_file_as_string(store.path) == bytes,"load leaves old bytes intact")
  		check(store.write_campaign(loaded),"exported save writes successfully")
  		check(FileAccess.get_file_as_string(store.path+".bak") == bytes,"exported save backs up old bytes")
---- a/dragon-forge-nextgen/release/README.md
-+++ b/dragon-forge-nextgen/release/README.md
-@@ -1,8 +1,7 @@
- # Standalone playtest packaging
- 
--These exports contain the complete Reconnection campaign with the Boss Identities,
--Tempest, soundtrack, evolution and fusion work. They are not editor launchers or
--empty test rooms. Gameplay, save schema 5 and the custom userdata directory are
-+These exports contain the complete Reconnection campaign with Cairn / Stone Resonance, the Boss Identities, Tempest, soundtrack, evolution and fusion work. They are not editor launchers or
-+empty test rooms. Gameplay, save schema 6 and the custom userdata directory are
- unchanged. No user save, credentials, authoring tools or font files are bundled.
- Godot's license and dependency notices accompany each package.
- 
-@@ -14,7 +13,7 @@
- On macOS open `DragonForge.app`; this universal bundle targets Intel and Apple Silicon.
- On Linux run `DragonForge.x86_64`. No Godot installation or export template is
- needed. The optional `Play-Compatibility` launcher selects OpenGL for troubleshooting.
--The title still reads BOSS IDENTITIES: this pass packages that game, not new content.
-+The title reads STONE RESONANCE and includes Cairn as the fourth owned guardian while expeditions retain two field slots.
- 
- Choose Continue under the same OS account to retain campaign progress. Keep a
- backup before a playtest. Save location is the existing custom Godot user directory
-@@ -58,9 +57,9 @@
- 
- ## What the checks establish
- 
--Package integrity, executable format, default campaign startup, all 53 models/maps/
-+Package integrity, executable format, default campaign startup, all 58 models/maps/
- recordings loadable from the exported pack, all 22 rooms, five imported bosses,
--evolved guardian swaps, runtime audio decoding, older-save migration and exact
-+Fire/Ice/Storm/Stone guardian swaps, runtime audio decoding, schema-5-to-6 migration and exact
- backup preservation. macOS also checks both architectures and the ad-hoc signature.
- Only the runner's native architecture is executed; presence of a second slice is
- not a second-architecture playtest. Headless Windows/macOS checks do not establish
 --- a/dragon-forge-nextgen/tools/release/build.py
 +++ b/dragon-forge-nextgen/tools/release/build.py
 @@ -63,7 +63,7 @@
