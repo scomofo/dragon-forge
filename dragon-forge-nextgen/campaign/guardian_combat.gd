@@ -25,21 +25,28 @@ const STONE = {
 	"wall": {"name":"Bulwark Field", "damage":9.0, "heat":28.0, "cooldown":6.5, "range":4.0, "radius":2.3, "windup":.26, "recovery":.30},
 	"burst": {"name":"Earthshatter", "damage":58.0, "heat":38.0, "cooldown":9.0, "range":4.5, "cone":-1.0, "windup":.38, "recovery":.44},
 }
+const VENOM = {
+	"claw": {"name":"Toxin Fang", "damage":18.0, "heat":0.0, "cooldown":.50, "range":2.9, "cone":.20, "windup":.11, "recovery":.18},
+	"breath": {"name":"Acid Spit", "damage":26.0, "heat":18.0, "cooldown":2.4, "range":7.5, "cone":.82, "windup":.22, "recovery":.28},
+	"wall": {"name":"Toxic Cloud", "damage":7.0, "heat":28.0, "cooldown":6.0, "range":4.0, "radius":2.5, "windup":.22, "recovery":.28},
+	"burst": {"name":"Septic Bloom", "damage":46.0, "heat":36.0, "cooldown":8.5, "range":4.5, "cone":-1.0, "windup":.30, "recovery":.38},
+}
 const ORDER = ["claw", "breath", "wall", "burst"]
 const MAX_RESOLVE = 3
+const MAX_TOXIN = 3
 
 static func rule(state: Dictionary, id: String) -> Dictionary:
-	var kit: Dictionary = {"fire":ABILITIES, "ice":ICE, "storm":STORM, "stone":STONE}.get(state.get("guardian", "fire"), ABILITIES)
+	var kit: Dictionary = {"fire":ABILITIES, "ice":ICE, "storm":STORM, "stone":STONE, "venom":VENOM}.get(state.get("guardian", "fire"), ABILITIES)
 	var move: Dictionary = kit.get(id, {}).duplicate()
 	if not move.is_empty() and id == "breath" and state.get("evolution", "") == "flashfire": move.cooldown = 1.8
 	if not move.is_empty() and id == "burst" and state.get("evolution", "") == "overcharge": move.cooldown = 6.75
 	return move
 
 static func guardian_name(id: String) -> String:
-	return {"fire":"MAGMA", "ice":"RIME", "storm":"ARC", "stone":"CAIRN"}.get(id, "UNKNOWN")
+	return {"fire":"MAGMA", "ice":"RIME", "storm":"ARC", "stone":"CAIRN", "venom":"NOX"}.get(id, "UNKNOWN")
 
 static func fresh(module: String = "", guardian: String = "fire") -> Dictionary:
-	var maximum: float = Modules.profile(module).hp * {"fire":1.0, "ice":.90, "storm":.85, "stone":1.15}.get(guardian, 1.0)
+	var maximum: float = Modules.profile(module).hp * {"fire":1.0, "ice":.90, "storm":.85, "stone":1.15, "venom":.95}.get(guardian, 1.0)
 	return {"evolution":"", "guardian":guardian, "ward":0.0, "resolve":0, "module":module if Modules.valid(module) else "", "hp":maximum, "max_hp":maximum, "heat":0.0, "cooldowns":{}, "iframes":0.0, "dash":0.0, "dodge_cd":0.0, "guard":false, "action":"", "action_time":0.0, "action_hit":false}
 
 static func tick(state: Dictionary, delta: float, guarding: bool = false) -> String:
@@ -117,6 +124,10 @@ static func technique_damage(state: Dictionary, id: String) -> float:
 	if state.get("guardian","") == "stone" and id == "burst": amount *= 1.0 + 0.20 * float(state.get("resolve",0))
 	return amount
 
+static func toxin_stacks(value: int) -> int: return clampi(value,0,MAX_TOXIN)
+static func toxin_duration() -> float: return 5.0
+static func toxin_tick_damage() -> float: return 4.0
+static func toxin_burst_multiplier(stacks: int) -> float: return 1.0 + 0.25 * float(toxin_stacks(stacks))
 static func consume_resolve(state: Dictionary) -> int:
 	var spent = int(state.get("resolve",0)); state.resolve = 0; return spent
 static func field_duration(state: Dictionary) -> float: return 4.8 if state.get("evolution", "") == "furnace" else 3.6
