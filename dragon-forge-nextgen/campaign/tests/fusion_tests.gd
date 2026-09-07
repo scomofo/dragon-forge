@@ -59,7 +59,7 @@ func run() -> void:
 		var bytes=JSON.stringify(old,"  ")
 		var f=FileAccess.open(store.path,FileAccess.WRITE);f.store_string(bytes);f.close()
 		var migrated=store.read_campaign()
-		check(migrated.version==5 and not migrated.storm_forged and not migrated.lattice_recovered,"old version %d grants no unearned fusion"%version)
+		check(migrated.version==6 and not migrated.storm_forged and not migrated.lattice_recovered,"old version %d grants no unearned fusion"%version)
 		check(migrated.salvage==old.salvage and migrated.cleared==old.cleared,"old version %d keeps existing journey"%version)
 		check(FileAccess.get_file_as_string(store.path)==bytes,"load preserves exact bytes version %d"%version)
 		check(store.write_campaign(migrated) and FileAccess.get_file_as_string(store.path+".bak")==bytes,"first new write backs up old bytes version %d"%version)
@@ -155,7 +155,7 @@ func run() -> void:
 	w.queue_free();await frames()
 	var studio=Studio.new();root.add_child(studio);await frames()
 	var actor_picker: OptionButton=studio.find_children("*","OptionButton",true,false)[0]
-	check(actor_picker.item_count==13,"all thirteen actual actors appear in the inspection picker")
+	check(actor_picker.item_count==14,"all fourteen actual actors appear in the inspection picker")
 	actor_picker.select(6);actor_picker.item_selected.emit(6)
 	check(not studio.feet.valid and studio.feet.error.contains("hovers"),"hovering rig is not misreported as foot-locked")
 	check(studio.actor_id=="storm_guardian" and studio.skeleton.get_bone_count()==17,"inspection scene loads real Arc asset")

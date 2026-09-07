@@ -45,7 +45,7 @@ func run() -> void:
 	var store=Store.new();store.import_legacy=false;store.path="user://tempest-test-save.json"
 	var f=FileAccess.open(store.path,FileAccess.WRITE);f.store_string(old_bytes);f.close()
 	var migrated=store.read_campaign()
-	check(migrated.version==5 and migrated.evolutions.storm=="","schema4 does not auto-evolve Arc")
+	check(migrated.version==6 and migrated.evolutions.storm=="","schema4 does not auto-evolve Arc")
 	for key in ["salvage","room","cleared","installed","guardians","loadout","active_guardian"]:
 		check(migrated[key]==old[key],"schema4 keeps "+key)
 	check(FileAccess.get_file_as_string(store.path)==old_bytes,"load leaves old bytes alone")

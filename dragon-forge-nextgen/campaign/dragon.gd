@@ -5,6 +5,7 @@ const StormRig = preload("res://campaign/storm_rig.gd")
 const IceRig = preload("res://campaign/ice_rig.gd")
 const EvolvedMagma = preload("res://campaign/evolved_magma_rig.gd")
 const EvolvedIce = preload("res://campaign/evolved_ice_rig.gd")
+const StoneRig = preload("res://campaign/stone_rig.gd")
 var cooling_level = 0
 var guardian = "fire"
 var rigs: Dictionary = {}
@@ -15,14 +16,16 @@ func _ready() -> void:
 	rigs["fire"] = rig
 
 func use_guardian(id: String, saved_state: Dictionary) -> void:
-	if not id in ["fire","ice","storm"]:
+	if not id in ["fire","ice","storm","stone"]:
 		return
 	var facing = rig.rotation.y
 	rig.visible = false
 	var key: String = id + ("/evolved" if saved_state.get("evolution", "") != "" else "")
 	if not rigs.has(key):
 		var next
-		if id == "storm":
+		if id == "stone":
+			next = StoneRig.new()
+		elif id == "storm":
 			next = EvolvedStorm.new() if key.ends_with("/evolved") else StormRig.new()
 		elif key.ends_with("/evolved"):
 			next = EvolvedIce.new() if id == "ice" else EvolvedMagma.new()

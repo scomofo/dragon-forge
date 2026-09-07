@@ -18,7 +18,7 @@ static func sound(cue: String, guardian: String = "fire") -> AudioStreamWAV:
 	var key = cue + "/" + guardian
 	if cache.has(key): return cache[key]
 	var spec: Array = CUES[cue]
-	var pitch: float = {"fire":.78,"ice":1.55,"storm":1.08}.get(guardian,1.0)
+	var pitch: float = {"fire":.78,"ice":1.55,"storm":1.08,"stone":.58}.get(guardian,1.0)
 	if cue in ["ui","warning","reward","evolve","repair","hatch","fusion","relay"]: pitch = 1.0
 	var count = int(RATE * spec[1])
 	var data = PackedByteArray()

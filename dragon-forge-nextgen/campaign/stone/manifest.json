@@ -1,0 +1,40 @@
+{
+  "source": "tools/build_stone_guardian.py",
+  "asset": {
+    "file": "stone_guardian.glb",
+    "triangles": 1908,
+    "vertices": 1555,
+    "surfaces": 1,
+    "bones": 18,
+    "clips": [
+      "idle",
+      "walk",
+      "claw",
+      "breath",
+      "wall",
+      "burst",
+      "guard",
+      "hurt",
+      "defeat"
+    ],
+    "bounds": [
+      [
+        -1.3700000047683716,
+        0.0,
+        -0.800000011920929
+      ],
+      [
+        1.3700000047683716,
+        2.869999885559082,
+        0.6800000071525574
+      ]
+    ]
+  },
+  "files": {
+    "atlas_base.png": "97c53ab057c0e0f9b1ad2e38e6080601240a82617321e21c01c38874a9249399",
+    "atlas_emission.png": "564617f2f39cb85bf0190eb5fea931ec1cd08a46f3c18e19a90cf8c6d00190b5",
+    "atlas_normal.png": "49ed24681c854678038f5a8a92a18d7c16193092a19a88595abcef3be53b51e9",
+    "atlas_orm.png": "c3d5f4dbff5a49b8c3908b0e2aabf70de2867977d869adbdd123f3e981652280",
+    "stone_guardian.glb": "7886a8efa57809a225d9a2eddc25d1c6997dc8584c7492481e4469628d2d8875"
+  }
+}

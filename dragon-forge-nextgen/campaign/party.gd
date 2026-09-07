@@ -29,7 +29,7 @@ func reserve_id() -> String:
 
 func rejection(target: String, force: bool = false) -> String:
 	if not states.has(target) or target == active_id:
-		return "No other guardian is ready. Rescue the egg in Frozen Vault."
+		return "No other selected guardian is ready. Change the expedition pair at the Forge Nursery."
 	if states[target].hp <= 0.0:
 		return "Reserve down. Rest at a shelter or retry to revive."
 	if not force and swap_remaining > 0.0:

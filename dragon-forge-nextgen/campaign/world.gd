@@ -265,6 +265,7 @@ func interaction() -> String:
 		"hatch":return "Rest / refill repair charges" if campaign.hatched else "Hatch Magma and begin your journey"
 		"fusion":return "Resonance Fusion / Fire + Ice = Storm"
 		"lattice":return "Recover the conductor lattice"
+		"stone_imprint":return "Recover the dormant Stone imprint"
 		"ice_egg":return "Rescue the frozen guardian egg"
 		"hatch_ice":return "Hatch Rime / Ice guardian" if campaign.ice_rescued and not campaign.guardians.has("ice") else "Guardian Nursery / evolution"
 		"rest":return "Rest / refill repair charges"
@@ -305,6 +306,9 @@ func interact() -> void:
 			if Fusion.recover(campaign):
 				_save()
 				hud.show_lattice_recovered()
+		"stone_imprint":
+			if Fusion.recover_stone(campaign):
+				_save();level.refresh(campaign);hud.show_stone_recovered()
 		"ice_egg":
 			if CampaignRules.rescue_ice(campaign):
 				_save()
@@ -420,26 +424,30 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		hud.feedback("CRYSTAL AEGIS", "55%% damage reduction for Rime / %d seconds" % int(dragon.state.ward))
 		return
 	if id=="wall":
-		if owner_id=="fire":
-			_place_wall(origin,direction)
-		elif owner_id=="ice":
-			_place_frost(origin,direction)
-		else:
-			_place_static(origin,direction)
+		if owner_id=="fire": _place_wall(origin,direction)
+		elif owner_id=="ice": _place_frost(origin,direction)
+		elif owner_id=="storm": _place_static(origin,direction)
+		else: _place_bulwark(origin,direction)
 		walls[-1].damage=campaign_damage(id)
 		walls[-1].guardian=owner_id
 		walls[-1].ttl=GuardianCombat.field_duration(dragon.state)
 		walls[-1].chill_duration=GuardianCombat.chill_duration(dragon.state)
 		walls[-1].charge_duration=GuardianCombat.charge_duration(dragon.state)
 		return
+	var landed=false
 	for actor in enemies.duplicate():
 		if is_instance_valid(actor) and Combat.in_cone(origin,direction,actor.global_position,rule.range,rule.cone) and line_clear(origin,actor.global_position):
-			actor.element_hit(campaign_damage(id),owner_id,id,GuardianCombat.chill_duration(dragon.state),GuardianCombat.charge_duration(dragon.state))
+			if actor.element_hit(campaign_damage(id),owner_id,id,GuardianCombat.chill_duration(dragon.state),GuardianCombat.charge_duration(dragon.state))>0.0: landed=true
+	if owner_id=="stone" and id=="burst" and landed:
+		var spent=GuardianCombat.consume_resolve(dragon.state)
+		if spent>0:hud.feedback("EARTHSHATTER / RESOLVE %d" % spent,"Guard landed hits to rebuild Resolve.")
 	if owner_id=="storm":
 		_storm_contact(id,origin,direction,rule.range)
 		if id=="breath" and not conduits.is_empty():
 			hud.toast("Thermal relays need Magma. Change your expedition pair at the Forge Nursery if Fire is benched.")
 		return
+	if owner_id=="stone":
+		_stone_contact(id,origin,direction,rule.range)
 	if owner_id=="ice":
 		_ice_contact(id,origin,direction,rule.range)
 		if id=="breath" and not conduits.is_empty():
@@ -578,6 +586,10 @@ func guidance() -> Dictionary:
 		target=Vector3(-2,0,8)
 		marker="HATCH MAGMA"
 	elif r.role=="forge":
+		if campaign.stone_forged and not campaign.guardians.has("stone"):
+			return {"title":"A Stone guardian is ready to hatch", "detail":"Visit Resonance Fusion on the left to awaken Cairn. Your current expedition pair stays unchanged.","target":Fusion.STATION,"marker":"HATCH CAIRN","index":mini(campaign.installed.size(),5)}
+		if campaign.stone_imprint_recovered and not campaign.stone_forged and Fusion.stone_reason(campaign)=="" and campaign.cores.size()==campaign.installed.size():
+			return {"title":"The Stone imprint can be tempered", "detail":"Magma can stabilize the recovered imprint at Resonance Fusion. Fire + Stone remains Stone; Magma is retained.","target":Fusion.STATION,"marker":"STONE RESONANCE","index":mini(campaign.installed.size(),5)}
 		if campaign.storm_forged and not campaign.guardians.has("storm"):
 			return {"title":"A Storm guardian is ready to hatch", "detail":"Visit Resonance Fusion on the left to hatch Arc. Your current expedition pair stays unchanged.","target":Fusion.STATION,"marker":"HATCH ARC","index":mini(campaign.installed.size(),5)}
 		if not campaign.storm_forged and Fusion.reason(campaign) == "" and campaign.cores.size() == campaign.installed.size():
@@ -627,6 +639,11 @@ func guidance() -> Dictionary:
 		detail="Recover the conductor lattice from the right-hand plinth. Evolved Magma and Rime can create Arc at the Forge."
 		target=Fusion.LATTICE
 		marker="CONDUCTOR LATTICE"
+	elif r.id=="admin-vault" and not campaign.stone_imprint_recovered:
+		title="A dormant Stone memory"
+		detail="Recover the Stone imprint from the right-hand plinth. Temper it with Magma at Resonance Fusion to awaken Cairn."
+		target=Fusion.STONE_IMPRINT
+		marker="STONE IMPRINT"
 	elif r.id=="frozen-vault" and not campaign.ice_rescued:
 		title="A second heartbeat in the ice"
 		detail="Rescue the egg from the cyan plinth. Return to the Forge to hatch Rime, your first reserve guardian."
@@ -663,7 +680,7 @@ func swap_guardian(target: String = "", forced: bool = false) -> bool:
 	campaign.active_guardian=target
 	get_viewport().gui_release_focus()
 	_save()
-	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", {"ice":"Chill, then swap to Magma to shatter.", "fire":"Fire shatters chilled enemies on a direct hit.", "storm":"Charge with Arc Lance or Static Well. Discharge with technique 4."}.get(target, ""))
+	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", {"ice":"Chill, then swap to Magma to shatter.", "fire":"Fire shatters chilled enemies on a direct hit.", "storm":"Charge with Arc Lance or Static Well. Discharge with technique 4.", "stone":"Guard landed hits to build Resolve, then Earthshatter [4]."}.get(target, ""))
 	return true
 
 func _on_guardian_down() -> void:
@@ -731,6 +748,14 @@ func hatch_storm() -> bool:
 	hud.show_fusion()
 	return true
 
+func forge_stone() -> bool:
+	if not can_fuse() or not Fusion.forge_stone(campaign):return false
+	sound("fusion","fire",3,true);_save();hud.show_fusion();return true
+
+func hatch_stone() -> bool:
+	if not can_fuse() or not Fusion.hatch_stone(campaign):return false
+	sound("hatch","fire",3,true);_save();hud.show_fusion();return true
+
 func equip_reserve(guardian: String) -> bool:
 	# Only the safe Nursery can change the pair. Opening P elsewhere never grants healing.
 	if not can_evolve() or not Fusion.equip_reserve(campaign,guardian): return false
@@ -770,6 +795,26 @@ func _storm_contact(id: String, origin: Vector3, direction: Vector3, reach: floa
 		if previous.distance_to(point)>.001: link.look_at(point,Vector3.UP)
 		previous=point
 	node.create_tween().tween_interval(.22).finished.connect(node.queue_free)
+
+func _place_bulwark(origin:Vector3,direction:Vector3)->void:
+	var at=origin+direction*4.0
+	var hit=get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(origin+Vector3.UP,at+Vector3.UP,1))
+	if not hit.is_empty():at=hit.position-direction*.6
+	at.y=0.0
+	var marker=effects.decal(at,2.3,Color("8b795c"))
+	for i in range(8):
+		var a=TAU*i/8.0;var rock=Geo.box(marker,Vector3(sin(a)*1.8,.30,cos(a)*1.8),Vector3(.38,.65,.38),Geo.material(Color("8f8069"),.05));rock.rotation.y=a
+	walls.append({"at":at,"ttl":3.6,"tick":0.0,"damage":campaign_damage("wall"),"guardian":"stone","node":marker})
+
+func _stone_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->void:
+	if id=="burst":effects.pulse(origin,reach,Color("bba47b"));return
+	var node=Node3D.new();add_child(node);effects._reserve(node);var mat=Geo.material(Color("c2ae86"),.35,true)
+	var count=3 if id=="claw" else 9
+	for i in range(count):
+		var d=1.1+i*.55
+		if d>reach or not line_clear(origin,origin+direction*d):break
+		var rock=Geo.box(node,origin+direction*d+Vector3.UP*(.25+.05*(i%2)),Vector3(.25,.45,.25),mat);rock.rotation.y=.18*i
+	node.create_tween().tween_interval(.28).finished.connect(node.queue_free)
 
 func sound(cue: String, guardian: String = "fire", priority: int = 1, ui: bool = false) -> void:
 	if is_instance_valid(audio): audio.play_cue(cue,guardian,priority,ui)

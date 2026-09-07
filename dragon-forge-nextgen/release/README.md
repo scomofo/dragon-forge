@@ -58,7 +58,7 @@ PR runs also work without merging. Artifacts expire after 14 days.
 
 ## What the checks establish
 
-Package integrity, executable format, default campaign startup, all 53 models/maps/
+Package integrity, executable format, default campaign startup, all 58 models/maps/
 recordings loadable from the exported pack, all 22 rooms, five imported bosses,
 evolved guardian swaps, runtime audio decoding, older-save migration and exact
 backup preservation. macOS also checks both architectures and the ad-hoc signature.
