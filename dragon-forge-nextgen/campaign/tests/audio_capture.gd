@@ -38,6 +38,11 @@ func run() -> void:
 	var result={"samples":pcm.size(),"rate":wav.mix_rate,"peak":peak,"dropped":tap.get_discarded_frames(),"scope":"Scripted native output-bus capture, not a user-device or full gameplay recording"}
 	var file=FileAccess.open("res://artifacts/tempest/audio-capture.json",FileAccess.WRITE);file.store_string(JSON.stringify(result,"  "));file.close()
 	AudioServer.remove_bus_effect(0,AudioServer.get_bus_effect_count(0)-1)
+	# Let the mixer observe unpaused streams before retiring the test director.
+	# Music is zero, so draining playback cannot emit an audible frame.
+	a.set_value("music",0.0);a.set_value("sfx",0.0);a.set_value("muted",false)
+	a.set_focused(true)
+	await create_timer(.2,true).timeout
 	a.queue_free();a=null;tap=null
 	await create_timer(.15,true).timeout
 	await process_frame
