@@ -23,7 +23,7 @@ Clear each boss, **collect its pedestal core**, take the return portal and insta
 
 ## Combat and growth
 
-Existing polished Magma, four techniques, guard/dodge, foot planting and imported environmental kit are reused. Encounter variants use the Sentinel/Warden models; this pass does **not** supply thirteen unique creature models. Their locked warnings are circles, a beam lane, a three-circle fan and a ring with a safe center. The impact checks use the same locked geometric payloads as the warning display. Normal guardians have a recovery counter window; scouts have no shield. Electrical/thermal floor hazards have a gold warning interval.
+Polished Magma and the earnable Ice guardian Rime each have four techniques, guard/dodge and foot planting; see `GUARDIANS.md` for the rescue, nursery, swap and chill/shatter rules. The imported environmental kit is reused. Encounter variants use the Sentinel/Warden models; this pass does **not** supply thirteen unique creature models. Their locked warnings are circles, a beam lane, a three-circle fan and a ring with a safe center. The impact checks use the same locked geometric payloads as the warning display. Normal guardians have a recovery counter window; scouts have no shield. Electrical/thermal floor hazards have a gold warning interval.
 
 Salvage is earned once per encounter/cache. The Forge anvil offers three permanent three-level upgrades: +20 HP per plating level, +12% technique damage per power level, +4 cooling/sec per cooling level (half while guarding). Prices are 30/60/90 per track. No mandatory farming is required; defeated encounters and recovered caches do not regenerate rewards.
 
@@ -33,7 +33,7 @@ Felix's radio and field records explain the story and mechanics. Read records ar
 
 ## Controls
 
-WASD/arrows move; mouse or right stick aims; 1–4 / X,Y,LB,RB use techniques. Space/A dodges; Shift/LT guards; E/B interacts. Q or the clickable Repair button heals. M / Routes opens the map. N / Journal opens records. Esc/Start pauses. The route map, records, upgrades and menus have native focusable buttons; dedicated controller shortcuts for Q/M/N are not yet provided. Physical-controller acceptance remains open.
+WASD/arrows move; mouse or right stick aims; 1–4 / X,Y,LB,RB use techniques. Space/A dodges; Shift/LT guards; E/B interacts. Q or the clickable Repair button heals the active guardian. Tab / right-stick click swaps to the reserve; P opens Guardians. M / Routes opens the map. N / Journal opens records. Esc/Start pauses. The route map, records, upgrades and menus have native focusable buttons; dedicated controller shortcuts for Q/M/N are not yet provided. Physical-controller acceptance remains open.
 
 ## Saves and compatibility
 
@@ -58,4 +58,4 @@ Visual capture setup seeds prerequisites to inspect sectors independently. It do
 
 ## Boundaries
 
-One controllable dragon. No reserve swapping, full creature collection, fusion/evolution, extra biomes beyond these routes, multiplayer, voiced dialogue, soundtrack integration or standalone executable is supplied. This is a short complete campaign path with the existing asset kit, not the original game's full content port. Durations, balance, target Mac/PC frame times and physical controllers still need human acceptance. Shared polished assets, legacy simulation and validation scenes are not replaced by these campaign adapters.
+Two controllable guardians (Magma and earned Rime) with party swapping; see `GUARDIANS.md`. No full creature collection, fusion/evolution, extra biomes beyond these routes, multiplayer, voiced dialogue, soundtrack integration or standalone executable is supplied. This is a short complete campaign path with the existing asset kit, not the original game's full content port. Durations, balance, target Mac/PC frame times and physical controllers still need human acceptance. Shared polished assets, legacy simulation and validation scenes are not replaced by these campaign adapters.

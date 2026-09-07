@@ -7,6 +7,7 @@ signal ability_used(id: String, origin: Vector3, direction: Vector3)
 signal damaged(amount: float, guarded: bool)
 signal died
 signal hint(text: String)
+var combat_rules = Combat
 var state = Combat.fresh()
 var active = false
 var reduced_motion = false
@@ -32,7 +33,7 @@ func _ready() -> void:
 	collider.shape = capsule
 	collider.position.y = 1.05
 	add_child(collider)
-	rig = Rig.new()
+	rig = create_rig()
 	add_child(rig)
 	guard_ring = Geo.ring(self, Vector3(0, 0.12, 0), 1.05, Geo.material(Geo.CYAN, 1.2, true))
 	guard_ring.visible = false
@@ -67,10 +68,10 @@ func _physics_process(delta: float) -> void:
 	elif mouse_aim:
 		_update_mouse_aim()
 	if state.hp > 0.0 and input_grace <= 0.0:
-		if Input.is_action_just_pressed("ng_dodge") and Combat.dodge(state):
+		if Input.is_action_just_pressed("ng_dodge") and combat_rules.dodge(state):
 			dash_direction = direction.normalized() if direction.length() > 0.1 else aim
 			buffered_id = ""
-		for id in Combat.ORDER:
+		for id in combat_rules.ORDER:
 			if Input.is_action_just_pressed("ng_" + id):
 				try_ability(id)
 	var speed = 2.8 if state.guard else (3.8 if state.action != "" else 6.2)
@@ -103,15 +104,15 @@ func _update_mouse_aim() -> void:
 func try_ability(id: String) -> bool:
 	if not active or get_tree().paused or input_grace > 0.0:
 		return false
-	if not Combat.cast(state, id):
+	if not combat_rules.cast(state, id):
 		# A single bounded input buffer, never a queue of delayed attacks.
-		if Combat.ABILITIES.has(id) and state.hp > 0.0 and not state.guard and state.dash <= 0.0 and state.heat + Combat.heat_cost(state, id) <= 100.0:
-			var wait = maxf(Combat.action_remaining(state), state.cooldowns.get(id, 0.0))
+		if combat_rules.ABILITIES.has(id) and state.hp > 0.0 and not state.guard and state.dash <= 0.0 and state.heat + combat_rules.heat_cost(state, id) <= 100.0:
+			var wait = maxf(combat_rules.action_remaining(state), state.cooldowns.get(id, 0.0))
 			if wait > 0.0 and wait <= BUFFER_WINDOW:
 				buffered_id = id
 				buffer_time = BUFFER_WINDOW
 				return false
-		hint.emit(Combat.rejection(state, id))
+		hint.emit(combat_rules.rejection(state, id))
 		return false
 	committed_aim = aim
 	buffered_id = ""
@@ -120,7 +121,7 @@ func try_ability(id: String) -> bool:
 
 func receive_damage(amount: float) -> float:
 	var guarded: bool = state.guard
-	var applied = Combat.damage(state, amount)
+	var applied = combat_rules.damage(state, amount)
 	if applied > 0.0:
 		rig.hurt(guarded)
 		damaged.emit(applied, guarded)
@@ -129,7 +130,7 @@ func receive_damage(amount: float) -> float:
 	return applied
 
 func respawn(at: Vector3, module: String = "") -> void:
-	state = Combat.fresh(module)
+	state = combat_rules.fresh(module)
 	global_position = at
 	velocity = Vector3.ZERO
 	input_grace = 0.2
@@ -140,12 +141,15 @@ func respawn(at: Vector3, module: String = "") -> void:
 
 ## The authoritative contact clock is simulation-driven, not a tween callback.
 func advance_combat(delta: float, guarding: bool = false) -> void:
-	var impact: String = Combat.tick(state, delta, guarding)
+	var impact: String = combat_rules.tick(state, delta, guarding)
 	if impact != "" and active and state.hp > 0.0:
 		ability_used.emit(impact, global_position, committed_aim)
 	if buffered_id != "":
 		buffer_time -= maxf(delta, 0.0)
 		if buffer_time < 0.0 or state.hp <= 0.0 or guarding or state.dash > 0.0:
 			buffered_id = ""
-		elif Combat.rejection(state, buffered_id) == "":
+		elif combat_rules.rejection(state, buffered_id) == "":
 			try_ability(buffered_id)
+
+func create_rig() -> Node3D:
+	return Rig.new()

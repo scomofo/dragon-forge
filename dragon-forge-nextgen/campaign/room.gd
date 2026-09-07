@@ -15,6 +15,8 @@ var color = Color("ecb270")
 var core_node: Node3D
 var egg: Node3D
 var badge_nodes: Array = []
+const IceEgg = preload("res://campaign/guardians/ice_egg.glb")
+var ice_egg: Node3D
 
 func build(data: Dictionary) -> void:
 	definition = data
@@ -137,6 +139,8 @@ func _interactables() -> void:
 		_station("forge", "CORES / MODULES", Vector3(5,0,5), "core_socket")
 		_station("upgrade", "FORGE UPGRADES", Vector3(-7,0,2), "anvil")
 		_station("lore", "FELIX / RADIO", Vector3(7,0,-5), "relay_conduit")
+		var ice_ring=_station("hatch_ice", "GUARDIAN NURSERY",Vector3(6,0,8),"incubator")
+		ice_egg=IceEgg.instantiate();ice_ring.add_child(ice_egg)
 		_add_door({"to":"map", "at":[0,0,-14], "label":"EXPEDITIONS  [E]"})
 		for i in range(4):
 			var p = Vector3(-5+i*3.3,0,-8)
@@ -149,6 +153,9 @@ func _interactables() -> void:
 	elif definition.role == "cache":
 		_station("cache", "SALVAGE CACHE", Vector3(0,0,-6), "core_socket")
 		_station("lore", "RECOVERED RECORD", Vector3(-6,0,0), "relay_conduit")
+		if definition.id=="frozen-vault":
+			var plinth=_station("ice_egg","RESCUE ICE EGG",Vector3(6,0,-4),"incubator")
+			ice_egg=IceEgg.instantiate();plinth.add_child(ice_egg)
 	elif definition.role in ["boss","final"]:
 		core_node = _station("finish" if definition.role=="final" else "core", "RECONNECT" if definition.role=="final" else "SECTOR CORE",Vector3(0,0,-19),"core_socket")
 		Geo.orb(core_node,Vector3(0,1.7,0),0.4,Geo.material(color,1.5,true))
@@ -198,6 +205,10 @@ func _art_direction() -> void:
 			Geo.ring(self,Vector3(side*13,5,-22.3),1.6,Geo.material(color,0.5,true)).rotation.x=PI/2
 
 func refresh(state: Dictionary) -> void:
+	if is_instance_valid(ice_egg):
+		ice_egg.visible=(not state.get("ice_rescued",false)) if definition.id=="frozen-vault" else (state.get("ice_rescued",false) and not state.get("guardians",["fire"]).has("ice"))
+	for station in stations:
+		if station.kind=="ice_egg":station.node.visible=not state.get("ice_rescued",false)
 	if is_instance_valid(egg):
 		egg.visible = not state.hatched
 	for i in range(badge_nodes.size()):

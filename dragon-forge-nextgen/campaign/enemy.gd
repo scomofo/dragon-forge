@@ -24,6 +24,7 @@ var shape: Dictionary = {}
 var pattern = "slam"
 var warmup = 0.8
 var hit_time = 0.0
+var chilled = 0.0
 
 func _ready() -> void:
 	boss = spec.get("boss", false)
@@ -62,6 +63,8 @@ func _physics_process(delta: float) -> void:
 	if target.state.hp <= 0.0:
 		tell.visible = false
 		return
+	chilled=maxf(0.0,chilled-delta)
+	label.text=spec.get("name","Guardian")+(" / CHILLED" if chilled>0.0 else "")
 	warmup = maxf(0, warmup - delta)
 	brain.enraged = boss and hp <= max_hp * 0.5
 	var toward: Vector3 = target.global_position - global_position
@@ -84,6 +87,8 @@ func _physics_process(delta: float) -> void:
 		direction = navigation.direction_to(global_position, target.global_position)
 	velocity.x = direction.x * (2.8 if brain.enraged else 2.3)
 	velocity.z = direction.z * (2.8 if brain.enraged else 2.3)
+	velocity.x *= (0.6 if chilled>0.0 else 1.0)
+	velocity.z *= (0.6 if chilled>0.0 else 1.0)
 	velocity.y = -1 if is_on_floor() else velocity.y - 25 * delta
 	move_and_slide()
 	if brain.mode == "seek" and toward.length() > 0.1:
@@ -158,3 +163,14 @@ func take_hit(amount: float, bypass_shield: bool = false) -> float:
 func overload() -> void:
 	brain.open_window(2.4)
 	take_hit(55.0, true)
+
+func element_hit(amount: float,guardian: String,id: String) -> float:
+	var shatter = guardian=="fire" and id!="wall" and chilled>0.0
+	var actual=take_hit(amount*(1.4 if shatter else 1.0))
+	if actual<=0.0:return 0.0
+	if shatter:
+		chilled=0.0
+		hit_feedback.emit(global_position,"SHATTER",false)
+	elif guardian=="ice" and id in ["breath","wall"] and hp>0.0:
+		chilled=3.0
+	return actual

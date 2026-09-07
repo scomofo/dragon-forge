@@ -5,12 +5,17 @@ const Modules = preload("res://sim/forge_modules.gd")
 const UPGRADE_IDS = ["plating", "power", "cooling"]
 
 static func fresh() -> Dictionary:
-	return {"version": 1, "hatched": false, "room": "forge", "visited": ["forge"], "cleared": [], "relays": [], "caches": [], "journals": [], "cores": [], "installed": [], "salvage": 0, "upgrades": {"plating": 0, "power": 0, "cooling": 0}, "module": "", "finished": false, "legacy_imported": false}
+	return {"version": 2, "guardians": ["fire"], "active_guardian": "fire", "ice_rescued": false, "hatched": false, "room": "forge", "visited": ["forge"], "cleared": [], "relays": [], "caches": [], "journals": [], "cores": [], "installed": [], "salvage": 0, "upgrades": {"plating": 0, "power": 0, "cooling": 0}, "module": "", "finished": false, "legacy_imported": false}
 
 static func normalize(value: Variant) -> Dictionary:
 	if not value is Dictionary:
 		return {}
 	var s: Dictionary = value.duplicate(true)
+	if s.get("version", 0) == 1:
+		s.version = 2
+		s.guardians = ["fire"]
+		s.active_guardian = "fire"
+		s.ice_rescued = false
 	var template = fresh()
 	for key in template:
 		if not s.has(key):
@@ -19,9 +24,9 @@ static func normalize(value: Variant) -> Dictionary:
 		if not _integer(s[key], 0, 1000000):
 			return {}
 		s[key] = int(s[key])
-	if s.version != 1:
+	if s.version != 2:
 		return {}
-	for key in ["hatched", "finished", "legacy_imported"]:
+	for key in ["hatched", "finished", "legacy_imported", "ice_rescued"]:
 		if not s[key] is bool:
 			return {}
 	if not s.room is String or not Data.ROOMS.has(s.room) or not s.module is String or (s.module != "" and not Modules.valid(s.module)):
@@ -60,6 +65,16 @@ static func normalize(value: Variant) -> Dictionary:
 	if s.finished and (s.installed.size() != 4 or not s.cleared.has("singularity-final")):
 		return {}
 	if not s.hatched and (s.room != "forge" or not s.cleared.is_empty() or not s.cores.is_empty()):
+		return {}
+	if not s.guardians is Array or s.guardians.is_empty() or s.guardians.size() > 2 or s.guardians[0] != "fire":
+		return {}
+	if s.guardians.size() == 2 and s.guardians[1] != "ice":
+		return {}
+	if not s.active_guardian is String or not s.guardians.has(s.active_guardian):
+		return {}
+	if s.ice_rescued and (not s.hatched or not s.visited.has("frozen-vault")):
+		return {}
+	if s.guardians.has("ice") and not s.ice_rescued:
 		return {}
 	return s
 
@@ -160,4 +175,16 @@ static func finish(s: Dictionary) -> bool:
 	if s.finished or s.room != "singularity" or s.installed.size() != 4 or not s.cleared.has("singularity-final"):
 		return false
 	s.finished = true
+	return true
+
+static func rescue_ice(s: Dictionary) -> bool:
+	if not s.hatched or s.room != "frozen-vault" or s.ice_rescued:
+		return false
+	s.ice_rescued = true
+	return true
+
+static func hatch_ice(s: Dictionary) -> bool:
+	if s.room != "forge" or not s.ice_rescued or s.guardians.has("ice"):
+		return false
+	s.guardians.append("ice")
 	return true
