@@ -84,7 +84,10 @@ func run() -> void:
 	for frame in pcm:peak=maxf(peak,maxf(absf(frame.x),absf(frame.y)))
 	check(pcm.size()>100 and peak<.00001,"mute gives silent sampled output after mixer latency")
 	AudioServer.remove_bus_effect(0,AudioServer.get_bus_effect_count(0)-1)
-	a.queue_free();await frames()
+	# Drain unpaused (but silent) playback before removing the test-only buses.
+	a.set_value("music",0.0);a.set_value("sfx",0.0);a.set_value("muted",false);a.set_focused(true)
+	await wait(.2)
+	a.queue_free();await wait(.2);await frames()
 	check(AudioServer.bus_count==count,"director cleanup leaves no private buses")
 	var w=World.new();w.test_mode=true;root.add_child(w);await frames()
 	a=Director.new();a.test_mode=true;a.source=w;w.audio=a;w.add_child(a)
@@ -105,6 +108,10 @@ func run() -> void:
 	check(a.event_counts.get("launch",0)==1,"real accepted ability starts launch cue")
 	w.dragon.advance_combat(.23)
 	check(a.event_counts.get("breath",0)==1,"real ability contact emits elemental effect")
-	w.hud.close_overlay();w.queue_free();await frames()
+	w.hud.close_overlay()
+	a.set_value("music",0.0);a.set_value("sfx",0.0);a.set_value("muted",false);a.set_focused(true)
+	await wait(.2)
+	w.queue_free();a=null;w=null;capture=null
+	await wait(.2);await frames()
 	print("AUDIO_TESTS: %d checks, %d failures" % [checks,failures])
 	quit(1 if failures else 0)
