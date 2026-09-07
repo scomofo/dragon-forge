@@ -27,8 +27,9 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import base64, hashlib, pathlib, subprocess, zlib
-          parts=[pathlib.Path(f'.trials-transfer/{i:02d}.b64') for i in range(3)]
-          assert all(p.exists() for p in parts), 'three complete transfer chunks required'
+          names=['00.b64','01.b64','01b.b64','02.b64']
+          parts=[pathlib.Path('.trials-transfer')/name for name in names]
+          assert all(p.exists() for p in parts), 'complete transfer chunks required'
           encoded=''.join(p.read_text().strip() for p in parts)
           assert len(encoded)==21528, f'unexpected encoded length {len(encoded)}'
           payload=zlib.decompress(base64.b64decode(encoded,validate=True))
