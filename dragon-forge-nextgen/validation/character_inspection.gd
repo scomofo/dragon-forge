@@ -3,7 +3,7 @@ extends Node3D
 const Art = preload("res://presentation/art_library.gd")
 const UI = preload("res://validation/review_ui.gd")
 const Probe = preload("res://validation/foot_review.gd")
-const ACTORS = ["magma_guardian", "firewall_sentinel", "packet_warden", "ice_guardian", "magma_evolved", "rime_evolved"]
+const ACTORS = ["magma_guardian", "firewall_sentinel", "packet_warden", "ice_guardian", "magma_evolved", "rime_evolved", "storm_guardian"]
 const VIEWS = ["Full body", "Shoulders", "Hips / feet", "Jaw / head", "Rear / tail"]
 var model: Node3D
 var skeleton: Skeleton3D
@@ -99,7 +99,7 @@ func _build_controls() -> void:
 	var box = UI.panel(layer, Vector2(18, 18), 296)
 	UI.text(box, "CHARACTER / INSPECTION", 19)
 	UI.text(box, "Actual imported art • save-safe", 12)
-	UI.picker(box, ["Magma guardian", "Firewall Sentinel", "Packet Warden", "Rime / Ice guardian", "Crowned Magma / Evolved", "Aurora Rime / Evolved"], load_actor)
+	UI.picker(box, ["Magma guardian", "Firewall Sentinel", "Packet Warden", "Rime / Ice guardian", "Crowned Magma / Evolved", "Aurora Rime / Evolved", "Arc / Storm fusion"], load_actor)
 	clip_picker = UI.picker(box, [], select_clip)
 	var transport = UI.row(box)
 	play_button = UI.button(transport, "Pause", toggle_play)
@@ -135,6 +135,9 @@ func load_actor(index: int) -> void:
 		add_child(model)
 	elif actor_id in ["ice_guardian","rime_evolved"]:
 		model=preload("res://campaign/guardians/ice_guardian.glb").instantiate()
+		add_child(model)
+	elif actor_id == "storm_guardian":
+		model = preload("res://campaign/fusion_assets/storm_guardian.glb").instantiate()
 		add_child(model)
 	else:
 		model = Art.place(self, actor_id)

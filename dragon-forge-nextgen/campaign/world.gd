@@ -10,6 +10,7 @@ const CampaignHud = preload("res://campaign/hud.gd")
 const Patterns = preload("res://campaign/patterns.gd")
 const GuardianCombat = preload("res://campaign/guardian_combat.gd")
 const GuardianParty = preload("res://campaign/party.gd")
+const Fusion = preload("res://campaign/fusion.gd")
 const Growth = preload("res://campaign/growth.gd")
 var party = GuardianParty.new()
 var campaign = CampaignRules.fresh()
@@ -249,6 +250,8 @@ func interaction() -> String:
 		return ""
 	match item.kind:
 		"hatch":return "Rest / refill repair charges" if campaign.hatched else "Hatch Magma and begin your journey"
+		"fusion":return "Resonance Fusion / Fire + Ice = Storm"
+		"lattice":return "Recover the conductor lattice"
 		"ice_egg":return "Rescue the frozen guardian egg"
 		"hatch_ice":return "Hatch Rime / Ice guardian" if campaign.ice_rescued and not campaign.guardians.has("ice") else "Guardian Nursery / evolution"
 		"rest":return "Rest / refill repair charges"
@@ -283,6 +286,11 @@ func interact() -> void:
 				hud.toast("Magma is awake. Head north to EXPEDITIONS or press M to choose Outer Grid.")
 			else:
 				rest()
+		"fusion":hud.show_fusion()
+		"lattice":
+			if Fusion.recover(campaign):
+				_save()
+				hud.show_lattice_recovered()
 		"ice_egg":
 			if CampaignRules.rescue_ice(campaign):
 				_save()
@@ -344,7 +352,7 @@ func rest() -> void:
 	dragon.buffered_id=""
 	dragon.buffer_time=0.0
 	repairs=2
-	hud.toast("Rested. Both guardians revived, cores cooled, two shared repair charges.")
+	hud.toast("Rested. Expedition pair revived, cores cooled, two shared repair charges.")
 
 func repair() -> bool:
 	if get_tree().paused or title_open or not dragon.active or repairs<=0 or dragon.state.hp<=0 or dragon.state.hp>=dragon.state.max_hp:
@@ -394,8 +402,10 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 	if id=="wall":
 		if owner_id=="fire":
 			_place_wall(origin,direction)
-		else:
+		elif owner_id=="ice":
 			_place_frost(origin,direction)
+		else:
+			_place_static(origin,direction)
 		walls[-1].damage=campaign_damage(id)
 		walls[-1].guardian=owner_id
 		walls[-1].ttl=GuardianCombat.field_duration(dragon.state)
@@ -404,6 +414,11 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 	for actor in enemies.duplicate():
 		if is_instance_valid(actor) and Combat.in_cone(origin,direction,actor.global_position,rule.range,rule.cone) and line_clear(origin,actor.global_position):
 			actor.element_hit(campaign_damage(id),owner_id,id,GuardianCombat.chill_duration(dragon.state))
+	if owner_id=="storm":
+		_storm_contact(id,origin,direction,rule.range)
+		if id=="breath" and not conduits.is_empty():
+			hud.toast("Thermal relays need Magma. Change your expedition pair at the Forge Nursery if Fire is benched.")
+		return
 	if owner_id=="ice":
 		_ice_contact(id,origin,direction,rule.range)
 		if id=="breath" and not conduits.is_empty():
@@ -536,6 +551,10 @@ func guidance() -> Dictionary:
 		target=Vector3(-2,0,8)
 		marker="HATCH MAGMA"
 	elif r.role=="forge":
+		if campaign.storm_forged and not campaign.guardians.has("storm"):
+			return {"title":"A Storm guardian is ready to hatch", "detail":"Visit Resonance Fusion on the left to hatch Arc. Your current expedition pair stays unchanged.","target":Fusion.STATION,"marker":"HATCH ARC","index":mini(campaign.installed.size(),5)}
+		if not campaign.storm_forged and Fusion.reason(campaign) == "" and campaign.cores.size() == campaign.installed.size():
+			return {"title":"Fire and Ice can forge a third guardian", "detail":"Take the conductor lattice to Resonance Fusion on the left. The parents and their growth are preserved.","target":Fusion.STATION,"marker":"FUSION READY","index":mini(campaign.installed.size(),5)}
 		if campaign.ice_rescued and not campaign.guardians.has("ice"):
 			return {"title":"Awaken the Ice guardian", "detail":"Bring the rescued egg to the cyan incubator on the right. Rime joins Magma without replacing him.","target":Vector3(6,0,8),"marker":"HATCH RIME","index":mini(campaign.installed.size(),5)}
 		if Growth.ready_guardian(campaign) != "" and campaign.cores.size() == campaign.installed.size():
@@ -576,6 +595,11 @@ func guidance() -> Dictionary:
 		detail="The reset has stopped. Reconnect its heart at the pedestal."
 		target=Vector3(0,0,-19)
 		marker="RECONNECT"
+	elif r.id=="capacitor-cache" and not campaign.lattice_recovered:
+		title="A way to stabilize Fire and Ice"
+		detail="Recover the conductor lattice from the right-hand plinth. Evolved Magma and Rime can create Arc at the Forge."
+		target=Fusion.LATTICE
+		marker="CONDUCTOR LATTICE"
 	elif r.id=="frozen-vault" and not campaign.ice_rescued:
 		title="A second heartbeat in the ice"
 		detail="Rescue the egg from the cyan plinth. Return to the Forge to hatch Rime, your first reserve guardian."
@@ -611,7 +635,7 @@ func swap_guardian(target: String = "", forced: bool = false) -> bool:
 	campaign.active_guardian=target
 	get_viewport().gui_release_focus()
 	_save()
-	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", "Chill, then swap to Magma to shatter." if target=="ice" else "Fire shatters chilled enemies on a direct hit.")
+	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", {"ice":"Chill, then swap to Magma to shatter.", "fire":"Fire shatters chilled enemies on a direct hit.", "storm":"Charge with Arc Lance or Static Well. Discharge with technique 4."}.get(target, ""))
 	return true
 
 func _on_guardian_down() -> void:
@@ -660,3 +684,58 @@ func choose_evolution(guardian: String, specialization: String) -> bool:
 	rest()
 	hud.show_evolution_result(guardian)
 	return true
+
+func can_fuse() -> bool:
+	return not entering and not title_open and campaign.room == "forge" and dragon.active and dragon.state.hp > 0.0 and dragon.state.action == "" and dragon.state.dash <= 0.0 and dragon.position.distance_to(Fusion.STATION) < 3.4
+
+func forge_storm() -> bool:
+	if not can_fuse() or not Fusion.forge(campaign): return false
+	_save()
+	hud.show_fusion()
+	return true
+
+func hatch_storm() -> bool:
+	if not can_fuse() or not Fusion.hatch(campaign): return false
+	_save()
+	hud.show_fusion()
+	return true
+
+func equip_reserve(guardian: String) -> bool:
+	# Only the safe Nursery can change the pair. Opening P elsewhere never grants healing.
+	if not can_evolve() or not Fusion.equip_reserve(campaign,guardian): return false
+	_save()
+	rest()
+	hud.show_party()
+	return true
+
+func _place_static(origin: Vector3, direction: Vector3) -> void:
+	var at=origin+direction*4.0
+	var hit=get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(origin+Vector3.UP,at+Vector3.UP,1))
+	if not hit.is_empty(): at=hit.position-direction*.6
+	at.y=0.0
+	var marker=effects.decal(at,2.3,Color("aa96e0"))
+	Geo.ring(marker,Vector3.UP*.05,2.3,Geo.material(Color("c3b0f7"),.5,true),.055)
+	walls.append({"at":at,"ttl":3.6,"tick":0.0,"damage":campaign_damage("wall"),"guardian":"storm","node":marker})
+
+func _storm_contact(id: String, origin: Vector3, direction: Vector3, reach: float) -> void:
+	if id=="burst":
+		effects.pulse(origin,reach,Color("b9a0ef"))
+		return
+	var node=Node3D.new()
+	add_child(node)
+	effects._reserve(node)
+	var material=Geo.material(Color("aeb7ff"),.8,true)
+	var previous=dragon.rig.muzzle_position()
+	var sideways=direction.cross(Vector3.UP)
+	var travel_distance=0.0
+	for i in range(1,17 if id=="breath" else 5):
+		var d=maxf(.5, (previous-origin).dot(direction))+.5 if i==1 else travel_distance+.5
+		travel_distance=d
+		if d>reach or not line_clear(origin,origin+direction*d): break
+		var point=origin+direction*d
+		point.y=previous.y
+		point+=sideways*(0.0 if reduced_motion else (.13 if i%2 else -.13))
+		var link=Geo.box(node,(previous+point)*.5,Vector3(.045,.045,previous.distance_to(point)),material)
+		if previous.distance_to(point)>.001: link.look_at(point,Vector3.UP)
+		previous=point
+	node.create_tween().tween_interval(.22).finished.connect(node.queue_free)

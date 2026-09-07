@@ -1,4 +1,5 @@
 extends "res://presentation/hud.gd"
+const Fusion = preload("res://campaign/fusion.gd")
 const Growth = preload("res://campaign/growth.gd")
 const Data = preload("res://campaign/data.gd")
 const Rules = preload("res://campaign/progress.gd")
@@ -60,6 +61,9 @@ func _process(delta: float) -> void:
 		var card: Dictionary=abilities[i]
 		card.button.get_child(0).get_child(0).text=str(i+1)+"   "+rule.name
 		card.cost.text="%d damage / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
+		if active_id=="storm":
+			if id in ["breath","wall"]: card.cost.text="%d + CHARGE / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
+			elif id=="burst": card.cost.text="%d / +50%% vs charge / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 		if active_id=="ice":
 			if id=="breath":card.cost.text="%d + CHILL / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 			elif id=="wall":card.cost.text="%d/tick + CHILL / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
@@ -91,6 +95,8 @@ func _update_enemy() -> void:
 		enemy_readout.text="UNSHIELDED  /  ATTACK BETWEEN ITS TELLS"
 	if foe.chilled>0.0:
 		enemy_readout.text+="  /  CHILLED %.1fs" % foe.chilled
+	if foe.charged>0.0:
+		enemy_readout.text+="  /  CHARGED %.1fs" % foe.charged
 	if foe.spec.id=="singularity-final":
 		enemy_name.text+="  /  PHASE %d" % (1 if foe.hp>foe.max_hp*0.66 else (2 if foe.hp>foe.max_hp*0.33 else 3))
 
@@ -141,8 +147,8 @@ func show_title() -> void:
 	_open_overlay("title")
 	_label(overlay_column,"DRAGON FORGE",42,GOLD)
 	_label(overlay_column,"RECONNECTION",25,TEAL)
-	_wrapped(overlay_column,"A compact playable campaign through four broken sectors. Restore their cores. Rescue a second guardian. Fight together. Stop the Great Reset.",20)
-	_label(overlay_column,"GUARDIAN EVOLUTION   /   22 ROOMS   /   ICE + FIRE TEAM COMBAT",14,MUTED)
+	_wrapped(overlay_column,"A compact playable campaign through four broken sectors. Restore their cores. Rescue, evolve and fuse guardians. Choose your expedition pair. Stop the Great Reset.",20)
+	_label(overlay_column,"RESONANCE FUSION   /   22 ROOMS   /   THREE GUARDIANS, TWO FIELD SLOTS",14,MUTED)
 	var start=_button(overlay_column,"Continue campaign" if world.store.existed or world.has_started else "Begin campaign")
 	start.pressed.connect(func():world.begin_campaign(false))
 	start.grab_focus()
@@ -343,30 +349,43 @@ func show_egg_rescued() -> void:
 func show_party() -> void:
 	if world.title_open:return
 	_open_overlay("party")
-	_label(overlay_column,"YOUR GUARDIANS / BOND %s" % ["I", "II", "III"][Growth.rank(world.campaign)-1],28,TEAL)
-	_label(overlay_column,"%d bond / 280 to evolve   •   First clears, caches and restored cores count for both guardians." % Growth.points(world.campaign),15,GOLD)
-	_wrapped(overlay_column,"Tab or right-stick click swaps in combat. Each guardian keeps its own health, core heat and cooldowns. No reserve healing. Shelters revive the whole party.",16,PAPER)
+	_label(overlay_column,"GUARDIANS / CHOOSE YOUR EXPEDITION PAIR",27,TEAL)
+	_label(overlay_column,"BOND %s / %d points   •   One active + one reserve. Bench changes at the Forge Nursery." % [["I","II","III"][Growth.rank(world.campaign)-1],Growth.points(world.campaign)],15,GOLD)
 	var row=HBoxContainer.new()
-	row.add_theme_constant_override("separation",18)
+	row.add_theme_constant_override("separation",14)
 	overlay_column.add_child(row)
-	for id in ["fire","ice"]:
-		var card=_panel(row);card.custom_minimum_size.x=477
-		var col=_column(card,10)
+	for id in ["fire","ice","storm"]:
+		var card=_panel(row);card.custom_minimum_size.x=315
+		var col=_column(card,9)
 		var owned: bool=world.campaign.guardians.has(id)
-		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),24,GOLD if id=="fire" else TEAL)
-		_label(col,("ACTIVE" if world.party.active_id==id else "RESERVE") if owned else ("EGG RESCUED" if world.campaign.ice_rescued else "UNDISCOVERED"),14,MUTED)
+		var selected: bool=world.party.states.has(id)
+		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa")}[id])
+		_label(col,("ACTIVE" if world.party.active_id==id else ("RESERVE" if selected else "AT THE FORGE")) if owned else "NOT RECRUITED",14,MUTED)
 		if owned:
-			var state: Dictionary=world.party.states.get(id,{})
-			if not state.is_empty():_label(col,"%d/%d health  /  %d heat" % [roundi(state.hp),roundi(state.max_hp),roundi(state.heat)],16,PAPER)
+			if selected:
+				var state: Dictionary=world.party.states[id]
+				_label(col,"%d/%d HP / %d heat" % [roundi(state.hp),roundi(state.max_hp),roundi(state.heat)],15,PAPER)
+			else:
+				_label(col,"Not in the expedition",15,MUTED)
 			for slot in GuardianCombat.ORDER:
-				var kit: Dictionary=GuardianCombat.rule({"guardian":id,"evolution":Growth.choice(world.campaign,id)},slot)
-				_label(col,kit.name,17,PAPER)
-			_wrapped(col,"Fire powers the heat relays. Direct fire hits shatter CHILLED for 40% bonus damage once." if id=="fire" else "Rime Lance and Permafrost chill on a landed hit. Crystal Aegis protects Rime for %d seconds." % (6 if Growth.choice(world.campaign,id)=="aegis" else 4),16,MUTED,436)
-			var evolve_button = _button(col, "Evolution / " + (Growth.TRAITS[Growth.choice(world.campaign,id)].name if Growth.choice(world.campaign,id) != "" else ("READY" if Growth.reason(world.campaign,id) == "" else "View requirements")))
-			evolve_button.pressed.connect(func():show_growth(id))
+				_label(col,GuardianCombat.rule({"guardian":id,"evolution":Growth.choice(world.campaign,id)},slot).name,17,PAPER)
+			var tips={"fire":"Powers heat relays. Direct Fire hits shatter Chill for +40% once.","ice":"Chills exposed enemies. Aegis protects Rime, even after swapping.","storm":"Lance / Well charge enemies. Discharge consumes Charge for +50% once."}
+			_wrapped(col,tips[id],16,MUTED,272)
+			if not selected:
+				var equip=_button(col,"Equip as reserve")
+				equip.disabled=not world.can_evolve()
+				equip.pressed.connect(func():world.equip_reserve(id))
+			if id!="storm":
+				var evolve=_button(col,"Evolution / " + (Growth.TRAITS[Growth.choice(world.campaign,id)].name if Growth.choice(world.campaign,id)!="" else "Requirements"))
+				evolve.pressed.connect(func():show_growth(id))
+			else:
+				_label(col,"Fusion form / no evolution yet",14,MUTED)
+		elif id=="ice":
+			_wrapped(col,"Rescue the Ice egg in Frozen Vault. Return to the right-hand Nursery to hatch Rime for free.",17,PAPER,272)
 		else:
-			_wrapped(col,"Bring the rescued egg to the cyan nursery on the right of the Forge, then press E." if world.campaign.ice_rescued else "Restore Outer Grid. In Frozen Cache, defeat the Thaw Guardian and explore the side passage to Frozen Vault. Rescue its egg and hatch it at the Forge.",18,PAPER,436)
-	_wrapped(overlay_column,"COMBO / Land Ice on an exposed enemy → swap to Magma → land a direct Fire hit before the chill expires. Shields still block both elements. The two guardians share repair charges and permanent Forge upgrades.",16,TEAL)
+			_wrapped(col,"Evolve both parents. Recover the conductor lattice in Capacitor Cache. Fire + Ice creates Storm; neither parent is lost.",17,PAPER,272)
+			_button(col,"View fusion recipe").pressed.connect(show_fusion)
+	_wrapped(overlay_column,"Tab swaps your active/reserve pair, not the benched guardian. A benched dragon cannot rescue a downed party. To change the pair, visit the right-hand Nursery; keep Magma for thermal relays.",16,TEAL)
 	_button(overlay_column,"Back to the world / P").pressed.connect(close_overlay)
 
 func show_growth(guardian: String) -> void:
@@ -414,3 +433,39 @@ func show_evolution_result(guardian: String) -> void:
 	if world.store.message != "":
 		_wrapped(overlay_column,world.store.message,16,GOLD)
 	_button(overlay_column,"Return to the Forge").pressed.connect(close_overlay)
+
+func show_lattice_recovered() -> void:
+	_open_overlay("lattice")
+	_label(overlay_column,"A CIRCUIT FOR TWO HEARTBEATS",31,Color("c4b1fa"))
+	_wrapped(overlay_column,"The conductor lattice can stabilize Fire and Ice into Storm. Felix: ‘We borrow a spark from each guardian. We do not erase either of them.’",21,PAPER)
+	_wrapped(overlay_column,"Rescue saved. Evolve Magma and Rime, then visit Resonance Fusion on the left of the Forge. This lattice is separate from the salvage cache, so earlier visits do not lock you out.",18,MUTED)
+	_button(overlay_column,"Return to the Forge").pressed.connect(func():world.return_to_forge())
+	_button(overlay_column,"Keep exploring").pressed.connect(close_overlay)
+
+func show_fusion() -> void:
+	if world.title_open:return
+	_open_overlay("fusion")
+	_label(overlay_column,"RESONANCE FUSION / FIRE + ICE = STORM",29,Color("c4b1fa"))
+	_wrapped(overlay_column,"Combine a spark from Crowned Magma and Aurora Rime in the conductor lattice to create ARC, a hovering Storm drake. The parents, their evolution choices and your salvage are preserved.",19,PAPER)
+	var c: Dictionary=world.campaign
+	var ready=Fusion.reason(c)
+	if c.guardians.has("storm"):
+		_label(overlay_column,"ARC HAS JOINED YOUR COLLECTION",23,TEAL)
+		_wrapped(overlay_column,"Your expedition pair has not changed. Visit the Guardian Nursery on the right to equip Arc as reserve, then Tab to take point. Choose Fire + Storm or Ice + Storm; only two guardians travel at once.",19,PAPER)
+	elif c.storm_forged:
+		_label(overlay_column,"STORM EGG STABILIZED / READY TO HATCH",23,TEAL)
+		var hatch=_button(overlay_column,"Hatch Arc / free")
+		hatch.disabled=not world.can_fuse()
+		hatch.pressed.connect(func():world.hatch_storm())
+	else:
+		for item in [[Growth.choice(c,"fire")!="","Crowned Magma"],[Growth.choice(c,"ice")!="","Aurora Rime"],[c.lattice_recovered,"Conductor lattice / Capacitor Cache"]]:
+			_label(overlay_column,("READY / " if item[0] else "NEEDED / ")+item[1],18,TEAL if item[0] else MUTED)
+		_wrapped(overlay_column,ready if ready!="" else ("READY / Free, permanent, one-time recipe. No random failure or parent sacrifice." if world.can_fuse() else "Visit Resonance Fusion on the left of the Forge to create the egg."),18,GOLD)
+		var forge=_button(overlay_column,"Create Storm egg / keep both parents")
+		forge.disabled=ready!="" or not world.can_fuse()
+		forge.pressed.connect(func():world.forge_storm())
+	_wrapped(overlay_column,"ARC / Spark Talon • Arc Lance • Static Well • Tempest Discharge
+Lance and Well apply four seconds of Charge on landed hits. Discharge consumes it for +50% damage once. Closed shields still block all three.",17,MUTED)
+	if world.store.message!="":_wrapped(overlay_column,world.store.message,16,GOLD)
+	_button(overlay_column,"Back to Guardians").pressed.connect(show_party)
+	_button(overlay_column,"Back to the world").pressed.connect(close_overlay)

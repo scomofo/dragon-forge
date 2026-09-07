@@ -3,10 +3,11 @@ extends RefCounted
 const Data = preload("res://campaign/data.gd")
 const Modules = preload("res://sim/forge_modules.gd")
 const Growth = preload("res://campaign/growth.gd")
+const Fusion = preload("res://campaign/fusion.gd")
 const UPGRADE_IDS = ["plating", "power", "cooling"]
 
 static func fresh() -> Dictionary:
-	return {"version": 3, "evolutions": {"fire": "", "ice": ""}, "guardians": ["fire"], "active_guardian": "fire", "ice_rescued": false, "hatched": false, "room": "forge", "visited": ["forge"], "cleared": [], "relays": [], "caches": [], "journals": [], "cores": [], "installed": [], "salvage": 0, "upgrades": {"plating": 0, "power": 0, "cooling": 0}, "module": "", "finished": false, "legacy_imported": false}
+	return {"version": 4, "lattice_recovered": false, "storm_forged": false, "loadout": [], "evolutions": {"fire": "", "ice": ""}, "guardians": ["fire"], "active_guardian": "fire", "ice_rescued": false, "hatched": false, "room": "forge", "visited": ["forge"], "cleared": [], "relays": [], "caches": [], "journals": [], "cores": [], "installed": [], "salvage": 0, "upgrades": {"plating": 0, "power": 0, "cooling": 0}, "module": "", "finished": false, "legacy_imported": false}
 
 static func normalize(value: Variant) -> Dictionary:
 	if not value is Dictionary:
@@ -20,6 +21,11 @@ static func normalize(value: Variant) -> Dictionary:
 	if s.get("version", 0) == 2:
 		s.version = 3
 		s.evolutions = {"fire": "", "ice": ""}
+	if s.get("version", 0) == 3:
+		s.version = 4
+		s.lattice_recovered = false
+		s.storm_forged = false
+		s.loadout = []
 	var template = fresh()
 	for key in template:
 		if not s.has(key):
@@ -28,9 +34,9 @@ static func normalize(value: Variant) -> Dictionary:
 		if not _integer(s[key], 0, 1000000):
 			return {}
 		s[key] = int(s[key])
-	if s.version != 3:
+	if s.version != 4:
 		return {}
-	for key in ["hatched", "finished", "legacy_imported", "ice_rescued"]:
+	for key in ["hatched", "finished", "legacy_imported", "ice_rescued", "lattice_recovered", "storm_forged"]:
 		if not s[key] is bool:
 			return {}
 	if not s.room is String or not Data.ROOMS.has(s.room) or not s.module is String or (s.module != "" and not Modules.valid(s.module)):
@@ -70,9 +76,9 @@ static func normalize(value: Variant) -> Dictionary:
 		return {}
 	if not s.hatched and (s.room != "forge" or not s.cleared.is_empty() or not s.cores.is_empty()):
 		return {}
-	if not s.guardians is Array or s.guardians.is_empty() or s.guardians.size() > 2 or s.guardians[0] != "fire":
+	if not s.guardians is Array or s.guardians.is_empty() or s.guardians.size() > 3 or s.guardians[0] != "fire":
 		return {}
-	if s.guardians.size() == 2 and s.guardians[1] != "ice":
+	if s.guardians.size() >= 2 and s.guardians[1] != "ice":
 		return {}
 	if not s.active_guardian is String or not s.guardians.has(s.active_guardian):
 		return {}
@@ -88,6 +94,23 @@ static func normalize(value: Variant) -> Dictionary:
 			return {}
 		if specialization != "" and Growth.reason(s, guardian) != "":
 			return {}
+	if s.guardians.size() == 3 and s.guardians[2] != "storm":
+		return {}
+	if s.lattice_recovered and (not s.hatched or not s.visited.has("capacitor-cache")):
+		return {}
+	if s.storm_forged and Fusion.reason(s) != "":
+		return {}
+	if s.guardians.has("storm") and not s.storm_forged:
+		return {}
+	if not s.loadout is Array:
+		return {}
+	if s.loadout.is_empty():
+		if s.guardians.size() > 2: return {}
+	elif s.loadout.size() != 2 or s.loadout[0] == s.loadout[1]:
+		return {}
+	for guardian in s.loadout:
+		if not guardian is String or not s.guardians.has(guardian): return {}
+	if not Fusion.members(s).has(s.active_guardian): return {}
 	return s
 
 static func _integer(v: Variant, lo: int, hi: int) -> bool:

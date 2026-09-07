@@ -23,3 +23,12 @@ Bond III (280 shared achievement points), restore two sector cores, then visit t
 Forge's Guardian Nursery. Choose between two specializations per guardian, with
 free later reconfiguration. Existing v1/v2 campaign saves retain milestones; no
 restart is needed. See `campaign/EVOLUTION.md` for exact effects and limitations.
+
+## Resonance Fusion campaign update
+
+**F5 still launches the complete campaign.** Fire + Ice can now produce Arc, a Storm guardian,
+without consuming the parents. Recover the conductor lattice in Storm Spine's Capacitor
+Cache, evolve both parents, and visit Resonance Fusion on the left of the Forge. Select
+one reserve at the right-hand Nursery; only two of the three owned guardians join a trip.
+Existing campaign progress migrates without a reset. See `campaign/FUSION.md` for the
+recruitment route, four Storm techniques, two-slot rules, testing and limitations.

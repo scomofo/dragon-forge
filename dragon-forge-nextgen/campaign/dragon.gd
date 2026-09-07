@@ -1,5 +1,6 @@
 extends "res://actors/dragon.gd"
 const GuardianCombat = preload("res://campaign/guardian_combat.gd")
+const StormRig = preload("res://campaign/storm_rig.gd")
 const IceRig = preload("res://campaign/ice_rig.gd")
 const EvolvedMagma = preload("res://campaign/evolved_magma_rig.gd")
 const EvolvedIce = preload("res://campaign/evolved_ice_rig.gd")
@@ -13,14 +14,16 @@ func _ready() -> void:
 	rigs["fire"] = rig
 
 func use_guardian(id: String, saved_state: Dictionary) -> void:
-	if not id in ["fire","ice"]:
+	if not id in ["fire","ice","storm"]:
 		return
 	var facing = rig.rotation.y
 	rig.visible = false
 	var key: String = id + ("/evolved" if saved_state.get("evolution", "") != "" else "")
 	if not rigs.has(key):
 		var next
-		if key.ends_with("/evolved"):
+		if id == "storm":
+			next = StormRig.new()
+		elif key.ends_with("/evolved"):
 			next = EvolvedIce.new() if id == "ice" else EvolvedMagma.new()
 		else:
 			next = IceRig.new() if id == "ice" else Rig.new()

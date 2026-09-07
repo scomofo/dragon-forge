@@ -53,6 +53,7 @@ static func select(campaign: Dictionary, guardian: String, specialization: Strin
 	return true
 
 static func form_name(guardian: String, evolved: bool) -> String:
+	if guardian == "storm": return "Arc"
 	if not evolved:
 		return "Magma" if guardian == "fire" else "Rime"
 	return "Crowned Magma" if guardian == "fire" else "Aurora Rime"

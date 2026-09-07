@@ -50,6 +50,9 @@ func configure(model: Node3D, id: String) -> bool:
 	probes.clear()
 	binds.clear()
 	reset()
+	if id == "storm_guardian":
+		error = "Arc hovers above the deck.\nNo planted-foot contract applies."
+		return false
 	skeleton = model.find_child("Skeleton3D", true, false)
 	var meshes = model.find_children("*", "MeshInstance3D", true, false)
 	if skeleton == null or meshes.is_empty():

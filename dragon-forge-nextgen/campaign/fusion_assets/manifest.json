@@ -1,0 +1,63 @@
+{
+  "source": "tools/build_storm_guardian.py",
+  "assets": [
+    {
+      "file": "storm_guardian.glb",
+      "triangles": 2056,
+      "vertices": 1584,
+      "surfaces": 1,
+      "bones": 17,
+      "clips": [
+        "idle",
+        "walk",
+        "claw",
+        "breath",
+        "wall",
+        "burst",
+        "guard",
+        "hurt",
+        "defeat"
+      ],
+      "bounds": [
+        [
+          -2.0439999103546143,
+          0.7573920488357544,
+          -1.4423339366912842
+        ],
+        [
+          2.055999994277954,
+          2.301820755004883,
+          2.6364328861236572
+        ]
+      ]
+    },
+    {
+      "file": "storm_egg.glb",
+      "triangles": 324,
+      "vertices": 219,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -0.48500001430511475,
+          0.10000000149011612,
+          -0.48500001430511475
+        ],
+        [
+          0.4845196306705475,
+          1.100000023841858,
+          0.48500001430511475
+        ]
+      ]
+    }
+  ],
+  "files": {
+    "atlas_base.png": "3f58562559fe4e329c824aae76926613957f42cf6bee2032c1368ec575ec5886",
+    "atlas_emission.png": "264faa55eee75aa2a4f111585e030bea77bfb762aa9a4059201ef84ebe82833d",
+    "atlas_normal.png": "b6b80481667ae61ef5f696b4cf1b7e65549697f57f567f1a13dd210178c8bb10",
+    "atlas_orm.png": "dd9cf42e97dc2db8eb7ca56fad864492a0f6e0d022bfc1afccfbffd17a5bbd75",
+    "storm_egg.glb": "5483284060782ea3dd3c80b9f3c7ff53f5903cb5a740daa50f86496a4bbf9212",
+    "storm_guardian.glb": "9f930cca476a741f3a64bdfd0fdfd5b09c7f606dc31afb9a009b21b36636097d"
+  }
+}
