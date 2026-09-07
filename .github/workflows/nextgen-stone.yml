@@ -1,0 +1,25 @@
+name: Nextgen Stone resonance
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/**'
+      - '.github/workflows/nextgen-stone.yml'
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Fetch official pinned editor for isolated development verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/stone-engine
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/stone-engine/Godot.zip
+          sha256sum /tmp/stone-engine/Godot.zip > /tmp/stone-engine/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stone-development-engine
+          path: /tmp/stone-engine/
+          retention-days: 1
