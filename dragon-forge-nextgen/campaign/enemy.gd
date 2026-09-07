@@ -1,6 +1,8 @@
 extends CharacterBody3D
-## Campaign combat adapters reuse imported rigs but have distinct, readable attack sequences.
+## Campaign rules own damage and tells. Sector bosses have distinct imported presentation rigs.
 const Brain = preload("res://sim/enemy_brain.gd")
+const BossRig = preload("res://campaign/bosses/rig.gd")
+const BossCatalog = preload("res://campaign/bosses/catalog.gd")
 const Rig = preload("res://presentation/sentinel_rig.gd")
 const Geo = preload("res://presentation/geometry.gd")
 const Patterns = preload("res://campaign/patterns.gd")
@@ -27,6 +29,7 @@ var warmup = 0.8
 var hit_time = 0.0
 var chilled = 0.0
 var charged = 0.0
+var impact_flash = 0.0
 
 func _ready() -> void:
 	boss = spec.get("boss", false)
@@ -42,14 +45,20 @@ func _ready() -> void:
 	collision.shape = capsule
 	collision.position.y = 1.2
 	add_child(collision)
-	visual = Rig.new()
-	visual.boss = boss
+	if BossCatalog.known(spec.id):
+		visual = BossRig.new()
+		visual.boss_id = spec.id
+	else:
+		visual = Rig.new()
+		visual.boss = boss
 	add_child(visual)
-	shield = Geo.cylinder(visual, Vector3(0, 1.4, -0.85), 1.08, 1.08, 0.03, Geo.material(Color(0.35, 0.76, 0.9, 0.20), 0.4, true), 6)
+	var shield_y = BossCatalog.entry(spec.id).get("core_height", 1.4)
+	var shield_radius = .69 if BossCatalog.known(spec.id) else 1.08
+	shield = Geo.cylinder(visual, Vector3(0, shield_y, -0.85), shield_radius, shield_radius, 0.03, Geo.material(Color(0.35, 0.76, 0.9, 0.20), 0.4, true), 6)
 	shield.rotation.x = PI / 2.0
 	var crown_color = Color(spec.get("color", "eabe80"))
 	Geo.ring(self, Vector3(0, 0.15, 0), 1.2, Geo.material(crown_color, 0.6, true), 0.045)
-	label = Geo.label(self, Vector3(0, 3.25, 0), spec.get("name", "Guardian"), crown_color)
+	label = Geo.label(self, Vector3(0, BossCatalog.entry(spec.id).get("height",3.25), 0), spec.get("name", "Guardian"), crown_color)
 	label.font_size = 24
 	tell = Node3D.new()
 	tell.name = "LockedAttackGeometry"
@@ -65,6 +74,7 @@ func _physics_process(delta: float) -> void:
 	if target.state.hp <= 0.0:
 		tell.visible = false
 		return
+	impact_flash=maxf(0.0,impact_flash-delta)
 	chilled=maxf(0.0,chilled-delta)
 	charged=maxf(0.0,charged-delta)
 	label.text=spec.get("name","Guardian")+(" / CHILLED" if chilled>0.0 else "") + (" / CHARGED" if charged>0.0 else "")
@@ -81,6 +91,10 @@ func _physics_process(delta: float) -> void:
 			if brain.mode == "tell":
 				brain.mode = "recover"
 				brain.timer = 2.0 if boss else 2.3
+				impact_flash = .16
+				if visual is BossRig:
+					visual.phase_index = BossCatalog.phase(spec.id,hp,max_hp)
+					visual.contact_now()
 				impact.emit(shape.duplicate(true), float(spec.damage))
 			else:
 				brain.mode = "seek"
@@ -96,10 +110,11 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	if brain.mode == "seek" and toward.length() > 0.1:
 		visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-toward.x, -toward.z), minf(delta * 7.0, 1.0))
-	tell.visible = brain.mode == "tell"
+	tell.visible = brain.mode == "tell" or impact_flash > 0.0
 	shield.visible = spec.get("shield", true) and not brain.vulnerable()
 	hit_time = maxf(0.0, hit_time - delta)
 	visual.rotation.x = hit_time * (0.10 if reduced_motion else 0.4)
+	if visual is BossRig: visual.phase_index = BossCatalog.phase(spec.id,hp,max_hp)
 	visual.animate(delta, brain, Vector2(velocity.x, velocity.z).length(), reduced_motion)
 
 func _begin_attack() -> void:
@@ -110,6 +125,9 @@ func _begin_attack() -> void:
 	pattern = list[sequence % list.size()]
 	sequence += 1
 	shape = Patterns.lock(pattern, global_position, target.global_position)
+	if visual is BossRig:
+		visual.begin_attack(pattern)
+		visual.rotation.y = atan2(-shape.direction.x,-shape.direction.z)
 	brain.mode = "tell"
 	brain.locked_duration = 1.15 if brain.enraged else (1.65 if boss else 1.5)
 	brain.timer = brain.locked_duration
@@ -160,6 +178,10 @@ func take_hit(amount: float, bypass_shield: bool = false) -> float:
 	hit_feedback.emit(global_position, str(int(actual)), false)
 	if hp <= 0.0:
 		brain.kill()
+		if visual is BossRig:
+			shield.visible = false
+			visual.reparent(get_parent(),true)
+			visual.begin_defeat(reduced_motion)
 		defeated.emit(spec.id)
 		queue_free()
 	return actual

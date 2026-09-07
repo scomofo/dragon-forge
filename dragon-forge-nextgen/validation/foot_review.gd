@@ -50,6 +50,9 @@ func configure(model: Node3D, id: String) -> bool:
 	probes.clear()
 	binds.clear()
 	reset()
+	if id in ["buffer_overflow","memory_leak","stack_overflow","mirror_admin","singularity"]:
+		error = "Tracked / suspended boss rig.\nNo planted-foot contract applies."
+		return false
 	if id in ["storm_guardian","tempest_arc"]:
 		error = "Arc hovers above the deck.\nNo planted-foot contract applies."
 		return false

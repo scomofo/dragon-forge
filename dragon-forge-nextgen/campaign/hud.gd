@@ -3,6 +3,7 @@ const Fusion = preload("res://campaign/fusion.gd")
 const Growth = preload("res://campaign/growth.gd")
 const Data = preload("res://campaign/data.gd")
 const Rules = preload("res://campaign/progress.gd")
+const BossCatalog = preload("res://campaign/bosses/catalog.gd")
 const Patterns = preload("res://campaign/patterns.gd")
 var audio_return_title = false
 var audio_settings_open = false
@@ -92,7 +93,9 @@ func _update_enemy() -> void:
 	var foe=world.enemy
 	enemy_name.text=foe.spec.name.to_upper()+"  /  %d / %d" % [int(foe.hp),int(foe.max_hp)]
 	if foe.brain.mode=="tell":
-		enemy_readout.text="%.1fs  /  " % foe.brain.timer+Patterns.tip(foe.pattern)
+		enemy_readout.text="%.1fs / " % foe.brain.timer+Patterns.tip(foe.pattern)
+		if BossCatalog.known(foe.spec.id):
+			enemy_name.text += " / " + BossCatalog.move_name(foe.spec.id,foe.pattern)
 	elif not foe.spec.get("shield",true):
 		enemy_readout.text="UNSHIELDED  /  ATTACK BETWEEN ITS TELLS"
 	if foe.chilled>0.0:
@@ -151,7 +154,7 @@ func show_title() -> void:
 	_label(overlay_column,"DRAGON FORGE",42,GOLD)
 	_label(overlay_column,"RECONNECTION",25,TEAL)
 	_wrapped(overlay_column,"A compact playable campaign through four broken sectors. Restore their cores. Rescue, evolve and fuse guardians. Choose your expedition pair. Stop the Great Reset.",20)
-	_label(overlay_column,"TEMPEST & SOUND   /   22 ROOMS   /   THREE GUARDIANS, TWO FIELD SLOTS",14,MUTED)
+	_label(overlay_column,"BOSS IDENTITIES   /   22 ROOMS   /   THREE GUARDIANS, TWO FIELD SLOTS",14,MUTED)
 	var start=_button(overlay_column,"Continue campaign" if world.store.existed or world.has_started else "Begin campaign")
 	start.pressed.connect(func():world.begin_campaign(false))
 	start.grab_focus()

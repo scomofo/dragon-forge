@@ -1,0 +1,76 @@
+name: Nextgen boss identities
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/**'
+      - '.github/workflows/nextgen-bosses.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: boss-identities-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  bosses:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      GODOT_SILENCE_ROOT_WARNING: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: dragon-forge-nextgen
+      - name: Install isolated validation tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          npm install --prefix /tmp/boss-validator gltf-validator@2.0.0-dev.3.10
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Validate committed boss assets and original exports without rebuilding
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dragon-forge-nextgen/artifacts/bosses
+          for name in bosses art evolutions tempest; do
+            python3 dragon-forge-nextgen/tools/validate_$name.py 2>&1 | tee dragon-forge-nextgen/artifacts/bosses/integrity-$name.log
+          done
+          GLTF_VALIDATOR_MODULE=/tmp/boss-validator/node_modules/gltf-validator node dragon-forge-nextgen/tools/validate_bosses.cjs 2>&1 | tee dragon-forge-nextgen/artifacts/bosses/gltf.log
+      - name: Import and run all native suites plus five real boss fights
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120 godot --headless --path dragon-forge-nextgen --editor --import 2>&1 | tee dragon-forge-nextgen/artifacts/bosses/import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/bosses/import.log; then exit 1; fi
+          GODOT=godot bash dragon-forge-nextgen/tools/test_bosses.sh
+      - name: Actual OpenGL and Vulkan Forward+ boss captures
+        shell: bash
+        run: |
+          set -euo pipefail
+          for mode in gl_compatibility forward_plus; do
+            target="dragon-forge-nextgen/artifacts/bosses/$mode"
+            mkdir -p "$target"
+            timeout 240 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method "$mode" --audio-driver Dummy --script res://campaign/tests/boss_capture.gd -- --test-mode 2>&1 | tee "$target/visual.log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' "$target/visual.log"; then exit 1; fi
+            grep 'BOSS_VISUAL: 0 failures' "$target/visual.log"
+            if [[ "$mode" == forward_plus ]]; then grep 'Forward+' "$target/visual.log"; fi
+            mv dragon-forge-nextgen/artifacts/bosses/captures/*.png "$target/"
+          done
+      - name: Record tested revision and archive unchanged project sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/bosses/TESTED_COMMIT.txt
+          git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/bosses/TESTED_TREE.txt
+          git archive --format=zip -o dragon-forge-nextgen/artifacts/bosses/Boss_Project_Source.zip HEAD:dragon-forge-nextgen
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: boss-identities-evidence
+          path: dragon-forge-nextgen/artifacts/bosses/
+          retention-days: 14
