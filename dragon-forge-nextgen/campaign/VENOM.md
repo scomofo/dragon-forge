@@ -1,23 +1,23 @@
 # Nox / Venom Resonance
 
-Nox is the planned fifth owned guardian. The expedition still has exactly two live field slots.
+Nox is the fifth owned guardian. Expeditions still contain exactly two live guardians.
 
-The browser alchemy table is authoritative: `Ice + Venom = Venom`. Native Reconnection therefore bootstraps Venom from a preserved culture rather than inventing a Fire/Stone recipe.
+The native bootstrap preserves the browser alchemy result **Ice + Venom = Venom**. A preserved Venom culture supplies the Venom parent; Rime stabilizes it without being consumed.
 
-1. Recover the preserved **Venom Culture** in Frozen Vault.
-2. Own Rime and restore at least three sector cores.
-3. At Resonance Fusion, stabilize the culture with Rime. Rime is retained; there is no RNG or salvage cost.
-4. Awaken Nox, then use the Guardian Nursery to put Nox in the two-slot expedition.
+1. Rescue and hatch Rime, restore at least three sector cores, and revisit Frozen Vault.
+2. Recover the **Venom Culture** from its separate preservation plinth. This does not consume the Ice egg or cache reward.
+3. Return to Resonance Fusion and stabilize the culture with Rime.
+4. Awaken Nox, then equip Nox at the Guardian Nursery. Existing guardians and progression remain owned.
 
-## Combat identity
+## Combat
 
-- **Toxin Fang** — fast heat-free close strike.
-- **Acid Spit** — ranged Venom attack; intended to apply one Toxin stack on a landed, unshielded hit.
-- **Toxic Cloud** — persistent caster-owned Venom field; intended to apply Toxin while dealing low tick damage.
-- **Septic Bloom** — radial finisher. Its target-side damage multiplier is `+25%` per Toxin stack, maximum three stacks. A fully shield-blocked Bloom must not consume Toxin.
+- **Toxin Fang** — quick heat-free bite; a landed hit applies one Toxin stack.
+- **Acid Spit** — ranged acid; a landed hit applies one Toxin stack.
+- **Toxic Cloud** — persistent Venom field; each damaging tick can build Toxin, capped at three.
+- **Septic Bloom** — radial finisher; +25% damage per Toxin stack on that target, up to +75%.
 
-Toxin contract: maximum three stacks, five-second duration refreshed on application, four damage per second baseline. The target owns its stacks/timer; swapping guardians does not clear them. Shields block new applications. This status is deterministic and has no random proc chance.
+Toxin lasts five seconds from the most recent successful application and ticks once per second for 4 damage per stack. A shield blocks the original Venom hit and therefore blocks new Toxin. Once applied, Toxin damage continues through a re-closed shield because the status is already inside the target. Septic Bloom consumes that target's Toxin only when the Bloom itself deals damage; a shield-blocked Bloom preserves the stacks.
 
-Nox starts at 95% of Magma's base maximum HP before permanent plating. Current numbers are provisional until human balance review.
+These numbers are deterministic provisional balance values. They require human balance review after the automated acceptance gates.
 
-Save schema 7 adds `venom_culture_recovered` and `venom_forged`. Valid schema-6 saves migrate in memory with both false; loading alone never writes. Existing campaign milestones, guardians, evolutions, loadout and salvage remain intact. The roster order is Fire, Ice, Storm, Stone, Venom.
+Save schema 7 adds `venom_culture_recovered` and `venom_forged`. Valid schema-6 saves migrate in memory with both false. Loading alone never writes; the next successful campaign write retains the existing exact previous-byte backup behavior.
