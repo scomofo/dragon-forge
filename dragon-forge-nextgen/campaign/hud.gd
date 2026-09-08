@@ -48,7 +48,9 @@ func _process(delta: float) -> void:
 	var active_id: String=world.party.active_id
 	health_text.text=Growth.form_name(active_id,actor.state.get("evolution", "") != "").to_upper()+"   /   %d / %d" % [roundi(actor.state.hp),roundi(actor.state.max_hp)]
 	if not actor.active:health_text.text="MAGMA / DORMANT"
-	if actor.state.get("ward",0.0)>0.0:
+	if active_id=="shadow":
+		defensive_text.text="PHASE %d / %d  /  DODGE THROUGH HITS" % [int(actor.state.get("phase",0)),GuardianCombat.MAX_PHASE]
+	elif actor.state.get("ward",0.0)>0.0:
 		defensive_text.text="CRYSTAL AEGIS  /  %.1fs" % actor.state.ward
 	var reserve: String=world.party.reserve_id()
 	reserve_button.visible=not overlay.visible and not menu.visible and actor.active
@@ -77,6 +79,8 @@ func _process(delta: float) -> void:
 			if id in ["claw","breath"]:card.cost.text="%d + TOXIN / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 			elif id=="wall":card.cost.text="%d/tick + TOXIN / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 			elif id=="burst":card.cost.text="%d / +25%% per TOXIN / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
+		if active_id=="shadow" and id=="burst":
+			card.cost.text="%d / +30%% per PHASE / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 		var cd: float=actor.state.cooldowns.get(id,0.0)
 		card.charge.value=1.0-cd/float(rule.cooldown)
 		card.status.text="COOLING %.1fs" % cd if cd>0 else ("TOO HOT" if actor.state.heat+GuardianCombat.heat_cost(actor.state,id)>100 else "READY")
@@ -173,7 +177,7 @@ func show_title() -> void:
 	_label(overlay_column,"DRAGON FORGE",42,GOLD)
 	_label(overlay_column,"RECONNECTION",25,TEAL)
 	_wrapped(overlay_column,"A compact playable campaign through four broken sectors. Restore their cores. Rescue, evolve and fuse guardians. Choose your expedition pair. Stop the Great Reset.",20)
-	_label(overlay_column,"VENOM RESONANCE   /   22 ROOMS   /   FIVE GUARDIANS, TWO FIELD SLOTS",14,MUTED)
+	_label(overlay_column,"SHADOW RESONANCE   /   22 ROOMS   /   SIX GUARDIANS, TWO FIELD SLOTS",14,MUTED)
 	var start=_button(overlay_column,"Continue campaign" if world.store.existed or world.has_started else "Begin campaign")
 	start.pressed.connect(func():world.begin_campaign(false))
 	start.grab_focus()
@@ -430,12 +434,12 @@ func show_party() -> void:
 	row.add_theme_constant_override("h_separation",14)
 	row.add_theme_constant_override("v_separation",14)
 	overlay_column.add_child(row)
-	for id in ["fire","ice","storm","stone","venom"]:
+	for id in ["fire","ice","storm","stone","venom","shadow"]:
 		var card=_panel(row);card.custom_minimum_size.x=315
 		var col=_column(card,9)
 		var owned: bool=world.campaign.guardians.has(id)
 		var selected: bool=world.party.states.has(id)
-		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa"),"stone":Color("c8ad7c"),"venom":Color("a8db61")}[id])
+		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa"),"stone":Color("c8ad7c"),"venom":Color("a8db61"),"shadow":Color("b78be0")}[id])
 		_label(col,("ACTIVE" if world.party.active_id==id else ("RESERVE" if selected else "AT THE FORGE")) if owned else "NOT RECRUITED",14,MUTED)
 		if owned:
 			if selected:
@@ -445,7 +449,7 @@ func show_party() -> void:
 				_label(col,"Not in the expedition",15,MUTED)
 			for slot in GuardianCombat.ORDER:
 				_label(col,GuardianCombat.rule({"guardian":id,"evolution":Growth.choice(world.campaign,id)},slot).name,17,PAPER)
-			var tips={"fire":"Powers heat relays. Direct Fire hits shatter Chill for +40% once.","ice":"Chills exposed enemies. Aegis protects Rime, even after swapping.","storm":"Lance / Well charge enemies. Discharge consumes Charge for +50% once.","stone":"Guard landed hits to build up to 3 Resolve. Earthshatter gains +20% per Resolve and spends it only on a landed hit.","venom":"Fang, Spit and Cloud build Toxin. Septic Bloom gains +25% per stack and consumes stacks only when it lands."}
+			var tips={"fire":"Powers heat relays. Direct Fire hits shatter Chill for +40% once.","ice":"Chills exposed enemies. Aegis protects Rime, even after swapping.","storm":"Lance / Well charge enemies. Discharge consumes Charge for +50% once.","stone":"Guard landed hits to build up to 3 Resolve. Earthshatter gains +20% per Resolve and spends it only on a landed hit.","venom":"Fang, Spit and Cloud build Toxin. Septic Bloom gains +25% per stack and consumes stacks only when it lands.","shadow":"A real incoming hit during dodge i-frames builds Phase (max 2). Phase Strike gains +30% per Phase and spends it only when damage lands."}
 			_wrapped(col,tips[id],16,MUTED,272)
 			if not selected:
 				var equip=_button(col,"Equip as reserve")
@@ -456,6 +460,8 @@ func show_party() -> void:
 				evolve.pressed.connect(func():show_growth(id))
 			elif id=="stone":
 				_label(col,"Resolve %d / 3" % int((world.party.states[id].get("resolve",0) if selected else 0)),15,GOLD)
+			elif id=="shadow":
+				_label(col,"Phase %d / 2" % int((world.party.states[id].get("phase",0) if selected else 0)),15,Color("b78be0"))
 		elif id=="ice":
 			_wrapped(col,"Rescue the Ice egg in Frozen Vault. Return to the right-hand Nursery to hatch Rime for free.",17,PAPER,272)
 		elif id=="storm":
@@ -464,8 +470,11 @@ func show_party() -> void:
 		elif id=="stone":
 			_wrapped(col,"Recover the Stone imprint in Admin Vault, then temper it with Magma at Resonance Fusion. Fire + Stone remains Stone; Magma is retained.",17,PAPER,272)
 			_button(col,"View fusion recipes").pressed.connect(show_fusion)
-		else:
+		elif id=="venom":
 			_wrapped(col,"Rescue Rime, then recover the preserved Venom culture from Frozen Vault. Canonical Ice + Venom remains Venom; Rime is retained.",17,PAPER,272)
+			_button(col,"View fusion recipes").pressed.connect(show_fusion)
+		else:
+			_wrapped(col,"Awaken Nox, then combine Magma + Nox at Resonance Fusion. Canonical Fire + Venom creates Shadow; both parents are retained.",17,PAPER,272)
 			_button(col,"View fusion recipes").pressed.connect(show_fusion)
 	_wrapped(overlay_column,"Tab swaps your active/reserve pair, not benched guardians. A benched guardian cannot rescue a downed party. Change the pair only at the right-hand Nursery; keep Magma available for thermal relays.",16,TEAL)
 	_button(overlay_column,"Back to the world / P").pressed.connect(close_overlay)
@@ -544,7 +553,7 @@ func show_fusion() -> void:
 	if world.title_open:return
 	_open_overlay("fusion")
 	_label(overlay_column,"RESONANCE FUSION / PRESERVE THE PARENTS",29,Color("c4b1fa"))
-	_wrapped(overlay_column,"The Forge now holds three explicit, non-destructive resonance recipes. No random failure, parent sacrifice or salvage cost.",18,PAPER)
+	_wrapped(overlay_column,"The Forge now holds four explicit, non-destructive resonance recipes. No random failure, parent sacrifice or salvage cost.",18,PAPER)
 	var c:Dictionary=world.campaign
 	_label(overlay_column,"FIRE + ICE = STORM / ARC",22,Color("c4b1fa"))
 	if c.guardians.has("storm"):
@@ -572,6 +581,15 @@ func show_fusion() -> void:
 		_wrapped(overlay_column,Fusion.venom_reason(c) if Fusion.venom_reason(c)!="" else "READY / Preserved Venom culture + Rime. Canonical Ice + Venom remains Venom.",16,GOLD)
 		var forge3=_button(overlay_column,"Stabilize Venom culture / keep Rime");forge3.disabled=Fusion.venom_reason(c)!="" or not world.can_fuse();forge3.pressed.connect(func():world.forge_venom())
 	_wrapped(overlay_column,"NOX / Toxin Fang • Acid Spit • Toxic Cloud • Septic Bloom\nBuild up to 3 Toxin stacks. Existing Toxin ticks after shields re-close; Bloom gains +25% per stack and consumes them only when the Bloom lands.",17,MUTED)
+	_label(overlay_column,"FIRE + VENOM = SHADOW / UMBRA",22,Color("b78be0"))
+	if c.guardians.has("shadow"):
+		_label(overlay_column,"UMBRA / RECRUITED",18,TEAL)
+	elif c.shadow_forged:
+		var hatch4=_button(overlay_column,"Awaken Umbra / free");hatch4.disabled=not world.can_fuse();hatch4.pressed.connect(func():world.hatch_shadow())
+	else:
+		_wrapped(overlay_column,Fusion.shadow_reason(c) if Fusion.shadow_reason(c)!="" else "READY / Magma + Nox. Canonical Fire + Venom creates Shadow; both parents remain.",16,GOLD)
+		var forge4=_button(overlay_column,"Create Shadow resonance / keep Magma + Nox");forge4.disabled=Fusion.shadow_reason(c)!="" or not world.can_fuse();forge4.pressed.connect(func():world.forge_shadow())
+	_wrapped(overlay_column,"UMBRA / Shadow Strike • Void Pulse • Umbral Wake • Phase Strike\nDodge through real incoming hits to build Phase (max 2). Phase Strike gains +30% per Phase and spends it only when damage lands; a closed shield preserves Phase.",17,MUTED)
 	if world.store.message!="":_wrapped(overlay_column,world.store.message,16,GOLD)
 	_button(overlay_column,"Back to Guardians").pressed.connect(show_party)
 	_button(overlay_column,"Back to the world").pressed.connect(close_overlay)

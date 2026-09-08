@@ -63,7 +63,8 @@ func fixture() -> Dictionary:
 	s.stone_forged = true
 	s.venom_culture_recovered = true
 	s.venom_forged = true
-	s.guardians = ["fire","ice","storm","stone","venom"]
+	s.shadow_forged = true
+	s.guardians = ["fire","ice","storm","stone","venom","shadow"]
 	s.loadout = ["fire","stone"]
 	s.evolutions = {"fire":"flashfire","ice":"aegis","storm":"overcharge"}
 	return s
@@ -78,7 +79,7 @@ func run() -> void:
 		check(not OS.has_feature("editor"), "running standalone template, not editor")
 		check(not ResourceLoader.exists("res://campaign/tests/run.gd"), "development tests excluded from pack")
 	var info = JSON.parse_string(FileAccess.get_file_as_string("res://release/build_info.json"))
-	check(info is Dictionary and info.get("assets",[]).size() == 63, "pack build identity and 63 art/audio resources present")
+	check(info is Dictionary and info.get("assets",[]).size() == 68, "pack build identity and 68 art/audio resources present")
 	if not info is Dictionary: quit(1); return
 	for path in info.assets:
 		var resource = load(path)
@@ -120,7 +121,7 @@ func run() -> void:
 			paused = false
 	w.campaign = s.duplicate(true)
 	w._enter_room("forge",true)
-	for pair in [["fire","ice"],["fire","storm"],["fire","stone"],["fire","venom"]]:
+	for pair in [["fire","ice"],["fire","storm"],["fire","stone"],["fire","venom"],["fire","shadow"]]:
 		w.campaign.loadout = pair
 		w.campaign.active_guardian = "fire"
 		w._enter_room("forge",true)
@@ -149,6 +150,7 @@ func run() -> void:
 	old.erase("stone_forged")
 	old.erase("venom_culture_recovered")
 	old.erase("venom_forged")
+	old.erase("shadow_forged")
 	var bytes = JSON.stringify(old)
 	var f = FileAccess.open(store.path,FileAccess.WRITE)
 	check(f != null,"temporary save writable")
@@ -156,7 +158,7 @@ func run() -> void:
 		f.store_string(bytes)
 		f.close()
 		var loaded = store.read_campaign()
-		check(loaded.version == 8 and not loaded.stone_imprint_recovered and not loaded.stone_forged and not loaded.venom_culture_recovered and not loaded.venom_forged, "schema-5 campaign migrates through Shadow to schema 8 in export")
+		check(loaded.version == 8 and not loaded.stone_imprint_recovered and not loaded.stone_forged and not loaded.venom_culture_recovered and not loaded.venom_forged and not loaded.shadow_forged, "schema-5 campaign migrates through Shadow to schema 8 with no unearned roster progress")
 		check(FileAccess.get_file_as_string(store.path) == bytes,"load leaves old bytes intact")
 		check(store.write_campaign(loaded),"exported save writes successfully")
 		check(FileAccess.get_file_as_string(store.path+".bak") == bytes,"exported save backs up old bytes")

@@ -155,7 +155,7 @@ func run() -> void:
 	w.queue_free();await frames()
 	var studio=Studio.new();root.add_child(studio);await frames()
 	var actor_picker: OptionButton=studio.find_children("*","OptionButton",true,false)[0]
-	check(actor_picker.item_count==14,"all fourteen actual actors appear in the inspection picker")
+	check(actor_picker.item_count==16,"all sixteen actual actors appear in the inspection picker")
 	actor_picker.select(6);actor_picker.item_selected.emit(6)
 	check(not studio.feet.valid and studio.feet.error.contains("hovers"),"hovering rig is not misreported as foot-locked")
 	check(studio.actor_id=="storm_guardian" and studio.skeleton.get_bone_count()==17,"inspection scene loads real Arc asset")

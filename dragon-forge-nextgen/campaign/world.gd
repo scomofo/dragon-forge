@@ -454,6 +454,7 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		elif owner_id=="ice": _place_frost(origin,direction)
 		elif owner_id=="storm": _place_static(origin,direction)
 		elif owner_id=="stone": _place_bulwark(origin,direction)
+		elif owner_id=="shadow": _place_shadow(origin,direction)
 		else: _place_venom(origin,direction)
 		walls[-1].damage=campaign_damage(id)
 		walls[-1].guardian=owner_id
@@ -468,6 +469,9 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 	if owner_id=="stone" and id=="burst" and landed:
 		var spent=GuardianCombat.consume_resolve(dragon.state)
 		if spent>0:hud.feedback("EARTHSHATTER / RESOLVE %d" % spent,"Guard landed hits to rebuild Resolve.")
+	if owner_id=="shadow" and id=="burst" and landed:
+		var spent_phase=GuardianCombat.consume_phase(dragon.state)
+		if spent_phase>0:hud.feedback("PHASE STRIKE / PHASE %d" % spent_phase,"Dodge through real incoming hits to rebuild Phase.")
 	if owner_id=="storm":
 		_storm_contact(id,origin,direction,rule.range)
 		if id=="breath" and not conduits.is_empty():
@@ -477,6 +481,11 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		_stone_contact(id,origin,direction,rule.range)
 	if owner_id=="venom":
 		_venom_contact(id,origin,direction,rule.range)
+	if owner_id=="shadow":
+		_shadow_contact(id,origin,direction,rule.range)
+		if id=="breath" and not conduits.is_empty():
+			hud.toast("Thermal relays need Magma. Void Pulse cannot power the conductor.")
+			return
 	if owner_id=="ice":
 		_ice_contact(id,origin,direction,rule.range)
 		if id=="breath" and not conduits.is_empty():
@@ -787,7 +796,7 @@ func swap_guardian(target: String = "", forced: bool = false) -> bool:
 	get_viewport().gui_release_focus()
 	if not forge_trial_active:
 		_save()
-	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", {"ice":"Chill, then swap to Magma to shatter.", "fire":"Fire shatters chilled enemies on a direct hit.", "storm":"Charge with Arc Lance or Static Well. Discharge with technique 4.", "stone":"Guard landed hits to build Resolve, then Earthshatter [4]."}.get(target, ""))
+	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", {"ice":"Chill, then swap to Magma to shatter.", "fire":"Fire shatters chilled enemies on a direct hit.", "storm":"Charge with Arc Lance or Static Well. Discharge with technique 4.", "stone":"Guard landed hits to build Resolve, then Earthshatter [4].", "venom":"Build Toxin, then cash it out with Septic Bloom [4].", "shadow":"Dodge through real hits to build Phase, then land Phase Strike [4]."}.get(target, ""))
 	return true
 
 func _on_guardian_down() -> void:
@@ -875,6 +884,14 @@ func hatch_venom() -> bool:
 	if not can_fuse() or not Fusion.hatch_venom(campaign):return false
 	sound("hatch","venom",3,true);_save();hud.show_fusion();return true
 
+func forge_shadow() -> bool:
+	if not can_fuse() or not Fusion.forge_shadow(campaign):return false
+	sound("fusion","shadow",3,true);_save();hud.show_fusion();return true
+
+func hatch_shadow() -> bool:
+	if not can_fuse() or not Fusion.hatch_shadow(campaign):return false
+	sound("hatch","shadow",3,true);_save();hud.show_fusion();return true
+
 func equip_reserve(guardian: String) -> bool:
 	# Only the safe Nursery can change the pair. Opening P elsewhere never grants healing.
 	if not can_evolve() or not Fusion.equip_reserve(campaign,guardian): return false
@@ -945,6 +962,29 @@ func _venom_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->voi
 		var side=direction.cross(Vector3.UP)*(.10 if i%2 else -.10)
 		Geo.orb(node,origin+direction*d+side+Vector3.UP*(.55+.03*(i%3)),.10 if id=="claw" else .075,mat)
 	node.create_tween().tween_interval(.30).finished.connect(node.queue_free)
+
+func _place_shadow(origin:Vector3,direction:Vector3)->void:
+	var at=origin+direction*4.0
+	var hit=get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(origin+Vector3.UP,at+Vector3.UP,1))
+	if not hit.is_empty():at=hit.position-direction*.6
+	at.y=0.0
+	var marker=effects.decal(at,2.4,Color("2a2138"))
+	var violet=Geo.material(Color("9b72d3"),.55,true)
+	for i in [0,1,3,4,6,7]:
+		var a=TAU*float(i)/8.0;Geo.orb(marker,Vector3(sin(a)*1.85,.09,cos(a)*1.85),.11,violet)
+	walls.append({"at":at,"ttl":3.6,"tick":0.0,"damage":campaign_damage("wall"),"guardian":"shadow","node":marker})
+
+func _shadow_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->void:
+	if id=="burst":effects.pulse(origin,reach,Color("9d70dc"));return
+	var node=Node3D.new();add_child(node);effects._reserve(node);var mat=Geo.material(Color("9c72db"),.70,true)
+	var count=4 if id=="claw" else 12
+	for i in range(count):
+		var d=.9+i*.50
+		if d>reach or not line_clear(origin,origin+direction*d):break
+		if i%3==1:continue
+		var side=direction.cross(Vector3.UP)*(.16 if i%2 else -.16)
+		Geo.orb(node,origin+direction*d+side+Vector3.UP*(.62+.03*(i%3)),.09,mat)
+	node.create_tween().tween_interval(.25).finished.connect(node.queue_free)
 
 func _stone_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->void:
 	if id=="burst":effects.pulse(origin,reach,Color("bba47b"));return
