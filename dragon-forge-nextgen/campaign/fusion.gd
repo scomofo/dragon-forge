@@ -104,7 +104,8 @@ static func hatch(c: Dictionary) -> bool:
 static func hatch_stone(c: Dictionary) -> bool:
 	if c.get("room", "") != "forge" or stone_reason(c) != "" or not c.get("stone_forged", false) or c.guardians.has("stone"):
 		return false
-	c.loadout = members(c)
+	# Cairn can be the first reserve; an empty pair then follows the two owned guardians.
+	c.loadout = members(c) if c.guardians.size()>=2 else []
 	c.guardians.append("stone")
 	return true
 
