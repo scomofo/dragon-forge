@@ -19,7 +19,7 @@ These are deterministic native balance values. They are not a claim of turn-base
 | 3 | Radiant Beam | 36 | 26 | 4 s | 0.28 + 0.32 s | 8 m direct line, 0.7 m half-width |
 | 4 | Recompile | 46 | 38 | 9 s | 0.36 + 0.40 s | 5 m radial |
 
-Void Rift pushes an exposed ordinary enemy up to 1.25 m through collision-aware movement. Bosses and enemies with a locked attack warning remain anchored. Radiant Beam is one direct aimed attack in a fixed 1.4 m-wide corridor, not a widening cone or persistent field. All techniques retain normal line-of-sight, range and shield checks.
+Void Rift pushes an exposed ordinary enemy up to 1.25 m through collision-aware movement. Bosses and enemies with a locked attack warning remain anchored. Radiant Beam is one direct aimed attack in a fixed 1.4 m-wide corridor, not a widening cone or persistent field. Its translucent floor panes and gold boundary rails expose that complete hit width while a raised white strip keeps the beam's bright centreline. All techniques retain normal line-of-sight, range and shield checks.
 
 ## Recompile and Advantage adaptation
 

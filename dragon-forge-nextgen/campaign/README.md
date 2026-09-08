@@ -84,7 +84,7 @@ Felix's text radio and field records explain the story and mechanics. Read recor
 
 ## Controls
 
-WASD/arrows move; mouse or right stick aims; 1–4 / X,Y,LB,RB use techniques. Space/A dodges; Shift/LT guards; E/B interacts. Q or the clickable Repair button heals the active guardian. Tab / right-stick click swaps to the reserve; P opens Guardians. M / Routes opens the map. N / Journal opens records. Esc/Start pauses. The route map, records, upgrades and menus have native focusable buttons; dedicated controller shortcuts for Q/M/N are not yet provided. Physical-controller acceptance remains open.
+WASD/arrows move; mouse or right stick aims; 1–4 / X,Y,LB,RB use techniques. Space/A dodges; Shift/LT guards; E/B interacts. Q/right trigger or the clickable Repair button heals the active guardian. Tab / right-stick click swaps to the reserve; P opens Guardians. M / Routes opens the map. N / Journal opens records. View/Back opens a controller utility with Routes, Journal and Guardians while preserving the four combat bindings. Esc/Start pauses. Menus use D-pad navigation and A activation. Losing the active controller pauses gameplay, releases held gameplay actions and focuses Resume; reconnecting never resumes automatically. Choose Resume with A/Enter or press Start explicitly. Synthetic event tests cover this safety and menu-navigation contract. Physical device mappings, deadzones, driver behavior and control feel remain human acceptance work.
 
 ## Saves and compatibility
 
@@ -115,7 +115,7 @@ godot --headless --fixed-fps 60 --path . --script res://campaign/tests/play_smok
 godot --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://campaign/tests/capture.gd -- --test-mode
 ```
 
-The traversal suite checks all rooms, prerequisites, real spell/relay/actor wiring, caches, upgrades, core return/install, ending, retry, pause, movement and save behavior. It uses controlled setup/damage for complete coverage and is not a player-experience verdict. The controller smoke policy separately defeats a patrol, the first boss and the final boss using actual movement, techniques, guard and finite repair charges without direct damage injection or forced shield openings. Those are bounded automated scenarios, not human playtests or difficulty measurements.
+The traversal suite checks all rooms, prerequisites, real spell/relay/actor wiring, caches, upgrades, core return/install, ending, retry, pause, movement and save behavior. It uses controlled setup/damage for complete coverage and is not a player-experience verdict. The controller runtime suite feeds Godot joypad Start, D-pad and A events through the shipped input and GUI path, and deterministically checks disconnect/reconnect safety without claiming a physical device was present. The controller smoke policy separately defeats a patrol, the first boss and the final boss using actual movement, techniques, guard and finite repair charges without direct damage injection or forced shield openings. Those are bounded automated scenarios, not human playtests or difficulty measurements.
 
 Visual capture setup seeds prerequisites to inspect sectors independently. It does not pretend that screenshots prove an unassisted playthrough. The rendering tests use software graphics, not target-hardware benchmarks.
 

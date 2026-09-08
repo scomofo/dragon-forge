@@ -1124,5 +1124,35 @@ func _synthesis_contact(id:String,origin:Vector3,direction:Vector3,reach:float)-
 	if id=="breath":
 		_void_contact(id,origin,direction,reach)
 		return
-	# Radiant Beam occupies slot 3 for Prism, with the same bounded line effect.
-	_light_contact("breath" if id=="wall" else id,origin,direction,reach)
+	if id=="wall":
+		_synthesis_beam_contact(origin,direction,reach,float(GuardianCombat.SYNTHESIS.wall.line_half_width))
+		return
+	_light_contact(id,origin,direction,reach)
+
+func _synthesis_beam_contact(origin:Vector3,direction:Vector3,reach:float,half_width:float)->void:
+	# The broad floor panes and gold rails expose the exact fixed-width hit lane;
+	# the narrow raised strip preserves Radiant Beam's bright centreline identity.
+	var forward=direction
+	forward.y=0.0
+	if forward.length_squared()<.000001:return
+	forward=forward.normalized()
+	var node=Node3D.new();node.position=origin;node.rotation.y=atan2(-forward.x,-forward.z);add_child(node);effects._reserve(node)
+	node.set_meta("contact_effect","synthesis_radiant_beam")
+	node.set_meta("line_half_width",half_width)
+	var lane=Geo.material(Color(1.0,.84,.43,.28),.65,true)
+	var rail=Geo.material(Color("ffd77f"),1.1,true)
+	var centre=Geo.material(Color("fff8df"),.8,true)
+	var lane_points=[]
+	var core_points=[]
+	var edge_points=[]
+	for i in range(ceili(reach/.5)):
+		var distance=minf(reach,.25+float(i)*.5)
+		if not line_clear(origin,origin+forward*distance):break
+		lane_points.append(Vector3(0.0,.10,-distance))
+		core_points.append(Vector3(0.0,.72,-distance))
+		for side in [-1.0,1.0]:
+			edge_points.append(Vector3(side*(half_width-.025),.18,-distance))
+	var panes=Geo.batch_boxes(node,lane_points,Vector3(half_width*2.0,.04,.48),lane);panes.name="RadiantLane"
+	var cores=Geo.batch_boxes(node,core_points,Vector3(.08,.24,.32),centre);cores.name="RadiantCore"
+	var edges=Geo.batch_boxes(node,edge_points,Vector3(.05,.30,.48),rail);edges.name="RadiantEdges"
+	node.create_tween().tween_interval(.22).finished.connect(node.queue_free)
