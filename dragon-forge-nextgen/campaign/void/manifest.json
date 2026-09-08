@@ -1,0 +1,71 @@
+{
+  "source": "tools/build_void_guardian.py",
+  "guardian": "Null",
+  "design": {
+    "plan": "hollow crystal tetra",
+    "silhouette": "empty-diamond",
+    "notes": "Frame only, inner glow, no flesh.",
+    "aperture_center": [
+      0.0,
+      1.28,
+      0.0
+    ],
+    "aperture_radius": 0.27,
+    "muzzle_joint": "Emitter",
+    "grounded": false
+  },
+  "asset": {
+    "file": "void_guardian.glb",
+    "triangles": 992,
+    "vertices": 2032,
+    "surfaces": 1,
+    "bones": 11,
+    "clips": [
+      "idle",
+      "walk",
+      "claw",
+      "breath",
+      "wall",
+      "burst",
+      "guard",
+      "hurt",
+      "defeat"
+    ],
+    "bounds": [
+      [
+        -1.2943925857543945,
+        0.2475000023841858,
+        -0.29499998688697815
+      ],
+      [
+        1.2943925857543945,
+        2.565000057220459,
+        0.33500000834465027
+      ]
+    ]
+  },
+  "clip_durations": {
+    "idle": 1.8,
+    "walk": 0.8,
+    "claw": 0.29,
+    "breath": 0.56,
+    "wall": 0.42,
+    "burst": 0.64,
+    "guard": 1.2,
+    "hurt": 0.24,
+    "defeat": 0.9
+  },
+  "action_windups": {
+    "claw": 0.11,
+    "breath": 0.26,
+    "wall": 0.18,
+    "burst": 0.3
+  },
+  "files": {
+    "atlas_base.png": "b06fe463ebb253bd82b7911f120ec81219d3fd630cc049ed94d3c0a7ec3fd050",
+    "atlas_emission.png": "0b1a3b537944e71db510d0af83b330e4f32abaac29aabee257062c14d1518627",
+    "atlas_normal.png": "203ae68ab8e80f1a879b48c6aad7c494aaad27a44fbd4b60ea4b5d2d55399f8c",
+    "atlas_orm.png": "2c27ffc94258018c8afc82cc272f8992f2c420301612ba219c3d2a2e95867fb5",
+    "void_guardian.glb": "0f2ec3239eff6a3973ae0270ad64ffd63a4275cff26914524a9683c370ecfddd"
+  }
+}

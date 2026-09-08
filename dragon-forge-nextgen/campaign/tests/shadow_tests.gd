@@ -24,16 +24,16 @@ func venom_owned()->Dictionary:
 	return c
 func run():
 	var fresh=Rules.fresh()
-	check(fresh.version==8,"fresh schema 8")
+	check(fresh.version==9,"fresh schema 9")
 	check(not fresh.shadow_forged,"fresh Shadow flag false")
 	var old=fresh.duplicate(true);old.version=7;old.erase("shadow_forged")
 	var migrated=Rules.normalize(old)
-	check(migrated.version==8,"schema 7 migrates")
+	check(migrated.version==9,"schema 7 migrates")
 	check(not migrated.shadow_forged,"migration grants no Shadow progress")
 	var impossible=old.duplicate(true);impossible.guardians=["fire","ice","storm","stone","venom","shadow"]
 	check(Rules.normalize(impossible).is_empty(),"schema 7 rejects impossible sixth guardian")
 	var c=venom_owned()
-	check(not Rules.normalize(c).is_empty(),"five-guardian source state valid under schema 8")
+	check(not Rules.normalize(c).is_empty(),"five-guardian source state valid under schema 9")
 	check(Fusion.shadow_reason(c)=="","canonical Fire plus Venom recipe ready")
 	var no_nox=c.duplicate(true);no_nox.guardians.erase("venom");no_nox.loadout=["fire","ice"]
 	check(Fusion.shadow_reason(no_nox)!="","Shadow requires Nox")
@@ -61,11 +61,22 @@ func run():
 	check(Combat.MAX_PHASE==2,"Phase cap two")
 	var normal=Combat.fresh("","shadow");var hp=normal.hp
 	check(Combat.damage(normal,20)>0 and normal.hp<hp and normal.phase==0,"ordinary landed damage grants no Phase")
+	hp=normal.hp
+	check(Combat.damage(normal,20)==0 and normal.hp==hp and normal.phase==0,"post-hit protection prevents damage without granting Phase")
 	var dodge=Combat.fresh("","shadow")
 	check(Combat.dodge(dodge),"Umbra begins dodge")
+	check(dodge.phase==0,"pressing dodge alone grants no Phase")
 	hp=dodge.hp;check(Combat.damage(dodge,20)==0 and dodge.hp==hp and dodge.phase==1,"real hit during dodge earns one Phase")
 	check(Combat.damage(dodge,20)==0 and dodge.phase==2,"second avoided hit reaches Phase cap")
 	check(Combat.damage(dodge,20)==0 and dodge.phase==2,"Phase remains capped")
+	var tail=Combat.fresh("","shadow");Combat.dodge(tail);Combat.tick(tail,.20)
+	check(tail.dash==0 and Combat.damage(tail,20)==0 and tail.phase==1,"dodge protection still earns Phase after dash movement ends")
+	Combat.tick(tail,.05);hp=tail.hp
+	check(Combat.damage(tail,20)>0 and tail.hp<hp and tail.phase==1,"expired dodge takes damage without granting Phase")
+	check(Combat.damage(tail,20)==0 and tail.phase==1,"post-hit protection cannot reuse expired dodge credit")
+	var invalid=Combat.fresh("","shadow");Combat.dodge(invalid);hp=invalid.hp
+	for amount in [0.0,-1.0,NAN,INF]:
+		check(Combat.damage(invalid,amount)==0 and invalid.hp==hp and invalid.phase==0,"invalid/non-damaging hit grants no Phase: " + str(amount))
 	var base=Combat.fresh("","shadow");var one=Combat.fresh("","shadow");var two=Combat.fresh("","shadow");one.phase=1;two.phase=2
 	check(is_equal_approx(Combat.technique_damage(base,"burst"),50.0),"Phase Strike base damage")
 	check(is_equal_approx(Combat.technique_damage(one,"burst"),65.0),"one Phase adds thirty percent")

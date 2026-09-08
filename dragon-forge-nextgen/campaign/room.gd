@@ -21,6 +21,7 @@ var storm_egg: Node3D
 var lattice
 var stone_imprint: Node3D
 var venom_culture: Node3D
+var void_imprint: Node3D
 
 func build(data: Dictionary) -> void:
 	definition = data
@@ -182,6 +183,10 @@ func _interactables() -> void:
 		core_node = _station("finish" if definition.role=="final" else "core", "RECONNECT" if definition.role=="final" else "SECTOR CORE",Vector3(0,0,-19),"core_socket")
 		Geo.orb(core_node,Vector3(0,1.7,0),0.4,Geo.material(color,1.5,true))
 		Art.place(self,"warden_dais",Vector3(0,0,-13))
+		if definition.role=="final":
+			void_imprint=_station("void_imprint","VOID IMPRINT",Vector3(-5,0,-4),"core_socket")
+			Geo.ring(void_imprint,Vector3.UP*1.5,.45,Geo.material(Color("44eeee"),1.2,true),.08)
+
 	else:
 		_station("lore", "FIELD RECORD", Vector3(6 if cells.has(Vector2i(2,1)) else -4,0,4),"relay_conduit")
 
@@ -230,6 +235,7 @@ func refresh(state: Dictionary) -> void:
 	if is_instance_valid(storm_egg): storm_egg.visible = state.get("storm_forged",false) and not state.get("guardians",[]).has("storm")
 	if is_instance_valid(lattice): lattice.visible = not state.get("lattice_recovered",false)
 	if is_instance_valid(stone_imprint): stone_imprint.visible = not state.get("stone_imprint_recovered",false)
+	if is_instance_valid(void_imprint):void_imprint.visible=state.get("finished",false) and not state.get("void_imprint_recovered",false)
 	if is_instance_valid(venom_culture): venom_culture.visible = state.get("ice_rescued",false) and not state.get("venom_culture_recovered",false)
 	if is_instance_valid(ice_egg):
 		ice_egg.visible=(not state.get("ice_rescued",false)) if definition.id=="frozen-vault" else (state.get("ice_rescued",false) and not state.get("guardians",["fire"]).has("ice"))

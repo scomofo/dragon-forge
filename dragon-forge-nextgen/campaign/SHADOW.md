@@ -16,7 +16,8 @@ Umbra is a high-speed, lower-HP guardian. Phase is session combat state, not sav
 
 - A real incoming hit that intersects Umbra's active dodge i-frames grants one Phase.
 - Phase is capped at two.
-- Merely pressing dodge grants no Phase.
+- Merely pressing dodge grants no Phase. Post-hit invulnerability grants no Phase either.
+- The dedicated dodge window lasts 0.24 seconds, including the tail after the 0.18-second movement ends. It is runtime-only and cannot carry expired dodge credit into post-hit protection.
 - Phase Strike gains +30% direct damage per stored Phase.
 - Stored Phase is consumed only when Phase Strike actually damages a target.
 - A shield-blocked Phase Strike preserves stored Phase.
@@ -33,3 +34,11 @@ Schema 8 adds only `shadow_forged`. Valid schema-7 saves migrate in memory with 
 Shadow is not considered shipped until the committed negative-space model is independently validated, real world routing proves dodge-earned Phase plus shield-preserved/landed Phase Strike behavior, OpenGL and Forward+ captures pass, and fresh editor plus macOS/Windows/Linux packages execute their updated schema-8/Shadow smoke checks.
 
 Release evidence must come from the permanent read-only workflows on the final user-authored feature head. Temporary mutation/helper workflow commits are never treated as release evidence by themselves.
+
+## Reviewer acceptance coverage
+
+- `campaign/tests/shadow_tests.gd` covers Phase timing, cap, exact multipliers and post-hit rejection, including a reproduced regression that previously awarded Phase after taking damage.
+- `release/shadow_contract.gd` runs in both source runtime tests and each platform's exported executable. It sends intersecting and missed attack patterns through the world, exercises whiffs and cancelled windups, and checks normal-enemy and Buffer Overflow shields. Shields remain enabled; the successful counter uses the existing recovery window. It asserts exact boosted damage and one contact per cast.
+- The exported save smoke checks schema 5 and a fully progressed schema 7, including all preserved progress, unchanged load bytes, exact first-write backup and round-trip loading.
+- The dual-renderer Shadow capture includes the five campaign views plus side-on mid-clip inspection of all nine animations under neutral and strong rim light. These are prepared-state captures, not an unassisted playthrough or a foot-lock certification. Umbra's first-pass rig has no planted-foot solver.
+- Standalone editor artifacts use `Dragon_Forge_Shadow_Editor_Project.zip`; the three native packages retain their established platform filenames.

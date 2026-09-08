@@ -187,7 +187,7 @@ func _spawn_enemy(source: Dictionary, as_trial: bool) -> void:
 	actor.navigation = self
 	actor.reduced_motion = reduced_motion
 	level.add_child(actor)
-	actor.impact.connect(_on_pattern)
+	actor.impact.connect(_on_pattern.bind(actor))
 	actor.attack_warning.connect(func(): sound("warning",CampaignEnemy.BossCatalog.entry(actor.spec.id).get("element","fire"),4))
 	actor.defeated.connect(_trial_defeat if as_trial else _campaign_defeat)
 	actor.hit_feedback.connect(_hit_feedback)
@@ -286,6 +286,7 @@ func interaction() -> String:
 		"fusion":return "Resonance Fusion / Fire + Ice = Storm"
 		"lattice":return "Recover the conductor lattice"
 		"stone_imprint":return "Recover the dormant Stone imprint"
+		"void_imprint":return "Recover the preserved Void imprint"
 		"venom_culture":return "Recover the preserved Venom culture"
 		"ice_egg":return "Rescue the frozen guardian egg"
 		"hatch_ice":return "Hatch Rime / Ice guardian" if campaign.ice_rescued and not campaign.guardians.has("ice") else "Guardian Nursery / evolution"
@@ -331,6 +332,9 @@ func interact() -> void:
 		"stone_imprint":
 			if Fusion.recover_stone(campaign):
 				_save();level.refresh(campaign);hud.show_stone_recovered()
+		"void_imprint":
+			if Fusion.recover_void(campaign):
+				_save();level.refresh(campaign);hud.show_void_recovered()
 		"venom_culture":
 			if Fusion.recover_venom(campaign):
 				_save();level.refresh(campaign);hud.show_venom_recovered()
@@ -449,11 +453,17 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		effects.pulse(origin,2.0,Color("9edff2"))
 		hud.feedback("CRYSTAL AEGIS", "55%% damage reduction for Rime / %d seconds" % int(dragon.state.ward))
 		return
+	if id=="wall" and owner_id=="void":
+		dragon.state.null_reflect=GuardianCombat.null_reflect_duration()
+		effects.pulse(origin,1.5,Color("44eeee"))
+		hud.feedback("NULL REFLECT", "Briefly halve incoming damage and counter the attacker. Shields still block counters.")
+		return
 	if id=="wall":
 		if owner_id=="fire": _place_wall(origin,direction)
 		elif owner_id=="ice": _place_frost(origin,direction)
 		elif owner_id=="storm": _place_static(origin,direction)
 		elif owner_id=="stone": _place_bulwark(origin,direction)
+		elif owner_id=="shadow": _place_shadow(origin,direction)
 		else: _place_venom(origin,direction)
 		walls[-1].damage=campaign_damage(id)
 		walls[-1].guardian=owner_id
@@ -462,12 +472,23 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		walls[-1].charge_duration=GuardianCombat.charge_duration(dragon.state)
 		return
 	var landed=false
+	var void_damage=0.0
 	for actor in enemies.duplicate():
 		if is_instance_valid(actor) and Combat.in_cone(origin,direction,actor.global_position,rule.range,rule.cone) and line_clear(origin,actor.global_position):
-			if actor.element_hit(campaign_damage(id),owner_id,id,GuardianCombat.chill_duration(dragon.state),GuardianCombat.charge_duration(dragon.state))>0.0: landed=true
+			var actual=actor.element_hit(campaign_damage(id),owner_id,id,GuardianCombat.chill_duration(dragon.state),GuardianCombat.charge_duration(dragon.state))
+			if actual>0.0:
+				landed=true
+				if owner_id=="void":
+					void_damage+=actual
+					actor.displace_from(origin,GuardianCombat.void_displacement(id))
+	if owner_id=="void" and id=="burst" and void_damage>0.0:
+		dragon.state.hp=minf(dragon.state.max_hp,dragon.state.hp+void_damage*.4)
 	if owner_id=="stone" and id=="burst" and landed:
 		var spent=GuardianCombat.consume_resolve(dragon.state)
 		if spent>0:hud.feedback("EARTHSHATTER / RESOLVE %d" % spent,"Guard landed hits to rebuild Resolve.")
+	if owner_id=="shadow" and id=="burst" and landed:
+		var spent_phase=GuardianCombat.consume_phase(dragon.state)
+		if spent_phase>0:hud.feedback("PHASE STRIKE / PHASE %d" % spent_phase,"Dodge through real incoming hits to rebuild Phase.")
 	if owner_id=="storm":
 		_storm_contact(id,origin,direction,rule.range)
 		if id=="breath" and not conduits.is_empty():
@@ -477,6 +498,14 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		_stone_contact(id,origin,direction,rule.range)
 	if owner_id=="venom":
 		_venom_contact(id,origin,direction,rule.range)
+	if owner_id=="void":
+		_void_contact(id,origin,direction,rule.range)
+		return
+	if owner_id=="shadow":
+		_shadow_contact(id,origin,direction,rule.range)
+		if id=="breath" and not conduits.is_empty():
+			hud.toast("Thermal relays need Magma. Void Pulse cannot power the conductor.")
+			return
 	if owner_id=="ice":
 		_ice_contact(id,origin,direction,rule.range)
 		if id=="breath" and not conduits.is_empty():
@@ -524,10 +553,16 @@ func _tick_walls(delta: float) -> void:
 			wall.node.queue_free()
 			walls.remove_at(i)
 
-func _on_pattern(shape: Dictionary, amount: float) -> void:
+func _on_pattern(shape: Dictionary, amount: float, source: Node3D = null) -> void:
 	sound("impact","fire",3)
 	if Patterns.contains(shape,dragon.global_position) and line_clear(shape.origin,dragon.global_position):
-		dragon.receive_damage(amount)
+		var struck_state:Dictionary=dragon.state
+		var reflecting=party.active_id=="void" and struck_state.get("null_reflect",0.0)>0.0
+		var received=dragon.receive_damage(amount)
+		# Keep counter eligibility tied to the struck guardian across reserve handoffs.
+		if reflecting and received>0.0 and struck_state.hp>0.0 and is_instance_valid(source):
+			var counter=source.take_hit(GuardianCombat.reflected_damage(received))
+			if counter>0.0:effects.pulse(source.global_position,1.0,Color("44eeee"))
 	else:
 		hud.feedback("EVADED", "Counter during recovery.")
 	if shape.kind=="beam":
@@ -682,6 +717,10 @@ func guidance() -> Dictionary:
 		target=Vector3(-2,0,8)
 		marker="HATCH MAGMA"
 	elif r.role=="forge":
+		if campaign.void_forged and not campaign.guardians.has("void"):
+			return {"title":"A Void guardian is ready to awaken","detail":"Visit Resonance Fusion to awaken Null. Existing guardians and the expedition pair remain.","target":Fusion.STATION,"marker":"AWAKEN NULL","index":5}
+		if campaign.void_imprint_recovered and not campaign.void_forged:
+			return {"title":"Stabilize the Void imprint","detail":"Return the recovered imprint to Resonance Fusion. No guardian is consumed.","target":Fusion.STATION,"marker":"VOID RESONANCE","index":5}
 		if campaign.venom_forged and not campaign.guardians.has("venom"):
 			return {"title":"A Venom guardian is ready to hatch","detail":"Visit Resonance Fusion to awaken Nox. Rime and your current expedition pair are retained.","target":Fusion.STATION,"marker":"HATCH NOX","index":mini(campaign.installed.size(),5)}
 		if campaign.venom_culture_recovered and not campaign.venom_forged and Fusion.venom_reason(campaign)=="" and campaign.cores.size()==campaign.installed.size():
@@ -739,6 +778,8 @@ func guidance() -> Dictionary:
 		detail="Recover the conductor lattice from the right-hand plinth. Evolved Magma and Rime can create Arc at the Forge."
 		target=Fusion.LATTICE
 		marker="CONDUCTOR LATTICE"
+	elif r.id=="singularity" and campaign.finished and not campaign.void_imprint_recovered:
+		return {"title":"Recover the Void imprint","detail":"The stabilized chamber reveals a preserved imprint. Bring it to the Forge to awaken Null.","target":Fusion.VOID_IMPRINT,"marker":"VOID IMPRINT","index":5}
 	elif r.id=="admin-vault" and not campaign.stone_imprint_recovered:
 		title="A dormant Stone memory"
 		detail="Recover the Stone imprint from the right-hand plinth. Temper it with Magma at Resonance Fusion to awaken Cairn."
@@ -787,7 +828,7 @@ func swap_guardian(target: String = "", forced: bool = false) -> bool:
 	get_viewport().gui_release_focus()
 	if not forge_trial_active:
 		_save()
-	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", {"ice":"Chill, then swap to Magma to shatter.", "fire":"Fire shatters chilled enemies on a direct hit.", "storm":"Charge with Arc Lance or Static Well. Discharge with technique 4.", "stone":"Guard landed hits to build Resolve, then Earthshatter [4]."}.get(target, ""))
+	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", {"ice":"Chill, then swap to Magma to shatter.", "fire":"Fire shatters chilled enemies on a direct hit.", "storm":"Charge with Arc Lance or Static Well. Discharge with technique 4.", "stone":"Guard landed hits to build Resolve, then Earthshatter [4].", "venom":"Build Toxin, then cash it out with Septic Bloom [4].", "shadow":"Dodge through real hits to build Phase, then land Phase Strike [4].", "void":"Void Rift pushes, Siphon Rift pulls and drains. Null Reflect counters incoming hits."}.get(target, ""))
 	return true
 
 func _on_guardian_down() -> void:
@@ -875,6 +916,14 @@ func hatch_venom() -> bool:
 	if not can_fuse() or not Fusion.hatch_venom(campaign):return false
 	sound("hatch","venom",3,true);_save();hud.show_fusion();return true
 
+func forge_shadow() -> bool:
+	if not can_fuse() or not Fusion.forge_shadow(campaign):return false
+	sound("fusion","shadow",3,true);_save();hud.show_fusion();return true
+
+func hatch_shadow() -> bool:
+	if not can_fuse() or not Fusion.hatch_shadow(campaign):return false
+	sound("hatch","shadow",3,true);_save();hud.show_fusion();return true
+
 func equip_reserve(guardian: String) -> bool:
 	# Only the safe Nursery can change the pair. Opening P elsewhere never grants healing.
 	if not can_evolve() or not Fusion.equip_reserve(campaign,guardian): return false
@@ -946,6 +995,29 @@ func _venom_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->voi
 		Geo.orb(node,origin+direction*d+side+Vector3.UP*(.55+.03*(i%3)),.10 if id=="claw" else .075,mat)
 	node.create_tween().tween_interval(.30).finished.connect(node.queue_free)
 
+func _place_shadow(origin:Vector3,direction:Vector3)->void:
+	var at=origin+direction*4.0
+	var hit=get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(origin+Vector3.UP,at+Vector3.UP,1))
+	if not hit.is_empty():at=hit.position-direction*.6
+	at.y=0.0
+	var marker=effects.decal(at,2.4,Color("2a2138"))
+	var violet=Geo.material(Color("9b72d3"),.55,true)
+	for i in [0,1,3,4,6,7]:
+		var a=TAU*float(i)/8.0;Geo.orb(marker,Vector3(sin(a)*1.85,.09,cos(a)*1.85),.11,violet)
+	walls.append({"at":at,"ttl":3.6,"tick":0.0,"damage":campaign_damage("wall"),"guardian":"shadow","node":marker})
+
+func _shadow_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->void:
+	if id=="burst":effects.pulse(origin,reach,Color("9d70dc"));return
+	var node=Node3D.new();add_child(node);effects._reserve(node);var mat=Geo.material(Color("9c72db"),.70,true)
+	var count=4 if id=="claw" else 12
+	for i in range(count):
+		var d=.9+i*.50
+		if d>reach or not line_clear(origin,origin+direction*d):break
+		if i%3==1:continue
+		var side=direction.cross(Vector3.UP)*(.16 if i%2 else -.16)
+		Geo.orb(node,origin+direction*d+side+Vector3.UP*(.62+.03*(i%3)),.09,mat)
+	node.create_tween().tween_interval(.25).finished.connect(node.queue_free)
+
 func _stone_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->void:
 	if id=="burst":effects.pulse(origin,reach,Color("bba47b"));return
 	var node=Node3D.new();add_child(node);effects._reserve(node);var mat=Geo.material(Color("c2ae86"),.35,true)
@@ -971,3 +1043,21 @@ func _on_player_damaged(amount: float, guarded: bool) -> void:
 		forge_trial_damage += maxf(0.0,amount)
 	super._on_player_damaged(amount,guarded)
 	sound("guard" if guarded else "hurt",party.active_id,3)
+
+func forge_void() -> bool:
+	if not can_fuse() or not Fusion.forge_void(campaign):return false
+	sound("fusion","void",3,true);_save();hud.show_fusion();return true
+
+func hatch_void() -> bool:
+	if not can_fuse() or not Fusion.hatch_void(campaign):return false
+	sound("hatch","void",3,true);_save();hud.show_fusion();return true
+
+func _void_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->void:
+	if id=="burst":effects.pulse(origin,reach,Color("44eeee"));return
+	var node=Node3D.new();add_child(node);effects._reserve(node)
+	var mat=Geo.material(Color("44dddd"),.8,true)
+	for i in range(3 if id=="claw" else 7):
+		var at=origin+direction*(.8+i*.9)
+		if not line_clear(origin,at):break
+		Geo.ring(node,at+Vector3.UP*.65,.18+i*.02,mat,.045)
+	node.create_tween().tween_interval(.25).finished.connect(node.queue_free)

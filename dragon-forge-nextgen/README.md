@@ -1,51 +1,27 @@
-## Current pass: Boss Identities
-
-The default campaign now loads five separate sector/final boss models, pattern-specific
-wind-up/contact clips, cosmetic defeat animations and boss-aware camera framing.
-The three guardians, evolution/fusion, ten existing music recordings, routes and saves remain.
-Import the complete project and **Run Project**; the title says **BOSS IDENTITIES**.
-Optional review only: `validation/character_inspection.tscn` now includes all bosses;
-`validation/boss_arena.tscn` exercises their actual rooms/camera/combat without loading saves.
-See [`campaign/BOSSES.md`](campaign/BOSSES.md) for scope and verification.
-
 # Dragon Forge — Reconnection Campaign
 
-**Start here: open `project.godot` in Godot 4.6.3 Standard and press F5.** The title must say **DRAGON FORGE / RECONNECTION**. This build has 22 connected rooms, four sectors, salvage upgrades and an ending; it is not the older small-room art prototype.
+**Open `project.godot` in Godot 4.6.3 Standard and press F5.** Run Project launches the complete Reconnection campaign: **22 connected rooms, four sectors, 13 encounters and an ending**. The current development pass adds Null, the Void guardian, and campaign save schema 9. Release acceptance for this revision must be established by its own workflow results.
 
-Choose Begin campaign → press E to hatch Magma → press M → Outer Grid → Enter sector. Use the labeled north portals to continue exploring. After a boss, collect its core, return to the Forge and install it to open the next sector.
+Choose **Begin campaign** → press **E** at the hatch ring to awaken Magma → press **M** → **Outer Grid / Enter sector**. Follow the labeled north portals. After each sector boss, collect its core, return to the Forge and install it to open the next sector.
 
-Controls: WASD move, mouse aim, 1–4 techniques, Space dodge, Shift guard, E interact, Q repair, Tab swap, P guardians, M routes, N journal, Esc pause. The title, route map and contextual interaction also provide clickable controls.
+Controls: WASD move, mouse aim, 1–4 techniques, Space dodge, Shift guard, E interact, Q repair, Tab swap, P guardians, M routes, N journal, Esc pause. Menus and contextual interactions also provide clickable controls.
 
-The packaged GLBs/textures are ready to import. No Python, Node or asset-generation step is needed to play. This source project is not a standalone application and still requires Godot. Existing prototype saves are preserved; campaign progression is separate.
+## Guardians and progression
 
-See `campaign/README.md` for the complete route, saves, tests and limitations. `art/README.md`, `art/POLISH.md` and `validation/README.md` document the inherited art and inspection tools. Those validation scenes remain opt-in: F6 runs the selected scene, while **F5 launches the campaign**. The original small mechanical slice is retained at `world/main.tscn` for regression tests.
+Up to **seven guardians** can be owned: Magma, Rime, Arc, Cairn, Nox, Umbra and Null. Expeditions have **two field slots**. Select the active guardian and reserve at the Forge Nursery. Optional recruitment can happen in any order allowed by each guardian's actual prerequisites; recruiting another guardian preserves an existing expedition pair and keeps the campaign saveable.
 
-This is a compact playable campaign using two earnable guardians and the existing modular art, not the full browser game's dragon collection/fusion/campaign port. The original browser game, frozen Godot runtime and soundtrack are unchanged.
+Magma and Rime have earned evolved forms; Arc can evolve into Tempest Arc. The Forge also supports non-destructive resonance recruitment. **Fire + Venom produces Shadow**: awaken Nox, then create Shadow resonance and awaken Umbra at Resonance Fusion. Umbra earns Phase by dodging real incoming hits and spends it only when Phase Strike deals damage. Closed enemy and boss shields still block that strike.
 
-## First guardian pair
+For Void, **stabilize the Singularity, recover the preserved imprint in its chamber, then return to Resonance Fusion at the Forge to stabilize it and awaken Null**. Existing guardians are retained. Null's four techniques are Rift Shard, the pushing Void Rift, the defensive Null Reflect and the pulling/healing Siphon Rift. Shields remain authoritative; bosses and enemies with locked attack warnings stay anchored, and displacement respects collision.
 
-The campaign now includes an earned Ice guardian, party swapping, chill/shatter combat and save migration. See [campaign/GUARDIANS.md](campaign/GUARDIANS.md). F5 still launches Reconnection.
+Five imported boss identities, Forge Trials, salvage upgrades, journals and the existing ten-track soundtrack are integrated. Audio settings are available on the title and pause menus. This remains a compact campaign adaptation; the browser game's full collection and content are outside its scope.
 
-## Guardian evolution
+## Source project and standalone builds
 
-The campaign now supports earned **Crowned Magma** and **Aurora Rime** forms. Reach
-Bond III (280 shared achievement points), restore two sector cores, then visit the
-Forge's Guardian Nursery. Choose between two specializations per guardian, with
-free later reconfiguration. Existing v1/v2 campaign saves retain milestones; no
-restart is needed. See `campaign/EVOLUTION.md` for exact effects and limitations.
+The included models and textures are ready for Godot to import. Playing the source project requires Godot; it does not require Python, Node or asset generation. **F5 runs the campaign**. F6 runs the selected scene, including optional character inspection and boss-arena validation scenes. The original mechanical slice remains at `world/main.tscn` for regression work.
 
-## Resonance Fusion campaign update
+Standalone Windows, macOS and Linux packages are produced and checked separately by **Nextgen standalone playtests**. Use a `standalone-playtest` artifact from a successful run for the revision you want; candidate exports have not completed native-runner checks. Standalone packages run without an installed Godot editor. See [release/README.md](release/README.md) for launch and build instructions.
 
-**F5 still launches the complete campaign.** Fire + Ice can now produce Arc, a Storm guardian,
-without consuming the parents. Recover the conductor lattice in Storm Spine's Capacitor
-Cache, evolve both parents, and visit Resonance Fusion on the left of the Forge. Select
-one reserve at the right-hand Nursery; only two of the three owned guardians join a trip.
-Existing campaign progress migrates without a reset. See `campaign/FUSION.md` for the
-recruitment route, four Storm techniques, two-slot rules, testing and limitations.
+Valid older campaign saves migrate in memory to schema 9; loading preserves their original bytes and the first later successful write retains a backup. Optional ownership order and the selected two-guardian pair survive migration. Unknown, corrupt or unearned states remain protected from overwrite.
 
-## Tempest & Sound
-Arc can evolve after the third restored core, and the campaign now plays the
-existing soundtrack with native effects. Audio settings are on the title and
-pause menus. Continue retains valid older progress. See
-[`campaign/TEMPEST_AUDIO.md`](campaign/TEMPEST_AUDIO.md) for the unlock route,
-controls, source provenance and validation boundaries.
+See [campaign/README.md](campaign/README.md) for routes, combat, saves, tests and the remaining human acceptance work. Visual captures do not establish controller quality, balance or target-hardware frame times; the optional first-pass guardian rigs are not certified for foot locking. [validation/README.md](validation/README.md), [art/README.md](art/README.md) and [art/POLISH.md](art/POLISH.md) describe the inspection tools and inherited art work.

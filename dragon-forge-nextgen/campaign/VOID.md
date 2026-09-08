@@ -8,13 +8,21 @@ The browser art bible defines Void as a hollow crystal tetra / negative-mass cry
 
 The browser alchemy table only defines Void explicitly through `Light + Void = Synthesis`; it does not provide a recipe from the currently owned Fire/Ice/Storm/Stone/Venom/Shadow set. Native Reconnection therefore must not invent a parent-pair result. The bootstrap path will recover a preserved Void imprint/catalyst from an existing campaign location, then awaken it at the Forge without consuming existing guardians. This is a bounded native adaptation that preserves the original alchemy table.
 
-## Combat direction
+## Recruitment and combat
 
-Void should occupy a distinct displacement/control role rather than duplicating Shadow's Phase or Venom's Toxin. Candidate mechanics must remain deterministic and shield-safe: no teleport through collision, no arbitrary shield bypass, no hidden damage engine, and no campaign rewards from repeatable trials.
+After stabilizing the Singularity ending pedestal, recover the preserved Void imprint from the separate plinth in that chamber. Return to Resonance Fusion, stabilize the imprint, and awaken **Null**. No existing guardian is consumed; optional guardian recruitment order remains free. Null can be the first reserve or a later member of the collection, and an existing two-member expedition pair is retained.
+
+- **Rift Shard**: bounded native basic attack, 24 base damage.
+- **Void Rift**: canonical named technique, 32 base damage; a landed hit pushes an ordinary enemy up to 1.25 metres away.
+- **Null Reflect**: canonical defensive technique adapted to a 1.2-second counter window. It halves real incoming damage. A survived, landed attack reflects the actual damage received, capped at 20, to that attack's source through the normal shield check. Dodged/missed/invalid hits and unowned environmental hazards cause no reflected attack. Reflected hits do not recursively create attacks.
+- **Siphon Rift**: canonical named signature, 44 base damage; a landed hit pulls ordinary enemies up to 1.5 metres toward Null and restores 40% of actual dealt damage, capped by maximum HP. Shielded hits and whiffs restore nothing.
+
+Displacement uses collision-aware swept movement. Bosses, dead/queued actors and enemies with locked attack tells remain anchored. It neither rewrites locked attack geometry nor opens shields. Null has 88% of Magma's base HP; Void grants neither Shadow Phase nor Venom Toxin and does not power thermal relays. All numbers are provisional native balance values, not browser turn-based damage equivalence.
+
 
 ## Save contract
 
-The next schema adds only the fields required to represent recovered/forged Void progression. Valid schema-8 saves must migrate in memory without write-on-load and preserve exact prior bytes on the first later successful write. Unearned ownership, malformed future states and invalid two-slot loadouts remain rejected.
+Schema 9 adds only `void_imprint_recovered` and `void_forged`. Valid schema-8 saves must migrate in memory without write-on-load and preserve exact prior bytes on the first later successful write. Unearned ownership, malformed future states and invalid two-slot loadouts remain rejected.
 
 ## Release gate
 

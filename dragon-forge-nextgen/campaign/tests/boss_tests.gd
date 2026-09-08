@@ -113,8 +113,7 @@ func run() -> void:
 	w.queue_free();await frames()
 	var studio=Studio.new();root.add_child(studio);await frames()
 	for i in range(5):
-		# Nox occupies inspector slot 9; bosses now begin at slot 10.
-		studio.load_actor(10+i)
+		studio.load_actor(studio.ACTORS.find(Catalog.ASSET_IDS[i]))
 		check(studio.actor_id==Catalog.ASSET_IDS[i] and studio.player!=null,"neutral/rim inspector loads boss / "+Catalog.ASSET_IDS[i])
 		check(not studio.feet.valid,"no invented planted-foot measurement for non-foot rigs")
 		studio.set_material(2);studio.set_material(0)

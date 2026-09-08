@@ -1,9 +1,11 @@
 # Standalone playtest packaging
 
-These exports contain the complete Reconnection campaign with Nox / Venom Resonance,
-Cairn / Stone Resonance, Forge Trials, Boss Identities, Tempest, the existing soundtrack,
+The current export scope is the complete Reconnection campaign with Null / Void Resonance,
+Umbra / Shadow Resonance,
+Nox / Venom Resonance, Cairn / Stone Resonance, Forge Trials, Boss Identities, Tempest, the existing soundtrack,
 evolution and fusion work. They are not editor launchers or empty test rooms. Campaign
-progress uses save schema 7 and retains the existing custom userdata directory. No user
+progress uses save schema 9 and retains the existing custom userdata directory. Release
+acceptance for this revision is pending until its own workflow results pass. No user
 save, credentials, authoring tools or separate font files are bundled. Godot's license
 and dependency notices accompany each package.
 
@@ -15,8 +17,9 @@ On Windows run `DragonForge.exe`, keeping its `.pck` and libraries alongside it.
 On macOS open `DragonForge.app`; this universal bundle targets Intel and Apple Silicon.
 On Linux run `DragonForge.x86_64`. No Godot installation or export template is
 needed. The optional `Play-Compatibility` launcher selects OpenGL for troubleshooting.
-The title reads **VENOM RESONANCE**. Nox is the fifth owned guardian; expeditions
-still use exactly two live field slots.
+The default entry is the Reconnection campaign. Up to seven guardians can be owned;
+expeditions still use exactly two live field slots. After stabilizing the Singularity,
+recover the preserved Void imprint in its chamber and take it to the Forge to awaken Null.
 
 Choose Continue under the same OS account to retain campaign progress. Keep a
 backup before a playtest. Save location is the existing custom Godot user directory
@@ -45,7 +48,7 @@ Silicon ETC2/ASTC texture import formats are enabled in project settings. The bu
 imports source assets and generates `release/build_info.json` before exporting.
 No prior gameplay source or asset is modified. The GUI Export dialog can also use
 these presets after metadata is generated. Runtime dependency discovery includes
-dynamically loaded boss models, guardian variants, Cairn, Nox and the soundtrack;
+dynamically loaded boss models, guardian variants, Cairn, Nox, Umbra, Null and the soundtrack;
 validation rejects missing packed assets.
 
 GitHub Actions downloads exact 4.6.3 release assets from Godot's official repository,
@@ -59,10 +62,12 @@ not stored in artifacts or executables. Artifacts expire after 14 days.
 
 ## What the checks establish
 
-Package integrity, executable format, default campaign startup, all **63** models/maps/
-recordings loadable from the exported pack, all 22 rooms, five imported bosses,
-Fire/Ice/Storm/Stone/Venom guardian swaps, runtime audio decoding, schema-5-to-7
-migration and exact backup preservation. macOS also checks both architectures and the
+The gate checks package integrity, executable format, default campaign startup, all
+**73** models/maps/recordings loadable from the exported pack, all 22 rooms, five imported bosses,
+Fire/Ice/Storm/Stone/Venom/Shadow/Void guardian swaps, runtime audio decoding, schema-5/7/8-to-9
+migration and exact backup preservation. Shared combat acceptance exercises Shadow's
+shield-preserving Phase Strike and Void's shield-safe displacement, reflection and drain.
+macOS also checks both architectures and the
 ad-hoc signature. Only the runner's native architecture is executed; presence of a
 second slice is not a second-architecture playtest. Headless Windows/macOS checks do
 not establish rendering performance or physical audio/controller quality.
@@ -79,7 +84,7 @@ Editor Run Project still opens `campaign/main.tscn` directly.
 The opt-in `release/export_smoke.gd` Node is dispatched by this bootstrap only
 with an explicit `--ci-release-check` argument and absolute report folder. It
 instantiates a test-mode world and uses a uniquely named temporary save. It verifies
-Nox is packed and swappable and exercises schema-5-to-7 migration without writing
+Umbra and Null are packed and swappable and exercises schema-5/7/8-to-9 migration without writing
 the source save until the explicit test write. It neither loads nor overwrites the
 player's campaign. Ordinary startup does not run these tests. Development tests and
 validation scenes are excluded from player builds; use the full source project to
