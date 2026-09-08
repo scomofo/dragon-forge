@@ -158,3 +158,26 @@ static func hatch_void(c: Dictionary) -> bool:
 	c.loadout=members(c) if c.guardians.size()>=2 else []
 	c.guardians.append("void")
 	return true
+
+static func synthesis_reason(c: Dictionary) -> String:
+	# Canonical browser alchemy: Light + Void = Synthesis. Both parents are retained.
+	if not c.get("finished", false):
+		return "Stabilize the Singularity before attempting Synthesis."
+	if not c.get("guardians", []).has("void"):
+		return "Awaken Null before attempting Synthesis."
+	if not c.get("guardians", []).has("light"):
+		return "Earn Lumen before attempting Synthesis."
+	return ""
+
+static func forge_synthesis(c: Dictionary) -> bool:
+	if c.get("room", "") != "forge" or synthesis_reason(c) != "" or c.get("synthesis_forged", false):
+		return false
+	c.synthesis_forged = true
+	return true
+
+static func hatch_synthesis(c: Dictionary) -> bool:
+	if c.get("room", "") != "forge" or synthesis_reason(c) != "" or not c.get("synthesis_forged", false) or c.guardians.has("synthesis"):
+		return false
+	c.loadout = members(c) if c.guardians.size()>=2 else []
+	c.guardians.append("synthesis")
+	return true
