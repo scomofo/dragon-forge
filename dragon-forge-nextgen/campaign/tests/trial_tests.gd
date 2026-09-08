@@ -21,7 +21,63 @@ func campaign_ready()->Dictionary:
 	c.cleared=["outer-boss","frozen-boss","storm-boss","admin-boss"]
 	c.cores=["outer","frozen","storm","admin"];c.installed=c.cores.duplicate();c.room="forge"
 	return c
+
+func clean_record_file(store) -> void:
+	for suffix in ["", ".bak", ".tmp"]:
+		if FileAccess.file_exists(store.path+suffix):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(store.path+suffix))
+
+func record_integrity_tests() -> void:
+	var store=Store.new()
+	store.path="user://trial-pair-integrity-%s.json" % str(Time.get_ticks_usec())
+	var pairs=[]
+	for active in Rules.GUARDIAN_IDS:
+		pairs.append([active])
+		for reserve in Rules.GUARDIAN_IDS:
+			if reserve!=active:pairs.append([active,reserve])
+	for pair in pairs:
+		clean_record_file(store)
+		var records=store.fresh()
+		check(store.record(records,"outer-pressure",12000,27,pair),"trial clear writes for supported expedition "+str(pair))
+		var loaded=store.read_records()
+		check(loaded==records and store.message=="" and loaded.records.get("outer-pressure",{}).get("last_pair")==pair,"trial pair and first result survive reload "+str(pair))
+		check(store.record(loaded,"outer-pressure",14000,12,pair),"slower clear with less damage persists "+str(pair))
+		var result=store.read_records().records.get("outer-pressure",{})
+		check(result.get("best_ms")==12000 and result.get("best_damage")==12 and result.get("clears")==2,"time and damage bests improve independently after reload "+str(pair))
+		check(store.record(loaded,"outer-pressure",11000,0,pair),"perfect clear persists "+str(pair))
+		check(store.record(loaded,"outer-pressure",16000,50,pair),"later damaged clear persists "+str(pair))
+		result=store.read_records().records.get("outer-pressure",{})
+		check(result.get("best_ms")==11000 and result.get("best_damage")==0 and result.get("clears")==4 and result.get("last_pair")==pair,"perfect damage best is retained after later damaged clear and reload "+str(pair))
+	check(Store.VERSION==1,"guardian domain extension retains trial schema 1")
+	var records=store.read_records()
+	var before=records.duplicate(true)
+	var bytes=FileAccess.get_file_as_string(store.path)
+	for pair in [[],["unknown"],["fire","fire"],["fire",42],["fire","ice","storm"]]:
+		check(not store.record(records,"outer-pressure",1000,0,pair) and records==before,"invalid new pair cannot mutate records: "+str(pair))
+		check(FileAccess.get_file_as_string(store.path)==bytes,"invalid pair leaves saved record bytes intact: "+str(pair))
+	for pair in [["unknown"],["fire","fire"],["fire",42],["fire","ice","storm"],"fire"]:
+		var bad=before.duplicate(true)
+		bad.records["outer-pressure"].last_pair=pair
+		check(store.normalize(bad).is_empty() and not store.write_records(bad),"malformed stored pair rejected: "+str(pair))
+	check(FileAccess.get_file_as_string(store.path)==bytes,"malformed stored pairs cannot overwrite the valid file")
+	for key in ["clears","best_ms","best_damage"]:
+		for value in [-1,.5,NAN,INF,-INF,"12",true]:
+			var bad=before.duplicate(true)
+			bad.records["outer-pressure"][key]=value
+			check(store.normalize(bad).is_empty(),"malformed trial metric rejected: "+key+" / "+str(value))
+	var missing_pair=before.duplicate(true)
+	missing_pair.records["outer-pressure"].erase("last_pair")
+	check(store.normalize(missing_pair).is_empty(),"missing trial pair is rejected without invalid field access")
+	var legacy=store.fresh()
+	legacy.records["outer-pressure"]={"clears":0,"best_ms":0,"best_damage":0,"last_pair":[]}
+	check(store.write_records(legacy) and store.read_records()==legacy,"schema 1 empty historical pair remains readable and writable")
+	check(store.record(legacy,"outer-pressure",9000,30,["fire"]),"first clear replaces empty historical bests")
+	var first=store.read_records().records.get("outer-pressure",{})
+	check(first.get("best_ms")==9000 and first.get("best_damage")==30 and first.get("clears")==1,"first-clear detection uses count instead of zero damage")
+	clean_record_file(store)
+
 func run():
+	record_integrity_tests()
 	check(Roles.valid("bruiser") and Roles.valid("bulwark") and Roles.valid("sniper") and Roles.valid("skirmisher") and Roles.valid("controller"),"five ordinary enemy roles")
 	check(Roles.profile("sniper").engage>Roles.profile("bruiser").engage,"sniper engages farther out")
 	check(Roles.profile("skirmisher").speed>Roles.profile("bulwark").speed,"skirmisher moves faster than bulwark")

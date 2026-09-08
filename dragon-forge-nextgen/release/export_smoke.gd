@@ -5,6 +5,8 @@ const World = preload("res://campaign/world.gd")
 const Rules = preload("res://campaign/progress.gd")
 const Data = preload("res://campaign/data.gd")
 const Store = preload("res://campaign/save_store.gd")
+const TrialStore = preload("res://campaign/trial_store.gd")
+const Trials = preload("res://campaign/trials.gd")
 const Bosses = preload("res://campaign/bosses/catalog.gd")
 const Audio = preload("res://campaign/audio/director.gd")
 const AudioCatalog = preload("res://campaign/audio/catalog.gd")
@@ -178,6 +180,21 @@ func run() -> void:
 		for suffix in ["", ".bak", ".tmp"]:
 			if FileAccess.file_exists(store.path+suffix):
 				DirAccess.remove_absolute(ProjectSettings.globalize_path(store.path+suffix))
+	# Trial records have a separate roster domain and must survive native packaging too.
+	var trial_store = TrialStore.new()
+	trial_store.path = "user://release-trial-check-%s.json" % str(Time.get_ticks_usec())
+	var trial_id: String = Trials.DATA.keys()[0]
+	for guardian in Rules.GUARDIAN_IDS:
+		var records = trial_store.fresh()
+		var pair = ["fire"] if guardian == "fire" else ["fire",guardian]
+		check(trial_store.record(records,trial_id,1000,0,pair),"exported trial writes perfect clear with " + guardian)
+		check(trial_store.record(records,trial_id,1500,9,pair),"exported trial writes later clear with " + guardian)
+		var restored = trial_store.read_records()
+		var record: Dictionary = restored.records.get(trial_id,{})
+		check(record.get("clears") == 2 and record.get("best_ms") == 1000 and record.get("best_damage") == 0 and record.get("last_pair") == pair,"exported trial retains pair and perfect personal best with " + guardian)
+	for suffix in ["", ".bak", ".tmp"]:
+		if FileAccess.file_exists(trial_store.path+suffix):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(trial_store.path+suffix))
 	w.hud.close_overlay()
 	w.queue_free()
 	await frames(5)
