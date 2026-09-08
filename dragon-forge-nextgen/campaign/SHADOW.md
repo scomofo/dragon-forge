@@ -31,3 +31,5 @@ Schema 8 adds only `shadow_forged`. Valid schema-7 saves migrate in memory with 
 ## Release gate
 
 Shadow is not considered shipped until the committed negative-space model is independently validated, real world routing proves dodge-earned Phase plus shield-preserved/landed Phase Strike behavior, OpenGL and Forward+ captures pass, and fresh editor plus macOS/Windows/Linux packages execute their updated schema-8/Shadow smoke checks.
+
+Release evidence must come from the permanent read-only workflows on the final user-authored feature head. Temporary mutation/helper workflow commits are never treated as release evidence by themselves.
