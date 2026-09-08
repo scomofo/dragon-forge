@@ -7,6 +7,7 @@ const EvolvedMagma = preload("res://campaign/evolved_magma_rig.gd")
 const EvolvedIce = preload("res://campaign/evolved_ice_rig.gd")
 const StoneRig = preload("res://campaign/stone_rig.gd")
 const VenomRig = preload("res://campaign/venom_rig.gd")
+const VoidRig = preload("res://campaign/void_rig.gd")
 const ShadowRig = preload("res://campaign/shadow_rig.gd")
 var cooling_level = 0
 var guardian = "fire"
@@ -18,14 +19,16 @@ func _ready() -> void:
 	rigs["fire"] = rig
 
 func use_guardian(id: String, saved_state: Dictionary) -> void:
-	if not id in ["fire","ice","storm","stone","venom","shadow"]:
+	if not id in ["fire","ice","storm","stone","venom","shadow","void"]:
 		return
 	var facing = rig.rotation.y
 	rig.visible = false
 	var key: String = id + ("/evolved" if saved_state.get("evolution", "") != "" else "")
 	if not rigs.has(key):
 		var next
-		if id == "shadow":
+		if id == "void":
+			next = VoidRig.new()
+		elif id == "shadow":
 			next = ShadowRig.new()
 		elif id == "venom":
 			next = VenomRig.new()

@@ -45,7 +45,7 @@ func run() -> void:
 	var store=Store.new();store.import_legacy=false;store.path="user://tempest-test-save.json"
 	var f=FileAccess.open(store.path,FileAccess.WRITE);f.store_string(old_bytes);f.close()
 	var migrated=store.read_campaign()
-	check(migrated.version==8 and migrated.evolutions.storm=="" and not migrated.venom_culture_recovered and not migrated.venom_forged,"schema4 does not auto-evolve Arc or grant Venom progress")
+	check(migrated.version==9 and migrated.evolutions.storm=="" and not migrated.venom_culture_recovered and not migrated.venom_forged,"schema4 does not auto-evolve Arc or grant Venom progress")
 	for key in ["salvage","room","cleared","installed","guardians","loadout","active_guardian"]:
 		check(migrated[key]==old[key],"schema4 keeps "+key)
 	check(FileAccess.get_file_as_string(store.path)==old_bytes,"load leaves old bytes alone")
@@ -105,7 +105,7 @@ func run() -> void:
 	var studio=Studio.new();root.add_child(studio);await frames()
 	studio.load_actor(7)
 	check(studio.actor_id=="tempest_arc" and studio.clips.size()==9,"inspector supports actual Tempest and all nine clips")
-	check(not studio.feet.valid and studio.feet.error.begins_with("Arc hovers"),"hovering inspector explicitly declines planted-foot measurements")
+	check(not studio.feet.valid and studio.feet.error.contains("hovers") and studio.feet.error.contains("No planted-foot contract"),"hovering inspector explicitly declines planted-foot measurements")
 	studio.queue_free();await frames()
 	print("TEMPEST_TESTS: %d checks, %d failures" % [checks,failures])
 	quit(1 if failures else 0)

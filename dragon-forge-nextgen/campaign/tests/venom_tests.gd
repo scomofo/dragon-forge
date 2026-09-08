@@ -18,9 +18,9 @@ func eligible()->Dictionary:
 	c.room="frozen-vault"
 	return c
 func run():
-	var fresh=Rules.fresh();check(fresh.version==8,"fresh schema 8");check(not fresh.venom_culture_recovered and not fresh.venom_forged,"fresh Venom flags false")
+	var fresh=Rules.fresh();check(fresh.version==9,"fresh schema 9");check(not fresh.venom_culture_recovered and not fresh.venom_forged,"fresh Venom flags false")
 	var old=fresh.duplicate(true);old.version=6;old.erase("venom_culture_recovered");old.erase("venom_forged")
-	var migrated=Rules.normalize(old);check(migrated.version==8,"schema 6 migrates through schema 8");check(not migrated.venom_culture_recovered and not migrated.venom_forged,"migration grants no Venom progress")
+	var migrated=Rules.normalize(old);check(migrated.version==9,"schema 6 migrates through schema 9");check(not migrated.venom_culture_recovered and not migrated.venom_forged,"migration grants no Venom progress")
 	var bad=old.duplicate(true);bad.guardians=["fire","ice","storm","stone","venom"];check(Rules.normalize(bad).is_empty(),"schema 6 rejects impossible fifth guardian")
 	var c=eligible();check(Fusion.recover_venom(c),"recover Venom culture in Frozen Vault");check(not Fusion.recover_venom(c),"culture one-time");check(Fusion.venom_reason(c)=="","eligible Venom recipe ready")
 	c.room="forge";check(Fusion.forge_venom(c),"stabilize culture with Rime");check(not Fusion.forge_venom(c),"stabilize one-time");var pair=Fusion.members(c).duplicate();check(Fusion.hatch_venom(c),"awaken Nox");check(c.guardians==["fire","ice","storm","stone","venom"],"five owned guardians ordered");check(Fusion.members(c)==pair,"recruitment preserves expedition pair");check(not Fusion.hatch_venom(c),"Nox one-time")

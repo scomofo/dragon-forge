@@ -5,10 +5,10 @@ const Modules = preload("res://sim/forge_modules.gd")
 const Growth = preload("res://campaign/growth.gd")
 const Fusion = preload("res://campaign/fusion.gd")
 const UPGRADE_IDS = ["plating", "power", "cooling"]
-const GUARDIAN_IDS = ["fire", "ice", "storm", "stone", "venom", "shadow"]
+const GUARDIAN_IDS = ["fire", "ice", "storm", "stone", "venom", "shadow", "void"]
 
 static func fresh() -> Dictionary:
-	return {"version":8, "lattice_recovered":false, "storm_forged":false, "stone_imprint_recovered":false, "stone_forged":false, "venom_culture_recovered":false, "venom_forged":false, "shadow_forged":false, "loadout":[], "evolutions":{"fire":"","ice":"","storm":""}, "guardians":["fire"], "active_guardian":"fire", "ice_rescued":false, "hatched":false, "room":"forge", "visited":["forge"], "cleared":[], "relays":[], "caches":[], "journals":[], "cores":[], "installed":[], "salvage":0, "upgrades":{"plating":0,"power":0,"cooling":0}, "module":"", "finished":false, "legacy_imported":false}
+	return {"version":9, "void_imprint_recovered":false, "void_forged":false, "lattice_recovered":false, "storm_forged":false, "stone_imprint_recovered":false, "stone_forged":false, "venom_culture_recovered":false, "venom_forged":false, "shadow_forged":false, "loadout":[], "evolutions":{"fire":"","ice":"","storm":""}, "guardians":["fire"], "active_guardian":"fire", "ice_rescued":false, "hatched":false, "room":"forge", "visited":["forge"], "cleared":[], "relays":[], "caches":[], "journals":[], "cores":[], "installed":[], "salvage":0, "upgrades":{"plating":0,"power":0,"cooling":0}, "module":"", "finished":false, "legacy_imported":false}
 
 static func normalize(value: Variant) -> Dictionary:
 	if not value is Dictionary: return {}
@@ -35,14 +35,17 @@ static func normalize(value: Variant) -> Dictionary:
 		if not _valid_guardians(s.get("guardians"),5) or not s.get("evolutions") is Dictionary or s.evolutions.size()!=3:return {}
 		if not s.has("venom_culture_recovered") or not s.venom_culture_recovered is bool or not s.has("venom_forged") or not s.venom_forged is bool:return {}
 		s.version=8;s.shadow_forged=false
+	if s.get("version",0)==8:
+		if not _valid_guardians(s.get("guardians"),6) or not s.get("shadow_forged") is bool:return {}
+		s.version=9;s.void_imprint_recovered=false;s.void_forged=false
 	var template=fresh()
 	for key in template:
 		if not s.has(key): return {}
 	for key in ["version","salvage"]:
 		if not _integer(s[key],0,1000000): return {}
 		s[key]=int(s[key])
-	if s.version!=8:return {}
-	for key in ["hatched","finished","legacy_imported","ice_rescued","lattice_recovered","storm_forged","stone_imprint_recovered","stone_forged","venom_culture_recovered","venom_forged","shadow_forged"]:
+	if s.version!=9:return {}
+	for key in ["hatched","finished","legacy_imported","ice_rescued","lattice_recovered","storm_forged","stone_imprint_recovered","stone_forged","venom_culture_recovered","venom_forged","shadow_forged","void_imprint_recovered","void_forged"]:
 		if not s[key] is bool:return {}
 	if not s.room is String or not Data.ROOMS.has(s.room) or not s.module is String or (s.module!="" and not Modules.valid(s.module)):return {}
 	var zones=[]
@@ -90,6 +93,9 @@ static func normalize(value: Variant) -> Dictionary:
 	if s.guardians.has("venom") and not s.venom_forged:return {}
 	if s.shadow_forged and Fusion.shadow_reason(s)!="":return {}
 	if s.guardians.has("shadow") and not s.shadow_forged:return {}
+	if s.void_imprint_recovered and (not s.finished or not s.visited.has("singularity")):return {}
+	if s.void_forged and Fusion.void_reason(s)!="":return {}
+	if s.guardians.has("void") and not s.void_forged:return {}
 	if not s.loadout is Array:return {}
 	if s.loadout.is_empty():
 		if s.guardians.size()>2:return {}

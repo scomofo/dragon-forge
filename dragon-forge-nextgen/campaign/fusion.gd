@@ -6,6 +6,7 @@ const STATION = Vector3(-7, 0, 8)
 const LATTICE = Vector3(6, 0, -4)
 const STONE_IMPRINT = Vector3(6, 0, -4)
 const VENOM_CULTURE = Vector3(-5, 0, -4)
+const VOID_IMPRINT = Vector3(-5, 0, -4)
 
 static func reason(c: Dictionary) -> String:
 	if not c.get("hatched", false) or not c.get("guardians", []).has("ice"):
@@ -134,4 +135,26 @@ static func equip_reserve(c: Dictionary, guardian: String) -> bool:
 	if members(c).has(guardian):
 		return false
 	c.loadout = pair
+	return true
+
+static func void_reason(c: Dictionary) -> String:
+	if not c.get("hatched",false):return "Awaken Magma first."
+	if not c.get("finished",false):return "Stabilize the Singularity before awakening Void."
+	if not c.get("void_imprint_recovered",false):return "Recover the Void imprint from the stabilized Singularity chamber."
+	return ""
+
+static func recover_void(c: Dictionary) -> bool:
+	if c.get("room","")!="singularity" or not c.get("finished",false) or c.get("void_imprint_recovered",false):return false
+	c.void_imprint_recovered=true
+	return true
+
+static func forge_void(c: Dictionary) -> bool:
+	if c.get("room","")!="forge" or void_reason(c)!="" or c.get("void_forged",false):return false
+	c.void_forged=true
+	return true
+
+static func hatch_void(c: Dictionary) -> bool:
+	if c.get("room","")!="forge" or void_reason(c)!="" or not c.get("void_forged",false) or c.guardians.has("void"):return false
+	c.loadout=members(c) if c.guardians.size()>=2 else []
+	c.guardians.append("void")
 	return true

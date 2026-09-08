@@ -48,7 +48,9 @@ func _process(delta: float) -> void:
 	var active_id: String=world.party.active_id
 	health_text.text=Growth.form_name(active_id,actor.state.get("evolution", "") != "").to_upper()+"   /   %d / %d" % [roundi(actor.state.hp),roundi(actor.state.max_hp)]
 	if not actor.active:health_text.text="MAGMA / DORMANT"
-	if active_id=="shadow":
+	if active_id=="void":
+		defensive_text.text="NULL REFLECT / %.1fs" % actor.state.null_reflect if actor.state.get("null_reflect",0.0)>0.0 else "VOID / PUSH, PULL AND COUNTER"
+	elif active_id=="shadow":
 		defensive_text.text="PHASE %d / %d  /  DODGE THROUGH HITS" % [int(actor.state.get("phase",0)),GuardianCombat.MAX_PHASE]
 	elif actor.state.get("ward",0.0)>0.0:
 		defensive_text.text="CRYSTAL AEGIS  /  %.1fs" % actor.state.ward
@@ -188,7 +190,7 @@ func show_title() -> void:
 	_label(overlay_column,"DRAGON FORGE",42,GOLD)
 	_label(overlay_column,"RECONNECTION",25,TEAL)
 	_wrapped(overlay_column,"A compact playable campaign through four broken sectors. Restore their cores. Rescue, evolve and fuse guardians. Choose your expedition pair. Stop the Great Reset.",20)
-	_label(overlay_column,"SHADOW RESONANCE   /   22 ROOMS   /   SIX GUARDIANS, TWO FIELD SLOTS",14,MUTED)
+	_label(overlay_column,"VOID RESONANCE   /   22 ROOMS   /   SEVEN GUARDIANS, TWO FIELD SLOTS",14,MUTED)
 	var start=_button(overlay_column,"Continue campaign" if world.store.existed or world.has_started else "Begin campaign")
 	start.pressed.connect(func():world.begin_campaign(false))
 	start.grab_focus()
@@ -447,14 +449,14 @@ func show_party() -> void:
 	row.add_theme_constant_override("h_separation",14)
 	row.add_theme_constant_override("v_separation",14)
 	scroll.add_child(row)
-	for id in ["fire","ice","storm","stone","venom","shadow"]:
+	for id in ["fire","ice","storm","stone","venom","shadow","void"]:
 		var card=_panel(row);card.custom_minimum_size.x=315
 		card.name="Guardian_"+id
 		card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 		var col=_column(card,9)
 		var owned: bool=world.campaign.guardians.has(id)
 		var selected: bool=world.party.states.has(id)
-		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa"),"stone":Color("c8ad7c"),"venom":Color("a8db61"),"shadow":Color("b78be0")}[id])
+		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa"),"stone":Color("c8ad7c"),"venom":Color("a8db61"),"shadow":Color("b78be0"),"void":Color("44eeee")}[id])
 		_label(col,("ACTIVE" if world.party.active_id==id else ("RESERVE" if selected else "AT THE FORGE")) if owned else "NOT RECRUITED",14,MUTED)
 		if owned:
 			if selected:
@@ -464,7 +466,7 @@ func show_party() -> void:
 				_label(col,"Not in the expedition",15,MUTED)
 			for slot in GuardianCombat.ORDER:
 				_label(col,GuardianCombat.rule({"guardian":id,"evolution":Growth.choice(world.campaign,id)},slot).name,17,PAPER)
-			var tips={"fire":"Powers heat relays. Direct Fire hits shatter Chill for +40% once.","ice":"Chills exposed enemies. Aegis protects Rime, even after swapping.","storm":"Lance / Well charge enemies. Discharge consumes Charge for +50% once.","stone":"Guard landed hits to build up to 3 Resolve. Earthshatter gains +20% per Resolve and spends it only on a landed hit.","venom":"Fang, Spit and Cloud build Toxin. Septic Bloom gains +25% per stack and consumes stacks only when it lands.","shadow":"A real incoming hit during dodge i-frames builds Phase (max 2). Phase Strike gains +30% per Phase and spends it only when damage lands."}
+			var tips={"fire":"Powers heat relays. Direct Fire hits shatter Chill for +40% once.","ice":"Chills exposed enemies. Aegis protects Rime, even after swapping.","storm":"Lance / Well charge enemies. Discharge consumes Charge for +50% once.","stone":"Guard landed hits to build up to 3 Resolve. Earthshatter gains +20% per Resolve and spends it only on a landed hit.","venom":"Fang, Spit and Cloud build Toxin. Septic Bloom gains +25% per stack and consumes stacks only when it lands.","shadow":"A real incoming hit during dodge i-frames builds Phase (max 2). Phase Strike gains +30% per Phase and spends it only when damage lands.","void":"Void Rift pushes exposed enemies. Null Reflect briefly halves incoming damage and counters its source. Siphon Rift pulls and heals 40% of damage dealt. Shields block control and drain; bosses and locked tells remain anchored."}
 			_wrapped(col,tips[id],16,MUTED,272)
 			if not selected:
 				var equip=_button(col,"Equip as reserve")
@@ -489,6 +491,9 @@ func show_party() -> void:
 		elif id=="venom":
 			_wrapped(col,"Rescue Rime, then recover the preserved Venom culture from Frozen Vault. Canonical Ice + Venom remains Venom; Rime is retained.",17,PAPER,272)
 			_button(col,"View fusion recipes").pressed.connect(show_fusion)
+		elif id=="void":
+			_wrapped(col,"Stabilize the Singularity, recover its preserved Void imprint, then awaken Null at Resonance Fusion. Existing guardians are retained.",17,PAPER,272)
+			_button(col,"View resonance requirements").pressed.connect(show_fusion)
 		else:
 			_wrapped(col,"Awaken Nox, then combine Magma + Nox at Resonance Fusion. Canonical Fire + Venom creates Shadow; both parents are retained.",17,PAPER,272)
 			_button(col,"View fusion recipes").pressed.connect(show_fusion)
@@ -569,7 +574,7 @@ func show_fusion() -> void:
 	if world.title_open:return
 	_open_overlay("fusion")
 	_label(overlay_column,"RESONANCE FUSION / PRESERVE THE PARENTS",29,Color("c4b1fa"))
-	_wrapped(overlay_column,"The Forge now holds four explicit, non-destructive resonance recipes. No random failure, parent sacrifice or salvage cost.",18,PAPER)
+	_wrapped(overlay_column,"The Forge preserves every guardian. Recipes and recovered imprints can awaken new companions. No random failure, parent sacrifice or salvage cost.",18,PAPER)
 	var scroll = _overlay_scroll("ResonanceScroll")
 	var recipes = _column(scroll, 16)
 	recipes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -609,6 +614,20 @@ func show_fusion() -> void:
 		_wrapped(recipes,Fusion.shadow_reason(c) if Fusion.shadow_reason(c)!="" else "READY / Magma + Nox. Canonical Fire + Venom creates Shadow; both parents remain.",16,GOLD)
 		var forge4=_button(recipes,"Create Shadow resonance / keep Magma + Nox");forge4.name="ForgeShadow";forge4.disabled=Fusion.shadow_reason(c)!="" or not world.can_fuse();forge4.pressed.connect(func():world.forge_shadow())
 	_wrapped(recipes,"UMBRA / Shadow Strike • Void Pulse • Umbral Wake • Phase Strike\nDodge through real incoming hits to build Phase (max 2). Phase Strike gains +30% per Phase and spends it only when damage lands; a closed shield preserves Phase.",17,MUTED)
+	_label(recipes,"PRESERVED VOID IMPRINT / NULL",22,Color("44eeee"))
+	if c.guardians.has("void"):
+		_label(recipes,"NULL / RECRUITED",18,TEAL)
+	elif c.void_forged:
+		var hatch_void=_button(recipes,"Awaken Null / free")
+		hatch_void.name="AwakenNull"
+		hatch_void.disabled=not world.can_fuse()
+		hatch_void.pressed.connect(func():world.hatch_void())
+	else:
+		_wrapped(recipes,Fusion.void_reason(c) if Fusion.void_reason(c)!="" else "READY / Recovered Void imprint. Every guardian is retained.",16,GOLD)
+		var forge_void=_button(recipes,"Stabilize Void imprint")
+		forge_void.name="StabilizeVoid"
+		forge_void.disabled=Fusion.void_reason(c)!="" or not world.can_fuse()
+		forge_void.pressed.connect(func():world.forge_void())
 	if world.store.message!="":_wrapped(recipes,world.store.message,16,GOLD)
 	var footer = HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 12)
@@ -676,3 +695,10 @@ func close_overlay() -> void:
 		_leave_audio()
 		return
 	super.close_overlay()
+
+func show_void_recovered()->void:
+	_open_overlay("void")
+	_label(overlay_column,"A HOLLOW HEARTBEAT",30,Color("44eeee"))
+	_wrapped(overlay_column,"The stabilized chamber held a preserved Void imprint. Bring it to Resonance Fusion at the Forge to awaken Null. Existing guardians and progress are retained.",20)
+	_button(overlay_column,"Return to the Forge").pressed.connect(func():world.return_to_forge())
+	_button(overlay_column,"Keep exploring").pressed.connect(close_overlay)

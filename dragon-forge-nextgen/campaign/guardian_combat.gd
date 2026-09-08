@@ -39,24 +39,31 @@ const SHADOW = {
 	"wall": {"name":"Umbral Wake", "damage":8.0, "heat":28.0, "cooldown":5.5, "range":4.0, "radius":2.4, "windup":.18, "recovery":.24},
 	"burst": {"name":"Phase Strike", "damage":50.0, "heat":34.0, "cooldown":7.5, "range":4.8, "cone":-1.0, "windup":.20, "recovery":.30},
 }
+const VOID = {
+	# Rift Shard fills the native basic-attack slot. The other names are canonical techniques.
+	"claw": {"name":"Rift Shard", "damage":24.0, "heat":0.0, "cooldown":.52, "range":3.0, "cone":.20, "windup":.11, "recovery":.18},
+	"breath": {"name":"Void Rift", "damage":32.0, "heat":22.0, "cooldown":3.0, "range":7.8, "cone":.82, "windup":.26, "recovery":.30},
+	"wall": {"name":"Null Reflect", "damage":0.0, "heat":30.0, "cooldown":8.0, "range":0.0, "radius":0.0, "windup":.18, "recovery":.24},
+	"burst": {"name":"Siphon Rift", "damage":44.0, "heat":36.0, "cooldown":8.0, "range":4.8, "cone":-1.0, "windup":.30, "recovery":.34},
+}
 const ORDER = ["claw", "breath", "wall", "burst"]
 const MAX_RESOLVE = 3
 const MAX_TOXIN = 3
 const MAX_PHASE = 2
 
 static func rule(state: Dictionary, id: String) -> Dictionary:
-	var kit: Dictionary = {"fire":ABILITIES, "ice":ICE, "storm":STORM, "stone":STONE, "venom":VENOM, "shadow":SHADOW}.get(state.get("guardian", "fire"), ABILITIES)
+	var kit: Dictionary = {"fire":ABILITIES, "ice":ICE, "storm":STORM, "stone":STONE, "venom":VENOM, "shadow":SHADOW, "void":VOID}.get(state.get("guardian", "fire"), ABILITIES)
 	var move: Dictionary = kit.get(id, {}).duplicate()
 	if not move.is_empty() and id == "breath" and state.get("evolution", "") == "flashfire": move.cooldown = 1.8
 	if not move.is_empty() and id == "burst" and state.get("evolution", "") == "overcharge": move.cooldown = 6.75
 	return move
 
 static func guardian_name(id: String) -> String:
-	return {"fire":"MAGMA", "ice":"RIME", "storm":"ARC", "stone":"CAIRN", "venom":"NOX", "shadow":"UMBRA"}.get(id, "UNKNOWN")
+	return {"fire":"MAGMA", "ice":"RIME", "storm":"ARC", "stone":"CAIRN", "venom":"NOX", "shadow":"UMBRA", "void":"NULL"}.get(id, "UNKNOWN")
 
 static func fresh(module: String = "", guardian: String = "fire") -> Dictionary:
-	var maximum: float = Modules.profile(module).hp * {"fire":1.0, "ice":.90, "storm":.85, "stone":1.15, "venom":.95, "shadow":.82}.get(guardian, 1.0)
-	return {"evolution":"", "guardian":guardian, "ward":0.0, "resolve":0, "phase":0, "module":module if Modules.valid(module) else "", "hp":maximum, "max_hp":maximum, "heat":0.0, "cooldowns":{}, "iframes":0.0, "dodge_iframes":0.0, "dash":0.0, "dodge_cd":0.0, "guard":false, "action":"", "action_time":0.0, "action_hit":false}
+	var maximum: float = Modules.profile(module).hp * {"fire":1.0, "ice":.90, "storm":.85, "stone":1.15, "venom":.95, "shadow":.82, "void":.88}.get(guardian, 1.0)
+	return {"evolution":"", "guardian":guardian, "ward":0.0, "null_reflect":0.0, "resolve":0, "phase":0, "module":module if Modules.valid(module) else "", "hp":maximum, "max_hp":maximum, "heat":0.0, "cooldowns":{}, "iframes":0.0, "dodge_iframes":0.0, "dash":0.0, "dodge_cd":0.0, "guard":false, "action":"", "action_time":0.0, "action_hit":false}
 
 static func tick(state: Dictionary, delta: float, guarding: bool = false) -> String:
 	var dt = maxf(delta, 0.0) if is_finite(delta) else 0.0
@@ -70,6 +77,7 @@ static func tick(state: Dictionary, delta: float, guarding: bool = false) -> Str
 			state.action_hit = true; impact = id
 		if state.action_time + 0.000001 >= move.windup + move.recovery: cancel_action(state)
 	state.ward = maxf(0.0, state.get("ward", 0.0) - dt)
+	state.null_reflect = maxf(0.0, state.get("null_reflect", 0.0) - dt)
 	state.guard = guarding and state.hp > 0.0 and state.dash <= 0.0 and state.action == ""
 	state.heat = maxf(0.0, state.heat - dt * float(Modules.profile(state.get("module", "")).cooling) * (0.5 if state.guard else 1.0))
 	for key in ["iframes", "dash", "dodge_cd"]: state[key] = maxf(0.0, state[key] - dt)
@@ -106,7 +114,8 @@ static func damage(state: Dictionary, amount: float) -> float:
 			state.phase=mini(MAX_PHASE,int(state.get("phase",0))+1)
 		return 0.0
 	var guarded = state.guard
-	var applied = minf(state.hp, amount * (0.45 if state.get("ward", 0.0) > 0.0 else 1.0) * (float(Modules.profile(state.get("module", "")).guard) if guarded else 1.0))
+	var reflecting = state.get("guardian", "") == "void" and state.get("null_reflect", 0.0) > 0.0
+	var applied = minf(state.hp, amount * (0.5 if reflecting else 1.0) * (0.45 if state.get("ward", 0.0) > 0.0 else 1.0) * (float(Modules.profile(state.get("module", "")).guard) if guarded else 1.0))
 	state.hp -= applied
 	if applied > 0.0 and guarded and state.get("guardian","") == "stone": state.resolve = mini(MAX_RESOLVE, int(state.get("resolve",0)) + 1)
 	if state.hp <= 0.0: cancel_action(state)
@@ -154,3 +163,8 @@ static func field_duration(state: Dictionary) -> float:return 4.8 if state.get("
 static func chill_duration(state: Dictionary) -> float:return 4.5 if state.get("evolution", "") == "deepwinter" else 3.0
 static func ward_duration(state: Dictionary) -> float:return 6.0 if state.get("evolution", "") == "aegis" else 4.0
 static func charge_duration(state: Dictionary) -> float:return 6.0 if state.get("evolution", "") == "thunderhead" else 4.0
+static func null_reflect_duration() -> float:return 1.2
+static func reflected_damage(applied: float) -> float:
+	return minf(applied, 20.0) if is_finite(applied) and applied > 0.0 else 0.0
+static func void_displacement(id: String) -> float:
+	return {"breath":1.25, "burst":-1.5}.get(id, 0.0)

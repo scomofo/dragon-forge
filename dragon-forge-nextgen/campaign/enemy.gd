@@ -219,7 +219,7 @@ func _draw_shape(data: Dictionary) -> void:
 				Geo.cylinder(tell, at, data.radius, data.radius, 0.012, fill, 40)
 
 func take_hit(amount: float, bypass_shield: bool = false) -> float:
-	if hp <= 0.0 or amount <= 0.0 or is_queued_for_deletion():
+	if hp <= 0.0 or not is_finite(amount) or amount <= 0.0 or is_queued_for_deletion():
 		return 0.0
 	if spec.get("shield", true) and not bypass_shield and not brain.vulnerable():
 		hit_feedback.emit(global_position, "SHIELDED", true)
@@ -237,6 +237,23 @@ func take_hit(amount: float, bypass_shield: bool = false) -> float:
 		defeated.emit(spec.id)
 		queue_free()
 	return actual
+
+func displace_from(origin: Vector3, distance: float) -> float:
+	# A successful Void hit may move an ordinary foe, never a boss or a locked tell.
+	# Movement uses the same collision body as navigation and does not alter attack geometry.
+	if hp <= 0.0 or brain.mode in ["dead", "tell"] or boss or is_queued_for_deletion() or not is_inside_tree():
+		return 0.0
+	if not is_finite(distance) or not origin.is_finite() or not global_position.is_finite():
+		return 0.0
+	var offset = global_position - origin
+	offset.y = 0.0
+	var separation = offset.length()
+	if separation < 0.001 or is_zero_approx(distance):return 0.0
+	var travel = clampf(distance, -1.5, 1.5)
+	if travel < 0.0:travel = -minf(-travel, separation)
+	var before = global_position
+	move_and_collide(offset / separation * travel)
+	return global_position.distance_to(before)
 
 func overload() -> void:
 	brain.open_window(2.4)

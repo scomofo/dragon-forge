@@ -53,8 +53,8 @@ func configure(model: Node3D, id: String) -> bool:
 	if id in ["buffer_overflow","memory_leak","stack_overflow","mirror_admin","singularity"]:
 		error = "Tracked / suspended boss rig.\nNo planted-foot contract applies."
 		return false
-	if id in ["storm_guardian","tempest_arc"]:
-		error = "Arc hovers above the deck.\nNo planted-foot contract applies."
+	if id in ["storm_guardian","tempest_arc","void_guardian"]:
+		error = "This guardian hovers above the deck.\nNo planted-foot contract applies."
 		return false
 	if id=="shadow_guardian":
 		error = "Umbra uses grounded collision but no planted-foot solver.\nNo planted-foot contract applies to this first-pass rig."
