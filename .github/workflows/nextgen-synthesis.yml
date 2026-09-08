@@ -1,0 +1,53 @@
+name: Nextgen Synthesis guardian
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/**'
+      - '.github/workflows/nextgen-synthesis.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: synthesis-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GODOT_SILENCE_ROOT_WARNING: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: dragon-forge-nextgen
+      - name: Install Godot 4.6.3
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          echo 'd0bc2113065e481c9c2c2b2c37daa4e8be3fe9e27f0ab9ab0b6096e9a37907f3  /tmp/godot.zip' | sha256sum -c -
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Import source and run deterministic final-roster contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dragon-forge-nextgen/artifacts/synthesis
+          timeout 120 godot --headless --path dragon-forge-nextgen --editor --import 2>&1 | tee dragon-forge-nextgen/artifacts/synthesis/import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/synthesis/import.log; then exit 1; fi
+          timeout 90 godot --headless --path dragon-forge-nextgen --script res://campaign/tests/synthesis_contract_tests.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/synthesis/contract.log
+          grep -E 'SYNTHESIS_CONTRACT_TESTS: [0-9]+ checks, 0 failures' dragon-forge-nextgen/artifacts/synthesis/contract.log
+      - name: Record exact revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/synthesis/TESTED_COMMIT.txt
+          git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/synthesis/TESTED_TREE.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synthesis-contract-evidence
+          path: dragon-forge-nextgen/artifacts/synthesis/
+          retention-days: 14
