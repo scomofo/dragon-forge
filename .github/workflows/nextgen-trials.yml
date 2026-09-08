@@ -1,0 +1,77 @@
+name: Nextgen Forge Trials
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/**'
+      - '.github/workflows/nextgen-trials.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: forge-trials-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  trials:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      GODOT_SILENCE_ROOT_WARNING: '1'
+      LIBGL_ALWAYS_SOFTWARE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: dragon-forge-nextgen
+      - name: Install Godot 4.6.3 and software graphics
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Import and run complete inherited regression stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dragon-forge-nextgen/artifacts/trials
+          timeout 120 godot --headless --path dragon-forge-nextgen --editor --import 2>&1 | tee dragon-forge-nextgen/artifacts/trials/import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/trials/import.log; then exit 1; fi
+          GODOT=godot bash dragon-forge-nextgen/tools/test_bosses.sh 2>&1 | tee dragon-forge-nextgen/artifacts/trials/tests.log
+          grep -E 'TRIAL_TESTS: [0-9]+ checks, 0 failures' dragon-forge-nextgen/artifacts/trials/tests.log
+          for marker in NEXTGEN_TESTS NEXTGEN_ART_TESTS NEXTGEN_REVIEW_TESTS NEXTGEN_POLISH_TESTS CAMPAIGN_TESTS PARTY_TESTS EVOLUTION_TESTS FUSION_TESTS TEMPEST_TESTS AUDIO_TESTS STONE_TESTS BOSS_TESTS; do
+            grep -E "$marker: [0-9]+ checks, 0 failures" dragon-forge-nextgen/artifacts/trials/tests.log
+          done
+          grep 'CAMPAIGN_CONTROLLER_PLAY: 0 failures' dragon-forge-nextgen/artifacts/trials/tests.log
+          grep 'STORM_CONTROLLER_PLAY: 0 failures' dragon-forge-nextgen/artifacts/trials/tests.log
+          grep 'BOSS_CONTROLLER_PLAY: 0 failures' dragon-forge-nextgen/artifacts/trials/tests.log
+      - name: Capture actual Forge Trials through both renderers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for mode in gl_compatibility forward_plus; do
+            target="dragon-forge-nextgen/artifacts/trials/$mode";mkdir -p "$target"
+            rm -rf dragon-forge-nextgen/artifacts/trials/captures
+            timeout 240 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method "$mode" --audio-driver Dummy --script res://campaign/tests/trial_capture.gd -- --test-mode 2>&1 | tee "$target/visual.log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|FAIL ' "$target/visual.log"; then exit 1; fi
+            grep 'TRIAL_VISUAL: 0 failures' "$target/visual.log"
+            if [[ "$mode" == forward_plus ]]; then grep 'Forward+' "$target/visual.log"; fi
+            cp dragon-forge-nextgen/artifacts/trials/captures/*.png "$target/"
+          done
+      - name: Record exact read-only revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git status --porcelain --untracked-files=no | tee dragon-forge-nextgen/artifacts/trials/tracked-status.txt
+          test ! -s dragon-forge-nextgen/artifacts/trials/tracked-status.txt
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/trials/TESTED_COMMIT.txt
+          git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/trials/TESTED_TREE.txt
+          git archive --format=zip -o dragon-forge-nextgen/artifacts/trials/Forge_Trials_Project_Source.zip HEAD:dragon-forge-nextgen
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: forge-trials-evidence
+          path: dragon-forge-nextgen/artifacts/trials/
+          retention-days: 14
