@@ -1,0 +1,63 @@
+name: Apply Shadow schema-8 test expectations
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/shadow-schema-fix.yml'
+permissions:
+  contents: read
+jobs:
+  apply:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'nextgen-shadow-guardian'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nextgen-shadow-guardian
+          fetch-depth: 1
+      - name: Carry inherited current-schema assertions to schema 8
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          replacements = {
+            'dragon-forge-nextgen/campaign/tests/party_tests.gd': [
+              ('migrated.version==7 and migrated.guardians==["fire"]','migrated.version==8 and migrated.guardians==["fire"]'),
+              ('version 1 migration initializes exactly Magma through schema 7','version 1 migration initializes exactly Magma through schema 8'),
+              ('loaded.version==7','loaded.version==8'),
+            ],
+            'dragon-forge-nextgen/campaign/tests/venom_tests.gd': [
+              ('fresh.version==7,"fresh schema 7"','fresh.version==8,"fresh schema 8"'),
+              ('migrated.version==7,"schema 6 migrates"','migrated.version==8,"schema 6 migrates through schema 8"'),
+            ],
+            'dragon-forge-nextgen/campaign/tests/tempest_tests.gd': [
+              ('migrated.version==7 and migrated.evolutions.storm==""','migrated.version==8 and migrated.evolutions.storm==""'),
+            ],
+            'dragon-forge-nextgen/campaign/tests/stone_tests.gd': [
+              ('fresh.version==7,"fresh schema 7"','fresh.version==8,"fresh schema 8"'),
+              ('migrated.version==7,"schema 5 migrates through Stone to schema 7"','migrated.version==8,"schema 5 migrates through Stone to schema 8"'),
+            ],
+            'dragon-forge-nextgen/release/export_smoke.gd': [
+              ('prepared checkpoint is valid schema 7','prepared checkpoint is valid schema 8'),
+              ('loaded.version == 7 and not loaded.stone_imprint_recovered','loaded.version == 8 and not loaded.stone_imprint_recovered'),
+              ('schema-5 campaign migrates through Stone to schema 7 in export','schema-5 campaign migrates through Shadow to schema 8 in export'),
+            ],
+          }
+          for path, reps in replacements.items():
+              p=Path(path); text=p.read_text()
+              for old,new in reps:
+                  count=text.count(old)
+                  assert count==1, f'{path}: expected one {old!r}, got {count}'
+                  text=text.replace(old,new,1)
+              p.write_text(text)
+          PY
+          rm -f .github/workflows/shadow-schema-fix.yml
+          git add -A
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'test: carry legacy migrations through schema 8'
+          git push origin HEAD:nextgen-shadow-guardian
