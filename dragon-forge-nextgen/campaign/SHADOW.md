@@ -18,7 +18,8 @@ Umbra is a high-speed, lower-HP guardian. Phase is session combat state, not sav
 - Phase is capped at two.
 - Merely pressing dodge grants no Phase.
 - Phase Strike gains +30% direct damage per stored Phase.
-- Stored Phase is intended to be consumed only when Phase Strike actually damages a target.
+- Stored Phase is consumed only when Phase Strike actually damages a target.
+- A shield-blocked Phase Strike preserves stored Phase.
 - Enemy and boss shields remain authoritative. The browser `ignoreDefend` signature flag is **not** translated into native shield bypass.
 
 This preserves the source fantasy—attacking through timing and position—without deleting the established Reconnection shield/counterplay rules.
@@ -26,3 +27,7 @@ This preserves the source fantasy—attacking through timing and position—with
 ## Save contract
 
 Schema 8 adds only `shadow_forged`. Valid schema-7 saves migrate in memory with the flag false. Loading a legacy save does not rewrite it; the first successful later write preserves the prior exact bytes through the existing backup behavior.
+
+## Release gate
+
+Shadow is not considered shipped until the committed negative-space model is independently validated, real world routing proves dodge-earned Phase plus shield-preserved/landed Phase Strike behavior, OpenGL and Forward+ captures pass, and fresh editor plus macOS/Windows/Linux packages execute their updated schema-8/Shadow smoke checks.
