@@ -1,0 +1,51 @@
+name: Clean generated Shadow metadata
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/shadow-clean-generated-metadata.yml'
+permissions:
+  contents: read
+jobs:
+  clean:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'nextgen-shadow-guardian'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nextgen-shadow-guardian
+          fetch-depth: 0
+      - name: Remove only newly-added Godot import metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin nextgen-forge-trials:refs/remotes/origin/nextgen-forge-trials
+          base=$(git merge-base origin/nextgen-forge-trials HEAD)
+          python3 - "$base" <<'PY'
+          import pathlib, subprocess, sys
+          base=sys.argv[1]
+          out=subprocess.check_output(['git','diff','--name-status',base+'...HEAD'],text=True)
+          removed=[]
+          for line in out.splitlines():
+              parts=line.split('\t')
+              if len(parts)!=2 or parts[0] != 'A':
+                  continue
+              p=pathlib.Path(parts[1])
+              if p.suffix not in {'.uid','.import'}:
+                  continue
+              if p.exists():
+                  p.unlink(); removed.append(str(p))
+          print(f'REMOVED_GENERATED_METADATA={len(removed)}')
+          for p in removed: print(p)
+          if not removed:
+              raise SystemExit('Expected newly-added Godot metadata to clean')
+          PY
+          rm -f .github/workflows/shadow-clean-generated-metadata.yml
+          git add -A
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore: remove generated Godot import metadata from Shadow'
+          git push origin HEAD:nextgen-shadow-guardian
