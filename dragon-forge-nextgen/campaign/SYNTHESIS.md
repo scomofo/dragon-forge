@@ -1,57 +1,49 @@
-# Synthesis / final roster guardian
+# Prism / Synthesis Resonance
 
-Synthesis is the ninth and final browser-order guardian in the native Reconnection roster. Expeditions remain exactly two live field guardians.
+Prism is the ninth owned guardian. Expeditions remain one active guardian and one reserve.
 
-## Canonical source anchors
+## Identity and recruitment
 
-- Browser alchemy is exactly **Light + Void = Synthesis** (and the reverse ordering is equivalent).
-- Browser Synthesis stats are **95 HP / 30 ATK / 26 DEF / 24 SPD**.
-- Browser move identity is **Void Rift**, **Radiant Beam**, and signature **Recompile**.
-- Browser art plan is **Void frame filled with Light panes**, silhouette `diamond-frame-pane-fill`.
-- It must read as Void + Light combined, not as another unrelated animal silhouette.
+The canonical browser recipe is **Light + Void = Synthesis**. Stabilize the Singularity to awaken Lumen, then recover its preserved Void imprint and awaken Null at the Forge. With both parents owned, return to **Resonance Fusion**, create the Synthesis resonance, and awaken Prism. Forging and awakening are separate, persistent, one-time milestones. They spend no salvage, consume neither parent, retain all progression, and preserve the selected expedition pair. Prism can then be selected at the Guardian Nursery.
 
-## Native recruitment contract
+The imported rig keeps Void's diamond frame and fills it with hard gold-and-white Light panes. This combined silhouette follows the browser art identity. It hovers and uses the existing grounded player collider; it cannot cross walls or missing decks. No planted-foot simulation is claimed.
 
-- Requires both **Null (Void)** and **Lumen (Light)** to be owned legitimately.
-- Requires the completed Singularity state that earned Lumen.
-- Uses Resonance Fusion at the Forge.
-- Null and Lumen are retained. No parent consumption, RNG, salvage cost, hidden catalyst, or invented element recipe.
-- Existing active guardian, expedition pair, upgrades, evolutions, cores, salvage, trial records and completion state are preserved.
-- Synthesis can be benched or selected into either of the two expedition slots after awakening.
+## Native four-slot kit
+
+These are deterministic native balance values. They are not a claim of turn-based damage equivalence.
+
+| Slot | Technique | Damage | Heat | Cooldown | Windup + recovery | Reach |
+|---|---|---:|---:|---:|---|---|
+| 1 | Convergence Shard | 26 | 0 | 0.55 s | 0.12 + 0.20 s | 3 m |
+| 2 | Void Rift | 32 | 22 | 3 s | 0.26 + 0.30 s | 7.8 m |
+| 3 | Radiant Beam | 36 | 26 | 4 s | 0.28 + 0.32 s | 8 m direct line |
+| 4 | Recompile | 46 | 38 | 9 s | 0.36 + 0.40 s | 5 m radial |
+
+Void Rift pushes an exposed ordinary enemy up to 1.25 m through collision-aware movement. Bosses and enemies with a locked attack warning remain anchored. Radiant Beam is one direct aimed attack, not a persistent field. All techniques retain normal line-of-sight, range and shield checks.
+
+## Recompile and Advantage adaptation
+
+Browser Advantage cannot literally copy a target affinity here: the native enemy runtime has no target-affinity field. Recompile instead selects the strongest **existing status payoff** separately for each target at authoritative contact:
+
+| Existing target status | Selected payoff | Damage multiplier |
+|---|---|---:|
+| Chill | Fire shatter | 1.40× |
+| Charge | Storm discharge | 1.50× |
+| Toxin, one to three stacks | Venom detonation | 1.25×, 1.50×, 1.75× |
+| No eligible status | Neutral hit | 1.00× |
+
+The highest multiplier wins. Ties prefer Fire, then Storm, then Venom. Only the selected status is consumed and only after the attack deals actual damage. Other marks remain available. A closed shield, miss, blocked line of sight, or cancelled windup consumes no status. Selecting a payoff does not add a new elemental mark or change Prism's guardian identity.
+
+Synthesis grants no healing, Null Reflect, Phase, thermal relay power, new ailment, or accuracy system. The inherited Shadow, Void and Light kits keep their own behavior.
 
 ## Save contract
 
-Schema 11 adds one earned flag: `synthesis_forged`.
+Schema 11 adds only `synthesis_forged` and expands the guardian domain to nine. A fresh campaign and every valid earlier migration begin with Synthesis unearned. Owning Prism requires its forged resonance and both earned Light and Void parents. Finished schema-10 saves retain their existing Light reward. Valid schema-9 and earlier finishers still receive earned Light through the established migration; unfinished saves receive no Light.
 
-- Valid schema-10 saves migrate in memory with `synthesis_forged = false`.
-- Migration does not grant Synthesis automatically.
-- Loading never rewrites the old bytes.
-- The first successful later save preserves the exact prior bytes through the existing backup behavior.
-- Sparse/reordered optional guardian rosters remain valid; ownership is still a set, not a forced recruitment sequence.
+Migration preserves prior guardian order, the active guardian, selected pair, milestones, salvage, upgrades and modules. Loading does not rewrite source bytes. The first successful write retains the exact previous bytes in the existing backup. Unknown, duplicate, future or unearned ownership and invalid pairs remain rejected and protected from overwrite. Forge Trial records keep separate schema 1 and use the shared guardian domain; a trial cannot unlock Prism or grant campaign rewards.
 
-## Native combat direction
+## Review and release acceptance
 
-The four-slot real-time kit will retain the three canonical identities and add only one bounded basic technique for controller parity:
+The committed imported model must pass independent glTF validation, and its authored clips must match contact timings. Source and exported runtime acceptance cover real Forge/Nursery routing, unchanged parents and pair, all four techniques, shield-preserved marks, collision-aware displacement and status selection. The inherited stack, neutral/rim animation inspection and campaign captures must pass under Compatibility and genuine Forward+.
 
-- basic: a low-cost Synthesis contact attack (native-only slot filler)
-- **Void Rift**: Void-side ranged/control identity
-- **Radiant Beam**: Light-side ranged identity
-- **Recompile**: signature mechanic
-
-`Recompile` must not bypass authoritative enemy/boss shields, duplicate rewards, rewrite save progression, or create a second damage engine. Its native `copyAdvantage` adaptation must be deterministic and testable against the existing world combat router.
-
-## Art / release gate
-
-The imported guardian must visibly combine Null's hollow diamond aperture with Lumen's rigid stained-glass panes. Final acceptance requires:
-
-- committed editable first-pass model + four material maps + hash manifest,
-- independent Khronos glTF validation,
-- nine named clips matching the current guardian controller contract,
-- real campaign/Nursery/Forge routing,
-- schema-10 -> 11 migration and exact backup tests,
-- two-slot party tests with nine owned guardians,
-- shield-preserving Recompile tests,
-- OpenGL and Forward+ captures,
-- fresh Godot editor plus Windows/macOS/Linux standalone packages executing the Synthesis smoke checks.
-
-Automated prepared-state verification is not a human balance/playthrough or target-GPU certification.
+Fresh editor and Windows/macOS/Linux packages must identify the same feature revision and execute the shared Synthesis acceptance through their own exported runtime. Passing automation does not certify human balance, physical-controller feel, target-GPU frame times or an unassisted playthrough. Existing soundtrack recordings and track choices are preserved.

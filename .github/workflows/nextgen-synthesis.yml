@@ -11,43 +11,79 @@ concurrency:
   group: synthesis-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  contract:
+  synthesis:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 25
     env:
       GODOT_SILENCE_ROOT_WARNING: '1'
+      LIBGL_ALWAYS_SOFTWARE: '1'
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
           sparse-checkout: dragon-forge-nextgen
-      - name: Install Godot 4.6.3
+      - name: Install Godot 4.6.3, Khronos validator and software graphics
         shell: bash
         run: |
           set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          npm install --prefix /tmp/gltf gltf-validator@2.0.0-dev.3.10
           curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
-          echo 'd0bc2113065e481c9c2c2b2c37daa4e8be3fe9e27f0ab9ab0b6096e9a37907f3  /tmp/godot.zip' | sha256sum -c -
           unzip -q /tmp/godot.zip -d /tmp/godot
           sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
-      - name: Import source and run deterministic final-roster contract
+      - name: Validate committed Prism export without rebuilding it
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dragon-forge-nextgen/artifacts/synthesis
-          timeout 120 godot --headless --path dragon-forge-nextgen --editor --import 2>&1 | tee dragon-forge-nextgen/artifacts/synthesis/import.log
-          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/synthesis/import.log; then exit 1; fi
-          timeout 90 godot --headless --path dragon-forge-nextgen --script res://campaign/tests/synthesis_contract_tests.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/synthesis/contract.log
-          grep -E 'SYNTHESIS_CONTRACT_TESTS: [0-9]+ checks, 0 failures' dragon-forge-nextgen/artifacts/synthesis/contract.log
-      - name: Record exact revision
+          cd dragon-forge-nextgen
+          python tools/validate_synthesis.py | tee artifacts/synthesis/export-validation.log
+          grep -E 'SYNTHESIS_EXPORTS: [0-9]+ checks, 0 failures' artifacts/synthesis/export-validation.log
+          GLTF_VALIDATOR_MODULE=/tmp/gltf/node_modules/gltf-validator node tools/validate_synthesis.cjs | tee artifacts/synthesis/gltf.log
+          grep 'synthesis_guardian.glb: 0 errors / 0 warnings' artifacts/synthesis/gltf.log
+          timeout 120 godot --headless --editor --import 2>&1 | tee artifacts/synthesis/import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' artifacts/synthesis/import.log; then exit 1; fi
+      - name: Run complete inherited stack plus Prism world routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          GODOT=godot bash dragon-forge-nextgen/tools/test_bosses.sh 2>&1 | tee dragon-forge-nextgen/artifacts/synthesis/tests.log
+          for marker in NEXTGEN_TESTS NEXTGEN_ART_TESTS NEXTGEN_REVIEW_TESTS NEXTGEN_POLISH_TESTS CAMPAIGN_TESTS PARTY_TESTS EVOLUTION_TESTS FUSION_TESTS TEMPEST_TESTS AUDIO_TESTS STONE_TESTS VENOM_TESTS VENOM_RUNTIME_TESTS RECRUITMENT_TESTS SHADOW_TESTS SHADOW_RUNTIME_TESTS VOID_TESTS VOID_COMBAT_TESTS VOID_RUNTIME_TESTS LIGHT_TESTS LIGHT_COMBAT_TESTS LIGHT_RUNTIME_TESTS SYNTHESIS_CONTRACT_TESTS SYNTHESIS_TESTS SYNTHESIS_COMBAT_TESTS SYNTHESIS_RUNTIME_TESTS TRIAL_TESTS BOSS_TESTS; do
+            grep -E "$marker: [0-9]+ checks, 0 failures" dragon-forge-nextgen/artifacts/synthesis/tests.log
+          done
+          grep 'CAMPAIGN_CONTROLLER_PLAY: 0 failures' dragon-forge-nextgen/artifacts/synthesis/tests.log
+          grep 'STORM_CONTROLLER_PLAY: 0 failures' dragon-forge-nextgen/artifacts/synthesis/tests.log
+          grep 'BOSS_CONTROLLER_PLAY: 0 failures' dragon-forge-nextgen/artifacts/synthesis/tests.log
+      - name: Capture committed Prism through OpenGL and Forward+
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dragon-forge-nextgen
+          for mode in gl_compatibility forward_plus; do
+            target="artifacts/synthesis/$mode"
+            mkdir -p "$target"
+            rm -rf artifacts/synthesis/captures
+            timeout 240 xvfb-run -a godot --rendering-method "$mode" --audio-driver Dummy --script res://campaign/tests/synthesis_capture.gd -- --test-mode 2>&1 | tee "$target/visual.log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' "$target/visual.log"; then exit 1; fi
+            grep 'SYNTHESIS_VISUAL: 0 failures' "$target/visual.log"
+            if [[ "$mode" == forward_plus ]]; then grep 'Forward+' "$target/visual.log"; fi
+            cp artifacts/synthesis/captures/*.png "$target/"
+          done
+      - name: Record exact read-only revision
         shell: bash
         run: |
           set -euo pipefail
           git diff --exit-code
+          git status --porcelain --untracked-files=no | tee dragon-forge-nextgen/artifacts/synthesis/tracked-status.txt
+          test ! -s dragon-forge-nextgen/artifacts/synthesis/tracked-status.txt
           git rev-parse HEAD > dragon-forge-nextgen/artifacts/synthesis/TESTED_COMMIT.txt
           git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/synthesis/TESTED_TREE.txt
+          git archive --format=zip -o dragon-forge-nextgen/artifacts/synthesis/Dragon_Forge_Synthesis_Editor_Project.zip HEAD:dragon-forge-nextgen
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: synthesis-contract-evidence
+          name: synthesis-runtime-evidence
           path: dragon-forge-nextgen/artifacts/synthesis/
           retention-days: 14

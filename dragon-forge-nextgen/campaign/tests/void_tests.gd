@@ -49,7 +49,7 @@ func migration():
 	old.caches = ["admin-vault"]
 	old.relays = ["admin-relay-a"]
 	var migrated = Rules.normalize(old)
-	check(not migrated.is_empty() and migrated.get("version") == 10, "valid schema 8 reaches schema 10")
+	check(not migrated.is_empty() and migrated.get("version") == 11, "valid schema 8 reaches schema 11")
 	if migrated.is_empty():return
 	check(not migrated.void_imprint_recovered and not migrated.void_forged and not migrated.guardians.has("void"), "migration grants no Void progress or guardian")
 	check(migrated.guardians == old.guardians + ["light"], "completed schema 8 earns only canonical Light while preserving prior guardian order")
@@ -65,11 +65,11 @@ func migration():
 	file.store_string(bytes)
 	file.close()
 	var loaded = store.read_campaign()
-	check(not store.blocked and loaded.version == 10, "schema 8 disk load migrates in memory")
+	check(not store.blocked and loaded.version == 11, "schema 8 disk load migrates in memory")
 	check(FileAccess.get_file_as_string(store.path) == bytes and not FileAccess.file_exists(store.path + ".bak"), "loading never writes or rotates original save bytes")
-	check(store.write_campaign(loaded), "first explicit schema 10 save succeeds")
+	check(store.write_campaign(loaded), "first explicit schema 11 save succeeds")
 	check(FileAccess.get_file_as_string(store.path + ".bak") == bytes, "first migration backup preserves exact schema 8 bytes")
-	check(store.read_campaign() == loaded, "schema 10 persisted state round-trips")
+	check(store.read_campaign() == loaded, "schema 11 persisted state round-trips")
 	clean_store(store.path)
 	var malformed = old.duplicate(true)
 	malformed.guardians.append("void")
@@ -89,7 +89,7 @@ func migration():
 		if version <= 4:bad.evolutions = {"fire":"","ice":""}
 		check(Rules.normalize(bad).is_empty(), "legacy schema %d cannot smuggle future Void ownership" % version)
 	var future = Rules.fresh()
-	future.version = 11
+	future.version = 12
 	check(Rules.normalize(future).is_empty(), "future schema remains rejected")
 
 func clean_store(path: String):
@@ -178,7 +178,7 @@ func combat():
 
 func run():
 	var fresh = Rules.fresh()
-	check(fresh.version == 10 and not fresh.void_imprint_recovered and not fresh.void_forged, "fresh schema 10 has unearned Void flags")
+	check(fresh.version == 11 and not fresh.void_imprint_recovered and not fresh.void_forged, "fresh schema 11 has unearned Void flags")
 	migration()
 	recruitment()
 	combat()

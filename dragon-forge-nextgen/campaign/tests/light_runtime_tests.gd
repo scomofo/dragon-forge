@@ -60,7 +60,7 @@ func run():
 		check(ending_button != null and w.hud.root.get_global_rect().encloses(ending_button.get_global_rect()), "combined Light reward and Void ending action remains inside viewport " + name)
 	w.hud.close_overlay()
 	check(not Rules.finish(w.campaign) and w.campaign.guardians.count("light") == 1, "ending reward cannot duplicate Lumen")
-	check(not Rules.normalize(w.campaign).is_empty(), "Fire plus Light ending state is save-valid schema 10")
+	check(not Rules.normalize(w.campaign).is_empty(), "Fire plus Light ending state is save-valid schema 11")
 	# A pre-existing pair must stay selected when Light is awarded to the bench.
 	w.campaign = Fixture.before_completion(["fire","ice","storm","stone","venom","shadow"])
 	w._enter_room("singularity", true)

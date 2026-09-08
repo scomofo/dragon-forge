@@ -260,6 +260,10 @@ func overload() -> void:
 	take_hit(55.0, true)
 
 func element_hit(amount: float,guardian: String,id: String,chill_duration: float = 3.0, charge_duration: float = 4.0) -> float:
+	# Only Recompile adapts. Reuse the selected element's existing damage path so
+	# a closed shield preserves every status and a landed hit consumes only its payoff.
+	if guardian == "synthesis" and id == "burst":
+		guardian = GuardianCombat.recompile_element(chilled, charged, toxin)
 	var shatter = guardian=="fire" and id!="wall" and chilled>0.0
 	var discharge = guardian == "storm" and id == "burst" and charged > 0.0
 	var bloom_stacks = toxin if guardian=="venom" and id=="burst" else 0

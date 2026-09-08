@@ -128,7 +128,7 @@ func run():
 	check(w.hatch_void(), "real Forge awakens Null")
 	w.hud.close_overlay()
 	check(w.campaign.guardians == prior_guardians + ["void"] and Fusion.members(w.campaign) == prior_pair, "world recruitment retains all prior guardians and expedition pair")
-	check(not Rules.normalize(w.campaign).is_empty(), "world recovery and forging produce save-valid schema 10")
+	check(not Rules.normalize(w.campaign).is_empty(), "world recovery and forging produce save-valid schema 11")
 	w.dragon.position = Vector3(6.0, .1, 8.0)
 	w.dragon.input_grace = 0.0
 	w.hud.show_party()
