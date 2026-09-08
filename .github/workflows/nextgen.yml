@@ -1,0 +1,63 @@
+name: Nextgen native prototype
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/**'
+      - 'run-nextgen.*'
+      - '.github/workflows/nextgen.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nextgen-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  native-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GODOT_VERSION: 4.6.3
+      LIBGL_ALWAYS_SOFTWARE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            dragon-forge-nextgen
+      - name: Install pinned Godot and software graphics
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri
+          base="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable"
+          archive="Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl --fail --location --retry 3 "$base/$archive" -o /tmp/godot.zip
+          mkdir -p "$HOME/.local/bin"
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          mv "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" "$HOME/.local/bin/godot"
+          chmod +x "$HOME/.local/bin/godot"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Package and native headless tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dragon-forge-nextgen/artifacts
+          python3 dragon-forge-nextgen/tests/validate.py
+          timeout 90 godot --headless --path dragon-forge-nextgen --editor --import 2>&1 | tee dragon-forge-nextgen/artifacts/import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/import.log; then exit 1; fi
+          timeout 90 godot --headless --path dragon-forge-nextgen --script res://tests/run.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' dragon-forge-nextgen/artifacts/tests.log; then exit 1; fi
+          grep 'NEXTGEN_TESTS:.*0 failures' dragon-forge-nextgen/artifacts/tests.log
+      - name: Render real scene with software OpenGL
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/visual_smoke.gd -- --test-mode 2>&1 | tee dragon-forge-nextgen/artifacts/visual.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/visual.log; then exit 1; fi
+          grep 'NEXTGEN_VISUAL_SMOKE: failures=0' dragon-forge-nextgen/artifacts/visual.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nextgen-test-evidence
+          path: dragon-forge-nextgen/artifacts/
+          if-no-files-found: warn

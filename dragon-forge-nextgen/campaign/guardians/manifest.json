@@ -1,0 +1,64 @@
+{
+  "source": "tools/build_ice_guardian.py",
+  "identity": "Ice Dragon: faceted quadruped; Rime is its campaign call name.",
+  "assets": [
+    {
+      "file": "ice_guardian.glb",
+      "triangles": 3898,
+      "vertices": 2965,
+      "surfaces": 1,
+      "bones": 21,
+      "clips": [
+        "idle",
+        "walk",
+        "claw",
+        "breath",
+        "wall",
+        "burst",
+        "guard",
+        "hurt",
+        "defeat"
+      ],
+      "bounds": [
+        [
+          -0.847000002861023,
+          0.05000000074505806,
+          -1.6711279153823853
+        ],
+        [
+          0.847000002861023,
+          1.9533566236495972,
+          2.43560528755188
+        ]
+      ]
+    },
+    {
+      "file": "ice_egg.glb",
+      "triangles": 164,
+      "vertices": 111,
+      "surfaces": 1,
+      "bones": 0,
+      "clips": [],
+      "bounds": [
+        [
+          -0.4399999976158142,
+          0.10000000149011612,
+          -0.44999998807907104
+        ],
+        [
+          0.4399999976158142,
+          1.1799999475479126,
+          0.4399999976158142
+        ]
+      ]
+    }
+  ],
+  "files": {
+    "atlas_base.png": "0e764252d30d23724130c8df5b33a23dc0468f2807353674e5e5172b0fdc1171",
+    "atlas_emission.png": "839662df1a6dec5ff590de847845b8fa57a0caa55fd323427f2f0aaea3047ae9",
+    "atlas_normal.png": "374a0ca52686e75259d6509a6d656d0472cece6ed10bae2b38b8b29a0027c602",
+    "atlas_orm.png": "2f49acbccce31fccec1073824cd4d971f36d3f2591f44425025ff0c563815870",
+    "ice_egg.glb": "c5f117037e134222287c17aaf92e33e22fbe23fae25d4389bf7a5c99ed6a2c6f",
+    "ice_guardian.glb": "d72a1fd2b1b97f14511591e32b82e9606b0b80312cd2500ef71fc31a72276266"
+  }
+}

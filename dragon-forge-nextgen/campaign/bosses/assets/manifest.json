@@ -1,0 +1,165 @@
+{
+  "source": "tools/build_bosses.py",
+  "assets": [
+    {
+      "file": "buffer_overflow.glb",
+      "triangles": 3936,
+      "vertices": 3307,
+      "surfaces": 1,
+      "bones": 13,
+      "clips": [
+        "idle",
+        "walk",
+        "open",
+        "defeat",
+        "tell_slam",
+        "strike_slam",
+        "tell_ring",
+        "strike_ring"
+      ],
+      "bounds": [
+        [
+          -1.406792163848877,
+          0.04500000178813934,
+          -1.3849999904632568
+        ],
+        [
+          1.406792163848877,
+          2.369999885559082,
+          1.1299999952316284
+        ]
+      ]
+    },
+    {
+      "file": "memory_leak.glb",
+      "triangles": 1296,
+      "vertices": 1070,
+      "surfaces": 1,
+      "bones": 10,
+      "clips": [
+        "idle",
+        "walk",
+        "open",
+        "defeat",
+        "tell_beam",
+        "strike_beam",
+        "tell_slam",
+        "strike_slam"
+      ],
+      "bounds": [
+        [
+          -1.2555785179138184,
+          0.24548211693763733,
+          -0.706682026386261
+        ],
+        [
+          1.2555454969406128,
+          3.2306811809539795,
+          0.8066819906234741
+        ]
+      ]
+    },
+    {
+      "file": "stack_overflow.glb",
+      "triangles": 2476,
+      "vertices": 1875,
+      "surfaces": 1,
+      "bones": 10,
+      "clips": [
+        "idle",
+        "walk",
+        "open",
+        "defeat",
+        "tell_fan",
+        "strike_fan",
+        "tell_beam",
+        "strike_beam"
+      ],
+      "bounds": [
+        [
+          -1.4249999523162842,
+          0.5450000166893005,
+          -0.6949999928474426
+        ],
+        [
+          1.4241482019424438,
+          3.7049999237060547,
+          0.6949999928474426
+        ]
+      ]
+    },
+    {
+      "file": "mirror_admin.glb",
+      "triangles": 1524,
+      "vertices": 1082,
+      "surfaces": 1,
+      "bones": 12,
+      "clips": [
+        "idle",
+        "walk",
+        "open",
+        "defeat",
+        "tell_ring",
+        "strike_ring",
+        "tell_beam",
+        "strike_beam",
+        "tell_fan",
+        "strike_fan"
+      ],
+      "bounds": [
+        [
+          -1.204815149307251,
+          0.10019999742507935,
+          -0.6899999976158142
+        ],
+        [
+          1.2946715354919434,
+          3.2353498935699463,
+          0.42974087595939636
+        ]
+      ]
+    },
+    {
+      "file": "singularity.glb",
+      "triangles": 2208,
+      "vertices": 1666,
+      "surfaces": 1,
+      "bones": 9,
+      "clips": [
+        "idle",
+        "walk",
+        "open",
+        "defeat",
+        "tell_ring",
+        "strike_ring",
+        "tell_beam",
+        "strike_beam",
+        "tell_fan",
+        "strike_fan"
+      ],
+      "bounds": [
+        [
+          -1.6699999570846558,
+          0.6899999976158142,
+          -1.2997182607650757
+        ],
+        [
+          1.6699999570846558,
+          3.9800000190734863,
+          1.75
+        ]
+      ]
+    }
+  ],
+  "files": {
+    "atlas_base.png": "aa64feb5db66551510a6a1a05a5fc804d2678c45e15c847b20fbc447f13e71cf",
+    "atlas_emission.png": "6399e852994a138e2a5dd4e91ead231e505e83173bb0b04776a5b0a0b8e25585",
+    "atlas_normal.png": "d17c379eee184828891ebc47682a8fddffe7793b87bb10ea2215a3c4a3e57525",
+    "atlas_orm.png": "a760aa3761aed1477f148b27b794f6e18c7519f76ea07b8c96b38ee60d67684f",
+    "buffer_overflow.glb": "861c137ff16b14c519b7f26d918cc64f1b02bcb3c395368b387650410044fb33",
+    "memory_leak.glb": "aa60c49308656ac388edc77867abc7727219bb924af6f0cc1ea667e302fa57e2",
+    "mirror_admin.glb": "4b55dc3e1e87645e8048853cd59c19223e5481a48621ee03d822e62e2631a18f",
+    "singularity.glb": "4cb799c21626d493412633502b982e93b2b4c3d2cf53609c0e27f29bb681f7b0",
+    "stack_overflow.glb": "497325e13c54ec21026ecc29f766590efccef2be1bc204f2774317db78113427"
+  }
+}

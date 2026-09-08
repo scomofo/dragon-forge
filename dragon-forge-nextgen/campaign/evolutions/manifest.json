@@ -1,0 +1,72 @@
+{
+  "source": "tools/build_evolutions.py",
+  "scope": "Additional skinned crown/armor geometry; existing skeletons, clips and sole vertices retained.",
+  "assets": [
+    {
+      "file": "magma_evolved.glb",
+      "triangles": 14146,
+      "vertices": 9014,
+      "surfaces": 1,
+      "bones": 24,
+      "clips": [
+        "idle",
+        "walk",
+        "claw",
+        "breath",
+        "wall",
+        "burst",
+        "guard",
+        "hurt",
+        "defeat"
+      ],
+      "bounds": [
+        [
+          -1.157737135887146,
+          0.0031845916528254747,
+          -1.3897705078125
+        ],
+        [
+          1.157737135887146,
+          3.3421897888183594,
+          2.6526992321014404
+        ]
+      ],
+      "parent_asset": "art/generated/magma_guardian.glb",
+      "parent_sha256": "e98862a3bedd126ee40cdc614f784e1bc8974813cd9e3993dceb2b9833ae7c8d",
+      "sha256": "71b1df6d66993c7707ca14735ed8708c9b08bb9d97fe2088de0ee3afece1a668"
+    },
+    {
+      "file": "rime_evolved.glb",
+      "triangles": 4574,
+      "vertices": 3509,
+      "surfaces": 1,
+      "bones": 21,
+      "clips": [
+        "idle",
+        "walk",
+        "claw",
+        "breath",
+        "wall",
+        "burst",
+        "guard",
+        "hurt",
+        "defeat"
+      ],
+      "bounds": [
+        [
+          -1.063494324684143,
+          0.05000000074505806,
+          -1.6711279153823853
+        ],
+        [
+          1.063494324684143,
+          2.222393274307251,
+          2.43560528755188
+        ]
+      ],
+      "parent_asset": "campaign/guardians/ice_guardian.glb",
+      "parent_sha256": "d72a1fd2b1b97f14511591e32b82e9606b0b80312cd2500ef71fc31a72276266",
+      "sha256": "61820ec963541de29c117a3eca42c760c8de62e3e817903bb0d922253113bed7"
+    }
+  ]
+}

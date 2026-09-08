@@ -1,0 +1,87 @@
+name: Nextgen guardian party
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/**'
+      - '.github/workflows/nextgen-guardians.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: guardian-party-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  guardians:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      GODOT_SILENCE_ROOT_WARNING: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: dragon-forge-nextgen
+      - name: Install isolated validation tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          npm install --prefix /tmp/guardian-validator gltf-validator@2.0.0-dev.3.10
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Validate committed exports without rebuilding or changing them
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dragon-forge-nextgen/artifacts/guardians
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('dragon-forge-nextgen/campaign/guardians')
+          manifest=json.loads((root/'manifest.json').read_text())
+          for name,digest in manifest['files'].items():
+              assert pathlib.Path(name).name==name
+              assert hashlib.sha256((root/name).read_bytes()).hexdigest()==digest,name
+          print('GUARDIAN_MANIFEST: six exported files match SHA-256')
+          PY
+          GLTF_VALIDATOR_MODULE=/tmp/guardian-validator/node_modules/gltf-validator node dragon-forge-nextgen/tools/validate_guardians.cjs 2>&1 | tee dragon-forge-nextgen/artifacts/guardians/exports.log
+          python3 dragon-forge-nextgen/tools/validate_art.py 2>&1 | tee dragon-forge-nextgen/artifacts/guardians/original-exports.log
+      - name: Native campaign, party, gameplay, art and review tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 100 godot --headless --path dragon-forge-nextgen --editor --import 2>&1 | tee dragon-forge-nextgen/artifacts/guardians/import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' dragon-forge-nextgen/artifacts/guardians/import.log; then exit 1; fi
+          for script in tests/run.gd tests/art_test.gd validation/review_tests.gd validation/polish_tests.gd campaign/tests/run.gd campaign/tests/party_tests.gd campaign/tests/play_smoke.gd; do
+            log="dragon-forge-nextgen/artifacts/guardians/$(echo "$script" | tr / _).log"
+            timeout 150 godot --headless --fixed-fps 60 --path dragon-forge-nextgen --script "res://$script" -- --test-mode 2>&1 | tee "$log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' "$log"; then exit 1; fi
+          done
+          grep 'PARTY_TESTS:.*0 failures' dragon-forge-nextgen/artifacts/guardians/campaign_tests_party_tests.gd.log
+      - name: Real OpenGL and Forward+ guardian captures
+        shell: bash
+        run: |
+          set -euo pipefail
+          for mode in gl_compatibility forward_plus; do
+            target="dragon-forge-nextgen/artifacts/guardians/$mode"
+            mkdir -p "$target"
+            timeout 240 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method "$mode" --audio-driver Dummy --script res://campaign/tests/party_capture.gd -- --test-mode 2>&1 | tee "$target/visual.log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' "$target/visual.log"; then exit 1; fi
+            grep 'GUARDIAN_VISUAL: 0 failures' "$target/visual.log"
+            mv dragon-forge-nextgen/artifacts/guardians/*.png "$target/"
+          done
+      - name: Package exact tested sources and record revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/guardians/TESTED_COMMIT.txt
+          git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/guardians/TESTED_TREE.txt
+          git archive --format=zip -o dragon-forge-nextgen/artifacts/guardians/Guardian_Project_Source.zip HEAD:dragon-forge-nextgen
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: guardian-party-evidence
+          path: dragon-forge-nextgen/artifacts/guardians/
+          retention-days: 14

@@ -1,0 +1,69 @@
+{
+  "source": "tools/build_light_guardian.py",
+  "guardian": "Lumen",
+  "design": {
+    "plan": "stained-glass winged biped",
+    "silhouette": "wing-chevron-panes",
+    "notes": "Hard panes. Gold/white only \u2014 no storm-violet.",
+    "palette": "gold-white",
+    "muzzle_joint": "Emitter",
+    "grounded": false,
+    "foot_planting": false,
+    "wing_panels": 6,
+    "rigid_panes": true
+  },
+  "asset": {
+    "file": "light_guardian.glb",
+    "triangles": 1994,
+    "vertices": 2642,
+    "surfaces": 1,
+    "bones": 25,
+    "clips": [
+      "idle",
+      "walk",
+      "claw",
+      "breath",
+      "wall",
+      "burst",
+      "guard",
+      "hurt",
+      "defeat"
+    ],
+    "bounds": [
+      [
+        -1.7836302518844604,
+        0.2175000011920929,
+        -0.7412430047988892
+      ],
+      [
+        1.7836302518844604,
+        2.9484455585479736,
+        0.31299999356269836
+      ]
+    ]
+  },
+  "clip_durations": {
+    "idle": 1.8,
+    "walk": 0.8,
+    "claw": 0.32,
+    "breath": 0.56,
+    "wall": 0.68,
+    "burst": 0.72,
+    "guard": 1.0,
+    "hurt": 0.24,
+    "defeat": 0.9
+  },
+  "action_windups": {
+    "claw": 0.12,
+    "breath": 0.26,
+    "wall": 0.32,
+    "burst": 0.4
+  },
+  "files": {
+    "atlas_base.png": "5f5ae307d7fd45a809c2d7bda9216232a080a2ab751ce5dd8a8564eebff3efd3",
+    "atlas_emission.png": "a1c9af1a6cbfe219bb16228648060d2901d107e7d293684397ea2cdb8a18d2dc",
+    "atlas_normal.png": "e1fa3a473e7e1c988a4d809676412da667b5fc724069c7dca4a5fff2091e37ef",
+    "atlas_orm.png": "82eb5b990825c093d596f6b386dbe5024e526e5226d18d0a1a988b29afbb07e7",
+    "light_guardian.glb": "2f5f49f52c7714f9b20ad100a2ba784b85936cddf0dfa429c89dbcafe89638a0"
+  }
+}

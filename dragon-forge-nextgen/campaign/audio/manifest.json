@@ -1,0 +1,66 @@
+{
+  "source_revision": "3770fc6abe22fed7b80b733b653eb25d6e49f634",
+  "note": "Ten existing repository recordings; battle has corrected WAV extension, identical bytes.",
+  "tracks": [
+    {
+      "file": "music_battle.wav",
+      "source": "public/assets/music/music_battle.mp3",
+      "sha256": "6c06179fefdc6cd69b19494fc3763fbc188271e76c20d94766e1ff2041185c7c",
+      "bytes": 3545684
+    },
+    {
+      "file": "music_boss.mp3",
+      "source": "public/assets/music/music_boss.mp3",
+      "sha256": "f8091d7b223da9ac513670775513ea9468678f66db708e8d978445d23cafb6f7",
+      "bytes": 525357
+    },
+    {
+      "file": "music_credits.mp3",
+      "source": "public/assets/music/music_credits.mp3",
+      "sha256": "067c652fc652febc9d56fef39e36c849b8bd0c2db4bbcb29998168e89cb32ffd",
+      "bytes": 429706
+    },
+    {
+      "file": "music_defeat.mp3",
+      "source": "public/assets/music/music_defeat.mp3",
+      "sha256": "e3968a659d5c4e2d28534ed41aadeae7bd5ada22cc31bbca9a76c618c78b6717",
+      "bytes": 97010
+    },
+    {
+      "file": "music_hub.mp3",
+      "source": "public/assets/music/music_hub.mp3",
+      "sha256": "d19c7812613e9478fa4e774c6b29ef7596e1bafd2ed2a524f4f039e1996cc590",
+      "bytes": 389582
+    },
+    {
+      "file": "music_map_wander.mp3",
+      "source": "public/assets/music/music_map_wander.mp3",
+      "sha256": "ecbc528df07043cc2ab5e6c791e91ba5527b8ebfc48ae95968b8cbe903d3e3be",
+      "bytes": 525357
+    },
+    {
+      "file": "music_mirror_admin.mp3",
+      "source": "public/assets/music/music_mirror_admin.mp3",
+      "sha256": "6936ad1aacd57600c7b4cbdcd057537ddfcff7a50fb0c23f0177f1c16dfc2435",
+      "bytes": 1250577
+    },
+    {
+      "file": "music_singularity.mp3",
+      "source": "public/assets/music/music_singularity.mp3",
+      "sha256": "a94a46d4cca948ede24e81e099a54c1dcdef5d152defa399387637684b90b3fe",
+      "bytes": 525357
+    },
+    {
+      "file": "music_victory.mp3",
+      "source": "public/assets/music/music_victory.mp3",
+      "sha256": "921d4f9c36dc4688b942f6a61ece743cac54f9346ee9b63d2c2dade4718a04d0",
+      "bytes": 96592
+    },
+    {
+      "file": "theme.mp3",
+      "source": "public/assets/music/theme.mp3",
+      "sha256": "cca782db88439d764f881507983fbcb06b23aa6d866798d51a0cfacf456a4697",
+      "bytes": 3148522
+    }
+  ]
+}

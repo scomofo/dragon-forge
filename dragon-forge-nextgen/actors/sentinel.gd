@@ -1,0 +1,129 @@
+extends CharacterBody3D
+const Brain = preload("res://sim/enemy_brain.gd")
+const Rig = preload("res://presentation/sentinel_rig.gd")
+const Geo = preload("res://presentation/geometry.gd")
+signal slam(at: Vector3, radius: float, amount: float)
+signal defeated(encounter: int)
+signal hit_feedback(at: Vector3, text: String, blocked: bool)
+var brain = Brain.new()
+var target
+var encounter = 0
+var boss = false
+var hp = 100.0
+var max_hp = 100.0
+var radius = 2.4
+var reduced_motion = false
+var visual: Node3D
+var shield: MeshInstance3D
+var tell: Node3D
+var tell_ring: MeshInstance3D
+var title: Label3D
+var hp_label: Label3D
+var clock = 0.0
+var arms: Array = []
+var hit_time = 0.0
+var tell_label: Label3D
+
+func _ready() -> void:
+	max_hp = 260.0 if boss else 100.0
+	hp = max_hp
+	radius = 3.1 if boss else 2.4
+	brain.boss = boss
+	collision_layer = 4
+	collision_mask = 1 | 2
+	var collision = CollisionShape3D.new()
+	var capsule = CapsuleShape3D.new()
+	capsule.radius = 0.75 if boss else 0.60
+	capsule.height = 2.4
+	collision.shape = capsule
+	collision.position.y = 1.2
+	add_child(collision)
+	visual = Rig.new()
+	visual.boss = boss
+	add_child(visual)
+	# Hexagonal energy shield is a combat effect; plated armature is the imported art.
+	shield = Geo.cylinder(visual, Vector3(0, 1.35, -0.83), 1.02, 1.02, 0.025, Geo.material(Color(0.25, 0.75, 0.90, 0.16), 0.35, true), 6)
+	shield.rotation.x = PI / 2.0
+	if boss:
+		visual.scale = Vector3.ONE * 1.2
+	title = Geo.label(self, Vector3(0, 3.6 if boss else 3.15, 0), "")
+	hp_label = Geo.label(self, Vector3(0, 2.85 if boss else 2.4, 0), "", Geo.CYAN)
+	title.font_size = 40
+	hp_label.font_size = 36
+	# Telegraph is a sibling: it does NOT follow the enemy or player after lock.
+	tell = Node3D.new()
+	get_parent().call_deferred("add_child", tell)
+	tell_ring = Geo.ring(tell, Vector3(0, 0.14, 0), radius, Geo.material(Color("ffcf68"), 1.0, true), 0.09)
+	Geo.cylinder(tell, Vector3(0, 0.115, 0), radius, radius, 0.025, Geo.material(Color(1.0, 0.25, 0.16, 0.2), 0.0, true), 40)
+	Geo.ring(tell, Vector3(0, 0.14, 0), radius, Geo.material(Color("ffe0a0"), 0.5, true), 0.04)
+	tell_label = Geo.label(tell, Vector3(0, 0.2, 0), "IMPACT", Color("ffdf9b"))
+	tell.visible = false
+
+func _exit_tree() -> void:
+	if is_instance_valid(tell):
+		tell.queue_free()
+
+func _physics_process(delta: float) -> void:
+	# The fixed world-space tell is attached by a deferred call.
+	# Wait until it has entered the tree before assigning global transforms.
+	if not is_instance_valid(tell) or not tell.is_inside_tree():
+		return
+	if not is_instance_valid(target) or target.state.hp <= 0.0 or brain.mode == "dead":
+		if is_instance_valid(tell):
+			tell.visible = false
+		return
+	if target.global_position.z > 1.5:
+		brain.mode = "seek"
+		velocity = Vector3.ZERO
+		tell.visible = false
+		return
+	clock += delta
+	brain.enraged = boss and hp <= max_hp * 0.5
+	var offset: Vector3 = target.global_position - global_position
+	offset.y = 0.0
+	var event = brain.tick(delta, offset.length(), target.global_position)
+	if event == "tell":
+		tell.global_position = Vector3(brain.locked_target.x, 0, brain.locked_target.z)
+	elif event == "slam":
+		slam.emit(brain.locked_target, radius, 32.0 if boss else 22.0)
+	var direction = offset.normalized()
+	velocity.x = direction.x * (2.7 if brain.enraged else 2.1) if brain.mode == "seek" else 0.0
+	velocity.z = direction.z * (2.7 if brain.enraged else 2.1) if brain.mode == "seek" else 0.0
+	velocity.y = -1.0 if is_on_floor() else velocity.y - delta * 25.0
+	move_and_slide()
+	if direction.length() > 0.1:
+		visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-direction.x, -direction.z), minf(delta * 6.0, 1.0))
+	visual.position.y = 0.0 if reduced_motion else sin(clock * 3.0) * 0.045
+	tell.visible = brain.mode == "tell"
+	# A shrinking ring indicates time, without flashing or shaking the screen.
+	var fraction = clampf(brain.timer / brain.locked_duration, 0.0, 1.0)
+	tell_label.text = "IMPACT %.1fs" % brain.timer
+	tell_ring.scale = Vector3.ONE * (1.0 if reduced_motion else maxf(0.1, fraction))
+	shield.visible = not brain.vulnerable()
+	hit_time = maxf(0.0, hit_time - delta)
+	visual.rotation.x = hit_time * (0.10 if reduced_motion else 0.60)
+	visual.animate(delta, brain, Vector2(velocity.x, velocity.z).length(), reduced_motion)
+	var name_text = "PACKET WARDEN" if boss else "FIREWALL SENTINEL"
+	var status = "OPEN - COUNTER!" if brain.vulnerable() else ("DODGE / GUARD" if brain.mode == "tell" else "SHIELD CLOSED")
+	title.text = name_text + (" // OVERCLOCK" if brain.enraged else "") + "\n" + status
+	hp_label.text = "%d / %d" % [int(hp), int(max_hp)]
+
+func take_hit(amount: float, bypass_shield: bool = false) -> float:
+	if hp <= 0.0 or amount <= 0.0 or is_queued_for_deletion():
+		return 0.0
+	if not bypass_shield and not brain.vulnerable():
+		hit_feedback.emit(global_position, "SHIELDED", true)
+		return 0.0
+	var applied = minf(hp, amount)
+	hp -= applied
+	hit_time = 0.18
+	hit_feedback.emit(global_position, str(int(applied)), false)
+	if hp <= 0.0:
+		brain.kill()
+		defeated.emit(encounter)
+		queue_free()
+	return applied
+
+func overload() -> void:
+	brain.open_window(2.4)
+	take_hit(55.0, true)

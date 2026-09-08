@@ -1,0 +1,93 @@
+name: Nextgen resonance fusion
+on:
+  pull_request:
+    paths:
+      - 'dragon-forge-nextgen/**'
+      - '.github/workflows/nextgen-fusion.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: resonance-fusion-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  fusion:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      LP_NUM_THREADS: '2'
+      OMP_NUM_THREADS: '1'
+      GODOT_SILENCE_ROOT_WARNING: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: dragon-forge-nextgen
+      - name: Install isolated validation tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          npm install --prefix /tmp/fusion-validator gltf-validator@2.0.0-dev.3.10
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Validate committed assets without rebuilding
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dragon-forge-nextgen
+          mkdir -p artifacts/fusion
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('campaign/fusion_assets')
+          manifest=json.loads((root/'manifest.json').read_text())
+          assert len(manifest['files'])==6
+          for name,digest in manifest['files'].items():
+              assert pathlib.Path(name).name==name
+              assert hashlib.sha256((root/name).read_bytes()).hexdigest()==digest,name
+          print('FUSION_MANIFEST: six shipped exports match SHA-256')
+          PY
+          GLTF_VALIDATOR_MODULE=/tmp/fusion-validator/node_modules/gltf-validator node tools/validate_fusion.cjs 2>&1 | tee artifacts/fusion/exports.log
+          python3 tools/validate_art.py 2>&1 | tee artifacts/fusion/original-exports.log
+          python3 tools/validate_evolutions.py 2>&1 | tee artifacts/fusion/evolved-exports.log
+      - name: Native campaign, fusion and existing regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dragon-forge-nextgen
+          timeout 100 godot --headless --path . --editor --import 2>&1 | tee artifacts/fusion/import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' artifacts/fusion/import.log; then exit 1; fi
+          for script in tests/run.gd tests/art_test.gd validation/review_tests.gd validation/polish_tests.gd campaign/tests/run.gd campaign/tests/party_tests.gd campaign/tests/evolution_tests.gd campaign/tests/fusion_tests.gd campaign/tests/play_smoke.gd campaign/tests/fusion_play.gd; do
+            log="artifacts/fusion/${script//\//_}.log"
+            timeout 150 godot --headless --fixed-fps 60 --path . --script "res://$script" -- --test-mode 2>&1 | tee "$log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' "$log"; then exit 1; fi
+          done
+          grep 'FUSION_TESTS:.*0 failures' artifacts/fusion/campaign_tests_fusion_tests.gd.log
+          grep 'STORM_CONTROLLER_PLAY:.*0 failures' artifacts/fusion/campaign_tests_fusion_play.gd.log
+      - name: Real OpenGL and Forward+ fusion captures
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dragon-forge-nextgen
+          for mode in gl_compatibility forward_plus; do
+            timeout 240 xvfb-run -a godot --path . --rendering-method "$mode" --audio-driver Dummy --script res://campaign/tests/fusion_capture.gd -- --test-mode 2>&1 | tee "artifacts/fusion/$mode.log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' "artifacts/fusion/$mode.log"; then exit 1; fi
+            grep 'FUSION_VISUAL: 0 failures' "artifacts/fusion/$mode.log"
+            mv artifacts/fusion/captures "artifacts/fusion/$mode"
+          done
+      - name: Record tested revision and archive unchanged sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git rev-parse HEAD > dragon-forge-nextgen/artifacts/fusion/TESTED_COMMIT.txt
+          git rev-parse HEAD:dragon-forge-nextgen > dragon-forge-nextgen/artifacts/fusion/TESTED_TREE.txt
+          git archive --format=zip -o dragon-forge-nextgen/artifacts/fusion/Fusion_Project_Source.zip HEAD:dragon-forge-nextgen
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resonance-fusion-evidence
+          path: dragon-forge-nextgen/artifacts/fusion/
+          retention-days: 14

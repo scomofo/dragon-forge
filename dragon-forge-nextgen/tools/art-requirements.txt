@@ -1,0 +1,3 @@
+# Offline authoring only; Godot loads the already exported assets.
+numpy==2.2.6
+Pillow==11.3.0
