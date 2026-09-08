@@ -4,11 +4,12 @@ const Data = preload("res://campaign/data.gd")
 const Modules = preload("res://sim/forge_modules.gd")
 const Growth = preload("res://campaign/growth.gd")
 const Fusion = preload("res://campaign/fusion.gd")
+const SAVE_VERSION = 11
 const UPGRADE_IDS = ["plating", "power", "cooling"]
 const GUARDIAN_IDS = ["fire", "ice", "storm", "stone", "venom", "shadow", "void", "light", "synthesis"]
 
 static func fresh() -> Dictionary:
-	return {"version":11, "synthesis_forged":false, "void_imprint_recovered":false, "void_forged":false, "lattice_recovered":false, "storm_forged":false, "stone_imprint_recovered":false, "stone_forged":false, "venom_culture_recovered":false, "venom_forged":false, "shadow_forged":false, "loadout":[], "evolutions":{"fire":"","ice":"","storm":""}, "guardians":["fire"], "active_guardian":"fire", "ice_rescued":false, "hatched":false, "room":"forge", "visited":["forge"], "cleared":[], "relays":[], "caches":[], "journals":[], "cores":[], "installed":[], "salvage":0, "upgrades":{"plating":0,"power":0,"cooling":0}, "module":"", "finished":false, "legacy_imported":false}
+	return {"version":SAVE_VERSION, "synthesis_forged":false, "void_imprint_recovered":false, "void_forged":false, "lattice_recovered":false, "storm_forged":false, "stone_imprint_recovered":false, "stone_forged":false, "venom_culture_recovered":false, "venom_forged":false, "shadow_forged":false, "loadout":[], "evolutions":{"fire":"","ice":"","storm":""}, "guardians":["fire"], "active_guardian":"fire", "ice_rescued":false, "hatched":false, "room":"forge", "visited":["forge"], "cleared":[], "relays":[], "caches":[], "journals":[], "cores":[], "installed":[], "salvage":0, "upgrades":{"plating":0,"power":0,"cooling":0}, "module":"", "finished":false, "legacy_imported":false}
 
 static func normalize(value: Variant) -> Dictionary:
 	if not value is Dictionary: return {}
@@ -55,7 +56,7 @@ static func normalize(value: Variant) -> Dictionary:
 	for key in ["version","salvage"]:
 		if not _integer(s[key],0,1000000): return {}
 		s[key]=int(s[key])
-	if s.version!=11:return {}
+	if s.version!=SAVE_VERSION:return {}
 	for key in ["hatched","finished","legacy_imported","ice_rescued","lattice_recovered","storm_forged","stone_imprint_recovered","stone_forged","venom_culture_recovered","venom_forged","shadow_forged","void_imprint_recovered","void_forged","synthesis_forged"]:
 		if not s[key] is bool:return {}
 	if not s.room is String or not Data.ROOMS.has(s.room) or not s.module is String or (s.module!="" and not Modules.valid(s.module)):return {}
