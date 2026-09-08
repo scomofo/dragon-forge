@@ -15,8 +15,11 @@ static func normalize(value: Variant) -> Dictionary:
 	if not value is Dictionary: return {}
 	var s: Dictionary = value.duplicate(true)
 	var migrate_light = false
-	# No historical schema could own Synthesis, including v1 before its roster reset.
+	# Schema 10 cannot carry its schema-11-only flag. Reject it before the
+	# migration default could erase malformed source state.
+	if s.get("version",0)==10 and s.has("synthesis_forged"):return {}
 	if _integer(s.get("version",0),1,10) and s.get("guardians",[]) is Array and s.get("guardians",[]).has("synthesis"):return {}
+	if s.get("version",0)==1 and (s.has("guardians") or s.has("active_guardian") or s.has("ice_rescued")):return {}
 	if s.get("version",0) in [2,3] and not _valid_guardians(s.get("guardians"),2):return {}
 	if s.get("version",0)==1:
 		s.version=2;s.guardians=["fire"];s.active_guardian="fire";s.ice_rescued=false

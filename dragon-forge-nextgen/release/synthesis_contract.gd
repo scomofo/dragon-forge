@@ -172,6 +172,13 @@ static func borrowed_attacks(w, check: Callable) -> void:
 	w.dragon.try_ability("wall")
 	w.dragon.advance_combat(.281)
 	check.call(foe.hp == hp, "Synthesis: Radiant Beam is directional, not a radial field")
+	for inside_line in [false,true]:
+		prepare(w)
+		foe.global_position = at + Vector3.FORWARD * 5.0 + Vector3.RIGHT * (.69 if inside_line else .71)
+		hp = foe.hp
+		w.dragon.try_ability("wall")
+		w.dragon.advance_combat(.281)
+		check.call(is_equal_approx(hp - foe.hp,w.campaign_damage("wall") if inside_line else 0.0), "Synthesis: Radiant Beam uses a fixed direct corridor " + str(inside_line))
 	var barrier = StaticBody3D.new()
 	barrier.collision_layer = 1
 	var collision = CollisionShape3D.new()

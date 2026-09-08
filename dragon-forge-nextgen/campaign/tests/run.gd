@@ -209,6 +209,9 @@ func _storage() -> void:
 	store.read_campaign()
 	check(store.blocked and not store.write_campaign(state),"corrupt campaign cannot be silently overwritten")
 	check(FileAccess.get_file_as_string(store.path)=="broken data","corrupt bytes unchanged")
+	check(store.replace_with_fresh_campaign(),"confirmed New campaign can replace a blocked corrupt save")
+	check(not store.blocked and store.read_campaign()==Rules.fresh(),"explicit replacement commits a readable current-schema campaign")
+	check(FileAccess.get_file_as_string(store.path+".bak")=="broken data","explicit replacement backs up the exact corrupt bytes")
 	for suffix in ["", ".bak", ".tmp"]:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(store.path+suffix))
 

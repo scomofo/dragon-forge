@@ -93,6 +93,23 @@ static func in_cone(origin: Vector3, facing: Vector3, target: Vector3, reach: fl
 		return true
 	return facing.normalized().dot(offset.normalized()) >= cosine
 
+## Finite forward corridor used by authored beam attacks. `half_width` measures
+## from the aim centreline to either edge, so it does not widen with distance.
+static func in_line(origin: Vector3, facing: Vector3, target: Vector3, reach: float, half_width: float) -> bool:
+	if not is_finite(reach) or not is_finite(half_width) or reach < 0.0 or half_width < 0.0:
+		return false
+	var forward = facing
+	forward.y = 0.0
+	if forward.length_squared() < 0.000001:
+		return false
+	forward = forward.normalized()
+	var offset = target - origin
+	offset.y = 0.0
+	var distance = offset.dot(forward)
+	if distance < 0.0 or distance > reach:
+		return false
+	return (offset - forward * distance).length_squared() <= half_width * half_width
+
 static func cancel_action(state: Dictionary) -> void:
 	state.action = ""
 	state.action_time = 0.0

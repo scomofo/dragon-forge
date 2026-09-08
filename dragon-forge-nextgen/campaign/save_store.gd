@@ -41,7 +41,8 @@ func _read(filename: String) -> Variant:
 func write_campaign(state: Dictionary) -> bool:
 	if blocked:
 		return false
-	if Rules.normalize(state).is_empty():
+	var normalized = Rules.normalize(state)
+	if normalized.is_empty():
 		message = "Invalid campaign state was not saved."
 		return false
 	var temporary = path + ".tmp"
@@ -49,11 +50,13 @@ func write_campaign(state: Dictionary) -> bool:
 	if f == null:
 		message = "Campaign save could not be written; progress remains in this session."
 		return false
-	f.store_string(JSON.stringify(state, "\t"))
+	# Commit the validated current-schema value, not a legacy caller whose
+	# temporary normalized copy merely happened to validate.
+	f.store_string(JSON.stringify(normalized, "\t"))
 	f.flush()
 	var error = f.get_error()
 	f.close()
-	if error != OK or Rules.normalize(_read(temporary)).is_empty():
+	if error != OK or Rules.normalize(_read(temporary)) != normalized:
 		message = "New save failed verification. Existing save was not replaced."
 		return false
 	var absolute = ProjectSettings.globalize_path(path)
@@ -74,3 +77,14 @@ func write_campaign(state: Dictionary) -> bool:
 	existed = true
 	message = ""
 	return true
+
+func replace_with_fresh_campaign() -> bool:
+	# Only an explicit, confirmed New campaign may lift corrupt/future-save
+	# protection. The normal writer stays blocked and still backs up the exact
+	# original bytes before committing the fresh current-schema state.
+	var was_blocked = blocked
+	blocked = false
+	var saved = write_campaign(Rules.fresh())
+	if not saved:
+		blocked = was_blocked
+	return saved

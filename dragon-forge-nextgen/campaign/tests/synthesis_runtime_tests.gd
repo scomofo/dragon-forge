@@ -23,6 +23,8 @@ func control(w, scroll_name: String, button_name: String):
 	var button = w.hud.overlay_column.find_child(button_name, true, false)
 	check(scroll != null and button != null, "Synthesis: real scroll action exists " + button_name)
 	if scroll == null or button == null:return null
+	var initial_focus = w.hud.get_viewport().gui_get_focus_owner()
+	check(initial_focus != null and scroll.is_ancestor_of(initial_focus), "Synthesis: controller-opened overlay seeds focus inside " + scroll_name)
 	scroll.ensure_control_visible(button)
 	await frames()
 	check(w.hud.root.get_global_rect().encloses(scroll.get_global_rect()) and scroll.get_global_rect().encloses(button.get_global_rect()), "Synthesis: action is fully reachable in logical viewport " + button_name)

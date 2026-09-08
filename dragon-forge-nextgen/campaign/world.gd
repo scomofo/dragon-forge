@@ -104,7 +104,11 @@ func _save() -> void:
 func begin_campaign(fresh: bool = false) -> void:
 	if fresh:
 		campaign = CampaignRules.fresh()
-		_save()
+		_sync_compat()
+		if not test_mode:
+			store.replace_with_fresh_campaign()
+		if is_instance_valid(level):
+			level.refresh(campaign)
 	title_open = false
 	has_started = true
 	hud.close_overlay()
@@ -488,7 +492,8 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 	var landed=false
 	var void_damage=0.0
 	for actor in enemies.duplicate():
-		if is_instance_valid(actor) and Combat.in_cone(origin,direction,actor.global_position,rule.range,rule.cone) and line_clear(origin,actor.global_position):
+		var shape_hit: bool = is_instance_valid(actor) and (Combat.in_line(origin,direction,actor.global_position,rule.range,rule.line_half_width) if rule.has("line_half_width") else Combat.in_cone(origin,direction,actor.global_position,rule.range,rule.cone))
+		if shape_hit and line_clear(origin,actor.global_position):
 			var actual=actor.element_hit(campaign_damage(id),owner_id,id,GuardianCombat.chill_duration(dragon.state),GuardianCombat.charge_duration(dragon.state))
 			if actual>0.0:
 				landed=true

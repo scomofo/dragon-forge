@@ -178,6 +178,17 @@ func migration_checks():
 	var migrated = Rules.normalize(implicit)
 	check(migrated.get("loadout") == ["fire", "void"] and migrated.active_guardian == "void" and migrated.guardians == ["fire", "void", "light"], "older implicit pair is preserved before Light retrogrant")
 	check(implicit.loadout.is_empty() and not migrated.synthesis_forged and not Rules.normalize(migrated).is_empty(), "older two-parent result remains valid without Synthesis auto-grant")
+	var raw_store = Store.new()
+	raw_store.path = "user://synthesis-raw-v10-write.json"
+	raw_store.import_legacy = false
+	clean(raw_store.path)
+	var raw_v10 = legacy(10,true)
+	var raw_before = raw_v10.duplicate(true)
+	check(raw_store.write_campaign(raw_v10), "direct valid schema-10 write succeeds through normalization")
+	var raw_disk = JSON.parse_string(FileAccess.get_file_as_string(raw_store.path))
+	check(raw_disk is Dictionary and raw_disk.version == Rules.SAVE_VERSION and raw_disk.get("synthesis_forged") == false, "direct legacy write commits current schema 11 bytes")
+	check(raw_v10 == raw_before and raw_store.read_campaign() == Rules.normalize(raw_v10), "legacy write does not mutate its caller and round-trips normalized progress")
+	clean(raw_store.path)
 	var store = Store.new()
 	store.path = "user://synthesis-earned-roundtrip.json"
 	store.import_legacy = false
@@ -231,6 +242,14 @@ func rejection_checks():
 	for version in range(1, 11):
 		var bad = legacy(version)
 		bad.guardians = ["fire", "synthesis"]
+		invalid.append(bad)
+	for value in [false, true, null, "false"]:
+		var bad = legacy(10, true)
+		bad.synthesis_forged = value
+		invalid.append(bad)
+	for injected in [{"guardians":["fire"]}, {"guardians":[]}, {"guardians":["ice"]}, {"guardians":"fire"}, {"active_guardian":"fire"}, {"ice_rescued":false}]:
+		var bad = legacy(1)
+		for key in injected:bad[key] = injected[key]
 		invalid.append(bad)
 	for version in [9, 10]:
 		for pair in [[], ["void"], ["void", "void"], ["void", "synthesis"], ["void", "light", "fire"], "void"]:

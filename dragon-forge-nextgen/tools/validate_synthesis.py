@@ -106,7 +106,7 @@ check('emissiveTexture' in material and 'normalTexture' in material and 'occlusi
 design = manifest['design']
 check(design['plan'] == 'void frame filled with light panes' and design['silhouette'] == 'diamond-frame-pane-fill', 'Art Bible Void+Light design')
 check(design['pane_palette'] == 'gold-white' and design['rigid_panes'] and design['pane_count'] == 4, 'Four rigid gold/white fill panes')
-check(design['pane_color_slots'] == [12, 13, 14, 15] and design['center'] == [0., 1.28, 0.], 'Recorded pane palette and inherited center')
+check(design['frame_texture_slots'] == list(range(12)) and design['pane_color_slots'] == [12, 13, 14, 15] and design['center'] == [0., 1.28, 0.], 'Recorded frame and pane palette ownership')
 check(design['muzzle_joint'] == 'Emitter' and not design['grounded'] and not design['foot_planting'], 'Authored emitter and honest hovering contract')
 check(manifest['pane_source'] == 'tools/build_light_guardian.py', 'Actual Light pane recipe retained')
 joint_indices = access(doc, binary, primitive['attributes']['JOINTS_0'])
@@ -213,6 +213,10 @@ def png_rgb(path):
                 row[x] = (row[x]+predictor)&255
             elif kind != 0: raise AssertionError('Unsupported PNG filter')
         yield row; previous = row
+for name in ['atlas_base.png', 'atlas_orm.png', 'atlas_normal.png', 'atlas_emission.png']:
+    synthesis_rows = list(png_rgb(FOLDER/name))
+    void_rows = list(png_rgb(ROOT/'campaign'/'void'/name))
+    check(synthesis_rows[:768] == void_rows[:768], 'Void frame texture slots retained byte-for-byte: ' + name)
 for name in ['atlas_base.png', 'atlas_emission.png']:
     # The bottom atlas row is reserved for the four Light pane/leading slots;
     # the retained Void frame deliberately keeps its original violet family.

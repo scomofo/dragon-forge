@@ -6,7 +6,7 @@ Prism is the ninth owned guardian. Expeditions remain one active guardian and on
 
 The canonical browser recipe is **Light + Void = Synthesis**. Stabilize the Singularity to awaken Lumen, then recover its preserved Void imprint and awaken Null at the Forge. With both parents owned, return to **Resonance Fusion**, create the Synthesis resonance, and awaken Prism. Forging and awakening are separate, persistent, one-time milestones. They spend no salvage, consume neither parent, retain all progression, and preserve the selected expedition pair. Prism can then be selected at the Guardian Nursery.
 
-The imported rig keeps Void's diamond frame and fills it with hard gold-and-white Light panes. This combined silhouette follows the browser art identity. It hovers and uses the existing grounded player collider; it cannot cross walls or missing decks. No planted-foot simulation is claimed.
+The imported rig keeps Void's diamond frame and its original texture slots byte-for-byte, then fills the reserved bottom atlas row with hard gold-and-white Light panes. This combined silhouette follows the browser art identity. It hovers and uses the existing grounded player collider; it cannot cross walls or missing decks. No planted-foot simulation is claimed.
 
 ## Native four-slot kit
 
@@ -16,10 +16,10 @@ These are deterministic native balance values. They are not a claim of turn-base
 |---|---|---:|---:|---:|---|---|
 | 1 | Convergence Shard | 26 | 0 | 0.55 s | 0.12 + 0.20 s | 3 m |
 | 2 | Void Rift | 32 | 22 | 3 s | 0.26 + 0.30 s | 7.8 m |
-| 3 | Radiant Beam | 36 | 26 | 4 s | 0.28 + 0.32 s | 8 m direct line |
+| 3 | Radiant Beam | 36 | 26 | 4 s | 0.28 + 0.32 s | 8 m direct line, 0.7 m half-width |
 | 4 | Recompile | 46 | 38 | 9 s | 0.36 + 0.40 s | 5 m radial |
 
-Void Rift pushes an exposed ordinary enemy up to 1.25 m through collision-aware movement. Bosses and enemies with a locked attack warning remain anchored. Radiant Beam is one direct aimed attack, not a persistent field. All techniques retain normal line-of-sight, range and shield checks.
+Void Rift pushes an exposed ordinary enemy up to 1.25 m through collision-aware movement. Bosses and enemies with a locked attack warning remain anchored. Radiant Beam is one direct aimed attack in a fixed 1.4 m-wide corridor, not a widening cone or persistent field. All techniques retain normal line-of-sight, range and shield checks.
 
 ## Recompile and Advantage adaptation
 

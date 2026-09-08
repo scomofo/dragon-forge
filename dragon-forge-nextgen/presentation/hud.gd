@@ -376,6 +376,33 @@ func _open_overlay(kind: String) -> void:
 	world.dragon.buffered_id = ""
 	world.dragon.buffer_time = 0.0
 	get_tree().paused = true
+	_focus_first_overlay_control.call_deferred()
+
+func _focus_first_overlay_control() -> void:
+	# Dynamic roster/recipe cards need one layout pass before follow-focus can
+	# calculate the target rectangle inside their ScrollContainer.
+	await get_tree().process_frame
+	if not overlay.visible:
+		return
+	var first = _first_focusable(overlay_column)
+	if first != null:
+		first.grab_focus()
+		var ancestor = first.get_parent()
+		while ancestor != null and ancestor != overlay_column:
+			if ancestor is ScrollContainer:
+				ancestor.ensure_control_visible(first)
+				break
+			ancestor = ancestor.get_parent()
+
+func _first_focusable(parent: Node) -> Control:
+	for child in parent.get_children():
+		var interactive = child is BaseButton or child is Range or child is LineEdit or child is TextEdit or child is ItemList or child is Tree
+		if interactive and child.focus_mode != Control.FOCUS_NONE and child.is_visible_in_tree() and not (child is BaseButton and child.disabled):
+			return child
+		var nested = _first_focusable(child)
+		if nested != null:
+			return nested
+	return null
 
 func close_overlay() -> void:
 	overlay.visible = false

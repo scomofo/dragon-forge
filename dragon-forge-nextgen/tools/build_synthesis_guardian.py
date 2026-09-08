@@ -18,9 +18,8 @@ import build_light_guardian as light
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'campaign' / 'synthesis'
-PALETTE = void.PALETTE[:8] + [void.PALETTE[8], (255, 249, 222), (245, 212, 139),
-                            (250, 245, 225), (255, 252, 235), (237, 206, 127),
-                            (211, 167, 67), (255, 230, 163)]
+PALETTE = void.PALETTE[:12] + [(255, 252, 235), (237, 206, 127),
+                              (211, 167, 67), (255, 230, 163)]
 DURATIONS = {'idle': 1.8, 'walk': .8, 'claw': .32, 'breath': .56,
              'wall': .60, 'burst': .76, 'guard': 1.2, 'hurt': .24, 'defeat': .9}
 WINDUPS = {'claw': .12, 'breath': .26, 'wall': .28, 'burst': .36}
@@ -28,10 +27,15 @@ WINDUPS = {'claw': .12, 'breath': .26, 'wall': .28, 'burst': .36}
 
 def paint():
     rng = np.random.default_rng(79237)
-    maps = {name: Image.new('RGB', (1024, 1024)) for name in ['base', 'orm', 'normal', 'emission']}
+    # Synthesis is the existing Void frame filled with Light panes. Seed every
+    # atlas from the committed Void export and author only the four reserved
+    # pane slots so frame texels, not merely frame geometry, stay identical.
+    maps = {name: Image.open(ROOT/'campaign'/'void'/f'atlas_{name}.png').convert('RGB').copy()
+            for name in ['base', 'orm', 'normal', 'emission']}
     y, x = np.mgrid[:256, :256]
     edge = np.minimum.reduce([x, y, 255 - x, 255 - y])
-    for slot, color in enumerate(PALETTE):
+    for slot in range(12, 16):
+        color = PALETTE[slot]
         glass = slot in [12, 13]
         metal = slot in [14, 15]
         grain = rng.normal(0, 1, (256, 256))
@@ -151,6 +155,7 @@ if __name__ == '__main__':
                            'notes': 'Must read as void + light combined, not a tenth animal.',
                            'muzzle_joint': 'Emitter', 'grounded': False, 'foot_planting': False,
                            'pane_count': 4, 'rigid_panes': True, 'pane_palette': 'gold-white',
+                           'frame_texture_slots': list(range(12)),
                            'pane_color_slots': [12, 13, 14, 15], 'center': void.CENTER.tolist()},
                 'frame_reference': {'file': 'campaign/void/void_guardian.glb',
                                     'sha256': hashlib.sha256(reference.read_bytes()).hexdigest(),

@@ -1,5 +1,6 @@
 extends SceneTree
 const Combat = preload("res://campaign/guardian_combat.gd")
+const HitRules = preload("res://sim/combat.gd")
 var checks = 0
 var failures = 0
 
@@ -38,6 +39,10 @@ func run():
 		check(Combat.tick(state, move.recovery - .001) == "" and state.action == id, "Synthesis move retains recovery: " + id)
 		check(Combat.tick(state, .001) == "" and state.action == "", "Synthesis move ends without a second contact: " + id)
 	check(not Combat.rule(prism, "wall").has("radius"), "Synthesis Radiant Beam has no persistent-field definition")
+	var beam = Combat.rule(prism,"wall")
+	check(beam.line_half_width == .70, "Synthesis Radiant Beam declares a fixed direct-line half width")
+	check(HitRules.in_line(Vector3.ZERO,Vector3.FORWARD,Vector3(.69,0,-7.9),beam.range,beam.line_half_width), "Radiant Beam includes a target intersecting its visible corridor")
+	check(not HitRules.in_line(Vector3.ZERO,Vector3.FORWARD,Vector3(.71,0,-2),beam.range,beam.line_half_width), "Radiant Beam cannot invisibly hit a target outside its corridor")
 	check(Combat.in_cone(Vector3.ZERO, Vector3.FORWARD, Vector3.BACK * 5.0, 5.0, -1.0), "Recompile reaches exposed targets behind Prism")
 	check(not Combat.in_cone(Vector3.ZERO, Vector3.FORWARD, Vector3.BACK * 5.01, 5.0, -1.0), "Recompile excludes targets outside five meters")
 	selection_checks()

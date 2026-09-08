@@ -58,7 +58,7 @@ const LIGHT = {
 const SYNTHESIS = {
 	"claw": {"name":"Convergence Shard", "damage":26.0, "heat":0.0, "cooldown":.55, "range":3.0, "cone":.20, "windup":.12, "recovery":.20},
 	"breath": {"name":"Void Rift", "damage":32.0, "heat":22.0, "cooldown":3.0, "range":7.8, "cone":.82, "windup":.26, "recovery":.30},
-	"wall": {"name":"Radiant Beam", "damage":36.0, "heat":26.0, "cooldown":4.0, "range":8.0, "cone":.86, "windup":.28, "recovery":.32},
+	"wall": {"name":"Radiant Beam", "damage":36.0, "heat":26.0, "cooldown":4.0, "range":8.0, "cone":.86, "line_half_width":.70, "windup":.28, "recovery":.32},
 	"burst": {"name":"Recompile", "damage":46.0, "heat":38.0, "cooldown":9.0, "range":5.0, "cone":-1.0, "windup":.36, "recovery":.40},
 }
 const ORDER = ["claw", "breath", "wall", "burst"]

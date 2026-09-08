@@ -17,6 +17,7 @@ jobs:
     env:
       GODOT_SILENCE_ROOT_WARNING: '1'
       LIBGL_ALWAYS_SOFTWARE: '1'
+      GODOT_LINUX_X86_64_SHA256: d0bc2113065e481c9c2c2b2c37daa4e8be3fe9e27f0ab9ab0b6096e9a37907f3
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,6 +32,7 @@ jobs:
           sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
           npm install --prefix /tmp/gltf gltf-validator@2.0.0-dev.3.10
           curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          printf '%s  %s\n' "$GODOT_LINUX_X86_64_SHA256" /tmp/godot.zip | sha256sum --check --strict -
           unzip -q /tmp/godot.zip -d /tmp/godot
           sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
       - name: Validate committed Prism export without rebuilding it
