@@ -58,6 +58,7 @@ static func select(campaign: Dictionary, guardian: String, specialization: Strin
 	return true
 
 static func form_name(guardian: String, evolved: bool) -> String:
+	if guardian == "light": return "Lumen"
 	if guardian == "void": return "Null"
 	if guardian == "shadow": return "Umbra"
 	if guardian == "venom": return "Nox"

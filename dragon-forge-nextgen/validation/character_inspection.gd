@@ -4,7 +4,7 @@ const Art = preload("res://presentation/art_library.gd")
 const UI = preload("res://validation/review_ui.gd")
 const Probe = preload("res://validation/foot_review.gd")
 const BossCatalog = preload("res://campaign/bosses/catalog.gd")
-const ACTORS = ["magma_guardian", "firewall_sentinel", "packet_warden", "ice_guardian", "magma_evolved", "rime_evolved", "storm_guardian", "tempest_arc", "stone_guardian", "venom_guardian", "shadow_guardian", "void_guardian", "buffer_overflow", "memory_leak", "stack_overflow", "mirror_admin", "singularity"]
+const ACTORS = ["magma_guardian", "firewall_sentinel", "packet_warden", "ice_guardian", "magma_evolved", "rime_evolved", "storm_guardian", "tempest_arc", "stone_guardian", "venom_guardian", "shadow_guardian", "void_guardian", "light_guardian", "buffer_overflow", "memory_leak", "stack_overflow", "mirror_admin", "singularity"]
 const VIEWS = ["Full body", "Shoulders", "Hips / feet", "Jaw / head", "Rear / tail"]
 var model: Node3D
 var skeleton: Skeleton3D
@@ -100,7 +100,7 @@ func _build_controls() -> void:
 	var box = UI.panel(layer, Vector2(18, 18), 296)
 	UI.text(box, "CHARACTER / INSPECTION", 19)
 	UI.text(box, "Actual imported art • save-safe", 12)
-	UI.picker(box, ["Magma guardian", "Firewall Sentinel", "Packet Warden", "Rime / Ice guardian", "Crowned Magma / Evolved", "Aurora Rime / Evolved", "Arc / Storm fusion", "Tempest Arc / Evolved", "Cairn / Stone guardian", "Nox / Venom guardian", "Umbra / Shadow guardian", "Null / Void guardian", "Buffer Overflow / Boss", "Memory Leak / Boss", "Stack Overflow / Boss", "Mirror Admin / Boss", "Singularity / Final"], load_actor)
+	UI.picker(box, ["Magma guardian", "Firewall Sentinel", "Packet Warden", "Rime / Ice guardian", "Crowned Magma / Evolved", "Aurora Rime / Evolved", "Arc / Storm fusion", "Tempest Arc / Evolved", "Cairn / Stone guardian", "Nox / Venom guardian", "Umbra / Shadow guardian", "Null / Void guardian", "Lumen / Light guardian", "Buffer Overflow / Boss", "Memory Leak / Boss", "Stack Overflow / Boss", "Mirror Admin / Boss", "Singularity / Final"], load_actor)
 	clip_picker = UI.picker(box, [], select_clip)
 	var transport = UI.row(box)
 	play_button = UI.button(transport, "Pause", toggle_play)
@@ -146,6 +146,8 @@ func load_actor(index: int) -> void:
 		model = load("res://campaign/stone/stone_guardian.glb").instantiate();add_child(model)
 	elif actor_id == "venom_guardian":
 		model = load("res://campaign/venom/venom_guardian.glb").instantiate();add_child(model)
+	elif actor_id == "light_guardian":
+		model = load("res://campaign/light/light_guardian.glb").instantiate();add_child(model)
 	elif actor_id == "void_guardian":
 		model = load("res://campaign/void/void_guardian.glb").instantiate();add_child(model)
 	elif actor_id == "shadow_guardian":

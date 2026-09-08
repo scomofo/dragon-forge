@@ -46,23 +46,32 @@ const VOID = {
 	"wall": {"name":"Null Reflect", "damage":0.0, "heat":30.0, "cooldown":8.0, "range":0.0, "radius":0.0, "windup":.18, "recovery":.24},
 	"burst": {"name":"Siphon Rift", "damage":44.0, "heat":36.0, "cooldown":8.0, "range":4.8, "cone":-1.0, "windup":.30, "recovery":.34},
 }
+const LIGHT = {
+	# Prism Claw fills the native basic-attack slot. Solar Flare is one radial hit,
+	# not a persistent field. Native combat has no accuracy or player-ailment system,
+	# so browser Dazzle and cleanse effects are not invented here.
+	"claw": {"name":"Prism Claw", "damage":22.0, "heat":0.0, "cooldown":.55, "range":2.9, "cone":.20, "windup":.12, "recovery":.20},
+	"breath": {"name":"Radiant Beam", "damage":36.0, "heat":22.0, "cooldown":2.8, "range":8.0, "cone":.86, "windup":.26, "recovery":.30},
+	"wall": {"name":"Solar Flare", "damage":42.0, "heat":32.0, "cooldown":7.5, "range":4.5, "cone":-1.0, "windup":.32, "recovery":.36},
+	"burst": {"name":"Restoration", "damage":0.0, "heat":34.0, "cooldown":12.0, "range":0.0, "cone":-1.0, "windup":.40, "recovery":.32},
+}
 const ORDER = ["claw", "breath", "wall", "burst"]
 const MAX_RESOLVE = 3
 const MAX_TOXIN = 3
 const MAX_PHASE = 2
 
 static func rule(state: Dictionary, id: String) -> Dictionary:
-	var kit: Dictionary = {"fire":ABILITIES, "ice":ICE, "storm":STORM, "stone":STONE, "venom":VENOM, "shadow":SHADOW, "void":VOID}.get(state.get("guardian", "fire"), ABILITIES)
+	var kit: Dictionary = {"fire":ABILITIES, "ice":ICE, "storm":STORM, "stone":STONE, "venom":VENOM, "shadow":SHADOW, "void":VOID, "light":LIGHT}.get(state.get("guardian", "fire"), ABILITIES)
 	var move: Dictionary = kit.get(id, {}).duplicate()
 	if not move.is_empty() and id == "breath" and state.get("evolution", "") == "flashfire": move.cooldown = 1.8
 	if not move.is_empty() and id == "burst" and state.get("evolution", "") == "overcharge": move.cooldown = 6.75
 	return move
 
 static func guardian_name(id: String) -> String:
-	return {"fire":"MAGMA", "ice":"RIME", "storm":"ARC", "stone":"CAIRN", "venom":"NOX", "shadow":"UMBRA", "void":"NULL"}.get(id, "UNKNOWN")
+	return {"fire":"MAGMA", "ice":"RIME", "storm":"ARC", "stone":"CAIRN", "venom":"NOX", "shadow":"UMBRA", "void":"NULL", "light":"LUMEN"}.get(id, "UNKNOWN")
 
 static func fresh(module: String = "", guardian: String = "fire") -> Dictionary:
-	var maximum: float = Modules.profile(module).hp * {"fire":1.0, "ice":.90, "storm":.85, "stone":1.15, "venom":.95, "shadow":.82, "void":.88}.get(guardian, 1.0)
+	var maximum: float = Modules.profile(module).hp * {"fire":1.0, "ice":.90, "storm":.85, "stone":1.15, "venom":.95, "shadow":.82, "void":.88, "light":1.0}.get(guardian, 1.0)
 	return {"evolution":"", "guardian":guardian, "ward":0.0, "null_reflect":0.0, "resolve":0, "phase":0, "module":module if Modules.valid(module) else "", "hp":maximum, "max_hp":maximum, "heat":0.0, "cooldowns":{}, "iframes":0.0, "dodge_iframes":0.0, "dash":0.0, "dodge_cd":0.0, "guard":false, "action":"", "action_time":0.0, "action_hit":false}
 
 static func tick(state: Dictionary, delta: float, guarding: bool = false) -> String:
@@ -168,3 +177,13 @@ static func reflected_damage(applied: float) -> float:
 	return minf(applied, 20.0) if is_finite(applied) and applied > 0.0 else 0.0
 static func void_displacement(id: String) -> float:
 	return {"breath":1.25, "burst":-1.5}.get(id, 0.0)
+static func restore(state: Dictionary) -> float:
+	# The world calls this once at Restoration's contact for its living owner.
+	# Healing changes HP only: no revival, reserve healing, cleanse or cooldown reset.
+	var hp = float(state.get("hp", 0.0))
+	var maximum = float(state.get("max_hp", 0.0))
+	if state.get("guardian", "") != "light" or not is_finite(hp) or not is_finite(maximum) or hp <= 0.0 or maximum <= hp:
+		return 0.0
+	var healed = minf(maximum * .25, maximum - hp)
+	state.hp = hp + healed
+	return healed

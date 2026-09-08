@@ -380,6 +380,12 @@ func interact() -> void:
 				hud.toast("CORE RECOVERED  /  Follow the north return portal. Install it in the Forge to unlock the next sector.")
 		"finish":
 			if CampaignRules.finish(campaign):
+				# A first reserve joins immediately; completion never rests the existing party.
+				if Fusion.members(campaign).has("light") and not party.states.has("light"):
+					var lumen=GuardianCombat.fresh(campaign.module,"light")
+					lumen.max_hp+=int(campaign.upgrades.plating)*20.0
+					lumen.hp=lumen.max_hp
+					party.states.light=lumen
 				_save()
 				hud.show_ending()
 
@@ -453,12 +459,20 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		effects.pulse(origin,2.0,Color("9edff2"))
 		hud.feedback("CRYSTAL AEGIS", "55%% damage reduction for Rime / %d seconds" % int(dragon.state.ward))
 		return
+	if id=="burst" and owner_id=="light":
+		var healed=GuardianCombat.restore(dragon.state)
+		if healed>0.0:
+			effects.pulse(origin,1.7,Color("fff2cf"))
+			hud.feedback("RESTORATION / +%d HP" % roundi(healed),"Lumen restores its own health. Cooldowns stay with the guardian.")
+		else:
+			hud.feedback("RESTORATION", "No health restored.")
+		return
 	if id=="wall" and owner_id=="void":
 		dragon.state.null_reflect=GuardianCombat.null_reflect_duration()
 		effects.pulse(origin,1.5,Color("44eeee"))
 		hud.feedback("NULL REFLECT", "Briefly halve incoming damage and counter the attacker. Shields still block counters.")
 		return
-	if id=="wall":
+	if id=="wall" and owner_id!="light":
 		if owner_id=="fire": _place_wall(origin,direction)
 		elif owner_id=="ice": _place_frost(origin,direction)
 		elif owner_id=="storm": _place_static(origin,direction)
@@ -498,6 +512,9 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		_stone_contact(id,origin,direction,rule.range)
 	if owner_id=="venom":
 		_venom_contact(id,origin,direction,rule.range)
+	if owner_id=="light":
+		_light_contact(id,origin,direction,rule.range)
+		return
 	if owner_id=="void":
 		_void_contact(id,origin,direction,rule.range)
 		return
@@ -717,6 +734,8 @@ func guidance() -> Dictionary:
 		target=Vector3(-2,0,8)
 		marker="HATCH MAGMA"
 	elif r.role=="forge":
+		if campaign.finished and not campaign.void_imprint_recovered:
+			return {"title":"A Void imprint awaits in the Singularity","detail":"Open Routes [M] and enter the Singularity. Recover its marked Void imprint, then bring it to Resonance Fusion to awaken Null.","target":Vector3(0,0,-14),"marker":"RETURN TO SINGULARITY  [M]","index":5}
 		if campaign.void_forged and not campaign.guardians.has("void"):
 			return {"title":"A Void guardian is ready to awaken","detail":"Visit Resonance Fusion to awaken Null. Existing guardians and the expedition pair remain.","target":Fusion.STATION,"marker":"AWAKEN NULL","index":5}
 		if campaign.void_imprint_recovered and not campaign.void_forged:
@@ -828,7 +847,7 @@ func swap_guardian(target: String = "", forced: bool = false) -> bool:
 	get_viewport().gui_release_focus()
 	if not forge_trial_active:
 		_save()
-	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", {"ice":"Chill, then swap to Magma to shatter.", "fire":"Fire shatters chilled enemies on a direct hit.", "storm":"Charge with Arc Lance or Static Well. Discharge with technique 4.", "stone":"Guard landed hits to build Resolve, then Earthshatter [4].", "venom":"Build Toxin, then cash it out with Septic Bloom [4].", "shadow":"Dodge through real hits to build Phase, then land Phase Strike [4].", "void":"Void Rift pushes, Siphon Rift pulls and drains. Null Reflect counters incoming hits."}.get(target, ""))
+	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", {"ice":"Chill, then swap to Magma to shatter.", "fire":"Fire shatters chilled enemies on a direct hit.", "storm":"Charge with Arc Lance or Static Well. Discharge with technique 4.", "stone":"Guard landed hits to build Resolve, then Earthshatter [4].", "venom":"Build Toxin, then cash it out with Septic Bloom [4].", "shadow":"Dodge through real hits to build Phase, then land Phase Strike [4].", "void":"Void Rift pushes, Siphon Rift pulls and drains. Null Reflect counters incoming hits.", "light":"Radiant Beam hits exposed foes at range; Solar Flare hits nearby exposed foes. Restoration [4] heals Lumen."}.get(target, ""))
 	return true
 
 func _on_guardian_down() -> void:
@@ -1061,3 +1080,16 @@ func _void_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->void
 		if not line_clear(origin,at):break
 		Geo.ring(node,at+Vector3.UP*.65,.18+i*.02,mat,.045)
 	node.create_tween().tween_interval(.25).finished.connect(node.queue_free)
+
+func _light_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->void:
+	if id=="wall":
+		effects.pulse(origin,reach,Color("ffe8a8"))
+		return
+	var node=Node3D.new();add_child(node);effects._reserve(node)
+	var material=Geo.material(Color("fff1c1"),.55,true)
+	for i in range(4 if id=="claw" else 13):
+		var distance=.7+float(i)*.55
+		if distance>reach or not line_clear(origin,origin+direction*distance):break
+		var pane=Geo.box(node,origin+direction*distance+Vector3.UP*.85,Vector3(.09,.28,.18),material)
+		pane.rotation.y=atan2(-direction.x,-direction.z)
+	node.create_tween().tween_interval(.22).finished.connect(node.queue_free)

@@ -43,7 +43,20 @@ func run():
 	w.title_open = false
 	w.hud.close_overlay()
 	w.campaign = Fixture.completed(true)
+	w.campaign.finished = false
+	w.campaign.guardians.erase("light")
 	w._enter_room("singularity", true)
+	await frames(5)
+	w.dragon.position = w.level.core_node.position + Vector3.UP * .1
+	w.dragon.input_grace = 0.0
+	w.interact()
+	await shot("00a-ending-void-recovery")
+	var home = w.hud.overlay_column.find_child("ReturnHomeFromEnding", true, false)
+	if home != null:home.pressed.emit()
+	else:failures += 1
+	await frames(5)
+	await shot("00b-forge-return-for-void")
+	if not w.travel("singularity"):failures += 1
 	await frames(5)
 	w.dragon.position = Vector3(-3.0,.1,-1.0)
 	await shot("01-singularity-void-imprint")
@@ -64,7 +77,7 @@ func run():
 	w.dragon.position = Vector3(6.0,.1,8.0)
 	w.dragon.input_grace = 0.0
 	w.hud.show_party()
-	await shot("03-seven-guardian-roster")
+	await shot("03-eight-guardian-roster")
 	var roster = w.hud.overlay_column.find_child("GuardianScroll", true, false)
 	var null_card = w.hud.overlay_column.find_child("Guardian_void", true, false)
 	if roster != null and null_card != null:

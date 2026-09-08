@@ -64,6 +64,7 @@ func _run() -> void:
 	await capture("10-modules")
 	w.hud.close_overlay()
 	w.campaign.finished=true
+	w.campaign.guardians.append("light")
 	w.hud.show_ending()
 	await capture("11-ending")
 	w.hud.close_overlay()
