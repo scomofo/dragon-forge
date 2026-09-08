@@ -56,6 +56,9 @@ func configure(model: Node3D, id: String) -> bool:
 	if id in ["storm_guardian","tempest_arc"]:
 		error = "Arc hovers above the deck.\nNo planted-foot contract applies."
 		return false
+	if id=="shadow_guardian":
+		error = "Umbra uses grounded collision but no planted-foot solver.\nNo planted-foot contract applies to this first-pass rig."
+		return false
 	skeleton = model.find_child("Skeleton3D", true, false)
 	var meshes = model.find_children("*", "MeshInstance3D", true, false)
 	if skeleton == null or meshes.is_empty():

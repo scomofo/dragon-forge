@@ -6,6 +6,8 @@ const BossCatalog = preload("res://campaign/bosses/catalog.gd")
 const Rig = preload("res://presentation/sentinel_rig.gd")
 const Geo = preload("res://presentation/geometry.gd")
 const Patterns = preload("res://campaign/patterns.gd")
+const Roles = preload("res://campaign/enemy_roles.gd")
+const GuardianCombat = preload("res://campaign/guardian_combat.gd")
 signal attack_warning
 signal defeated(id: String)
 signal impact(payload: Dictionary, amount: float)
@@ -29,6 +31,9 @@ var warmup = 0.8
 var hit_time = 0.0
 var chilled = 0.0
 var charged = 0.0
+var toxin = 0
+var toxin_time = 0.0
+var toxin_tick = 1.0
 var impact_flash = 0.0
 
 func _ready() -> void:
@@ -77,20 +82,26 @@ func _physics_process(delta: float) -> void:
 	impact_flash=maxf(0.0,impact_flash-delta)
 	chilled=maxf(0.0,chilled-delta)
 	charged=maxf(0.0,charged-delta)
-	label.text=spec.get("name","Guardian")+(" / CHILLED" if chilled>0.0 else "") + (" / CHARGED" if charged>0.0 else "")
+	tick_toxin(delta)
+	if hp<=0.0:return
+	var role_tag = "" if boss else " / " + Roles.label(str(spec.get("archetype","bruiser")))
+	label.text=spec.get("name","Guardian")+role_tag+(" / CHILLED" if chilled>0.0 else "") + (" / CHARGED" if charged>0.0 else "") + (" / TOXIN x%d" % toxin if toxin>0 else "")
 	warmup = maxf(0, warmup - delta)
 	brain.enraged = boss and hp <= max_hp * 0.5
 	var toward: Vector3 = target.global_position - global_position
 	toward.y = 0.0
+	var role: String = str(spec.get("archetype", "bruiser"))
+	var profile: Dictionary = Roles.profile(role)
+	var engage: float = 9.0 if boss else float(profile.engage)
 	if brain.mode == "seek" and warmup <= 0.0:
-		if toward.length() <= (9.0 if boss else 6.5) and navigation.line_clear(global_position, target.global_position):
+		if toward.length() <= engage and navigation.line_clear(global_position, target.global_position):
 			_begin_attack()
 	elif brain.mode != "seek":
 		brain.timer = maxf(0.0, brain.timer - delta)
 		if brain.timer <= 0.0:
 			if brain.mode == "tell":
 				brain.mode = "recover"
-				brain.timer = 2.0 if boss else 2.3
+				brain.timer = 2.0 if boss else float(profile.recover)
 				impact_flash = .16
 				if visual is BossRig:
 					visual.phase_index = BossCatalog.phase(spec.id,hp,max_hp)
@@ -101,9 +112,10 @@ func _physics_process(delta: float) -> void:
 				warmup = 0.3
 	var direction = Vector3.ZERO
 	if brain.mode == "seek" and warmup <= 0.0:
-		direction = navigation.direction_to(global_position, target.global_position)
-	velocity.x = direction.x * (2.8 if brain.enraged else 2.3)
-	velocity.z = direction.z * (2.8 if brain.enraged else 2.3)
+		direction = _role_direction(role,toward)
+	var speed: float = (2.8 if brain.enraged else 2.3) if boss else float(profile.speed)
+	velocity.x = direction.x * speed
+	velocity.z = direction.z * speed
 	velocity.x *= (0.6 if chilled>0.0 else 1.0)
 	velocity.z *= (0.6 if chilled>0.0 else 1.0)
 	velocity.y = -1 if is_on_floor() else velocity.y - 25 * delta
@@ -117,6 +129,45 @@ func _physics_process(delta: float) -> void:
 	if visual is BossRig: visual.phase_index = BossCatalog.phase(spec.id,hp,max_hp)
 	visual.animate(delta, brain, Vector2(velocity.x, velocity.z).length(), reduced_motion)
 
+
+func tick_toxin(delta: float) -> void:
+	if toxin<=0 or toxin_time<=0.0 or hp<=0.0:return
+	var dt=minf(maxf(delta,0.0) if is_finite(delta) else 0.0,toxin_time)
+	toxin_time=maxf(0.0,toxin_time-dt);toxin_tick-=dt
+	while toxin_tick<=0.0 and toxin>0 and hp>0.0:
+		toxin_tick+=1.0
+		take_hit(GuardianCombat.toxin_tick_damage()*float(toxin),true)
+	if toxin_time<=0.0:toxin=0;toxin_tick=1.0
+
+func apply_toxin() -> void:
+	if toxin<=0:toxin_tick=1.0
+	toxin=GuardianCombat.toxin_stacks(toxin+1);toxin_time=GuardianCombat.toxin_duration()
+	hit_feedback.emit(global_position,"TOXIN x%d" % toxin,false)
+
+func _role_direction(role: String, toward: Vector3) -> Vector3:
+	var direct: Vector3 = navigation.direction_to(global_position,target.global_position)
+	if boss or toward.length_squared() < 0.001:
+		return direct
+	var distance := toward.length()
+	var forward := toward.normalized()
+	var side := Vector3(-forward.z,0.0,forward.x) * (1.0 if sequence % 2 == 0 else -1.0)
+	var profile: Dictionary = Roles.profile(role)
+	match role:
+		"sniper":
+			if distance < float(profile.min): return -forward
+			if distance > float(profile.max): return direct
+			return Vector3.ZERO
+		"skirmisher":
+			if distance < float(profile.min): return (-forward + side * .55).normalized()
+			if distance > float(profile.max): return (direct + side * .35).normalized()
+			return side
+		"controller":
+			if distance < float(profile.min): return -forward
+			if distance > float(profile.max): return direct
+			return side * .45
+		_:
+			return direct
+
 func _begin_attack() -> void:
 	var list: Array = spec.get("patterns", ["slam"])
 	if spec.id == "singularity-final":
@@ -129,7 +180,8 @@ func _begin_attack() -> void:
 		visual.begin_attack(pattern)
 		visual.rotation.y = atan2(-shape.direction.x,-shape.direction.z)
 	brain.mode = "tell"
-	brain.locked_duration = 1.15 if brain.enraged else (1.65 if boss else 1.5)
+	var profile: Dictionary = Roles.profile(str(spec.get("archetype", "bruiser")))
+	brain.locked_duration = 1.15 if brain.enraged else (1.65 if boss else float(profile.tell))
 	brain.timer = brain.locked_duration
 	for n in tell.get_children():
 		tell.remove_child(n)
@@ -193,7 +245,9 @@ func overload() -> void:
 func element_hit(amount: float,guardian: String,id: String,chill_duration: float = 3.0, charge_duration: float = 4.0) -> float:
 	var shatter = guardian=="fire" and id!="wall" and chilled>0.0
 	var discharge = guardian == "storm" and id == "burst" and charged > 0.0
-	var actual=take_hit(amount*(1.4 if shatter else (1.5 if discharge else 1.0)))
+	var bloom_stacks = toxin if guardian=="venom" and id=="burst" else 0
+	var multiplier=1.4 if shatter else (1.5 if discharge else (GuardianCombat.toxin_burst_multiplier(bloom_stacks) if guardian=="venom" and id=="burst" else 1.0))
+	var actual=take_hit(amount*multiplier)
 	if actual<=0.0:return 0.0
 	if discharge:
 		charged = 0.0
@@ -205,4 +259,9 @@ func element_hit(amount: float,guardian: String,id: String,chill_duration: float
 		hit_feedback.emit(global_position,"SHATTER",false)
 	elif guardian=="ice" and id in ["breath","wall"] and hp>0.0:
 		chilled=maxf(chilled,clampf(chill_duration,0.0,4.5))
+	if guardian=="venom":
+		if id=="burst" and bloom_stacks>0:
+			toxin=0;toxin_time=0.0;toxin_tick=1.0;hit_feedback.emit(global_position,"SEPTIC BLOOM x%d" % bloom_stacks,false)
+		elif id in ["claw","breath","wall"] and hp>0.0:
+			apply_toxin()
 	return actual

@@ -66,13 +66,13 @@ func run() -> void:
 		if version==1:
 			for key in ["guardians","active_guardian","ice_rescued"]:legacy.erase(key)
 		var migrated=Rules.normalize(legacy)
-		check(migrated.version==6 and migrated.evolutions=={"fire":"","ice":"","storm":""}, "version %d migrates without auto-evolving" % version)
+		check(migrated.version==8 and migrated.evolutions=={"fire":"","ice":"","storm":""}, "version %d migrates without auto-evolving through schema 8" % version)
 		check(migrated.cleared==legacy.cleared and migrated.installed==legacy.installed and migrated.salvage==legacy.salvage, "version %d keeps milestones and salvage" % version)
 		var store=Store.new();store.import_legacy=false;store.path="user://evolution-test-%d.json" % version
 		var bytes=JSON.stringify(legacy,"  ")
 		var f=FileAccess.open(store.path,FileAccess.WRITE);f.store_string(bytes);f.close()
 		var loaded=store.read_campaign()
-		check(FileAccess.get_file_as_string(store.path)==bytes and loaded.version==6, "migration never writes on load")
+		check(FileAccess.get_file_as_string(store.path)==bytes and loaded.version==8, "migration reaches schema 8 without writing on load")
 		check(store.write_campaign(loaded), "migrated version commits successfully")
 		check(FileAccess.get_file_as_string(store.path+".bak")==bytes, "migration backup preserves original bytes")
 		for suffix in ["",".bak",".tmp"]:

@@ -6,6 +6,8 @@ const IceRig = preload("res://campaign/ice_rig.gd")
 const EvolvedMagma = preload("res://campaign/evolved_magma_rig.gd")
 const EvolvedIce = preload("res://campaign/evolved_ice_rig.gd")
 const StoneRig = preload("res://campaign/stone_rig.gd")
+const VenomRig = preload("res://campaign/venom_rig.gd")
+const ShadowRig = preload("res://campaign/shadow_rig.gd")
 var cooling_level = 0
 var guardian = "fire"
 var rigs: Dictionary = {}
@@ -16,14 +18,18 @@ func _ready() -> void:
 	rigs["fire"] = rig
 
 func use_guardian(id: String, saved_state: Dictionary) -> void:
-	if not id in ["fire","ice","storm","stone"]:
+	if not id in ["fire","ice","storm","stone","venom","shadow"]:
 		return
 	var facing = rig.rotation.y
 	rig.visible = false
 	var key: String = id + ("/evolved" if saved_state.get("evolution", "") != "" else "")
 	if not rigs.has(key):
 		var next
-		if id == "stone":
+		if id == "shadow":
+			next = ShadowRig.new()
+		elif id == "venom":
+			next = VenomRig.new()
+		elif id == "stone":
 			next = StoneRig.new()
 		elif id == "storm":
 			next = EvolvedStorm.new() if key.ends_with("/evolved") else StormRig.new()
@@ -45,6 +51,13 @@ func use_guardian(id: String, saved_state: Dictionary) -> void:
 	buffer_time = 0.0
 	input_grace = 0.15
 	guard_ring.visible = false
+
+func receive_damage(amount: float) -> float:
+	var phase_before=int(state.get("phase",0))
+	var applied=super.receive_damage(amount)
+	if guardian=="shadow" and int(state.get("phase",0))>phase_before:
+		hint.emit("PHASE %d / %d  •  Phase Strike stores the opening" % [int(state.phase),GuardianCombat.MAX_PHASE])
+	return applied
 
 func advance_combat(delta: float, guarding: bool = false) -> void:
 	super.advance_combat(delta, guarding)
