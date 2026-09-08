@@ -40,6 +40,18 @@ static func venom_reason(c: Dictionary) -> String:
 		return "Restore three sector cores before stabilizing the culture."
 	return ""
 
+static func shadow_reason(c: Dictionary) -> String:
+	# Canonical browser alchemy: Fire + Venom = Shadow. No catalyst or currency.
+	if not c.get("hatched", false):
+		return "Awaken Magma first."
+	if not c.get("guardians", []).has("fire"):
+		return "Magma is required for Shadow resonance."
+	if not c.get("guardians", []).has("venom"):
+		return "Awaken Nox before attempting Shadow resonance."
+	if not c.get("venom_forged", false):
+		return "Stabilize the Venom culture before Shadow resonance."
+	return ""
+
 static func recover(c: Dictionary) -> bool:
 	if c.get("room", "") != "capacitor-cache" or c.get("lattice_recovered", false) or not c.get("hatched", false):
 		return false
@@ -76,6 +88,12 @@ static func forge_venom(c: Dictionary) -> bool:
 	c.venom_forged = true
 	return true
 
+static func forge_shadow(c: Dictionary) -> bool:
+	if c.get("room", "") != "forge" or shadow_reason(c) != "" or c.get("shadow_forged", false):
+		return false
+	c.shadow_forged = true
+	return true
+
 static func hatch(c: Dictionary) -> bool:
 	if c.get("room", "") != "forge" or reason(c) != "" or not c.get("storm_forged", false) or c.guardians.has("storm"):
 		return false
@@ -86,7 +104,8 @@ static func hatch(c: Dictionary) -> bool:
 static func hatch_stone(c: Dictionary) -> bool:
 	if c.get("room", "") != "forge" or stone_reason(c) != "" or not c.get("stone_forged", false) or c.guardians.has("stone"):
 		return false
-	c.loadout = members(c)
+	# Cairn can be the first reserve; an empty pair then follows the two owned guardians.
+	c.loadout = members(c) if c.guardians.size()>=2 else []
 	c.guardians.append("stone")
 	return true
 
@@ -95,6 +114,13 @@ static func hatch_venom(c: Dictionary) -> bool:
 		return false
 	c.loadout = members(c)
 	c.guardians.append("venom")
+	return true
+
+static func hatch_shadow(c: Dictionary) -> bool:
+	if c.get("room", "") != "forge" or shadow_reason(c) != "" or not c.get("shadow_forged", false) or c.guardians.has("shadow"):
+		return false
+	c.loadout = members(c)
+	c.guardians.append("shadow")
 	return true
 
 static func members(c: Dictionary) -> Array:

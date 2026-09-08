@@ -1,6 +1,7 @@
 extends RefCounted
 ## Separate Forge-Trials records. Never reads or writes reconnection-campaign.json.
 const Trials = preload("res://campaign/trials.gd")
+const Campaign = preload("res://campaign/progress.gd")
 const VERSION = 1
 var path = "user://forge-trials.json"
 var message = ""
@@ -16,12 +17,19 @@ func normalize(value: Variant) -> Dictionary:
 		if not Trials.DATA.has(id) or not value.records[id] is Dictionary: return {}
 		var r: Dictionary = value.records[id]
 		for key in ["clears","best_ms","best_damage"]:
-			if not r.has(key) or not (r[key] is int or r[key] is float) or float(r[key]) < 0 or float(r[key]) != floor(float(r[key])): return {}
-		if not r.get("last_pair",[]) is Array or r.last_pair.size()>2: return {}
-		for guardian in r.last_pair:
-			if not guardian is String or not guardian in ["fire","ice","storm","stone"]: return {}
+			if not r.has(key) or not (r[key] is int or r[key] is float) or not is_finite(float(r[key])) or float(r[key]) < 0 or float(r[key]) != floor(float(r[key])): return {}
+		# Empty historical pairs remain readable; new clears always name a participant.
+		if not r.has("last_pair") or not _valid_pair(r.last_pair, true): return {}
 		out.records[id]={"clears":int(r.clears),"best_ms":int(r.best_ms),"best_damage":int(r.best_damage),"last_pair":r.last_pair.duplicate()}
 	return out
+
+static func _valid_pair(value: Variant, allow_empty: bool = false) -> bool:
+	if not value is Array or value.size()>2 or (value.is_empty() and not allow_empty):return false
+	var seen=[]
+	for guardian in value:
+		if not guardian is String or not Campaign.GUARDIAN_IDS.has(guardian) or seen.has(guardian):return false
+		seen.append(guardian)
+	return true
 
 func read_records() -> Dictionary:
 	message=""
@@ -33,12 +41,13 @@ func read_records() -> Dictionary:
 	return result
 
 func apply_record(state: Dictionary,id: String,time_ms: int,damage: int,pair: Array) -> bool:
-	if not Trials.DATA.has(id) or time_ms<0 or damage<0: return false
+	if not Trials.DATA.has(id) or time_ms<0 or damage<0 or not _valid_pair(pair) or normalize(state).is_empty(): return false
 	var current: Dictionary = state.records.get(id,{"clears":0,"best_ms":0,"best_damage":0,"last_pair":[]})
+	var first_clear = int(current.clears)==0
 	current.clears=int(current.clears)+1
-	if int(current.best_ms)==0 or time_ms<int(current.best_ms): current.best_ms=time_ms
-	if int(current.best_damage)==0 or damage<int(current.best_damage): current.best_damage=damage
-	current.last_pair=pair.slice(0,2)
+	if first_clear or time_ms<int(current.best_ms): current.best_ms=time_ms
+	if first_clear or damage<int(current.best_damage): current.best_damage=damage
+	current.last_pair=pair.duplicate()
 	state.records[id]=current
 	return true
 
