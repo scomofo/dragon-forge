@@ -89,6 +89,16 @@ func run():
 	check(w.swap_guardian("synthesis"), "Synthesis: normal party action takes point")
 	check(w.dragon.guardian == "synthesis" and w.dragon.rig.skeleton.get_bone_count() == 15 and w.dragon.rig.player.has_animation("burst"), "Synthesis: live controller uses imported frame and pane rig")
 	check(w.dragon.rig.muzzle_position().is_finite(), "Synthesis: live authored emitter has finite world position")
+	var effects_before=w.effects.transients.size()
+	w._synthesis_contact("wall",w.dragon.position,Vector3.FORWARD,8.0)
+	check(w.effects.transients.size()==effects_before+1,"Synthesis: Radiant Beam creates one bounded lane effect")
+	var beam=w.effects.transients[-1]
+	var lanes=beam.get_node("RadiantLane")
+	var edges=beam.get_node("RadiantEdges")
+	check(beam.get_meta("contact_effect","")=="synthesis_radiant_beam" and beam.get_meta("line_half_width",0.0)==.70,"Synthesis: beam effect records its authoritative fixed corridor")
+	check(lanes.multimesh.instance_count>0 and is_equal_approx(lanes.multimesh.mesh.size.x,1.4),"Synthesis: visible lane spans the full 1.4 meter hit width")
+	check(edges.multimesh.instance_count==lanes.multimesh.instance_count*2,"Synthesis: both fixed hit boundaries remain visible along the lane")
+	w.effects.transients.erase(beam);beam.free()
 	Contract.run(w, check)
 	var reserve: String = w.party.reserve_id()
 	var reserve_hp: float = w.party.states[reserve].hp

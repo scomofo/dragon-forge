@@ -131,6 +131,15 @@ func run():
 		await shot("10-recompile-discharge" if element == "storm" else "11-recompile-shatter")
 		paused = false
 	await prepare_capture(w)
+	hp=foe.hp
+	require(w.dragon.try_ability("claw"),"Convergence Shard cast")
+	w.dragon.advance_combat(.121)
+	w.dragon.rig.animate(0.0,0.0,false,w.dragon.state)
+	require(foe.hp<hp,"actual Convergence Shard contact lands")
+	paused=true
+	await shot("12-convergence-shard-contact")
+	paused=false
+	await prepare_capture(w)
 	var at: Vector3 = foe.global_position
 	hp = foe.hp
 	require(w.dragon.try_ability("breath"), "borrowed Void Rift cast")
@@ -138,7 +147,7 @@ func run():
 	w.dragon.rig.animate(0.0, 0.0, false, w.dragon.state)
 	require(foe.hp < hp and is_equal_approx(foe.global_position.distance_to(at), 1.25), "actual Rift contact pushes exposed ordinary target")
 	paused = true
-	await shot("12-void-rift-push-contact")
+	await shot("13-void-rift-push-contact")
 	paused = false
 	await prepare_capture(w)
 	hp = foe.hp
@@ -148,8 +157,28 @@ func run():
 	w.dragon.rig.animate(0.0, 0.0, false, w.dragon.state)
 	require(foe.hp < hp and w.walls.size() == fields, "Radiant Beam is a direct contact without field")
 	paused = true
-	await shot("13-radiant-beam-contact")
+	await shot("14-radiant-beam-contact")
 	paused = false
+	await prepare_capture(w)
+	foe.global_position=w.dragon.global_position+Vector3.FORWARD*5.0+Vector3.RIGHT*.69
+	hp=foe.hp
+	require(w.dragon.try_ability("wall"),"Radiant Beam inside-edge cast")
+	w.dragon.advance_combat(.281)
+	w.dragon.rig.animate(0.0,0.0,false,w.dragon.state)
+	require(foe.hp<hp,"Radiant Beam includes the visible inside edge")
+	paused=true
+	await shot("15-radiant-beam-inside-edge")
+	paused=false
+	await prepare_capture(w)
+	foe.global_position=w.dragon.global_position+Vector3.FORWARD*5.0+Vector3.RIGHT*.71
+	hp=foe.hp
+	require(w.dragon.try_ability("wall"),"Radiant Beam outside-edge cast")
+	w.dragon.advance_combat(.281)
+	w.dragon.rig.animate(0.0,0.0,false,w.dragon.state)
+	require(foe.hp==hp,"Radiant Beam excludes the first point outside its visible corridor")
+	paused=true
+	await shot("16-radiant-beam-outside-edge")
+	paused=false
 	w.queue_free()
 	await frames(4)
 	await inspect_clips()

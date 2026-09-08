@@ -159,8 +159,8 @@ func _build_menu() -> void:
 	reduced_check.set_pressed_no_signal(world.reduced_motion)
 	reduced_check.toggled.connect(func(v):world.set_reduced_motion(v))
 	col.add_child(reduced_check)
-	_label(col,"1–4 Techniques    Space Dodge    Shift Guard    Q Repair",15,PAPER)
-	_label(col,"E Interact    M Routes    N Journal    P Guardians    Tab Swap",15,PAPER)
+	_label(col,"1–4 / X,Y,LB,RB Techniques    Space/A Dodge    Shift/LT Guard    Q/RT Repair",15,PAPER)
+	_label(col,"E/B Interact    M Routes    N Journal    P Guardians    Tab/RS Swap    View Utility",15,PAPER)
 	_button(col,"Audio / music, effects and mute").pressed.connect(show_audio)
 	resume_button=_button(col,"Resume campaign")
 	resume_button.pressed.connect(func():set_pause(false))
@@ -427,6 +427,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if world.title_open:
 		return
+	if Input.is_action_just_pressed_by_event("ng_utility", event):
+		if overlay_kind == "utility":
+			close_overlay()
+		else:
+			show_utility()
+		get_viewport().set_input_as_handled()
+		return
+	if Input.is_action_just_pressed_by_event("ng_repair", event):
+		world.repair()
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
 			KEY_P:
@@ -444,11 +455,23 @@ func _unhandled_input(event: InputEvent) -> void:
 				else:show_journal()
 				get_viewport().set_input_as_handled()
 				return
-			KEY_Q:
-				world.repair()
-				get_viewport().set_input_as_handled()
-				return
 	super._unhandled_input(event)
+
+func show_utility() -> void:
+	_open_overlay("utility")
+	_label(overlay_column,"CONTROLLER UTILITY",30,GOLD)
+	_wrapped(overlay_column,"Open campaign information without assigning four combat buttons.",16,MUTED)
+	var routes=_button(overlay_column,"Routes")
+	routes.name="UtilityRoutes"
+	routes.pressed.connect(show_map)
+	var journal=_button(overlay_column,"Journal")
+	journal.name="UtilityJournal"
+	journal.pressed.connect(show_journal)
+	var guardians=_button(overlay_column,"Guardians")
+	guardians.name="UtilityGuardians"
+	guardians.pressed.connect(show_party)
+	_button(overlay_column,"Back to the world").pressed.connect(close_overlay)
+	routes.grab_focus()
 
 func show_egg_rescued() -> void:
 	_open_overlay("egg")

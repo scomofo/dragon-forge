@@ -45,6 +45,10 @@ var feedback_detail: Label
 var feedback_remaining = 0.0
 var debug_visible = false
 var dead_presented = false
+var controller_notice: Label
+var controller_disconnected = false
+var active_joypad_device = -1
+const CONTROLLER_ACTIONS = ["ng_left", "ng_right", "ng_up", "ng_down", "ng_aim_left", "ng_aim_right", "ng_aim_up", "ng_aim_down", "ng_claw", "ng_breath", "ng_wall", "ng_burst", "ng_dodge", "ng_guard", "ng_interact", "ng_swap", "ng_repair", "ng_utility"]
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -110,6 +114,10 @@ func _ready() -> void:
 	_place(stats, Control.PRESET_TOP_RIGHT, -335, 62, -24, 82)
 	stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_build_menu()
+	controller_notice = _label(menu, "", 16, GOLD)
+	_place(controller_notice, Control.PRESET_TOP_WIDE, 24, 78, -24, 110)
+	controller_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	controller_notice.visible = false
 	overlay = _shade()
 	var center = CenterContainer.new()
 	overlay.add_child(center)
@@ -118,6 +126,7 @@ func _ready() -> void:
 	modal_panel.custom_minimum_size.x = 1050
 	overlay_column = _column(modal_panel, 16)
 	overlay.visible = false
+	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 
 func _build_enemy() -> void:
 	enemy_panel = _panel(root)
@@ -228,6 +237,12 @@ func _process(delta: float) -> void:
 	feedback_detail.visible = feedback_title.visible
 	if state.hp > 0.0:
 		dead_presented = false
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventJoypadButton and event.pressed:
+		active_joypad_device = event.device
+	elif event is InputEventJoypadMotion and absf(event.axis_value) > 0.25:
+		active_joypad_device = event.device
 
 func _update_enemy() -> void:
 	enemy_panel.visible = is_instance_valid(world.enemy)
@@ -408,11 +423,42 @@ func close_overlay() -> void:
 	overlay.visible = false
 	overlay_kind = ""
 	menu.visible = false
+	controller_disconnected = false
+	controller_notice.visible = false
 	world.dragon.buffered_id = ""
 	world.dragon.buffer_time = 0.0
 	world.dragon.input_grace = 0.22
 	get_tree().paused = false
 	get_viewport().gui_release_focus()
+
+func _on_joy_connection_changed(device: int, connected: bool) -> void:
+	if connected:
+		if not controller_disconnected:
+			return
+		# Re-enumeration may assign a replacement controller a different device ID.
+		active_joypad_device = device
+		controller_disconnected = false
+		if menu.visible:
+			controller_notice.text = "CONTROLLER RECONNECTED  /  PRESS A OR ENTER TO RESUME"
+			controller_notice.visible = true
+			resume_button.grab_focus()
+		return
+	if device != active_joypad_device:
+		return
+	controller_disconnected = true
+	for action in CONTROLLER_ACTIONS:
+		if InputMap.has_action(action):
+			Input.action_release(action)
+	world.dragon.buffered_id = ""
+	world.dragon.buffer_time = 0.0
+	world.dragon.velocity.x = 0.0
+	world.dragon.velocity.z = 0.0
+	if overlay.visible:
+		return
+	set_pause(true)
+	controller_notice.text = "CONTROLLER DISCONNECTED  /  RECONNECT OR USE KEYBOARD"
+	controller_notice.visible = true
+	resume_button.grab_focus()
 
 func set_pause(value: bool) -> void:
 	if value and overlay.visible:
