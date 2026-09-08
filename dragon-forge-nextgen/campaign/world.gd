@@ -472,7 +472,7 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		effects.pulse(origin,1.5,Color("44eeee"))
 		hud.feedback("NULL REFLECT", "Briefly halve incoming damage and counter the attacker. Shields still block counters.")
 		return
-	if id=="wall" and owner_id!="light":
+	if id=="wall" and owner_id not in ["light","synthesis"]:
 		if owner_id=="fire": _place_wall(origin,direction)
 		elif owner_id=="ice": _place_frost(origin,direction)
 		elif owner_id=="storm": _place_static(origin,direction)
@@ -495,6 +495,8 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 				if owner_id=="void":
 					void_damage+=actual
 					actor.displace_from(origin,GuardianCombat.void_displacement(id))
+				elif owner_id=="synthesis" and id=="breath":
+					actor.displace_from(origin,GuardianCombat.void_displacement("breath"))
 	if owner_id=="void" and id=="burst" and void_damage>0.0:
 		dragon.state.hp=minf(dragon.state.max_hp,dragon.state.hp+void_damage*.4)
 	if owner_id=="stone" and id=="burst" and landed:
@@ -514,6 +516,9 @@ func resolve_ability(id: String, origin: Vector3, direction: Vector3) -> void:
 		_venom_contact(id,origin,direction,rule.range)
 	if owner_id=="light":
 		_light_contact(id,origin,direction,rule.range)
+		return
+	if owner_id=="synthesis":
+		_synthesis_contact(id,origin,direction,rule.range)
 		return
 	if owner_id=="void":
 		_void_contact(id,origin,direction,rule.range)
@@ -734,6 +739,10 @@ func guidance() -> Dictionary:
 		target=Vector3(-2,0,8)
 		marker="HATCH MAGMA"
 	elif r.role=="forge":
+		if campaign.synthesis_forged and not campaign.guardians.has("synthesis"):
+			return {"title":"A Synthesis guardian is ready to awaken","detail":"Visit Resonance Fusion to awaken Prism. Lumen, Null and your selected expedition pair are retained.","target":Fusion.STATION,"marker":"AWAKEN PRISM","index":5}
+		if not campaign.synthesis_forged and Fusion.synthesis_reason(campaign)=="":
+			return {"title":"Light and Void can forge Synthesis","detail":"Bring Lumen and Null to Resonance Fusion. Both parents are retained; Prism joins your owned guardians.","target":Fusion.STATION,"marker":"SYNTHESIS RESONANCE","index":5}
 		if campaign.finished and not campaign.void_imprint_recovered:
 			return {"title":"A Void imprint awaits in the Singularity","detail":"Open Routes [M] and enter the Singularity. Recover its marked Void imprint, then bring it to Resonance Fusion to awaken Null.","target":Vector3(0,0,-14),"marker":"RETURN TO SINGULARITY  [M]","index":5}
 		if campaign.void_forged and not campaign.guardians.has("void"):
@@ -847,7 +856,7 @@ func swap_guardian(target: String = "", forced: bool = false) -> bool:
 	get_viewport().gui_release_focus()
 	if not forge_trial_active:
 		_save()
-	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", {"ice":"Chill, then swap to Magma to shatter.", "fire":"Fire shatters chilled enemies on a direct hit.", "storm":"Charge with Arc Lance or Static Well. Discharge with technique 4.", "stone":"Guard landed hits to build Resolve, then Earthshatter [4].", "venom":"Build Toxin, then cash it out with Septic Bloom [4].", "shadow":"Dodge through real hits to build Phase, then land Phase Strike [4].", "void":"Void Rift pushes, Siphon Rift pulls and drains. Null Reflect counters incoming hits.", "light":"Radiant Beam hits exposed foes at range; Solar Flare hits nearby exposed foes. Restoration [4] heals Lumen."}.get(target, ""))
+	hud.feedback(GuardianCombat.guardian_name(target)+" TAKES POINT", {"ice":"Chill, then swap to Magma to shatter.", "fire":"Fire shatters chilled enemies on a direct hit.", "storm":"Charge with Arc Lance or Static Well. Discharge with technique 4.", "stone":"Guard landed hits to build Resolve, then Earthshatter [4].", "venom":"Build Toxin, then cash it out with Septic Bloom [4].", "shadow":"Dodge through real hits to build Phase, then land Phase Strike [4].", "void":"Void Rift pushes, Siphon Rift pulls and drains. Null Reflect counters incoming hits.", "light":"Radiant Beam hits exposed foes at range; Solar Flare hits nearby exposed foes. Restoration [4] heals Lumen.", "synthesis":"Recompile [4] uses the strongest existing status payoff. Shields preserve effects."}.get(target, ""))
 	return true
 
 func _on_guardian_down() -> void:
@@ -1093,3 +1102,22 @@ func _light_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->voi
 		var pane=Geo.box(node,origin+direction*distance+Vector3.UP*.85,Vector3(.09,.28,.18),material)
 		pane.rotation.y=atan2(-direction.x,-direction.z)
 	node.create_tween().tween_interval(.22).finished.connect(node.queue_free)
+
+func forge_synthesis() -> bool:
+	if not can_fuse() or not Fusion.forge_synthesis(campaign):return false
+	sound("fusion","synthesis",3,true);_save();hud.show_fusion();return true
+
+func hatch_synthesis() -> bool:
+	if not can_fuse() or not Fusion.hatch_synthesis(campaign):return false
+	sound("hatch","synthesis",3,true);_save();hud.show_fusion();return true
+
+func _synthesis_contact(id:String,origin:Vector3,direction:Vector3,reach:float)->void:
+	if id=="burst":
+		effects.pulse(origin,reach,Color("fff1c1"))
+		effects.pulse(origin,reach*.65,Color("44dddd"))
+		return
+	if id=="breath":
+		_void_contact(id,origin,direction,reach)
+		return
+	# Radiant Beam occupies slot 3 for Prism, with the same bounded line effect.
+	_light_contact("breath" if id=="wall" else id,origin,direction,reach)

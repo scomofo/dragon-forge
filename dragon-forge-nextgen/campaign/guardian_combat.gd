@@ -55,23 +55,29 @@ const LIGHT = {
 	"wall": {"name":"Solar Flare", "damage":42.0, "heat":32.0, "cooldown":7.5, "range":4.5, "cone":-1.0, "windup":.32, "recovery":.36},
 	"burst": {"name":"Restoration", "damage":0.0, "heat":34.0, "cooldown":12.0, "range":0.0, "cone":-1.0, "windup":.40, "recovery":.32},
 }
+const SYNTHESIS = {
+	"claw": {"name":"Convergence Shard", "damage":26.0, "heat":0.0, "cooldown":.55, "range":3.0, "cone":.20, "windup":.12, "recovery":.20},
+	"breath": {"name":"Void Rift", "damage":32.0, "heat":22.0, "cooldown":3.0, "range":7.8, "cone":.82, "windup":.26, "recovery":.30},
+	"wall": {"name":"Radiant Beam", "damage":36.0, "heat":26.0, "cooldown":4.0, "range":8.0, "cone":.86, "windup":.28, "recovery":.32},
+	"burst": {"name":"Recompile", "damage":46.0, "heat":38.0, "cooldown":9.0, "range":5.0, "cone":-1.0, "windup":.36, "recovery":.40},
+}
 const ORDER = ["claw", "breath", "wall", "burst"]
 const MAX_RESOLVE = 3
 const MAX_TOXIN = 3
 const MAX_PHASE = 2
 
 static func rule(state: Dictionary, id: String) -> Dictionary:
-	var kit: Dictionary = {"fire":ABILITIES, "ice":ICE, "storm":STORM, "stone":STONE, "venom":VENOM, "shadow":SHADOW, "void":VOID, "light":LIGHT}.get(state.get("guardian", "fire"), ABILITIES)
+	var kit: Dictionary = {"fire":ABILITIES, "ice":ICE, "storm":STORM, "stone":STONE, "venom":VENOM, "shadow":SHADOW, "void":VOID, "light":LIGHT, "synthesis":SYNTHESIS}.get(state.get("guardian", "fire"), ABILITIES)
 	var move: Dictionary = kit.get(id, {}).duplicate()
 	if not move.is_empty() and id == "breath" and state.get("evolution", "") == "flashfire": move.cooldown = 1.8
 	if not move.is_empty() and id == "burst" and state.get("evolution", "") == "overcharge": move.cooldown = 6.75
 	return move
 
 static func guardian_name(id: String) -> String:
-	return {"fire":"MAGMA", "ice":"RIME", "storm":"ARC", "stone":"CAIRN", "venom":"NOX", "shadow":"UMBRA", "void":"NULL", "light":"LUMEN"}.get(id, "UNKNOWN")
+	return {"fire":"MAGMA", "ice":"RIME", "storm":"ARC", "stone":"CAIRN", "venom":"NOX", "shadow":"UMBRA", "void":"NULL", "light":"LUMEN", "synthesis":"PRISM"}.get(id, "UNKNOWN")
 
 static func fresh(module: String = "", guardian: String = "fire") -> Dictionary:
-	var maximum: float = Modules.profile(module).hp * {"fire":1.0, "ice":.90, "storm":.85, "stone":1.15, "venom":.95, "shadow":.82, "void":.88, "light":1.0}.get(guardian, 1.0)
+	var maximum: float = Modules.profile(module).hp * {"fire":1.0, "ice":.90, "storm":.85, "stone":1.15, "venom":.95, "shadow":.82, "void":.88, "light":1.0, "synthesis":.95}.get(guardian, 1.0)
 	return {"evolution":"", "guardian":guardian, "ward":0.0, "null_reflect":0.0, "resolve":0, "phase":0, "module":module if Modules.valid(module) else "", "hp":maximum, "max_hp":maximum, "heat":0.0, "cooldowns":{}, "iframes":0.0, "dodge_iframes":0.0, "dash":0.0, "dodge_cd":0.0, "guard":false, "action":"", "action_time":0.0, "action_hit":false}
 
 static func tick(state: Dictionary, delta: float, guarding: bool = false) -> String:
@@ -187,3 +193,18 @@ static func restore(state: Dictionary) -> float:
 	var healed = minf(maximum * .25, maximum - hp)
 	state.hp = hp + healed
 	return healed
+static func recompile_element(chilled: float, charged: float, toxin: int) -> String:
+	# Browser copyAdvantage chooses a target's elemental weakness. Native enemies
+	# have no affinity model: Recompile instead selects the strongest existing
+	# status payoff, using the normal shield and consumption rules. Ties retain
+	# Fire, then Storm, then Venom; a clean target receives neutral Synthesis damage.
+	var selected = "synthesis"
+	var strongest = 1.0
+	if is_finite(chilled) and chilled > 0.0:
+		selected = "fire";strongest = 1.4
+	if is_finite(charged) and charged > 0.0 and 1.5 > strongest:
+		selected = "storm";strongest = 1.5
+	var stacks = toxin_stacks(toxin)
+	if stacks > 0 and toxin_burst_multiplier(stacks) > strongest:
+		selected = "venom"
+	return selected

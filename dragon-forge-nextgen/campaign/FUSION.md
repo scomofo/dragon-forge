@@ -1,8 +1,21 @@
 # Reconnection: Resonance Fusion
 
-This update adds one earned recipe, one new Storm guardian, and an explicit two-slot
-expedition party. It does not implement every browser fusion pair or replace the campaign.
+Forge resonance recruits new guardians while retaining parents and progression.
+The campaign supports nine owned guardians with an explicit two-slot expedition.
 The existing 22 rooms, thirteen encounters, parent evolutions and ending remain.
+
+| Result | Native recipe or preserved source | Feature contract |
+|---|---|---|
+| Arc / Storm | Evolved Fire + Ice, stabilized by the recovered lattice | Storm details below |
+| Cairn / Stone | Fire + preserved Stone imprint | [STONE.md](STONE.md) |
+| Nox / Venom | Ice + preserved Venom culture | [VENOM.md](VENOM.md) |
+| Umbra / Shadow | Fire + Venom | [SHADOW.md](SHADOW.md) |
+| Null / Void | Preserved post-ending Void imprint | [VOID.md](VOID.md) |
+| Prism / Synthesis | Light + Void | [SYNTHESIS.md](SYNTHESIS.md) |
+
+Light itself is the direct Singularity completion reward and requires no Forge recipe.
+With Lumen and Null owned, create Synthesis resonance and awaken Prism at the same
+Forge station. Both parents, all other guardians and the selected pair are retained.
 
 ## Earn Arc
 
@@ -23,17 +36,17 @@ that opposing pair unstable. This native adaptation uses the recovered lattice t
 an offspring without sacrificing either parent. It intentionally does not port random
 stability penalties or parent consumption. No hidden fee, duplicate reward or auto-evolution.
 
-## Two field slots, three owned guardians
+## Two field slots, nine potential guardians
 
-One active + one reserve are physically available, as before. The third remains at the
+One active + one reserve are physically available. Other owned guardians remain at the
 Forge. A benched guardian is not simulated and cannot provide an extra knockout handoff.
-Choose Fire/Ice, Fire/Storm or Ice/Storm at the Nursery. Equipment changes there rest the
+Choose any two owned guardians at the Nursery. Equipment changes there rest the
 selected pair; the Nursery is a safe-town station, not an in-combat heal.
 
 Tab swaps the two selected guardians only. The 2.5-second shared swap cooldown, committed
 attacks/dodges, independent HP/heat/cooldowns and reserve cooling remain. Persistent fields
 retain their original caster, duration and damage snapshot through swaps. Checkpoint retry
-restores exactly the selected pair, not all three. No autonomous companion AI is added.
+restores exactly the selected pair. No autonomous companion AI is added.
 
 Thermal relays still require Magma. With Ice/Storm selected, return to the Forge and equip
 Magma before using an unpowered heat gate. Esc / Return to Forge is always available;
@@ -55,7 +68,8 @@ shatter remain separate. The static field lasts 3.6 seconds and uses the existin
 geometry/line-of-sight checks. No chain-hit-through-walls or shield-bypass mechanic is claimed.
 
 Arc has 102 base HP (85% of Magma's unmodified baseline). Existing modules, salvage health,
-power and cooling upgrades apply. Arc does not yet have an evolved variant or specialization.
+power and cooling upgrades apply. Arc also has the earned Tempest evolution described in
+[TEMPEST_AUDIO.md](TEMPEST_AUDIO.md).
 All effects resolve through the real campaign actor and contact signals, not an alternate
 combat engine. Changing visual quality or reduced motion does not change the combat rules.
 
@@ -77,14 +91,15 @@ secondary wings/tail but retains action poses and mandatory combat feedback.
 
 ## Save compatibility
 
-Campaign schema 4 adds `lattice_recovered`, `storm_forged`, and `loadout`. Versions 1–3
-migrate in memory without granting the new reward or modifying original files on load.
+Campaign schema 4 introduced `lattice_recovered`, `storm_forged`, and `loadout`. Current
+schema 11 adds `synthesis_forged` without auto-granting its reward. Earlier versions
+migrate in memory without granting unearned resonance or modifying original files on load.
 The next successful write backs up the prior bytes via the existing store. Existing rooms,
 cores, salvage, guardians, evolutions and upgrades remain. Malformed/future saves stay
 write-blocked. These changes never touch browser or prototype saves.
 
-An empty `loadout` means automatic Fire/Ice selection only while at most two guardians are
-owned. Hatching Arc records the current pair explicitly. An explicit pair must contain two
+An empty `loadout` means automatic selection of the owned guardian or pair only while
+at most two guardians are owned. Recruiting later guardians records the current pair explicitly. An explicit pair must contain two
 different owned guardians and include the active one. Unowned/duplicate/three-slot and
 unearned-Storm states are rejected. Mid-combat resources remain session-only as in earlier
 campaign builds; Continue restores the pair at the recorded room entrance.
@@ -103,5 +118,7 @@ campaign builds; Continue restores the pair at the recorded room entrance.
 
 Use Godot 4.6.3 Standard. **F5 runs Reconnection**, while opening a validation scene and F6
 runs that tool only. The root-project import ZIP includes explicit directory entries.
-Hardware performance, physical controller feel, final artwork/animation, general terrain,
-a larger recipe catalogue, soundtrack and standalone executable remain outside this pass.
+Hardware performance, physical controller feel, final artwork/animation and general terrain
+remain human acceptance work. The current campaign includes the additional resonance
+recipes above, the existing soundtrack and editor plus standalone packages; each feature
+revision requires its own full release gates.

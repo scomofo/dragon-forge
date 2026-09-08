@@ -1,8 +1,16 @@
-# Reconnection: first guardian pair
+# Reconnection: guardian collection and expedition pair
 
-This pass adds an earned second playable guardian to the existing 22-room campaign.
-It does not replace the campaign with an inspection room, erase progression, add
-new biomes, or modify either original game or soundtrack.
+The 22-room campaign supports nine owned guardians: Magma, Rime, Arc, Cairn, Nox,
+Umbra, Null, Lumen and Prism. Exactly two selected guardians form an expedition.
+The Nursery changes the selected pair; recruiting a later guardian preserves the
+current pair and all existing ownership. Optional guardians follow their actual
+prerequisites and need not be recruited in roster order.
+
+Rime's original recruitment and pair mechanics are documented below. See
+[README.md](README.md) for all recruitment routes, [FUSION.md](FUSION.md) for Forge
+resonance, [LIGHT.md](LIGHT.md) for the direct completion reward, and
+[SYNTHESIS.md](SYNTHESIS.md) for Light + Void resonance. Existing evolution, Forge
+Trials, soundtrack and standalone packages remain integrated.
 
 ## Earn Rime
 
@@ -60,9 +68,11 @@ health/resource states and cancels pending old-room attacks without refunds.
 
 ## Persistence
 
-Campaign schema 2 adds `guardians`, `active_guardian`, and `ice_rescued`. Valid schema
-1 campaigns migrate in memory with exactly Magma owned; no sector progress,
-upgrade, cache or currency is invented. Loading does not write. The next successful
+Current campaign schema 11 includes Synthesis resonance and the nine-guardian domain.
+Schema 2 originally introduced `guardians`, `active_guardian`, and `ice_rescued`.
+Valid older campaigns migrate in memory without inventing optional recruitment,
+sector progress, upgrades, caches or currency. Completed pre-Light campaigns receive
+their earned Light reward; migration never grants Synthesis. Loading does not write. The next successful
 save backs up the previous file bytes through the existing store. Unknown future
 versions and malformed ownership are blocked. The earlier prototype/browser saves
 are untouched. Active-room combat state still is not serialized: Continue restores
@@ -85,8 +95,8 @@ regression samples actual skinned sole points against live surface queries.
 
 This is an initial authored/parametric Ice asset, not final sculpted character art.
 The cinematic concept images are not screenshots of this implementation. No
-fusion, evolution, larger roster, simultaneous companion AI, audio integration or
-standalone executable is included. Numerical balance and target-hardware/controller
+autonomous companion AI is included. Fusion, evolution, the larger guardian roster,
+audio integration and standalone packages are documented in the current campaign guide. Numerical balance and target-hardware/controller
 feel still require human playtesting; passing automated checks does not establish fun.
 
 ## Verify

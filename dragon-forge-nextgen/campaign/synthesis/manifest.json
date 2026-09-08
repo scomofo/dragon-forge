@@ -1,0 +1,89 @@
+{
+  "source": "tools/build_synthesis_guardian.py",
+  "guardian": "Prism",
+  "design": {
+    "plan": "void frame filled with light panes",
+    "silhouette": "diamond-frame-pane-fill",
+    "notes": "Must read as void + light combined, not a tenth animal.",
+    "muzzle_joint": "Emitter",
+    "grounded": false,
+    "foot_planting": false,
+    "pane_count": 4,
+    "rigid_panes": true,
+    "pane_palette": "gold-white",
+    "pane_color_slots": [
+      12,
+      13,
+      14,
+      15
+    ],
+    "center": [
+      0.0,
+      1.28,
+      0.0
+    ]
+  },
+  "frame_reference": {
+    "file": "campaign/void/void_guardian.glb",
+    "sha256": "0f2ec3239eff6a3973ae0270ad64ffd63a4275cff26914524a9683c370ecfddd",
+    "source": "tools/build_void_guardian.py",
+    "vertices": 2032,
+    "triangles": 992,
+    "bones": 11
+  },
+  "pane_source": "tools/build_light_guardian.py",
+  "asset": {
+    "file": "synthesis_guardian.glb",
+    "triangles": 1184,
+    "vertices": 2440,
+    "surfaces": 1,
+    "bones": 15,
+    "clips": [
+      "idle",
+      "walk",
+      "claw",
+      "breath",
+      "wall",
+      "burst",
+      "guard",
+      "hurt",
+      "defeat"
+    ],
+    "bounds": [
+      [
+        -1.2943925857543945,
+        0.2475000023841858,
+        -0.29499998688697815
+      ],
+      [
+        1.2943925857543945,
+        2.565000057220459,
+        0.33500000834465027
+      ]
+    ]
+  },
+  "clip_durations": {
+    "idle": 1.8,
+    "walk": 0.8,
+    "claw": 0.32,
+    "breath": 0.56,
+    "wall": 0.6,
+    "burst": 0.76,
+    "guard": 1.2,
+    "hurt": 0.24,
+    "defeat": 0.9
+  },
+  "action_windups": {
+    "claw": 0.12,
+    "breath": 0.26,
+    "wall": 0.28,
+    "burst": 0.36
+  },
+  "files": {
+    "atlas_base.png": "915f2ff634b1150ad3acacaa9c7cbc32bb6f62063559167dfe53b2bb85c61598",
+    "atlas_emission.png": "293d0f5dcb5d4335d0a00023ee0889de7c9c8b19ab13c17c8591e9b3a4c85b51",
+    "atlas_normal.png": "6a8b9f1216093ce3038233fa9c02e26eabfa137ab696abe63a3ea1a57e032b95",
+    "atlas_orm.png": "9b9d3302be7eff123f9843eea39ad12f4d96136a11da72f5847919a78b778849",
+    "synthesis_guardian.glb": "aa3ebe8282157c76b1b5fe25e230934eb4571845458466919f7386cdab935f68"
+  }
+}

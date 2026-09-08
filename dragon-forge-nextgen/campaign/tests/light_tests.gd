@@ -49,6 +49,7 @@ static func legacy(version: int, full_roster: bool = false) -> Dictionary:
 		if version >= 8:roster.append("shadow")
 	var c = before_completion(roster)
 	c.version = version
+	c.erase("synthesis_forged")
 	c.finished = true
 	c.salvage = 327
 	c.module = "coolant"
@@ -83,7 +84,7 @@ func clean(path: String):
 
 func completion_checks():
 	var fresh = Rules.fresh()
-	check(fresh.version == 10 and Rules.GUARDIAN_IDS.size() == 8, "fresh schema 10 supports eight guardian identities")
+	check(fresh.version == 11 and Rules.GUARDIAN_IDS.size() == 9, "fresh schema 11 supports nine guardian identities")
 	check(not fresh.guardians.has("light") and not fresh.has("light_forged") and not fresh.has("light_imprint_recovered"), "Light adds no saved recipe or imprint flags")
 	check(not Rules.normalize(fresh).is_empty(), "new uncompleted campaign remains valid")
 	for roster in [["fire"], ["fire", "ice"], ["fire", "stone"], ["fire", "ice", "venom", "shadow"], ["fire", "stone", "ice", "venom", "shadow", "storm"]]:
@@ -125,7 +126,7 @@ func migration_checks():
 		var old = legacy(version)
 		var before = old.duplicate(true)
 		var loaded = Rules.normalize(old)
-		check(not loaded.is_empty() and loaded.version == 10 and loaded.guardians == ["fire", "light"], "finished schema %d gains earned Light without optional predecessors" % version)
+		check(not loaded.is_empty() and loaded.version == 11 and loaded.guardians == ["fire", "light"], "finished schema %d gains earned Light without optional predecessors" % version)
 		check(old == before, "schema %d normalization leaves original dictionary unchanged" % version)
 		var unfinished = old.duplicate(true)
 		unfinished.finished = false
@@ -134,7 +135,7 @@ func migration_checks():
 		var old = legacy(version, true)
 		var before = old.duplicate(true)
 		var loaded = Rules.normalize(old)
-		check(not loaded.is_empty() and loaded.version == 10, "full schema %d campaign migrates" % version)
+		check(not loaded.is_empty() and loaded.version == 11, "full schema %d campaign migrates" % version)
 		if loaded.is_empty():continue
 		check(loaded.guardians == old.guardians + ["light"], "schema %d adds exactly the earned completion reward" % version)
 		for key in old:
@@ -149,7 +150,7 @@ func migration_checks():
 		f.store_string(bytes);f.close()
 		check(store.read_campaign() == loaded and not store.blocked, "schema %d disk load grants the same earned Light" % version)
 		check(FileAccess.get_file_as_string(store.path) == bytes and not FileAccess.file_exists(store.path + ".bak"), "load preserves exact original bytes and creates no backup")
-		check(store.write_campaign(loaded), "first schema 10 write succeeds")
+		check(store.write_campaign(loaded), "first schema 11 write succeeds")
 		check(FileAccess.get_file_as_string(store.path + ".bak") == bytes, "first write backs up exact legacy bytes")
 		check(store.read_campaign() == loaded, "Light and all prior progress survive save/reload")
 		clean(store.path)
@@ -207,7 +208,7 @@ func rejection_checks():
 	missing_reward.finished = true
 	check(Rules.normalize(missing_reward).is_empty(), "current schema requires completed campaigns to own earned Light")
 	var future = Rules.fresh()
-	future.version = 11
+	future.version = 12
 	check(Rules.normalize(future).is_empty(), "future schema is not interpreted as an earned completion")
 	for version in range(2, 10):
 		var bad = legacy(version)

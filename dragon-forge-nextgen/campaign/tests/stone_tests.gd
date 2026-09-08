@@ -23,9 +23,9 @@ func eligible()->Dictionary:
 	c.room="admin-vault"
 	return c
 func run():
-	var fresh=Rules.fresh();check(fresh.version==10,"fresh schema 10");check(not fresh.stone_imprint_recovered and not fresh.stone_forged,"fresh Stone flags false")
+	var fresh=Rules.fresh();check(fresh.version==11,"fresh schema 11");check(not fresh.stone_imprint_recovered and not fresh.stone_forged,"fresh Stone flags false")
 	var old=fresh.duplicate(true);old.version=5;old.erase("stone_imprint_recovered");old.erase("stone_forged");old.erase("venom_culture_recovered");old.erase("venom_forged")
-	var migrated=Rules.normalize(old);check(migrated.version==10,"schema 5 migrates through Stone to schema 10");check(not migrated.stone_imprint_recovered and not migrated.stone_forged,"migration grants no Stone progress")
+	var migrated=Rules.normalize(old);check(migrated.version==11,"schema 5 migrates through Stone to schema 11");check(not migrated.stone_imprint_recovered and not migrated.stone_forged,"migration grants no Stone progress")
 	var c=eligible();check(Fusion.recover_stone(c),"recover imprint in Admin Vault");check(not Fusion.recover_stone(c),"imprint one-time");check(Fusion.stone_reason(c)=="","eligible recipe ready")
 	c.room="forge";check(Fusion.forge_stone(c),"temper imprint");check(not Fusion.forge_stone(c),"temper one-time");var pair=Fusion.members(c).duplicate();check(Fusion.hatch_stone(c),"awaken Cairn");check(c.guardians==["fire","ice","storm","stone"],"four owned guardians ordered");check(Fusion.members(c)==pair,"recruitment preserves expedition pair");check(not Fusion.hatch_stone(c),"Cairn one-time")
 	check(not Rules.normalize(c).is_empty(),"four-guardian save valid")

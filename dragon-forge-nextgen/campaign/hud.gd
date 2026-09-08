@@ -48,7 +48,9 @@ func _process(delta: float) -> void:
 	var active_id: String=world.party.active_id
 	health_text.text=Growth.form_name(active_id,actor.state.get("evolution", "") != "").to_upper()+"   /   %d / %d" % [roundi(actor.state.hp),roundi(actor.state.max_hp)]
 	if not actor.active:health_text.text="MAGMA / DORMANT"
-	if active_id=="light":
+	if active_id=="synthesis":
+		defensive_text.text="PRISM / RECOMPILE [4]"
+	elif active_id=="light":
 		defensive_text.text="RESTORATION / SELF HEAL 25%"
 	elif active_id=="void":
 		defensive_text.text="NULL REFLECT / %.1fs" % actor.state.null_reflect if actor.state.get("null_reflect",0.0)>0.0 else "VOID / PUSH, PULL AND COUNTER"
@@ -85,6 +87,8 @@ func _process(delta: float) -> void:
 			elif id=="burst":card.cost.text="%d / +25%% per TOXIN / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 		if active_id=="light" and id=="burst":
 			card.cost.text="25%% self heal / %d heat" % roundi(GuardianCombat.heat_cost(actor.state,id))
+		if active_id=="synthesis" and id=="burst":
+			card.cost.text="%d + STATUS PAYOFF / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 		if active_id=="shadow" and id=="burst":
 			card.cost.text="%d / +30%% per PHASE / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 		var cd: float=actor.state.cooldowns.get(id,0.0)
@@ -194,7 +198,7 @@ func show_title() -> void:
 	_label(overlay_column,"DRAGON FORGE",42,GOLD)
 	_label(overlay_column,"RECONNECTION",25,TEAL)
 	_wrapped(overlay_column,"A compact playable campaign through four broken sectors. Restore their cores. Rescue, evolve and fuse guardians. Choose your expedition pair. Stop the Great Reset.",20)
-	_label(overlay_column,"LIGHT RESTORATION   /   22 ROOMS   /   EIGHT GUARDIANS, TWO FIELD SLOTS",14,MUTED)
+	_label(overlay_column,"SYNTHESIS RECOMPILE   /   22 ROOMS   /   NINE GUARDIANS, TWO FIELD SLOTS",14,MUTED)
 	var start=_button(overlay_column,"Continue campaign" if world.store.existed or world.has_started else "Begin campaign")
 	start.pressed.connect(func():world.begin_campaign(false))
 	start.grab_focus()
@@ -466,14 +470,14 @@ func show_party() -> void:
 	row.add_theme_constant_override("h_separation",14)
 	row.add_theme_constant_override("v_separation",14)
 	scroll.add_child(row)
-	for id in ["fire","ice","storm","stone","venom","shadow","void","light"]:
+	for id in ["fire","ice","storm","stone","venom","shadow","void","light","synthesis"]:
 		var card=_panel(row);card.custom_minimum_size.x=315
 		card.name="Guardian_"+id
 		card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 		var col=_column(card,9)
 		var owned: bool=world.campaign.guardians.has(id)
 		var selected: bool=world.party.states.has(id)
-		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa"),"stone":Color("c8ad7c"),"venom":Color("a8db61"),"shadow":Color("b78be0"),"void":Color("44eeee"),"light":Color("ffe8a8")}[id])
+		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa"),"stone":Color("c8ad7c"),"venom":Color("a8db61"),"shadow":Color("b78be0"),"void":Color("44eeee"),"light":Color("ffe8a8"),"synthesis":Color("72f0ec")}[id])
 		_label(col,("ACTIVE" if world.party.active_id==id else ("RESERVE" if selected else "AT THE FORGE")) if owned else "NOT RECRUITED",14,MUTED)
 		if owned:
 			if selected:
@@ -484,6 +488,7 @@ func show_party() -> void:
 			for slot in GuardianCombat.ORDER:
 				_label(col,GuardianCombat.rule({"guardian":id,"evolution":Growth.choice(world.campaign,id)},slot).name,17,PAPER)
 			var tips={"fire":"Powers heat relays. Direct Fire hits shatter Chill for +40% once.","ice":"Chills exposed enemies. Aegis protects Rime, even after swapping.","storm":"Lance / Well charge enemies. Discharge consumes Charge for +50% once.","stone":"Guard landed hits to build up to 3 Resolve. Earthshatter gains +20% per Resolve and spends it only on a landed hit.","venom":"Fang, Spit and Cloud build Toxin. Septic Bloom gains +25% per stack and consumes stacks only when it lands.","shadow":"A real incoming hit during dodge i-frames builds Phase (max 2). Phase Strike gains +30% per Phase and spends it only when damage lands.","void":"Void Rift pushes exposed enemies. Null Reflect briefly halves incoming damage and counters its source. Siphon Rift pulls and heals 40% of damage dealt. Shields block control and drain; bosses and locked tells remain anchored.","light":"Radiant Beam strikes exposed foes at range. Solar Flare hits nearby exposed foes once. Restoration heals Lumen by 25% of maximum HP; it cannot revive or heal a reserve. Shields still block both attacks."}
+			tips.synthesis="Void Rift pushes exposed foes; Radiant Beam strikes at range. Recompile [4] consumes the strongest existing Chill, Charge or Toxin payoff. Shields block it and preserve those effects. A clean target takes normal damage."
 			_wrapped(col,tips[id],16,MUTED,272)
 			if not selected:
 				var equip=_button(col,"Equip as reserve")
@@ -508,6 +513,9 @@ func show_party() -> void:
 		elif id=="venom":
 			_wrapped(col,"Rescue Rime, then recover the preserved Venom culture from Frozen Vault. Canonical Ice + Venom remains Venom; Rime is retained.",17,PAPER,272)
 			_button(col,"View fusion recipes").pressed.connect(show_fusion)
+		elif id=="synthesis":
+			_wrapped(col,"Awaken Lumen and Null, then bring Light + Void to Resonance Fusion to create Prism. Both parents and your expedition pair are retained.",17,PAPER,272)
+			_button(col,"View Light + Void recipe").pressed.connect(show_fusion)
 		elif id=="light":
 			_wrapped(col,"Stabilize the Singularity to earn Lumen. Earlier finishers receive Light on Continue. No fusion recipe or Void ownership is required.",17,PAPER,272)
 		elif id=="void":
@@ -647,6 +655,21 @@ func show_fusion() -> void:
 		forge_void.name="StabilizeVoid"
 		forge_void.disabled=Fusion.void_reason(c)!="" or not world.can_fuse()
 		forge_void.pressed.connect(func():world.forge_void())
+	_label(recipes,"LIGHT + VOID = SYNTHESIS / PRISM",22,Color("72f0ec"))
+	if c.guardians.has("synthesis"):
+		_label(recipes,"PRISM / RECRUITED",18,TEAL)
+	elif c.synthesis_forged:
+		var hatch_synthesis=_button(recipes,"Awaken Prism / free")
+		hatch_synthesis.name="HatchSynthesis"
+		hatch_synthesis.disabled=not world.can_fuse()
+		hatch_synthesis.pressed.connect(func():world.hatch_synthesis())
+	else:
+		_wrapped(recipes,Fusion.synthesis_reason(c) if Fusion.synthesis_reason(c)!="" else "READY / Lumen + Null. Light + Void creates Synthesis; both parents and the expedition pair remain.",16,GOLD)
+		var forge_synthesis=_button(recipes,"Create Synthesis resonance / keep Lumen + Null")
+		forge_synthesis.name="ForgeSynthesis"
+		forge_synthesis.disabled=Fusion.synthesis_reason(c)!="" or not world.can_fuse()
+		forge_synthesis.pressed.connect(func():world.forge_synthesis())
+	_wrapped(recipes,"PRISM / Convergence Shard • Void Rift • Radiant Beam • Recompile\nRecompile consumes the strongest existing Chill, Charge or Toxin payoff only when damage lands. Closed shields preserve every effect.",17,MUTED)
 	if world.store.message!="":_wrapped(recipes,world.store.message,16,GOLD)
 	var footer = HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 12)

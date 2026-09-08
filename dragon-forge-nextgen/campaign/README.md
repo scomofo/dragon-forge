@@ -1,6 +1,6 @@
 # Dragon Forge: Reconnection
 
-This is a **compact, end-to-end playable campaign**. Open `project.godot` in **Godot 4.6.3 Standard** and press **F5** to launch `campaign/main.tscn`. Character inspection and the original mechanical arena remain separate scenes. The current development pass adds Light and schema 10; its release status depends on the checks for the exact revision being reviewed.
+This is a **compact, end-to-end playable campaign**. Open `project.godot` in **Godot 4.6.3 Standard** and press **F5** to launch `campaign/main.tscn`. Character inspection and the original mechanical arena remain separate scenes. The current development pass adds Synthesis and schema 11; its release status depends on the checks for the exact revision being reviewed.
 
 ## First two minutes
 
@@ -23,7 +23,7 @@ Clear each boss, **collect its pedestal core**, take the return portal and insta
 
 ## Combat and growth
 
-The collection can contain **eight guardians**, with **two selected for an expedition**. Recruitment follows each recipe's prerequisites, not a mandatory roster order. Nox and Umbra can join before optional Arc or Cairn; Cairn can also be the first reserve. Recruiting later guardians preserves the selected pair and produces valid saves.
+The collection can contain **nine guardians**, with **two selected for an expedition**. Recruitment follows each recipe's prerequisites, not a mandatory roster order. Nox and Umbra can join before optional Arc or Cairn; Cairn can also be the first reserve. Recruiting later guardians preserves the selected pair and produces valid saves.
 
 | Guardian | Recruitment route | Combat identity |
 |---|---|---|
@@ -35,8 +35,9 @@ The collection can contain **eight guardians**, with **two selected for an exped
 | Umbra / Shadow | Fire + Venom resonance at the Forge after awakening Nox | Dodge-earned Phase and Phase Strike |
 | Null / Void | Stabilize the Singularity; recover its preserved Void imprint; stabilize and awaken at the Forge | Push, pull, drain and timed reflection |
 | Lumen / Light | Stabilize the Singularity pedestal; Lumen awakens directly | Shield-respecting radiant damage and self-restoration |
+| Prism / Synthesis | Own Lumen and Null; create Synthesis resonance and awaken at the Forge | Rift displacement, direct beam and status-selecting Recompile |
 
-Parents and existing progression are retained. Magma and Rime can evolve at Bond III with two restored cores; Arc's Tempest evolution requires three restored cores. Specializations can be reconfigured at the Nursery. See [GUARDIANS.md](GUARDIANS.md), [EVOLUTION.md](EVOLUTION.md), [FUSION.md](FUSION.md), [STONE.md](STONE.md), [VENOM.md](VENOM.md), [SHADOW.md](SHADOW.md), [VOID.md](VOID.md) and [LIGHT.md](LIGHT.md) for the feature contracts.
+Parents and existing progression are retained. Magma and Rime can evolve at Bond III with two restored cores; Arc's Tempest evolution requires three restored cores. Specializations can be reconfigured at the Nursery. See [GUARDIANS.md](GUARDIANS.md), [EVOLUTION.md](EVOLUTION.md), [FUSION.md](FUSION.md), [STONE.md](STONE.md), [VENOM.md](VENOM.md), [SHADOW.md](SHADOW.md), [VOID.md](VOID.md), [LIGHT.md](LIGHT.md) and [SYNTHESIS.md](SYNTHESIS.md) for the feature contracts.
 
 Umbra gains one Phase when a real incoming hit intersects its dodge window, capped at two. Phase Strike gains 30% damage per stack and consumes stored Phase only after dealing damage. Misses, interrupted windups and closed shields preserve the stacks. Post-hit invulnerability grants no Phase.
 
@@ -62,6 +63,17 @@ Lumen is a gold-and-white winged biped with stained-glass wing panels. Stabilizi
 
 All Light attacks use ordinary shield checks. Restoration affects the active Lumen only and never revives a fallen guardian. The current combat model has no player ailment or accuracy system, so this adaptation provides no cleanse or Dazzle effect.
 
+Prism retains Void's diamond frame and fills it with hard gold-and-white Light panes. Its canonical Light + Void recipe retains both parents and every existing guardian; the expedition pair changes only when selected at the Nursery.
+
+| Slot | Technique | Effect |
+|---|---|---|
+| 1 | Convergence Shard | 26 base damage |
+| 2 | Void Rift | 32 base damage and up to 1.25 m of collision-respecting push on exposed ordinary foes |
+| 3 | Radiant Beam | 36 base damage in a direct aimed line; no persistent field |
+| 4 | Recompile | 46 base radial damage with the best available existing status payoff on each target |
+
+Recompile chooses Chill/Fire at 1.4×, Charge/Storm at 1.5×, or Toxin/Venom at 1.25–1.75×, selecting the highest multiplier and breaking ties in Fire, Storm, Venom order. An unmarked target receives the neutral 1× hit. Only the selected status is consumed, and only after actual damage; closed shields preserve all marks. This is an explicit native adaptation of browser Advantage: native enemies have no target-affinity field to copy. Prism grants no healing, reflection, Phase, new ailments or thermal relay power.
+
 Five imported bosses have their own models and attack clips; ordinary encounter variants reuse the Sentinel/Warden models. Locked warnings use circles, a beam lane, a three-circle fan and a ring with a safe center. Impact checks use those same locked shapes. Shielded enemies expose recovery windows; scouts have no shield. Electrical/thermal floor hazards have a gold warning interval.
 
 Salvage is earned once per encounter/cache. The Forge anvil offers three permanent three-level upgrades: +20 HP per plating level, +12% technique damage per power level, +4 cooling/sec per cooling level (half while guarding). Prices are 30/60/90 per track. No mandatory farming is required; defeated encounters and recovered caches do not regenerate rewards.
@@ -78,7 +90,7 @@ WASD/arrows move; mouse or right stick aims; 1–4 / X,Y,LB,RB use techniques. S
 
 Campaign milestones use **`user://reconnection-campaign.json`**, within the existing nextgen user-data directory. The old `nextgen-progress.json` is read only on first campaign creation: a valid existing Magma hatch and module carry over with 30 starter salvage. The prototype's single-room encounter clears are not misrepresented as completion of these new sectors. It is never overwritten. Existing browser saves are separate.
 
-Campaign **schema 10** adds Light ownership without another persisted unlock flag. A completed campaign must own Light; valid completed saves from schema 9 and earlier receive that earned guardian during in-memory migration. Unfinished saves receive no Light. Loading preserves the original save bytes, existing guardian order and any selected expedition pair. The existing recovered/forged Void progression remains independent. Ownership accepts legitimate optional recruitment orders while rejecting unknown, duplicate or unearned guardians. The selected expedition remains limited to two owned guardians.
+Campaign **schema 11** adds the `synthesis_forged` flag and Synthesis ownership. Valid older saves receive no Synthesis progress; awakening Prism requires earned Light and Void parents plus the forged resonance. Schema 10 introduced Light ownership without another persisted unlock flag. A completed campaign must own Light; valid completed saves from schema 9 and earlier receive that earned guardian during in-memory migration. Unfinished saves receive no Light. Loading preserves the original save bytes, existing guardian order and any selected expedition pair. The existing recovered/forged Void progression remains independent. Ownership accepts legitimate optional recruitment orders while rejecting unknown, duplicate or unearned guardians. The selected expedition remains limited to two owned guardians.
 
 Campaign writes validate data, verify a temporary write and retain the prior exact bytes as `.bak`. Unknown/future/corrupt data is preserved and write-blocked, with an on-screen session-only warning. No automatic backup restoration is claimed. Continue returns to the last entered room's entrance with full health and repair charges, rather than the exact mid-fight frame. Explicit New campaign replaces only this campaign's progress after confirmation. Settings remain in the existing separate preferences file. Phase and Null Reflect are session combat state, not saved milestones.
 
@@ -90,6 +102,9 @@ Use Godot 4.6.3 Standard. Tests use `--test-mode` and test-only storage paths, n
 godot --headless --path . --editor --import
 godot --headless --path . --script res://campaign/tests/run.gd -- --test-mode
 godot --headless --path . --script res://campaign/tests/recruitment_tests.gd -- --test-mode
+godot --headless --path . --script res://campaign/tests/synthesis_tests.gd -- --test-mode
+godot --headless --path . --script res://campaign/tests/synthesis_combat_tests.gd -- --test-mode
+godot --headless --fixed-fps 60 --path . --script res://campaign/tests/synthesis_runtime_tests.gd -- --test-mode
 godot --headless --path . --script res://campaign/tests/light_tests.gd -- --test-mode
 godot --headless --path . --script res://campaign/tests/light_combat_tests.gd -- --test-mode
 godot --headless --fixed-fps 60 --path . --script res://campaign/tests/light_runtime_tests.gd -- --test-mode
@@ -104,10 +119,10 @@ The traversal suite checks all rooms, prerequisites, real spell/relay/actor wiri
 
 Visual capture setup seeds prerequisites to inspect sectors independently. It does not pretend that screenshots prove an unassisted playthrough. The rendering tests use software graphics, not target-hardware benchmarks.
 
-The **Nextgen Light guardian** workflow runs the inherited regression stack and Light acceptance with OpenGL and Forward+ captures, and produces an editor-project ZIP. **Nextgen standalone playtests** separately builds Windows/macOS/Linux exports and checks each on a native runner. A release requires successful results for the same feature revision; this documentation alone does not establish a passing release. See [../release/README.md](../release/README.md) for standalone launch instructions.
+The **Nextgen Synthesis guardian** workflow runs the inherited regression stack and Synthesis acceptance with OpenGL and Forward+ captures, and produces an editor-project ZIP. **Nextgen standalone playtests** separately builds Windows/macOS/Linux exports and checks each on a native runner. A release requires successful results for the same feature revision; this documentation alone does not establish a passing release. See [../release/README.md](../release/README.md) for standalone launch instructions.
 
 ## Boundaries
 
-The scope is a short campaign with eight potential guardians, two field slots, earned evolution/resonance, Forge Trials and the existing soundtrack. The full browser collection/content, additional biomes, multiplayer and voiced dialogue remain outside this adaptation. Forge Trials keep their records separate from campaign rewards and unlocks.
+The scope is a short campaign with nine potential guardians, two field slots, earned evolution/resonance, Forge Trials and the existing soundtrack. The full browser collection/content, additional biomes, multiplayer and voiced dialogue remain outside this adaptation. Forge Trials keep their records separate from campaign rewards and unlocks.
 
-Balance, duration, character readability/deformation, target Mac/PC frame times, physical controllers and audio still need human acceptance. The optional first-pass guardian rigs, including Umbra, Null and Lumen, are not certified for planted-foot behavior. Software-rendered captures and prepared combat fixtures provide review evidence, not that certification. Shared polished assets, legacy simulation and validation scenes remain available.
+Balance, duration, character readability/deformation, target Mac/PC frame times, physical controllers and audio still need human acceptance. The optional first-pass guardian rigs, including Umbra, Null, Lumen and Prism, are not certified for planted-foot behavior. Software-rendered captures and prepared combat fixtures provide review evidence, not that certification. Shared polished assets, legacy simulation and validation scenes remain available.
