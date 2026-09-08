@@ -20,6 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
           sparse-checkout: dragon-forge-nextgen
       - name: Install Godot 4.6.3, Khronos validator and software graphics
