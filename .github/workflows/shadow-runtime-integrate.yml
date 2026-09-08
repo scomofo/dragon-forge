@@ -1,0 +1,116 @@
+name: Integrate Umbra Shadow runtime
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/shadow-runtime-integrate.yml'
+      - 'dragon-forge-nextgen/tools/run_shadow_integrator.py'
+      - 'dragon-forge-nextgen/tools/build_shadow_guardian.py'
+      - 'dragon-forge-nextgen/tools/validate_shadow.py'
+      - 'dragon-forge-nextgen/tools/validate_shadow.cjs'
+permissions:
+  contents: read
+concurrency:
+  group: shadow-runtime-integration-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  integrate:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'nextgen-shadow-guardian'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GODOT_SILENCE_ROOT_WARNING: '1'
+      LIBGL_ALWAYS_SOFTWARE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nextgen-shadow-guardian
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned authoring, validation and rendering tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers
+          python -m pip install -r dragon-forge-nextgen/tools/art-requirements.txt
+          npm install --prefix /tmp/gltf gltf-validator@2.0.0-dev.3.10
+          curl --fail --location --retry 3 'https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip' -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install /tmp/godot/Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Apply exact reviewed Shadow runtime edits
+        shell: bash
+        run: |
+          set -euo pipefail
+          python dragon-forge-nextgen/tools/run_shadow_integrator.py
+          git diff --check
+      - name: Build and independently validate Umbra
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dragon-forge-nextgen
+          mkdir -p artifacts/shadow
+          python tools/build_shadow_guardian.py | tee artifacts/shadow/build.json
+          python tools/validate_shadow.py | tee artifacts/shadow/export-validation.log
+          GLTF_VALIDATOR_MODULE=/tmp/gltf/node_modules/gltf-validator node tools/validate_shadow.cjs | tee artifacts/shadow/gltf.log
+          grep '0 errors / 0 warnings' artifacts/shadow/gltf.log
+          timeout 120 godot --headless --editor --import 2>&1 | tee artifacts/shadow/import.log
+          if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' artifacts/shadow/import.log; then exit 1; fi
+      - name: Run complete inherited stack plus Umbra world routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          GODOT=godot bash dragon-forge-nextgen/tools/test_bosses.sh 2>&1 | tee dragon-forge-nextgen/artifacts/shadow/tests.log
+          grep -E 'SHADOW_TESTS: [0-9]+ checks, 0 failures' dragon-forge-nextgen/artifacts/shadow/tests.log
+          grep -E 'SHADOW_RUNTIME_TESTS: [0-9]+ checks, 0 failures' dragon-forge-nextgen/artifacts/shadow/tests.log
+          for marker in NEXTGEN_TESTS NEXTGEN_ART_TESTS NEXTGEN_REVIEW_TESTS NEXTGEN_POLISH_TESTS CAMPAIGN_TESTS PARTY_TESTS EVOLUTION_TESTS FUSION_TESTS TEMPEST_TESTS AUDIO_TESTS STONE_TESTS VENOM_TESTS VENOM_RUNTIME_TESTS TRIAL_TESTS BOSS_TESTS; do
+            grep -E "$marker: [0-9]+ checks, 0 failures" dragon-forge-nextgen/artifacts/shadow/tests.log
+          done
+          grep 'CAMPAIGN_CONTROLLER_PLAY: 0 failures' dragon-forge-nextgen/artifacts/shadow/tests.log
+          grep 'STORM_CONTROLLER_PLAY: 0 failures' dragon-forge-nextgen/artifacts/shadow/tests.log
+          grep 'BOSS_CONTROLLER_PLAY: 0 failures' dragon-forge-nextgen/artifacts/shadow/tests.log
+      - name: Capture Umbra through OpenGL and Forward+
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dragon-forge-nextgen
+          for mode in gl_compatibility forward_plus; do
+            target="artifacts/shadow/$mode"
+            mkdir -p "$target"
+            rm -rf artifacts/shadow/captures
+            timeout 240 xvfb-run -a godot --rendering-method "$mode" --audio-driver Dummy --script res://campaign/tests/shadow_capture.gd -- --test-mode 2>&1 | tee "$target/visual.log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' "$target/visual.log"; then exit 1; fi
+            grep 'SHADOW_VISUAL: 0 failures' "$target/visual.log"
+            if [[ "$mode" == forward_plus ]]; then grep 'Forward+' "$target/visual.log"; fi
+            cp artifacts/shadow/captures/*.png "$target/"
+          done
+      - name: Commit only verified runtime and generated assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/shadow-runtime-integrate.yml
+          rm -f dragon-forge-nextgen/tools/run_shadow_integrator.py
+          rm -rf dragon-forge-nextgen/.godot
+          find dragon-forge-nextgen/campaign/shadow -maxdepth 1 -type f \( -name '*.import' -o -name '*.uid' \) -delete
+          git add -A
+          git diff --cached --check
+          if git diff --cached --name-only | grep -E '(^|/)\.godot/|campaign/shadow/.*\.(import|uid)$'; then
+            echo 'Generated Godot import metadata was staged unexpectedly.' >&2
+            exit 1
+          fi
+          test -f dragon-forge-nextgen/campaign/shadow/shadow_guardian.glb
+          test -f dragon-forge-nextgen/campaign/shadow/atlas_base.png
+          test -f dragon-forge-nextgen/campaign/shadow/manifest.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: integrate Umbra Shadow runtime and imported guardian'
+          git push origin HEAD:nextgen-shadow-guardian
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shadow-runtime-integration-evidence
+          path: dragon-forge-nextgen/artifacts/shadow/
+          retention-days: 14
