@@ -1,5 +1,6 @@
 extends SceneTree
 ## Prepared-state visual review using the actual campaign; not an unassisted playthrough.
+const Inspection=preload("res://validation/character_inspection.gd")
 const World=preload("res://campaign/world.gd")
 const Rules=preload("res://campaign/progress.gd")
 const Enemy=preload("res://campaign/enemy.gd")
@@ -16,4 +17,30 @@ func run():
 	w.hud.show_fusion();await shot("01-shadow-recipe");w.hud.close_overlay();w.hud.show_party();await shot("02-six-guardian-roster");w.hud.close_overlay();await shot("03-umbra-negative-space")
 	var foe=Enemy.new();foe.spec={"id":"shadow-capture","name":"Training Sentinel","hp":900.0,"damage":10.0,"shield":false,"boss":false,"patterns":["slam"],"archetype":"bruiser"};foe.target=w.dragon;foe.navigation=w;w.level.add_child(foe);foe.position=w.dragon.position+Vector3.FORWARD*3;foe.set_physics_process(false);w.enemies=[foe];w._select_enemy();w.dragon.input_grace=0;w.dragon.state.phase=2
 	w.dragon.try_ability("wall");w.dragon.advance_combat(.19);await shot("04-umbral-wake");w.dragon.advance_combat(.5);w.dragon.state.heat=0;w.dragon.state.cooldowns.clear();w.dragon.input_grace=0;w.dragon.try_ability("burst");w.dragon.advance_combat(.21);paused=true;await shot("05-phase-strike");paused=false
-	w.queue_free();await frames(4);print("SHADOW_VISUAL: %d failures"%failures);quit(1 if failures else 0)
+	w.queue_free();await frames(4)
+	await inspect_clips()
+	print("SHADOW_VISUAL: %d failures"%failures);quit(1 if failures else 0)
+
+func inspect_clips():
+	var scene=Inspection.new()
+	root.add_child(scene)
+	scene.load_actor(Inspection.ACTORS.find("shadow_guardian"))
+	scene.find_children("*","OptionButton",true,false)[0].select(Inspection.ACTORS.find("shadow_guardian"))
+	scene.playing=false
+	scene.cycle_all=false
+	scene.orbit=PI/2.0
+	scene.elevation=.12
+	scene.distance=6.0
+	scene._update_camera()
+	for lighting in ["neutral","rim"]:
+		scene.key.light_energy=1.6 if lighting=="neutral" else .35
+		scene.rim.light_energy=0.0 if lighting=="neutral" else 6.0
+		for clip in ["idle","walk","claw","breath","wall","burst","guard","hurt","defeat"]:
+			if not scene.player.has_animation(clip):
+				failures+=1
+				continue
+			scene.select_clip(scene.clips.find(clip))
+			scene.scrub(scene.player.get_animation(clip).length*.5)
+			await shot("inspection-"+lighting+"-"+clip)
+	scene.queue_free()
+	await frames(4)

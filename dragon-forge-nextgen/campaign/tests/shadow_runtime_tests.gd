@@ -3,6 +3,7 @@ const Rules=preload("res://campaign/progress.gd")
 const Fusion=preload("res://campaign/fusion.gd")
 const Combat=preload("res://campaign/guardian_combat.gd")
 const World=preload("res://campaign/world.gd")
+const ShadowContract=preload("res://release/shadow_contract.gd")
 const Enemy=preload("res://campaign/enemy.gd")
 var checks=0
 var failures=0
@@ -24,6 +25,7 @@ func run():
 	check(w.forge_shadow(),"real Forge creates Shadow resonance");check(w.hatch_shadow(),"real Forge awakens Umbra");check(w.campaign.guardians==["fire","ice","storm","stone","venom","shadow"],"world owns six ordered guardians")
 	w.hud.close_overlay();w.dragon.position=Vector3(6,.1,8);w.dragon.input_grace=0;check(w.equip_reserve("shadow"),"Nursery equips Umbra as reserve");w.hud.close_overlay();w.party.swap_remaining=0;w.dragon.input_grace=0;check(w.swap_guardian("shadow"),"world swaps to Umbra")
 	check(w.dragon.guardian=="shadow" and w.dragon.rig.skeleton.get_bone_count()==26 and w.dragon.rig.player.has_animation("burst"),"Umbra controller uses actual imported rig")
+	ShadowContract.run(w,check)
 	var hp=w.dragon.state.hp;check(Combat.dodge(w.dragon.state),"Umbra begins authoritative dodge");check(w.dragon.receive_damage(22)==0 and w.dragon.state.hp==hp and w.dragon.state.phase==1,"real world incoming hit during i-frames earns Phase")
 	check(w.dragon.receive_damage(22)==0 and w.dragon.state.phase==2,"second real world hit reaches Phase cap")
 	w.dragon.advance_combat(.30);w.dragon.state.heat=0;w.dragon.state.cooldowns.clear();w.dragon.input_grace=0

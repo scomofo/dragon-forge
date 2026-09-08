@@ -1,5 +1,6 @@
 extends Node
 ## Explicit opt-in package check. Never loads or writes the player's campaign/preferences.
+const ShadowContract = preload("res://release/shadow_contract.gd")
 const World = preload("res://campaign/world.gd")
 const Rules = preload("res://campaign/progress.gd")
 const Data = preload("res://campaign/data.gd")
@@ -129,6 +130,7 @@ func run() -> void:
 		w.party.swap_remaining = 0
 		w.swap_guardian(pair[1])
 		check(w.party.active_id == pair[1] and w.dragon.guardian == pair[1] and is_instance_valid(w.dragon.rig), "packed guardian swap " + pair[1])
+	ShadowContract.run(w,check)
 	var audio = Audio.new()
 	audio.test_mode = true
 	root.add_child(audio)
@@ -140,38 +142,49 @@ func run() -> void:
 	var store = Store.new()
 	store.import_legacy = false
 	store.path = "user://release-check-%s.json" % str(Time.get_ticks_usec())
-	var old = s.duplicate(true)
-	# Seed a valid schema-5 snapshot: Cairn and Nox did not exist yet.
-	old.version = 5
-	old.guardians = ["fire","ice","storm"]
-	old.loadout = ["fire","storm"]
-	old.active_guardian = "fire"
-	old.erase("stone_imprint_recovered")
-	old.erase("stone_forged")
-	old.erase("venom_culture_recovered")
-	old.erase("venom_forged")
-	old.erase("shadow_forged")
-	var bytes = JSON.stringify(old)
-	var f = FileAccess.open(store.path,FileAccess.WRITE)
-	check(f != null,"temporary save writable")
-	if f != null:
-		f.store_string(bytes)
-		f.close()
-		var loaded = store.read_campaign()
-		check(loaded.version == 8 and not loaded.stone_imprint_recovered and not loaded.stone_forged and not loaded.venom_culture_recovered and not loaded.venom_forged and not loaded.shadow_forged, "schema-5 campaign migrates through Shadow to schema 8 with no unearned roster progress")
-		check(FileAccess.get_file_as_string(store.path) == bytes,"load leaves old bytes intact")
-		check(store.write_campaign(loaded),"exported save writes successfully")
-		check(FileAccess.get_file_as_string(store.path+".bak") == bytes,"exported save backs up old bytes")
-	for suffix in ["", ".bak", ".tmp"]:
-		if FileAccess.file_exists(store.path+suffix):
-			DirAccess.remove_absolute(ProjectSettings.globalize_path(store.path+suffix))
+	for version in [5,7]:
+		var old = s.duplicate(true)
+		old.version = version
+		old.active_guardian = "fire"
+		old.erase("shadow_forged")
+		if version == 5:
+			old.guardians = ["fire","ice","storm"]
+			old.loadout = ["fire","storm"]
+			for key in ["stone_imprint_recovered","stone_forged","venom_culture_recovered","venom_forged"]:
+				old.erase(key)
+		else:
+			old.guardians = ["fire","ice","storm","stone","venom"]
+			old.loadout = ["fire","venom"]
+		# Deliberate formatting checks byte preservation, not merely parsed equality.
+		var bytes = JSON.stringify(old,"  ") + "\n"
+		var temporary = FileAccess.open(store.path,FileAccess.WRITE)
+		check(temporary != null,"temporary schema-%d save writable" % version)
+		if temporary != null:
+			temporary.store_string(bytes)
+			temporary.close()
+			var loaded = store.read_campaign()
+			check(not store.blocked and loaded.version == 8 and not loaded.shadow_forged, "schema-%d migrates to 8 without Shadow progress" % version)
+			var expected = old.duplicate(true)
+			expected.version = 8
+			expected.shadow_forged = false
+			if version == 5:
+				for key in ["stone_imprint_recovered","stone_forged","venom_culture_recovered","venom_forged"]:
+					expected[key] = false
+			check(loaded == expected,"schema-%d preserves all earned progression" % version)
+			check(FileAccess.get_file_as_string(store.path) == bytes,"load leaves schema-%d bytes intact" % version)
+			check(store.write_campaign(loaded),"exported schema-%d migration writes successfully" % version)
+			check(FileAccess.get_file_as_string(store.path+".bak") == bytes,"exported save backs up exact schema-%d bytes" % version)
+			check(store.read_campaign() == expected,"schema-%d migration round-trips" % version)
+		for suffix in ["", ".bak", ".tmp"]:
+			if FileAccess.file_exists(store.path+suffix):
+				DirAccess.remove_absolute(ProjectSettings.globalize_path(store.path+suffix))
 	w.hud.close_overlay()
 	w.queue_free()
 	await frames(5)
 	# Silent mixer drain before process teardown.
 	await get_tree().create_timer(.3,true).timeout
 	var result = {"checks":checks,"failures":failures,"os":OS.get_name(),"architecture":Engine.get_architecture_name(),"editor":OS.has_feature("editor"),"renderer":RenderingServer.get_current_rendering_method(),"engine":Engine.get_version_info(),"build":info,"note":"Finite prepared-state package checks, not a human playthrough or target-device benchmark."}
-	f = FileAccess.open(output.path_join("package-check.json"),FileAccess.WRITE)
+	var f = FileAccess.open(output.path_join("package-check.json"),FileAccess.WRITE)
 	if f != null: f.store_string(JSON.stringify(result,"  ")); f.close()
 	print("EXPORT_SMOKE: %d checks, %d failures" % [checks,failures])
 	quit(1 if failures else 0)

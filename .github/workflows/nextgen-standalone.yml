@@ -53,11 +53,11 @@ jobs:
           path: ${{ runner.temp }}/df-release/Dragon_Forge_Standalone_macOS.zip
           retention-days: 14
       - name: Archive exact source revision for editor users
-        run: git archive --format=zip -o "$RUNNER_TEMP/df-release/Dragon_Forge_Cairn_Editor_Project.zip" HEAD:dragon-forge-nextgen
+        run: git archive --format=zip -o "$RUNNER_TEMP/df-release/Dragon_Forge_Shadow_Editor_Project.zip" HEAD:dragon-forge-nextgen
       - uses: actions/upload-artifact@v4
         with:
           name: standalone-source
-          path: ${{ runner.temp }}/df-release/Dragon_Forge_Cairn_Editor_Project.zip
+          path: ${{ runner.temp }}/df-release/Dragon_Forge_Shadow_Editor_Project.zip
           retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()

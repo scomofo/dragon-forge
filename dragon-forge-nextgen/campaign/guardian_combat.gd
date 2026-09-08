@@ -56,7 +56,7 @@ static func guardian_name(id: String) -> String:
 
 static func fresh(module: String = "", guardian: String = "fire") -> Dictionary:
 	var maximum: float = Modules.profile(module).hp * {"fire":1.0, "ice":.90, "storm":.85, "stone":1.15, "venom":.95, "shadow":.82}.get(guardian, 1.0)
-	return {"evolution":"", "guardian":guardian, "ward":0.0, "resolve":0, "phase":0, "module":module if Modules.valid(module) else "", "hp":maximum, "max_hp":maximum, "heat":0.0, "cooldowns":{}, "iframes":0.0, "dash":0.0, "dodge_cd":0.0, "guard":false, "action":"", "action_time":0.0, "action_hit":false}
+	return {"evolution":"", "guardian":guardian, "ward":0.0, "resolve":0, "phase":0, "module":module if Modules.valid(module) else "", "hp":maximum, "max_hp":maximum, "heat":0.0, "cooldowns":{}, "iframes":0.0, "dodge_iframes":0.0, "dash":0.0, "dodge_cd":0.0, "guard":false, "action":"", "action_time":0.0, "action_hit":false}
 
 static func tick(state: Dictionary, delta: float, guarding: bool = false) -> String:
 	var dt = maxf(delta, 0.0) if is_finite(delta) else 0.0
@@ -73,6 +73,7 @@ static func tick(state: Dictionary, delta: float, guarding: bool = false) -> Str
 	state.guard = guarding and state.hp > 0.0 and state.dash <= 0.0 and state.action == ""
 	state.heat = maxf(0.0, state.heat - dt * float(Modules.profile(state.get("module", "")).cooling) * (0.5 if state.guard else 1.0))
 	for key in ["iframes", "dash", "dodge_cd"]: state[key] = maxf(0.0, state[key] - dt)
+	state.dodge_iframes = maxf(0.0, state.get("dodge_iframes",0.0) - dt)
 	for key in state.cooldowns.keys(): state.cooldowns[key] = maxf(0.0, state.cooldowns[key] - dt)
 	return impact
 
@@ -94,14 +95,15 @@ static func cast(state: Dictionary, id: String) -> bool:
 
 static func dodge(state: Dictionary) -> bool:
 	if state.hp <= 0.0 or state.dodge_cd > 0.0 or state.heat > 90.0: return false
-	cancel_action(state); state.heat += 10.0; state.iframes = 0.24; state.dash = 0.18; state.dodge_cd = 0.85; state.guard = false
+	cancel_action(state); state.heat += 10.0; state.iframes = 0.24; state.dodge_iframes = 0.24; state.dash = 0.18; state.dodge_cd = 0.85; state.guard = false
 	return true
 
 static func damage(state: Dictionary, amount: float) -> float:
-	if amount <= 0.0 or state.hp <= 0.0:return 0.0
+	if not is_finite(amount) or amount <= 0.0 or state.hp <= 0.0:return 0.0
 	if state.iframes > 0.0:
 		# Phase is earned only when a real incoming hit intersects an active dodge window.
-		if state.get("guardian","") == "shadow":state.phase=mini(MAX_PHASE,int(state.get("phase",0))+1)
+		if state.get("guardian","") == "shadow" and state.get("dodge_iframes",0.0)>0.0:
+			state.phase=mini(MAX_PHASE,int(state.get("phase",0))+1)
 		return 0.0
 	var guarded = state.guard
 	var applied = minf(state.hp, amount * (0.45 if state.get("ward", 0.0) > 0.0 else 1.0) * (float(Modules.profile(state.get("module", "")).guard) if guarded else 1.0))
@@ -109,6 +111,7 @@ static func damage(state: Dictionary, amount: float) -> float:
 	if applied > 0.0 and guarded and state.get("guardian","") == "stone": state.resolve = mini(MAX_RESOLVE, int(state.get("resolve",0)) + 1)
 	if state.hp <= 0.0: cancel_action(state)
 	state.iframes = 0.16
+	state.dodge_iframes = 0.0
 	return applied
 
 static func in_cone(origin: Vector3, facing: Vector3, target: Vector3, reach: float, cosine: float) -> bool:
