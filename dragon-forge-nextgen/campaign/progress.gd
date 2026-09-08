@@ -5,10 +5,10 @@ const Modules = preload("res://sim/forge_modules.gd")
 const Growth = preload("res://campaign/growth.gd")
 const Fusion = preload("res://campaign/fusion.gd")
 const UPGRADE_IDS = ["plating", "power", "cooling"]
-const GUARDIAN_IDS = ["fire", "ice", "storm", "stone", "venom", "shadow", "void", "light"]
+const GUARDIAN_IDS = ["fire", "ice", "storm", "stone", "venom", "shadow", "void", "light", "synthesis"]
 
 static func fresh() -> Dictionary:
-	return {"version":10, "void_imprint_recovered":false, "void_forged":false, "lattice_recovered":false, "storm_forged":false, "stone_imprint_recovered":false, "stone_forged":false, "venom_culture_recovered":false, "venom_forged":false, "shadow_forged":false, "loadout":[], "evolutions":{"fire":"","ice":"","storm":""}, "guardians":["fire"], "active_guardian":"fire", "ice_rescued":false, "hatched":false, "room":"forge", "visited":["forge"], "cleared":[], "relays":[], "caches":[], "journals":[], "cores":[], "installed":[], "salvage":0, "upgrades":{"plating":0,"power":0,"cooling":0}, "module":"", "finished":false, "legacy_imported":false}
+	return {"version":11, "synthesis_forged":false, "void_imprint_recovered":false, "void_forged":false, "lattice_recovered":false, "storm_forged":false, "stone_imprint_recovered":false, "stone_forged":false, "venom_culture_recovered":false, "venom_forged":false, "shadow_forged":false, "loadout":[], "evolutions":{"fire":"","ice":"","storm":""}, "guardians":["fire"], "active_guardian":"fire", "ice_rescued":false, "hatched":false, "room":"forge", "visited":["forge"], "cleared":[], "relays":[], "caches":[], "journals":[], "cores":[], "installed":[], "salvage":0, "upgrades":{"plating":0,"power":0,"cooling":0}, "module":"", "finished":false, "legacy_imported":false}
 
 static func normalize(value: Variant) -> Dictionary:
 	if not value is Dictionary: return {}
@@ -28,11 +28,9 @@ static func normalize(value: Variant) -> Dictionary:
 		if not _valid_guardians(s.get("guardians"),3) or not s.get("evolutions") is Dictionary or s.evolutions.size()!=3: return {}
 		s.version=6;s.stone_imprint_recovered=false;s.stone_forged=false
 	if s.get("version",0)==6:
-		# Validate the critical v6 roster shape before extending it. Migration itself never writes.
 		if not _valid_guardians(s.get("guardians"),4) or not s.get("evolutions") is Dictionary or s.evolutions.size()!=3:return {}
 		s.version=7;s.venom_culture_recovered=false;s.venom_forged=false
 	if s.get("version",0)==7:
-		# Shadow is direct Fire + Venom resonance; migration never grants that earned result.
 		if not _valid_guardians(s.get("guardians"),5) or not s.get("evolutions") is Dictionary or s.evolutions.size()!=3:return {}
 		if not s.has("venom_culture_recovered") or not s.venom_culture_recovered is bool or not s.has("venom_forged") or not s.venom_forged is bool:return {}
 		s.version=8;s.shadow_forged=false
@@ -40,18 +38,20 @@ static func normalize(value: Variant) -> Dictionary:
 		if not _valid_guardians(s.get("guardians"),6) or not s.get("shadow_forged") is bool:return {}
 		s.version=9;s.void_imprint_recovered=false;s.void_forged=false
 	if s.get("version",0)==9:
-		# Reject future ownership now; grant the earned completion reward only after
-		# every old progression, loadout and active-guardian constraint has passed.
 		if not _valid_guardians(s.get("guardians"),7):return {}
 		s.version=10;migrate_light=true
+	if s.get("version",0)==10:
+		# Synthesis is an earned Light + Void fusion. Migration never grants it.
+		if not _valid_guardians(s.get("guardians"),8):return {}
+		s.version=11;s.synthesis_forged=false
 	var template=fresh()
 	for key in template:
 		if not s.has(key): return {}
 	for key in ["version","salvage"]:
 		if not _integer(s[key],0,1000000): return {}
 		s[key]=int(s[key])
-	if s.version!=10:return {}
-	for key in ["hatched","finished","legacy_imported","ice_rescued","lattice_recovered","storm_forged","stone_imprint_recovered","stone_forged","venom_culture_recovered","venom_forged","shadow_forged","void_imprint_recovered","void_forged"]:
+	if s.version!=11:return {}
+	for key in ["hatched","finished","legacy_imported","ice_rescued","lattice_recovered","storm_forged","stone_imprint_recovered","stone_forged","venom_culture_recovered","venom_forged","shadow_forged","void_imprint_recovered","void_forged","synthesis_forged"]:
 		if not s[key] is bool:return {}
 	if not s.room is String or not Data.ROOMS.has(s.room) or not s.module is String or (s.module!="" and not Modules.valid(s.module)):return {}
 	var zones=[]
@@ -77,8 +77,6 @@ static func normalize(value: Variant) -> Dictionary:
 		if not Data.zone_unlocked(s,Data.ROOMS[id].zone):return {}
 	if s.finished and (s.installed.size()!=4 or not s.cleared.has("singularity-final")):return {}
 	if not s.hatched and (s.room!="forge" or not s.cleared.is_empty() or not s.cores.is_empty()):return {}
-	# Ownership is a set. Optional recipes do not impose a recruitment order.
-	# Keep the stored order for presentation; each guardian still needs earned flags below.
 	if not _valid_guardians(s.guardians,GUARDIAN_IDS.size()):return {}
 	if not s.active_guardian is String or not s.guardians.has(s.active_guardian):return {}
 	if s.ice_rescued and (not s.hatched or not s.visited.has("frozen-vault")):return {}
@@ -103,6 +101,8 @@ static func normalize(value: Variant) -> Dictionary:
 	if s.void_forged and Fusion.void_reason(s)!="":return {}
 	if s.guardians.has("void") and not s.void_forged:return {}
 	if s.guardians.has("light") and not s.finished:return {}
+	if s.synthesis_forged and Fusion.synthesis_reason(s)!="":return {}
+	if s.guardians.has("synthesis") and not s.synthesis_forged:return {}
 	if not s.loadout is Array:return {}
 	if s.loadout.is_empty():
 		if s.guardians.size()>2:return {}
@@ -116,8 +116,6 @@ static func normalize(value: Variant) -> Dictionary:
 	return s
 
 static func _grant_light(s: Dictionary) -> void:
-	# Browser canon grants Light for Singularity completion, including old finishers.
-	# Materialize an implicit existing pair before adding a third owned guardian.
 	if s.guardians.has("light"):return
 	if s.guardians.size()>=2:s.loadout=Fusion.members(s)
 	s.guardians.append("light")
@@ -189,6 +187,5 @@ static func rescue_ice(s:Dictionary)->bool:
 	s.ice_rescued=true;return true
 static func hatch_ice(s:Dictionary)->bool:
 	if s.room!="forge" or not s.ice_rescued or s.guardians.has("ice"):return false
-	# Cairn may already be the first reserve. Preserve that pair when Rime joins later.
 	if s.guardians.size()>=2:s.loadout=Fusion.members(s)
 	s.guardians.append("ice");return true
