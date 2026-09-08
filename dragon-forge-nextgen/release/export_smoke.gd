@@ -1,5 +1,6 @@
 extends Node
 ## Explicit opt-in package check. Never loads or writes the player's campaign/preferences.
+const LightContract = preload("res://release/light_contract.gd")
 const VoidContract = preload("res://release/void_contract.gd")
 const ShadowContract = preload("res://release/shadow_contract.gd")
 const World = preload("res://campaign/world.gd")
@@ -71,7 +72,7 @@ func fixture() -> Dictionary:
 	s.void_imprint_recovered = true
 	s.void_forged = true
 	s.finished = true
-	s.guardians = ["fire","ice","storm","stone","venom","shadow","void"]
+	s.guardians = ["fire","ice","storm","stone","venom","shadow","void","light"]
 	s.loadout = ["fire","stone"]
 	s.evolutions = {"fire":"flashfire","ice":"aegis","storm":"overcharge"}
 	return s
@@ -86,7 +87,7 @@ func run() -> void:
 		check(not OS.has_feature("editor"), "running standalone template, not editor")
 		check(not ResourceLoader.exists("res://campaign/tests/run.gd"), "development tests excluded from pack")
 	var info = JSON.parse_string(FileAccess.get_file_as_string("res://release/build_info.json"))
-	check(info is Dictionary and info.get("assets",[]).size() == 73, "pack build identity and 73 art/audio resources present")
+	check(info is Dictionary and info.get("assets",[]).size() == 78, "pack build identity and 78 art/audio resources present")
 	if not info is Dictionary: quit(1); return
 	for path in info.assets:
 		var resource = load(path)
@@ -110,7 +111,7 @@ func run() -> void:
 	w.hud.close_overlay()
 	w.title_open = false
 	var s = fixture()
-	check(not Rules.normalize(s).is_empty(), "prepared checkpoint is valid schema 9")
+	check(not Rules.normalize(s).is_empty(), "prepared checkpoint is valid schema 10")
 	for room in Data.ROOMS:
 		w.campaign = s.duplicate(true)
 		w.campaign.room = room
@@ -128,7 +129,7 @@ func run() -> void:
 			paused = false
 	w.campaign = s.duplicate(true)
 	w._enter_room("forge",true)
-	for pair in [["fire","ice"],["fire","storm"],["fire","stone"],["fire","venom"],["fire","shadow"],["fire","void"]]:
+	for pair in [["fire","ice"],["fire","storm"],["fire","stone"],["fire","venom"],["fire","shadow"],["fire","void"],["fire","light"]]:
 		w.campaign.loadout = pair
 		w.campaign.active_guardian = "fire"
 		w._enter_room("forge",true)
@@ -137,7 +138,8 @@ func run() -> void:
 		w.swap_guardian(pair[1])
 		check(w.party.active_id == pair[1] and w.dragon.guardian == pair[1] and is_instance_valid(w.dragon.rig), "packed guardian swap " + pair[1])
 		if pair[1]=="shadow":ShadowContract.run(w,check)
-	VoidContract.run(w,check)
+		if pair[1]=="void":VoidContract.run(w,check)
+		if pair[1]=="light":LightContract.run(w,check)
 	var audio = Audio.new()
 	audio.test_mode = true
 	root.add_child(audio)
@@ -149,12 +151,13 @@ func run() -> void:
 	var store = Store.new()
 	store.import_legacy = false
 	store.path = "user://release-check-%s.json" % str(Time.get_ticks_usec())
-	for version in [5,7,8]:
+	for version in [5,7,8,9]:
 		var old = s.duplicate(true)
 		old.version = version
 		old.active_guardian = "fire"
-		old.erase("void_imprint_recovered")
-		old.erase("void_forged")
+		if version<9:
+			old.erase("void_imprint_recovered")
+			old.erase("void_forged")
 		if version<8:old.erase("shadow_forged")
 		if version == 5:
 			old.guardians = ["fire","ice","storm"]
@@ -164,9 +167,12 @@ func run() -> void:
 		elif version==7:
 			old.guardians = ["fire","ice","storm","stone","venom"]
 			old.loadout = ["fire","venom"]
-		else:
+		elif version==8:
 			old.guardians=["fire","ice","storm","stone","venom","shadow"]
 			old.loadout=["fire","shadow"]
+		else:
+			old.guardians=["fire","ice","storm","stone","venom","shadow","void"]
+			old.loadout=["fire","void"]
 		# Deliberate formatting checks byte preservation, not merely parsed equality.
 		var bytes = JSON.stringify(old,"  ") + "\n"
 		var temporary = FileAccess.open(store.path,FileAccess.WRITE)
@@ -175,12 +181,14 @@ func run() -> void:
 			temporary.store_string(bytes)
 			temporary.close()
 			var loaded = store.read_campaign()
-			check(not store.blocked and loaded.version == 9 and not loaded.void_imprint_recovered and not loaded.void_forged, "schema-%d migrates to 9 without Void progress" % version)
+			check(not store.blocked and loaded.version == 10 and loaded.guardians.has("light"), "completed schema-%d migrates to 10 with earned Light" % version)
 			var expected = old.duplicate(true)
-			expected.version = 9
+			expected.version = 10
+			expected.guardians.append("light")
 			if version<8:expected.shadow_forged = false
-			expected.void_imprint_recovered=false
-			expected.void_forged=false
+			if version<9:
+				expected.void_imprint_recovered=false
+				expected.void_forged=false
 			if version == 5:
 				for key in ["stone_imprint_recovered","stone_forged","venom_culture_recovered","venom_forged"]:
 					expected[key] = false

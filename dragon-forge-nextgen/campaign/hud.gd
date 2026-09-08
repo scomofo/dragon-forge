@@ -48,7 +48,9 @@ func _process(delta: float) -> void:
 	var active_id: String=world.party.active_id
 	health_text.text=Growth.form_name(active_id,actor.state.get("evolution", "") != "").to_upper()+"   /   %d / %d" % [roundi(actor.state.hp),roundi(actor.state.max_hp)]
 	if not actor.active:health_text.text="MAGMA / DORMANT"
-	if active_id=="void":
+	if active_id=="light":
+		defensive_text.text="RESTORATION / SELF HEAL 25%"
+	elif active_id=="void":
 		defensive_text.text="NULL REFLECT / %.1fs" % actor.state.null_reflect if actor.state.get("null_reflect",0.0)>0.0 else "VOID / PUSH, PULL AND COUNTER"
 	elif active_id=="shadow":
 		defensive_text.text="PHASE %d / %d  /  DODGE THROUGH HITS" % [int(actor.state.get("phase",0)),GuardianCombat.MAX_PHASE]
@@ -81,6 +83,8 @@ func _process(delta: float) -> void:
 			if id in ["claw","breath"]:card.cost.text="%d + TOXIN / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 			elif id=="wall":card.cost.text="%d/tick + TOXIN / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 			elif id=="burst":card.cost.text="%d / +25%% per TOXIN / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
+		if active_id=="light" and id=="burst":
+			card.cost.text="25%% self heal / %d heat" % roundi(GuardianCombat.heat_cost(actor.state,id))
 		if active_id=="shadow" and id=="burst":
 			card.cost.text="%d / +30%% per PHASE / %d heat" % [roundi(world.campaign_damage(id)),roundi(GuardianCombat.heat_cost(actor.state,id))]
 		var cd: float=actor.state.cooldowns.get(id,0.0)
@@ -190,7 +194,7 @@ func show_title() -> void:
 	_label(overlay_column,"DRAGON FORGE",42,GOLD)
 	_label(overlay_column,"RECONNECTION",25,TEAL)
 	_wrapped(overlay_column,"A compact playable campaign through four broken sectors. Restore their cores. Rescue, evolve and fuse guardians. Choose your expedition pair. Stop the Great Reset.",20)
-	_label(overlay_column,"VOID RESONANCE   /   22 ROOMS   /   SEVEN GUARDIANS, TWO FIELD SLOTS",14,MUTED)
+	_label(overlay_column,"LIGHT RESTORATION   /   22 ROOMS   /   EIGHT GUARDIANS, TWO FIELD SLOTS",14,MUTED)
 	var start=_button(overlay_column,"Continue campaign" if world.store.existed or world.has_started else "Begin campaign")
 	start.pressed.connect(func():world.begin_campaign(false))
 	start.grab_focus()
@@ -236,6 +240,7 @@ func show_map() -> void:
 	overlay_column.add_child(options)
 	options.add_theme_constant_override("separation",12)
 	var final_button=_button(options,"ENTER THE SINGULARITY")
+	final_button.name="SingularityExpedition"
 	final_button.disabled=world.campaign.installed.size()!=4 or world.campaign.room!="forge"
 	final_button.pressed.connect(func():world.travel("singularity"))
 	if world.campaign.room!="forge":
@@ -397,7 +402,19 @@ func show_ending() -> void:
 	_label(overlay_column,"DRAGON FORGE / RECONNECTION COMPLETE",19,GOLD)
 	_wrapped(overlay_column,"The four sectors answer together. The frozen memories thaw. The storm slows to a pulse. For the first time, the administrator listens.\n\nFelix: “You did not rebuild it by erasing what was broken. You brought it home.”",21,PAPER)
 	_wrapped(overlay_column,"Magma rests beside a living Forge. The campaign is complete; its paths remain open. You can return for missed caches, records and upgrades.",17,MUTED)
-	_button(overlay_column,"Return home").pressed.connect(func():world.return_to_forge())
+	_wrapped(overlay_column,"LUMEN / LIGHT JOINS THE COLLECTION. Your expedition pair is preserved. Equip the stained-glass guardian at the Forge Nursery; Restoration heals Lumen during combat.",18,Color("ffe8a8"))
+	var recover: Button
+	if not world.campaign.void_imprint_recovered:
+		_wrapped(overlay_column,"A preserved Void imprint has appeared in this chamber. Follow the VOID IMPRINT marker and press E to recover it, then bring it to Resonance Fusion at the Forge to awaken Null.",18,TEAL)
+		if world.campaign.room=="singularity":
+			recover=_button(overlay_column,"Stay and recover the Void imprint")
+			recover.name="StayForVoidImprint"
+			recover.pressed.connect(func():close_overlay();toast("Follow the VOID IMPRINT marker. Press E at the plinth to recover it."))
+	var home=_button(overlay_column,"Return home")
+	home.name="ReturnHomeFromEnding"
+	home.pressed.connect(func():world.return_to_forge())
+	if recover!=null:recover.grab_focus()
+	else:home.grab_focus()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if audio_settings_open and event.is_action_pressed("ng_menu") and not event.is_echo():
@@ -449,14 +466,14 @@ func show_party() -> void:
 	row.add_theme_constant_override("h_separation",14)
 	row.add_theme_constant_override("v_separation",14)
 	scroll.add_child(row)
-	for id in ["fire","ice","storm","stone","venom","shadow","void"]:
+	for id in ["fire","ice","storm","stone","venom","shadow","void","light"]:
 		var card=_panel(row);card.custom_minimum_size.x=315
 		card.name="Guardian_"+id
 		card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 		var col=_column(card,9)
 		var owned: bool=world.campaign.guardians.has(id)
 		var selected: bool=world.party.states.has(id)
-		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa"),"stone":Color("c8ad7c"),"venom":Color("a8db61"),"shadow":Color("b78be0"),"void":Color("44eeee")}[id])
+		_label(col,Growth.form_name(id,Growth.choice(world.campaign,id)!="").to_upper(),23,{"fire":GOLD,"ice":TEAL,"storm":Color("c4b1fa"),"stone":Color("c8ad7c"),"venom":Color("a8db61"),"shadow":Color("b78be0"),"void":Color("44eeee"),"light":Color("ffe8a8")}[id])
 		_label(col,("ACTIVE" if world.party.active_id==id else ("RESERVE" if selected else "AT THE FORGE")) if owned else "NOT RECRUITED",14,MUTED)
 		if owned:
 			if selected:
@@ -466,7 +483,7 @@ func show_party() -> void:
 				_label(col,"Not in the expedition",15,MUTED)
 			for slot in GuardianCombat.ORDER:
 				_label(col,GuardianCombat.rule({"guardian":id,"evolution":Growth.choice(world.campaign,id)},slot).name,17,PAPER)
-			var tips={"fire":"Powers heat relays. Direct Fire hits shatter Chill for +40% once.","ice":"Chills exposed enemies. Aegis protects Rime, even after swapping.","storm":"Lance / Well charge enemies. Discharge consumes Charge for +50% once.","stone":"Guard landed hits to build up to 3 Resolve. Earthshatter gains +20% per Resolve and spends it only on a landed hit.","venom":"Fang, Spit and Cloud build Toxin. Septic Bloom gains +25% per stack and consumes stacks only when it lands.","shadow":"A real incoming hit during dodge i-frames builds Phase (max 2). Phase Strike gains +30% per Phase and spends it only when damage lands.","void":"Void Rift pushes exposed enemies. Null Reflect briefly halves incoming damage and counters its source. Siphon Rift pulls and heals 40% of damage dealt. Shields block control and drain; bosses and locked tells remain anchored."}
+			var tips={"fire":"Powers heat relays. Direct Fire hits shatter Chill for +40% once.","ice":"Chills exposed enemies. Aegis protects Rime, even after swapping.","storm":"Lance / Well charge enemies. Discharge consumes Charge for +50% once.","stone":"Guard landed hits to build up to 3 Resolve. Earthshatter gains +20% per Resolve and spends it only on a landed hit.","venom":"Fang, Spit and Cloud build Toxin. Septic Bloom gains +25% per stack and consumes stacks only when it lands.","shadow":"A real incoming hit during dodge i-frames builds Phase (max 2). Phase Strike gains +30% per Phase and spends it only when damage lands.","void":"Void Rift pushes exposed enemies. Null Reflect briefly halves incoming damage and counters its source. Siphon Rift pulls and heals 40% of damage dealt. Shields block control and drain; bosses and locked tells remain anchored.","light":"Radiant Beam strikes exposed foes at range. Solar Flare hits nearby exposed foes once. Restoration heals Lumen by 25% of maximum HP; it cannot revive or heal a reserve. Shields still block both attacks."}
 			_wrapped(col,tips[id],16,MUTED,272)
 			if not selected:
 				var equip=_button(col,"Equip as reserve")
@@ -491,6 +508,8 @@ func show_party() -> void:
 		elif id=="venom":
 			_wrapped(col,"Rescue Rime, then recover the preserved Venom culture from Frozen Vault. Canonical Ice + Venom remains Venom; Rime is retained.",17,PAPER,272)
 			_button(col,"View fusion recipes").pressed.connect(show_fusion)
+		elif id=="light":
+			_wrapped(col,"Stabilize the Singularity to earn Lumen. Earlier finishers receive Light on Continue. No fusion recipe or Void ownership is required.",17,PAPER,272)
 		elif id=="void":
 			_wrapped(col,"Stabilize the Singularity, recover its preserved Void imprint, then awaken Null at Resonance Fusion. Existing guardians are retained.",17,PAPER,272)
 			_button(col,"View resonance requirements").pressed.connect(show_fusion)

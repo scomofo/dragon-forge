@@ -24,16 +24,16 @@ func venom_owned()->Dictionary:
 	return c
 func run():
 	var fresh=Rules.fresh()
-	check(fresh.version==9,"fresh schema 9")
+	check(fresh.version==10,"fresh schema 10")
 	check(not fresh.shadow_forged,"fresh Shadow flag false")
 	var old=fresh.duplicate(true);old.version=7;old.erase("shadow_forged")
 	var migrated=Rules.normalize(old)
-	check(migrated.version==9,"schema 7 migrates")
+	check(migrated.version==10,"schema 7 migrates")
 	check(not migrated.shadow_forged,"migration grants no Shadow progress")
 	var impossible=old.duplicate(true);impossible.guardians=["fire","ice","storm","stone","venom","shadow"]
 	check(Rules.normalize(impossible).is_empty(),"schema 7 rejects impossible sixth guardian")
 	var c=venom_owned()
-	check(not Rules.normalize(c).is_empty(),"five-guardian source state valid under schema 9")
+	check(not Rules.normalize(c).is_empty(),"five-guardian source state valid under schema 10")
 	check(Fusion.shadow_reason(c)=="","canonical Fire plus Venom recipe ready")
 	var no_nox=c.duplicate(true);no_nox.guardians.erase("venom");no_nox.loadout=["fire","ice"]
 	check(Fusion.shadow_reason(no_nox)!="","Shadow requires Nox")

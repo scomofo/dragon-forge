@@ -83,7 +83,7 @@ func migration(c: Dictionary, version: int) -> void:
 	f.store_string(bytes)
 	f.close()
 	var loaded = store.read_campaign()
-	check(not store.blocked and loaded.version == 9, "schema %d accepts legitimate optional roster" % version)
+	check(not store.blocked and loaded.version == 10, "schema %d accepts legitimate optional roster" % version)
 	check(loaded == in_memory, "disk and in-memory migration produce identical progress")
 	for key in old:
 		if key != "version": check(loaded.get(key) == old[key], "schema %d preserves %s" % [version, key])
