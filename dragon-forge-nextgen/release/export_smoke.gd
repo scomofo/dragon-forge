@@ -61,7 +61,9 @@ func fixture() -> Dictionary:
 	s.storm_forged = true
 	s.stone_imprint_recovered = true
 	s.stone_forged = true
-	s.guardians = ["fire","ice","storm","stone"]
+	s.venom_culture_recovered = true
+	s.venom_forged = true
+	s.guardians = ["fire","ice","storm","stone","venom"]
 	s.loadout = ["fire","stone"]
 	s.evolutions = {"fire":"flashfire","ice":"aegis","storm":"overcharge"}
 	return s
@@ -76,7 +78,7 @@ func run() -> void:
 		check(not OS.has_feature("editor"), "running standalone template, not editor")
 		check(not ResourceLoader.exists("res://campaign/tests/run.gd"), "development tests excluded from pack")
 	var info = JSON.parse_string(FileAccess.get_file_as_string("res://release/build_info.json"))
-	check(info is Dictionary and info.get("assets",[]).size() == 58, "pack build identity and 58 art/audio resources present")
+	check(info is Dictionary and info.get("assets",[]).size() == 63, "pack build identity and 63 art/audio resources present")
 	if not info is Dictionary: quit(1); return
 	for path in info.assets:
 		var resource = load(path)
@@ -100,7 +102,7 @@ func run() -> void:
 	w.hud.close_overlay()
 	w.title_open = false
 	var s = fixture()
-	check(not Rules.normalize(s).is_empty(), "prepared checkpoint is valid schema 6")
+	check(not Rules.normalize(s).is_empty(), "prepared checkpoint is valid schema 7")
 	for room in Data.ROOMS:
 		w.campaign = s.duplicate(true)
 		w.campaign.room = room
@@ -118,14 +120,14 @@ func run() -> void:
 			paused = false
 	w.campaign = s.duplicate(true)
 	w._enter_room("forge",true)
-	for pair in [["fire","ice"],["fire","storm"],["fire","stone"]]:
+	for pair in [["fire","ice"],["fire","storm"],["fire","stone"],["fire","venom"]]:
 		w.campaign.loadout = pair
 		w.campaign.active_guardian = "fire"
 		w._enter_room("forge",true)
 		w.dragon.input_grace = 0
 		w.party.swap_remaining = 0
 		w.swap_guardian(pair[1])
-		check(w.party.active_id == pair[1] and is_instance_valid(w.dragon.rig), "packed guardian swap " + pair[1])
+		check(w.party.active_id == pair[1] and w.dragon.guardian == pair[1] and is_instance_valid(w.dragon.rig), "packed guardian swap " + pair[1])
 	var audio = Audio.new()
 	audio.test_mode = true
 	root.add_child(audio)
@@ -138,13 +140,15 @@ func run() -> void:
 	store.import_legacy = false
 	store.path = "user://release-check-%s.json" % str(Time.get_ticks_usec())
 	var old = s.duplicate(true)
-	# Seed a valid schema-5 snapshot: Cairn did not exist yet.
+	# Seed a valid schema-5 snapshot: Cairn and Nox did not exist yet.
 	old.version = 5
 	old.guardians = ["fire","ice","storm"]
 	old.loadout = ["fire","storm"]
 	old.active_guardian = "fire"
 	old.erase("stone_imprint_recovered")
 	old.erase("stone_forged")
+	old.erase("venom_culture_recovered")
+	old.erase("venom_forged")
 	var bytes = JSON.stringify(old)
 	var f = FileAccess.open(store.path,FileAccess.WRITE)
 	check(f != null,"temporary save writable")
@@ -152,7 +156,7 @@ func run() -> void:
 		f.store_string(bytes)
 		f.close()
 		var loaded = store.read_campaign()
-		check(loaded.version == 6 and not loaded.stone_imprint_recovered and not loaded.stone_forged, "schema-5 campaign migrates to schema 6 in export")
+		check(loaded.version == 7 and not loaded.stone_imprint_recovered and not loaded.stone_forged and not loaded.venom_culture_recovered and not loaded.venom_forged, "schema-5 campaign migrates through Stone to schema 7 in export")
 		check(FileAccess.get_file_as_string(store.path) == bytes,"load leaves old bytes intact")
 		check(store.write_campaign(loaded),"exported save writes successfully")
 		check(FileAccess.get_file_as_string(store.path+".bak") == bytes,"exported save backs up old bytes")
