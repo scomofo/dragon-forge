@@ -89,7 +89,7 @@ func run() -> void:
 		check(not OS.has_feature("editor"), "running standalone template, not editor")
 		check(not ResourceLoader.exists("res://campaign/tests/run.gd"), "development tests excluded from pack")
 	var info = JSON.parse_string(FileAccess.get_file_as_string("res://release/build_info.json"))
-	check(info is Dictionary and info.get("assets",[]).size() == 83, "pack build identity and 83 art/audio resources present")
+	check(info is Dictionary and info.get("assets",[]).size() == 87, "pack build identity and 87 art/audio resources present")
 	if not info is Dictionary: quit(1); return
 	for path in info.assets:
 		var resource = load(path)
