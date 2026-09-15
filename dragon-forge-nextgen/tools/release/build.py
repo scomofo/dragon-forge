@@ -48,7 +48,7 @@ def main() -> None:
     if not version.startswith('4.6.3.stable.'): raise SystemExit(f'Expected 4.6.3 stable, got {version}')
     assets=sorted('res://'+p.relative_to(PROJECT).as_posix() for p in PROJECT.rglob('*')
                   if p.suffix in ('.glb','.png','.mp3','.wav') and '.godot' not in p.parts and 'artifacts' not in p.parts)
-    if len(assets)!=83: raise SystemExit('Expected 33 models, 40 maps and 10 recordings; review inventory before changing this gate.')
+    if len(assets)!=87: raise SystemExit('Expected 33 models, 44 maps and 10 recordings; review inventory before changing this gate.')
     info={'source_commit':args.commit,'engine':version,'assets':assets,
           'build_kind':'standalone-playtest','signing':{'Windows':'unsigned','macOS':'ad-hoc, not notarized'}}
     (PROJECT/'release/build_info.json').write_text(json.dumps(info,indent=2)+'\n')
