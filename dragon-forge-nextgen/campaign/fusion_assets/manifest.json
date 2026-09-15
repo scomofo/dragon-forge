@@ -3,8 +3,8 @@
   "assets": [
     {
       "file": "storm_guardian.glb",
-      "triangles": 2056,
-      "vertices": 1584,
+      "triangles": 10928,
+      "vertices": 7736,
       "surfaces": 1,
       "bones": 17,
       "clips": [
@@ -20,14 +20,14 @@
       ],
       "bounds": [
         [
-          -2.0439999103546143,
+          -2.101138114929199,
           0.7573920488357544,
-          -1.4423339366912842
+          -1.4432224035263062
         ],
         [
-          2.055999994277954,
-          2.301820755004883,
-          2.6364328861236572
+          2.101138114929199,
+          2.2320876121520996,
+          2.6407315731048584
         ]
       ]
     },
@@ -53,11 +53,18 @@
     }
   ],
   "files": {
-    "atlas_base.png": "3f58562559fe4e329c824aae76926613957f42cf6bee2032c1368ec575ec5886",
-    "atlas_emission.png": "264faa55eee75aa2a4f111585e030bea77bfb762aa9a4059201ef84ebe82833d",
-    "atlas_normal.png": "b6b80481667ae61ef5f696b4cf1b7e65549697f57f567f1a13dd210178c8bb10",
-    "atlas_orm.png": "dd9cf42e97dc2db8eb7ca56fad864492a0f6e0d022bfc1afccfbffd17a5bbd75",
+    "atlas_base.png": "ceae9d3aea0fccddaff4140b9e8f3a07ece6427a6a09999b38fc54bfbf0f7cb6",
+    "atlas_emission.png": "0492534d16b30cd90a2fffcd615a87abff81a2e2ef1de8ebf23e92c6ab9523dd",
+    "atlas_normal.png": "7c6eb2823f50e26a806558063f701a0fe3d09caf0d5ae0fad55983448e127d7f",
+    "atlas_orm.png": "ea2c8299bb65addd594eb570a1d6121296d239055b23d2a0ad01d5c927f55864",
     "storm_egg.glb": "5483284060782ea3dd3c80b9f3c7ff53f5903cb5a740daa50f86496a4bbf9212",
-    "storm_guardian.glb": "9f930cca476a741f3a64bdfd0fdfd5b09c7f606dc31afb9a009b21b36636097d"
+    "storm_guardian.glb": "ac06b1460672ba62210967b23b2e6b4563d1533de6b51fe51542920293e01da3"
+  },
+  "source_sha256": "6375d67603f708a9cc48fde6240b418e7c0e7fccab202bb284321f4c69f4cd89",
+  "creature_detail_sha256": "d517421ade7acd1f529cd2b5fb88e802589a39c0058133b24d40af1b9cec46f0",
+  "compiler_sha256": "310b404c03e463e5b0e319ae8160fda3e423fccc1044d7817358b840e91050d2",
+  "authoring_versions": {
+    "numpy": "2.2.6",
+    "Pillow": "11.3.0"
   }
 }

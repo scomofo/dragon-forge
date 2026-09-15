@@ -3,7 +3,7 @@
   "source": "tools/build_art.py",
   "pose_source_sha256": "1c766e8d48ec62889e299c519b4c7bf26d7575047e19da3d8e8e55fd07989491",
   "paint_source_sha256": "3ce557765f0fde7110aac0690d100e757bd6eac2ac25d4ee554d2c96894f5718",
-  "source_sha256": "2c6ee8c14b01d6098b1324683c516f3683dae3e1602dbf1699af10307a4e4ab4",
+  "source_sha256": "310b404c03e463e5b0e319ae8160fda3e423fccc1044d7817358b840e91050d2",
   "units": "metres",
   "up": "+Y",
   "forward": "-Z",
@@ -20,8 +20,8 @@
   "assets": [
     {
       "file": "magma_guardian.glb",
-      "triangles": 13388,
-      "vertices": 8498,
+      "triangles": 17528,
+      "vertices": 11308,
       "surfaces": 1,
       "bones": 24,
       "clips": [
@@ -39,11 +39,11 @@
         [
           -1.157737135887146,
           0.0031845916528254747,
-          -1.3897705078125
+          -1.4450000524520874
         ],
         [
           1.157737135887146,
-          2.9728124141693115,
+          2.972818374633789,
           2.6526992321014404
         ]
       ]
@@ -352,14 +352,24 @@
     "cable_tray.glb": "509dc0bb0fb2edff0546ea1cd9737259c1d075fd333ff8b8c7ab7241302e1c91",
     "core_socket.glb": "0e2b7faec9b08e71cbc6bec84907aee26b2dd87764aabaa81b1c5c9db93a78fa",
     "deck_panel.glb": "76fb037ebc16b604dee1510e14f6e41f3a656f48adce5388d689c1d36ba6c9d3",
+    "dragon_base.png": "5824c66c627b10d00c9bc2bea232898c759a78ba50b486ab5898de767eca3bb8",
+    "dragon_emission.png": "483a94739a4f1b18ce59d69332733d90140b92cc66141404a1a57e04f169cf94",
+    "dragon_normal.png": "940d669a96d85fd1f5da752dd2d5352864c96e5b3a5ab3926c69a26760211cb6",
+    "dragon_orm.png": "d848ca4096b766f4c5ea580f5622c5ee4c1acf9fcece37b58383e359d78bcc1e",
     "firewall_sentinel.glb": "5fe141f0285220e0205cec6aca6e7b0a37655f4b7668f65583b53acf2f30b611",
     "furnace.glb": "4789191632c1bf557c28dbaa70e668dff80b0b85678d547f47fa56c2eec70a3f",
     "incubator.glb": "c8a2a6a688861a3206276a31efab904e3296d254c20340146287627d642d7296",
     "magma_egg.glb": "c982f35efc0e70a6397cf342db7711d899db76cc598f7d4a67881612232fa3cc",
-    "magma_guardian.glb": "e98862a3bedd126ee40cdc614f784e1bc8974813cd9e3993dceb2b9833ae7c8d",
+    "magma_guardian.glb": "9ce9f1e03b646d04a51053e5f44efbd7b199182d5d898658f6c846eb6e301355",
     "packet_warden.glb": "20d60f1604ba82655d8c2537473007f4d8d16c55fa4c42b2d40aedb811ef9fb1",
     "relay_conduit.glb": "b0c55e289cc90b10dc2c2dc725bbfe92157dac9dcb9c759fa1f1ed41e294b014",
     "relay_pylon.glb": "a2a54265154015f1eaf125c5ea67aa74359fe9d88874db23137960171dbf54a1",
     "warden_dais.glb": "05b0a4dd5c8d13167519b009644b3b9c15ee4997a1039115c019b81950aed828"
+  },
+  "creature_detail_sha256": "d517421ade7acd1f529cd2b5fb88e802589a39c0058133b24d40af1b9cec46f0",
+  "compiler_sha256": "310b404c03e463e5b0e319ae8160fda3e423fccc1044d7817358b840e91050d2",
+  "authoring_versions": {
+    "numpy": "2.2.6",
+    "Pillow": "11.3.0"
   }
 }

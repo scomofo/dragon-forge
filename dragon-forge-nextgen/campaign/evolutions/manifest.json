@@ -4,8 +4,8 @@
   "assets": [
     {
       "file": "magma_evolved.glb",
-      "triangles": 14146,
-      "vertices": 9014,
+      "triangles": 18286,
+      "vertices": 11824,
       "surfaces": 1,
       "bones": 24,
       "clips": [
@@ -23,7 +23,7 @@
         [
           -1.157737135887146,
           0.0031845916528254747,
-          -1.3897705078125
+          -1.4450000524520874
         ],
         [
           1.157737135887146,
@@ -32,13 +32,13 @@
         ]
       ],
       "parent_asset": "art/generated/magma_guardian.glb",
-      "parent_sha256": "e98862a3bedd126ee40cdc614f784e1bc8974813cd9e3993dceb2b9833ae7c8d",
-      "sha256": "71b1df6d66993c7707ca14735ed8708c9b08bb9d97fe2088de0ee3afece1a668"
+      "parent_sha256": "9ce9f1e03b646d04a51053e5f44efbd7b199182d5d898658f6c846eb6e301355",
+      "sha256": "21ab867c7f35795d4a3f5fd3b4c3379d0acbedea9431b1cb814427e28a3a240d"
     },
     {
       "file": "rime_evolved.glb",
-      "triangles": 4574,
-      "vertices": 3509,
+      "triangles": 16546,
+      "vertices": 11012,
       "surfaces": 1,
       "bones": 21,
       "clips": [
@@ -55,18 +55,18 @@
       "bounds": [
         [
           -1.063494324684143,
-          0.05000000074505806,
-          -1.6711279153823853
+          0.05053462088108063,
+          -1.6654846668243408
         ],
         [
           1.063494324684143,
           2.222393274307251,
-          2.43560528755188
+          2.48069429397583
         ]
       ],
       "parent_asset": "campaign/guardians/ice_guardian.glb",
-      "parent_sha256": "d72a1fd2b1b97f14511591e32b82e9606b0b80312cd2500ef71fc31a72276266",
-      "sha256": "61820ec963541de29c117a3eca42c760c8de62e3e817903bb0d922253113bed7"
+      "parent_sha256": "b4de48973b3ed137f56ddf4f126030c53d48cf90358d754b1d8b7d245d660d04",
+      "sha256": "7997d3cda8dbe94a92a59dcdecbac5f8c6be1aace780bf6ff1b489949fc2993b"
     }
   ]
 }

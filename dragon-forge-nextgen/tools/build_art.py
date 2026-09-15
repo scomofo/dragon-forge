@@ -163,7 +163,7 @@ class Mesh:
         tangents=np.column_stack([tangent,handed])
         doc={'asset':{'version':'2.0','generator':'Dragon Forge offline art compiler v1'},'scene':0,'scenes':[{'nodes':[0]}],
              'nodes':[{'name':self.name,'children':[]}],'meshes':[], 'accessors':[],'bufferViews':[],
-             'images':[{'uri':s+'.png'} for s in ['atlas_base','atlas_orm','atlas_normal','atlas_emission']],
+             'images':[{'uri':getattr(self,'texture_prefix','atlas')+'_'+s+'.png'} for s in ['base','orm','normal','emission']],
              'samplers':[{'magFilter':9729,'minFilter':9987,'wrapS':33071,'wrapT':33071}],
              'textures':[{'source':i,'sampler':0} for i in range(4)],
              'materials':[{'name':'ForgePBR','pbrMetallicRoughness':{'baseColorTexture':{'index':0},'metallicRoughnessTexture':{'index':1},'metallicFactor':1.,'roughnessFactor':1.},
@@ -223,12 +223,14 @@ class Mesh:
 
 
 def magma():
+    from creature_detail import eye, teeth, scute_row
     m=Mesh('magma_guardian');root=m.bone('Root',(0,0,0));hips=m.bone('Pelvis',(0,.94,.12),root);chest=m.bone('Chest',(0,1.65,-.02),hips)
+    m.texture_prefix='dragon'
     neck=m.bone('Neck',(0,2.06,-.3),chest);head=m.bone('Head',(0,2.28,-.62),neck);jaw=m.bone('Jaw',(0,2.115,-.59),head)
     # Broad diamond chest, tapered pelvis, leaning reptilian neck. Skin joins are weighted.
     path=[(0,.77,.14),(0,.92,.16),(0,1.14,.16),(0,1.40,.10),(0,1.69,-.02),(0,1.90,-.14),(0,2.12,-.32),(0,2.25,-.47)]
     ws=[[(hips,1)],[(hips,1)],[(hips,.85),(chest,.15)],[(hips,.35),(chest,.65)],[(chest,1)],[(chest,.75),(neck,.25)],[(neck,1)],[(neck,.4),(head,.6)]]
-    m.tube(path,[.32,.45,.55,.68,.72,.63,.37,.32],[.29,.36,.44,.49,.46,.36,.29,.27],BASALT,weights=ws,sides=24)
+    m.tube(path,[.32,.43,.48,.60,.69,.59,.34,.30],[.29,.36,.40,.49,.49,.37,.28,.25],BASALT,weights=ws,sides=24)
     # Scapular shield-scales make the signature broad diamond readable from gameplay view.
     for side in [-1,1]:
         for row in range(3):
@@ -242,26 +244,24 @@ def magma():
     # Chest crucible nestled inside a shield-shaped breastplate.
     m.plate((0,1.76,-.445),.63,.59,normal=(0,.18,-1),slot=SOOT,bone=chest,depth=.075)
     m.plate((0,1.76,-.51),.28,.39,normal=(0,.18,-1),slot=EMBER,bone=chest,depth=.04)
-    m.tube([(0,2.29,-.35),(0,2.34,-.58),(0,2.32,-.82),(0,2.25,-1.12),(0,2.21,-1.37)], [.24,.42,.37,.27,.195],[.27,.29,.27,.17,.125],SCALE,head,sides=20)
-    m.tube([(0,2.02,-.59),(0,2.0,-.91),(0,2.04,-1.23),(0,2.085,-1.35)],[.28,.27,.21,.15],[.09,.075,.06,.025],BASALT,jaw,sides=16)
+    # Broad temporal muscles taper into a low crocodilian muzzle; the cheek and
+    # lower mandible are separate masses around the existing animated jaw hinge.
+    m.tube([(0,2.29,-.35),(0,2.34,-.58),(0,2.30,-.85),(0,2.24,-1.13),(0,2.22,-1.36),(0,2.22,-1.42),(0,2.22,-1.445)], [.23,.36,.31,.23,.165,.10,.015],[.24,.26,.205,.13,.091,.05,.015],SCALE,head,sides=24)
+    m.tube([(0,2.08,-.59),(0,2.045,-.86),(0,2.08,-1.18),(0,2.115,-1.37)],[.265,.25,.19,.13],[.095,.071,.054,.027],BASALT,jaw,sides=20)
     # Separate rigid palate and lower cavity: opening the hinge cannot stretch upper mouth vertices.
     m.tube([(0,2.145,-.66),(0,2.14,-1.27)],[.23,.17],[.021,.02],SOOT,head,sides=12)
     # Mouth cavity is dark; enamel teeth and a few ember fissures are visible during breath.
     m.tube([(0,2.07,-.68),(0,2.08,-1.28)],[.245,.18],[.025,.023],SOOT,jaw,sides=12)
+    teeth(m,head,jaw,back=-.77,front=-1.29,y=2.145,width=.237,count=8,scale=.82)
     for side in [-1,1]:
-        for i in range(4):
-            z=-.77-i*.145;x=side*(.265-i*.019)
-            m.tube([(x,2.13,z),(x,2.05,z-.024),(x*.91,2.015,z-.035)],[.038,.023,.002],slot=BONE,bone=head,sides=7)
-        # Tapered eye sockets, recessed amber slit, bony overhanging brow.
-        norm=(side*.9,.10,-.44)
-        m.plate((side*.35,2.40,-.76),.23,.34,norm,(0,1,0),SOOT,head,depth=.025)
-        m.plate((side*.414,2.415,-.800),.105,.240,norm,(0,0,-1),EMBER,head,depth=.02)
-        m.plate((side*.35,2.49,-.72),.24,.49,(side*.7,.68,-.20),(0,0,-1),BASALT,head,depth=.06)
+        eye(m,(side*.318,2.405,-.79),(side*.92,.12,-.36),.064,head,hide=SCALE)
+        m.tube([(side*.25,2.27,-.52),(side*.33,2.22,-.68),(side*.24,2.17,-.91)], [.14,.105,.025],slot=SCALE,bone=head,sides=16)
+        m.plate((side*.27,2.47,-.70),.19,.36,(side*.7,.68,-.20),(0,0,-1),BASALT,head,depth=.035)
         m.plate((side*.24,2.39,-.54),.31,.52,(side*.4,.6,.8),(0,1,0),SCALE,head,depth=.065)
         horn=[(side*.29,2.51,-.51),(side*.40,2.65,-.39),(side*.53,2.80,-.19),(side*.61,2.91,.04),(side*.57,2.97,.19)]
-        m.tube(horn,[.16,.145,.11,.055,.003],slot=BONE,bone=head,sides=12)
+        m.tube(horn,[.115,.098,.073,.032,.003],slot=BONE,bone=head,sides=18)
         m.tube([(side*.37,2.18,-.45),(side*.57,2.19,-.20),(side*.68,2.30,.03)],[.125,.08,.003],slot=BASALT,bone=head,sides=9)
-        m.plate((side*.148,2.265,-1.36),.065,.14,(side*.3,.35,-1),slot=SOOT,bone=head,depth=.012)
+        m.plate((side*.10,2.26,-1.414),.038,.076,(side*.3,.35,-1),slot=15,bone=head,depth=.005)
         arm=m.bone('Arm.L' if side<0 else 'Arm.R',(side*.66,1.80,-.10),chest)
         fore=m.bone('Forearm.L' if side<0 else 'Forearm.R',(side*.95,1.29,-.17),arm)
         hand=m.bone('Hand.L' if side<0 else 'Hand.R',(side*.88,1.12,-.58),fore)
@@ -290,6 +290,10 @@ def magma():
         p=np.array(p);bone=tailbones[min(i+1,5)];r=.26-i*.032
         m.plate(p+[0,r*.50,0],r*1.9,.47,(0,1,.2),(0,0,-1),SCALE,bone,depth=.05)
         m.tube([p+[0,r*.65,.04],p+[0,r+.14,.12],p+[0,r+.22,.27]],[r*.38,r*.24,.003],slot=SCALE,bone=bone,sides=7)
+    for side in [-1,1]:
+        for row in range(4):
+            scute_row(m,[(side*(.52-row*.075),1.87-row*.105,.24+j*.065) for j in range(3)],
+                      [.21,.19,.17],chest,normal=(side*.60,.27,.76),depth=.019)
     clips={'idle':1.8,'walk':.8,'claw':.28,'breath':.5,'wall':.44,'burst':.72,'guard':1.,'hurt':.24,'defeat':.8}
     for name,length in clips.items():
         times=np.linspace(0,length,17).tolist()
@@ -300,8 +304,8 @@ def magma():
             q=t/length;pose={}
             def setp(b,r=(0,0,0),p=(0,0,0)):pose[b]=(list(r),list(p))
             if name=='idle':
-                a=math.sin(q*TAU);setp('Chest',(.014*a,0,0),(0,.017*a,0));setp('Head',(-.014*a,0,0))
-                for i in range(6):setp('Tail%02d'%i,(0,math.sin(q*TAU-i*.46)*.038,0))
+                a=math.sin(q*TAU);setp('Chest',(.010*a,0,0),(0,.010*a,0));setp('Head',(-.010*a,0,0))
+                for i in range(6):setp('Tail%02d'%i,(0,math.sin(q*TAU-i*.46)*(.016+i*.002),0))
             elif name=='walk':
                 a=math.sin(q*TAU);setp('Pelvis',(0,a*.045,0),(0,abs(a)*.035,0));setp('Chest',(-.055,-a*.06,0))
                 for side,sign in [('L',1),('R',-1)]:
@@ -487,10 +491,20 @@ def kit():
     return all
 
 
+def creature_atlas():
+    from creature_detail import paint_hide
+    palette=[(58,55,48),(109,64,40),(196,172,126),(255,125,29),
+             *PALETTE[4:14],(185,115,32),(16,12,10)]
+    paint_hide(OUT,palette,prefix='dragon')
+
+
 def main():
-    atlas();report=[m.export() for m in [magma(),sentinel(),sentinel(True),*kit()]]
+    atlas();creature_atlas()
+    report=[m.export() for m in [magma(),sentinel(),sentinel(True),*kit()]]
     files={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(OUT.iterdir()) if p.suffix in ('.png','.glb')}
     manifest={'version':2,'source':'tools/build_art.py','pose_source_sha256':hashlib.sha256(Path(__file__).with_name('pose_cleanup.py').read_bytes()).hexdigest(),'paint_source_sha256':hashlib.sha256(Path(__file__).with_name('paint_surfaces.py').read_bytes()).hexdigest(),'source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'units':'metres','up':'+Y','forward':'-Z','atlas_size':[2048,2048],'textures':['base color','occlusion/roughness/metallic','OpenGL normal','emission'],'assets':report,'sha256':files}
+    from creature_detail import provenance
+    manifest.update(provenance(__file__))
     (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print(json.dumps(report,indent=2));print('ART_BUILD: %d assets, %d triangles'%(len(report),sum(a['triangles'] for a in report)))
 if __name__=='__main__':main()
