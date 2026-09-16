@@ -50,9 +50,23 @@ func configure(owner_rig: Node3D) -> void:
 				count += 1
 		assert(count > 0, "Rime foot contact requires weighted sole geometry")
 		center /= count
+		# The separated toes can span a deck seam. Retain actual sole extrema so
+		# a ray through a narrow recess cannot plant the other toes inside a plate.
+		var sole_points: Array = []
+		for p in candidates:
+			if p.y <= low + 0.025:
+				sole_points.append(p)
+		var footprint: Array[Vector3] = [Vector3.ZERO]
+		for axis in [Vector3.LEFT, Vector3.RIGHT, Vector3.FORWARD, Vector3.BACK]:
+			var extreme: Vector3 = sole_points[0]
+			for p in sole_points:
+				if p.dot(axis) > extreme.dot(axis):
+					extreme = p
+			footprint.append(Vector3(extreme.x-center.x, 0.0, extreme.z-center.z))
 		var rest = skeleton.get_bone_global_rest(foot)
 		legs[side] = {"hip": skeleton.find_bone("Thigh." + side), "knee": skeleton.find_bone("Hock." + side), "foot": foot,
 			"rest_center": center, "sole": rest.affine_inverse() * center, "height": center.y-low+0.004,
+			"footprint": footprint,
 			"planted": false, "anchor": Vector3.ZERO, "basis": Basis.IDENTITY, "from": Vector3.ZERO,
 			"last": Vector3.ZERO, "settle": 0.0, "id": 0, "blocked": false}
 	reset()
@@ -67,12 +81,20 @@ func reset() -> void:
 		leg.blocked = false
 		leg.settle = 0.0
 
-func _ground(at: Vector3, height: float) -> Dictionary:
-	var query = PhysicsRayQueryParameters3D.create(at + Vector3.UP * 1.25, at - Vector3.UP * 1.5, SURFACE_LAYER)
-	var hit = rig.get_world_3d().direct_space_state.intersect_ray(query)
-	if hit.is_empty() or hit.normal.dot(Vector3.UP) < 0.85:
+func _ground(at: Vector3, height: float, leg: Dictionary) -> Dictionary:
+	var highest = -INF
+	var normal = Vector3.UP
+	var facing = Basis(Vector3.UP, rig.global_rotation.y)
+	for offset in leg.footprint:
+		var point: Vector3 = at + facing * offset
+		var query = PhysicsRayQueryParameters3D.create(point + Vector3.UP * 1.25, point - Vector3.UP * 1.5, SURFACE_LAYER)
+		var hit = rig.get_world_3d().direct_space_state.intersect_ray(query)
+		if not hit.is_empty() and hit.normal.dot(Vector3.UP) >= 0.85 and hit.position.y > highest:
+			highest = hit.position.y
+			normal = hit.normal
+	if not is_finite(highest):
 		return {}
-	return {"position": Vector3(at.x, hit.position.y + height, at.z), "normal": hit.normal}
+	return {"position": Vector3(at.x, highest + height, at.z), "normal": normal}
 
 func apply(delta: float, state: Dictionary) -> void:
 	if not enabled or not rig.is_inside_tree():
@@ -101,7 +123,7 @@ func apply(delta: float, state: Dictionary) -> void:
 	for side in ["FL", "FR", "RL", "RR"]:
 		var leg: Dictionary = legs[side]
 		var nominal: Vector3 = rig.global_transform * leg.rest_center
-		var ground = _ground(nominal + direction * (STRIDE * DUTY * 0.5), leg.height)
+		var ground = _ground(nominal + direction * (STRIDE * DUTY * 0.5), leg.height, leg)
 		if ground.is_empty():
 			leg.planted = false
 			continue
@@ -117,7 +139,7 @@ func apply(delta: float, state: Dictionary) -> void:
 			leg.blocked = false
 		var target: Vector3
 		if not initialized:
-			leg.last = _ground(nominal, leg.height).get("position", ground.position)
+			leg.last = _ground(nominal, leg.height, leg).get("position", ground.position)
 			leg.from = leg.last
 			leg.basis = yaw_basis
 			leg.planted = true
@@ -131,7 +153,7 @@ func apply(delta: float, state: Dictionary) -> void:
 		if not leg.planted and want_plant:
 			if moving and not leg.blocked:
 				# Touch down where the swing actually ended; no horizontal target snap.
-				var landing = _ground(leg.last, leg.height)
+				var landing = _ground(leg.last, leg.height, leg)
 				if not landing.is_empty():
 					leg.anchor = landing.position
 					leg.planted = true
@@ -177,7 +199,7 @@ func apply(delta: float, state: Dictionary) -> void:
 		if not leg.planted:
 			leg.basis = leg.basis.slerp(yaw_basis, minf(maxf(delta,0) * 18, 1))
 		if not leg.planted:
-			var swing_surface = _ground(target, leg.height)
+			var swing_surface = _ground(target, leg.height, leg)
 			if not swing_surface.is_empty():
 				target.y = maxf(target.y, swing_surface.position.y)
 		var error = _solve(leg, target, leg.basis, -1 if side in ["FL", "RL"] else 1)

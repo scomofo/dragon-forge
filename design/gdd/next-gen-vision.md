@@ -10,7 +10,10 @@
 
 The existing game already has the right DNA: dragon collection, hatching, fusion, authored boss patterns, four corrupted zones, the Forge as a home base, and the Singularity as an endgame frame. The next-generation version should preserve those ideas while replacing the cartridge-era presentation ceiling with a modern real-time world.
 
-This is not a realism conversion. It should look authored, strange, readable, and unmistakably Dragon Forge.
+**Playtest direction, 2026-09-15:** Scott and his children want much more realistic
+dragons. Creature anatomy, skin, eyes, flight membranes and movement now move toward
+believable fantasy animals while retaining the elemental identities and clear combat
+silhouettes. This supersedes the original proposal's stylization-only direction.
 
 ## Player fantasy
 

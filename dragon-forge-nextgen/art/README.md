@@ -1,3 +1,9 @@
+# Creature realism update
+
+See [REALISM.md](REALISM.md) for the current Fire, Ice, Storm and Venom assets,
+their evolved forms, dedicated creature materials, and the family-playtest art
+direction. Earlier descriptions and counts below document previous passes.
+
 # Surface / deformation / footwork update
 
 See `POLISH.md` for the implemented repaint, baked stress-pose corrections, and world-space foot-lock contract. The atlas is now 2048×2048; Magma has 13,388 triangles. Earlier asset-set descriptions below remain historical where they cite the original 1024 atlas or triangle count.

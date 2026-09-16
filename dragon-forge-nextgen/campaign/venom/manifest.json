@@ -2,8 +2,8 @@
   "source": "tools/build_venom_guardian.py",
   "asset": {
     "file": "venom_guardian.glb",
-    "triangles": 1604,
-    "vertices": 1255,
+    "triangles": 15068,
+    "vertices": 10626,
     "surfaces": 1,
     "bones": 22,
     "clips": [
@@ -19,22 +19,29 @@
     ],
     "bounds": [
       [
-        -0.6948229074478149,
-        0.08999145776033401,
-        -1.5261366367340088
+        -0.9613723158836365,
+        0.052361078560352325,
+        -1.521552562713623
       ],
       [
-        0.7070909738540649,
-        1.9346327781677246,
-        2.9839329719543457
+        0.9613723158836365,
+        1.9210623502731323,
+        3.000330686569214
       ]
     ]
   },
   "files": {
-    "atlas_base.png": "751c72bf9c2bf5f5a661cab67493cd8c91d5af0299580c416b7d4c6cfcd60d58",
-    "atlas_emission.png": "be2d91c2ce2956ef6b709967dcb42566f4ac65bcbcbfe427068830fbe969620c",
-    "atlas_normal.png": "54c3184e646bc456631a00b20f280a52c1803232a932ad35414bae4a6df8f7f3",
-    "atlas_orm.png": "325b25572fbd6d33956624b68f8955fee40ae417d311481ec5914ed5b8a443c6",
-    "venom_guardian.glb": "9df4ce9811637cbd78b46e53f93206025458aba74e5bf2ab7bcf8c825409123d"
+    "atlas_base.png": "31ca069beb286b95815afec8ccc4609b0c0bba23bb80b04de96ecbd670828f32",
+    "atlas_emission.png": "8bffc501b7e21ecc4ed2980cad44e1c2010b5977be08e10177c5563929430849",
+    "atlas_normal.png": "82064fab11e059413fbfd88cee997bff050c9b1efe0a3a3337f6afe25b3edfb9",
+    "atlas_orm.png": "c4238e60a8bf9e7f4eede05d36969d19eeae46ea5c9cf9aa15587e04094b3292",
+    "venom_guardian.glb": "046d8f55e7f52cac8096822968484d74e8fb9e2a6492f2522588dcdbdd8c2826"
+  },
+  "source_sha256": "bac447d82a48b66d00ed538bcbdcb5dc8ba60f0d83e320009b59c977008a9d6a",
+  "creature_detail_sha256": "d517421ade7acd1f529cd2b5fb88e802589a39c0058133b24d40af1b9cec46f0",
+  "compiler_sha256": "310b404c03e463e5b0e319ae8160fda3e423fccc1044d7817358b840e91050d2",
+  "authoring_versions": {
+    "numpy": "2.2.6",
+    "Pillow": "11.3.0"
   }
 }

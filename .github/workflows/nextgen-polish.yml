@@ -13,7 +13,7 @@ concurrency:
 jobs:
   validate-polish:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       LIBGL_ALWAYS_SOFTWARE: '1'
       GODOT_VERSION: 4.6.3
@@ -39,9 +39,10 @@ jobs:
           cd dragon-forge-nextgen
           mkdir -p artifacts
           python3 tools/validate_art.py | tee artifacts/polish-asset-integrity.log
+          python3 tools/validate_creature_detail.py | tee artifacts/creature-detail-integrity.log
           GLTF_VALIDATOR_MODULE=/tmp/gltf-validation/node_modules/gltf-validator node tools/validate_gltf.cjs | tee artifacts/polish-gltf.log
           timeout 100 godot --headless --path . --editor --import 2>&1 | tee artifacts/polish-import.log
-          for script in tests/run.gd tests/art_test.gd validation/review_tests.gd validation/polish_tests.gd; do
+          for script in tests/run.gd tests/art_test.gd validation/review_tests.gd validation/polish_tests.gd validation/realism_tests.gd; do
             log="artifacts/polish-$(basename "$script" .gd).log"
             timeout 100 godot --headless --path . --script "res://$script" -- --test-mode 2>&1 | tee "$log"
             grep 'checks, 0 failures' "$log"
@@ -57,6 +58,16 @@ jobs:
           done
           grep 'NEXTGEN_REVIEW_CAPTURES: failures=0' dragon-forge-nextgen/artifacts/polish-capture_reviews.log
           grep 'NEXTGEN_POLISH_MOTION: 36 frames, 0 failures' dragon-forge-nextgen/artifacts/polish-capture_polish.log
+      - name: Compare creature anatomy and every clip in both renderers
+        run: |
+          set -euo pipefail
+          for renderer in gl_compatibility forward_plus; do
+            log="dragon-forge-nextgen/artifacts/realism-$renderer.log"
+            timeout 300 xvfb-run -a godot --path dragon-forge-nextgen --rendering-method "$renderer" --audio-driver Dummy --script res://validation/capture_realism.gd 2>&1 | tee "$log"
+            if grep -E 'SCRIPT ERROR|Parse Error|ERROR:|^FAIL ' "$log"; then exit 1; fi
+            grep 'REALISM_CAPTURES: 52 captures, 0 failures' "$log"
+            mv dragon-forge-nextgen/artifacts/realism "dragon-forge-nextgen/artifacts/realism-$renderer"
+          done
       - name: Capture Low, High and calm mode in Forward+
         run: |
           set -euo pipefail

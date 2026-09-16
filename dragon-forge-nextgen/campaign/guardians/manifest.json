@@ -4,8 +4,8 @@
   "assets": [
     {
       "file": "ice_guardian.glb",
-      "triangles": 3898,
-      "vertices": 2965,
+      "triangles": 15870,
+      "vertices": 10468,
       "surfaces": 1,
       "bones": 21,
       "clips": [
@@ -21,14 +21,14 @@
       ],
       "bounds": [
         [
-          -0.847000002861023,
-          0.05000000074505806,
-          -1.6711279153823853
+          -0.8550000190734863,
+          0.05053462088108063,
+          -1.6654846668243408
         ],
         [
-          0.847000002861023,
-          1.9533566236495972,
-          2.43560528755188
+          0.8550000190734863,
+          1.9534409046173096,
+          2.48069429397583
         ]
       ]
     },
@@ -54,11 +54,18 @@
     }
   ],
   "files": {
-    "atlas_base.png": "0e764252d30d23724130c8df5b33a23dc0468f2807353674e5e5172b0fdc1171",
-    "atlas_emission.png": "839662df1a6dec5ff590de847845b8fa57a0caa55fd323427f2f0aaea3047ae9",
-    "atlas_normal.png": "374a0ca52686e75259d6509a6d656d0472cece6ed10bae2b38b8b29a0027c602",
-    "atlas_orm.png": "2f49acbccce31fccec1073824cd4d971f36d3f2591f44425025ff0c563815870",
+    "atlas_base.png": "761d8e98d01c8a1ef4cf7f9ed4a1640d605788115db855115c702107f5b00deb",
+    "atlas_emission.png": "9908891d2c310f2281a22d5000622c3cb35e99a5930dea2c10036455aac408bf",
+    "atlas_normal.png": "8049ce0dcdc878bbcb90dbffbc54472f3e935af3a2c2409311a234286452551c",
+    "atlas_orm.png": "be12d55a06a612d9effd6218576063a19dac164c9e2ac3abb97ccc3b8e87fb0e",
     "ice_egg.glb": "c5f117037e134222287c17aaf92e33e22fbe23fae25d4389bf7a5c99ed6a2c6f",
-    "ice_guardian.glb": "d72a1fd2b1b97f14511591e32b82e9606b0b80312cd2500ef71fc31a72276266"
+    "ice_guardian.glb": "b4de48973b3ed137f56ddf4f126030c53d48cf90358d754b1d8b7d245d660d04"
+  },
+  "source_sha256": "762cc2a7d3a0b3a8c5e6d2c177c4162ecc67ce47f0c74f442e834f0a25ae47f6",
+  "creature_detail_sha256": "d517421ade7acd1f529cd2b5fb88e802589a39c0058133b24d40af1b9cec46f0",
+  "compiler_sha256": "310b404c03e463e5b0e319ae8160fda3e423fccc1044d7817358b840e91050d2",
+  "authoring_versions": {
+    "numpy": "2.2.6",
+    "Pillow": "11.3.0"
   }
 }

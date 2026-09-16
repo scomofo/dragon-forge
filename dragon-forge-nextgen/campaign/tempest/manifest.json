@@ -3,8 +3,8 @@
   "assets": [
     {
       "file": "tempest_arc.glb",
-      "triangles": 2556,
-      "vertices": 1967,
+      "triangles": 11428,
+      "vertices": 8119,
       "surfaces": 1,
       "bones": 17,
       "clips": [
@@ -20,19 +20,19 @@
       ],
       "bounds": [
         [
-          -2.0439999103546143,
+          -2.101138114929199,
           0.7573920488357544,
-          -1.4423339366912842
+          -1.4432224035263062
         ],
         [
-          2.055999994277954,
+          2.101138114929199,
           2.5432653427124023,
-          2.6364328861236572
+          2.6407315731048584
         ]
       ],
       "parent_asset": "campaign/fusion_assets/storm_guardian.glb",
-      "parent_sha256": "9f930cca476a741f3a64bdfd0fdfd5b09c7f606dc31afb9a009b21b36636097d",
-      "sha256": "c52f9a48ec248e6021f7b68c7b99750829c6622805a990685b5d1250a200fcbe"
+      "parent_sha256": "ac06b1460672ba62210967b23b2e6b4563d1533de6b51fe51542920293e01da3",
+      "sha256": "50dd94cffeeb7b52dbbb5a1e83e13c23dadf0c5d9e19a5d57561570640f24451"
     }
   ]
 }

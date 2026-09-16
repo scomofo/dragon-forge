@@ -1,0 +1,33 @@
+{
+  "baseline_revision": "9db15d57fdb76cb0143ef0cb257a58a022cdc290",
+  "capture_engine": "Godot 4.6.3 Standard",
+  "renderer": "gl_compatibility (Mesa llvmpipe)",
+  "camera": {
+    "orbit_radians": 0.92,
+    "elevation_radians": 0.24,
+    "distance_m": 7.3,
+    "fov_degrees": 38,
+    "clip": "idle",
+    "time_seconds": 0,
+    "rim_light": false
+  },
+  "before": {
+    "art/generated": "d3bfe8b9e6f19f59e70f33e5e76f82809546934aae79972837621776b744ad02",
+    "campaign/guardians": "d8bad6359d6150baac2a0aadad2dfed289df632206a40d99149a47ba11e04bad",
+    "campaign/fusion_assets": "fb325c27222647e851c06c0f82678190a84922fb6ff12cc658244d35c516337f",
+    "campaign/venom": "14afd16d7ac5a38ae100d8f071cfa09b53fdd615b84cdfceec6cc83667a72ef4"
+  },
+  "after": {
+    "art/generated": "99a24496b14b6a2802a0848341bc5a1a2355bf140036626ec16f83c1ffa6e1aa",
+    "campaign/guardians": "dd5ba1727ec2e23e719c6c145d1a30274ffc707cf4f2b63d406c60a49489d0e8",
+    "campaign/fusion_assets": "297df20cc689dd88da08bd7e404b3a8e10f4af49fa9d76ad924ee41a1414d8c9",
+    "campaign/venom": "726b37c119ec3a7469c857fe00089b1a9557ad01c5f7032a2f13e9b17eab413b"
+  },
+  "local_validation": {
+    "native_checks": 4877,
+    "native_suites": 30,
+    "controller_replays": 3,
+    "failures": 0,
+    "candidate_captures": 52
+  }
+}

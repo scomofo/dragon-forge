@@ -15,8 +15,8 @@ for name,digest in m['files'].items():
     p=FOLDER/name;check(p.is_file(),'committed '+name);check(hashlib.sha256(p.read_bytes()).hexdigest()==digest,'hash '+name)
 a=m['asset'];doc=glb(FOLDER/a['file']);prim=doc['meshes'][0]['primitives'][0]
 vertices=doc['accessors'][prim['attributes']['POSITION']]['count'];triangles=doc['accessors'][prim['indices']]['count']//3;joints=len(doc['skins'][0]['joints'])
-check(vertices==a['vertices'] and 800<=vertices<=5000,'manifest vertex count in bounded budget')
-check(triangles==a['triangles'] and 900<=triangles<=6000,'manifest triangle count in bounded budget')
+check(vertices==a['vertices'] and 800<=vertices<=12000,'manifest vertex count within the creature realism budget')
+check(triangles==a['triangles'] and 900<=triangles<=18000,'manifest triangle count within the creature realism budget')
 check(joints==a['bones'] and 18<=joints<=30,'frilled-wyrm joint budget')
 clips=[x.get('name','') for x in doc['animations']];expected=['idle','walk','claw','breath','wall','burst','guard','hurt','defeat'];check(clips==expected and a['clips']==expected,'nine named clips')
 uris=[x.get('uri','') for x in doc.get('images',[])]
