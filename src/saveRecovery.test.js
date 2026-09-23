@@ -111,6 +111,20 @@ describe('save recovery through the persistence API', () => {
     expect(api.getSaveStatus().blocked).toBe(false);
   });
 
+  it('caps the damaged archive at the three most recent corruptions', () => {
+    for (let n = 1; n <= 5; n++) {
+      data.set(PRIMARY, `{"damaged":${n}`);
+      data.set(BACKUP, original);
+      api.loadSave();
+      expect(api.restoreSaveBackup().ok).toBe(true);
+    }
+    expect(data.get(DAMAGED)).toBe('{"damaged":3');
+    expect(data.get(`${DAMAGED}_1`)).toBe('{"damaged":4');
+    expect(data.get(`${DAMAGED}_2`)).toBe('{"damaged":5');
+    expect(data.get(`${DAMAGED}_3`)).toBeUndefined();
+    expect(api.loadSave().dragons.fire.level).toBe(7);
+  });
+
   it('does not replace damaged progress if archiving the original bytes fails', () => {
     const damaged = 'original damaged progress';
     data.set(PRIMARY, damaged);

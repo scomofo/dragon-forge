@@ -1,12 +1,13 @@
 # Dragon Forge — Master Architecture Overview
 
 **Status:** Living document
-**Last verified:** 2026-06-16
+**Last verified:** 2026-09-23
 **Owner:** Technical Director
-**Scope:** Whole-project technical vision — browser build (source of truth) + Godot runtime (production spine)
+**Scope:** Whole-project technical vision — browser build (1.0 cartridge, source of truth) + frozen Godot research slice + active nextgen native line
 
 This document is the top-level map of how Dragon Forge is built. It explains the
-browser build's architecture, the dual-build relationship with the Godot runtime,
+browser build's architecture, the three-line relationship (browser cartridge,
+frozen Godot research slice, active nextgen native prototype),
 and how each Accepted Architecture Decision Record (ADR) governs concrete systems.
 For the *why* behind any single decision, follow the link into its ADR; for the
 *what the feature does*, follow the link into its GDD.
@@ -16,16 +17,20 @@ For the *why* behind any single decision, follow the link into its ADR; for the
 ## 1. System at a glance
 
 Dragon Forge is a turn-based, monster-collecting browser game (hatch → fuse →
-battle → Singularity endgame) shipped as **two parallel implementations of the
-same simulation**:
+battle → Singularity endgame) shipped as **three development lines**: the browser
+1.0 cartridge, a frozen Godot 2.0 research slice, and the active nextgen native
+prototype ([ADR-0011](adr-0011-browser-is-the-cartridge.md),
+[ADR-0013](adr-0013-next-gen-foundation.md),
+[ADR-0014](adr-0014-nextgen-prototype-isolation.md)):
 
 | Build | Path | Role | Status |
 |---|---|---|---|
 | **Browser** | `src/`, `index.html`, `vite.config.js` | React 18 + Vite. The live, deployed game (`base: '/dragon-forge/'`). **Canonical source of truth** for systems, balance, content. | Feature-complete, deployed |
-| **Godot runtime** | `dragon-forge-godot/` | Godot 4.6 production spine. Re-implements the same sim in GDScript and adds an overworld the web build lacks. | In progress |
+| **Godot runtime** | `dragon-forge-godot/` | Godot 4.6 **frozen 2.0 research slice** — overworld prototype. Per ADR-0011 it must not receive new gameplay systems, balance, or content; ports flow browser → Godot only. | Frozen |
+| **Nextgen** | `dragon-forge-nextgen/` | Godot 4.6.3 native action-RPG prototype (Reconnection campaign). A separate line with its own save namespace and CI workflows; real-time combat is an adaptation, not a balance replacement. | Active development |
 | **Reborn** | `dragon-forge-reborn/` | Built artifacts only, no source. Ignore unless explicitly working on it. | Artifact-only |
 
-The architectural through-line across both builds: **pure, serializable
+The architectural through-line across the lines: **pure, serializable
 simulation logic is kept strictly separate from presentation**, and **all player
 progress is a single derived-from-primitives save object**. Those two invariants
 are what make the game unit-testable in plain Node and portable from web to Godot.

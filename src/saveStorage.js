@@ -3,6 +3,9 @@
 const PRIMARY = 'dragonforge_save';
 const BACKUP = 'dragonforge_save_backup';
 const DAMAGED = 'dragonforge_save_damaged';
+// The damaged archive keeps the most recent corrupt primaries for diagnosis,
+// but is capped so repeated corruptions cannot grow localStorage without bound.
+const MAX_DAMAGED_ARCHIVES = 3;
 const clone = value => structuredClone(value);
 const failure = error => ({ ok: false, error });
 
@@ -157,7 +160,15 @@ export function createSaveStorage({ getStorage, makeDefault, decode }) {
       if (previous !== null && !valid(previous)) {
         const entries = archives(storage);
         if (!entries.some(([, raw]) => raw === previous)) {
-          storage.setItem(entries.length ? `${DAMAGED}_${entries.length}` : DAMAGED, previous);
+          // Re-store the capped list under dense keys so the archive never
+          // holds more than MAX_DAMAGED_ARCHIVES entries.
+          const kept = [...entries.map(([, raw]) => raw), previous].slice(-MAX_DAMAGED_ARCHIVES);
+          for (let i = 0; i < entries.length; i++) {
+            storage.removeItem(i ? `${DAMAGED}_${i}` : DAMAGED);
+          }
+          kept.forEach((raw, i) => {
+            storage.setItem(i ? `${DAMAGED}_${i}` : DAMAGED, raw);
+          });
         }
         damagedRaw = previous;
       } else if (previous !== null) {
