@@ -3,12 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-path="res://.godot/imported/void_guardian.glb-b23dba6982984fe0ba67fe12939fa245.scn"
+uid="uid://752k4mo6hipp"
+path="res://.godot/imported/void_guardian.glb-04a84127b0a2064a4ab70ec4a741147c.scn"
 
 [deps]
 
 source_file="res://campaign/void/void_guardian.glb"
-dest_files=["res://.godot/imported/void_guardian.glb-b23dba6982984fe0ba67fe12939fa245.scn"]
+dest_files=["res://.godot/imported/void_guardian.glb-04a84127b0a2064a4ab70ec4a741147c.scn"]
 
 [params]
 
@@ -37,3 +38,5 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=1
