@@ -430,3 +430,49 @@ export function getEffectivenessBadge(moveElement, defenderElement) {
   const label = getTypeEffectivenessLabel(moveElement, defenderElement);
   return EFFECTIVENESS_BADGES[label] || EFFECTIVENESS_BADGES.NORMAL;
 }
+
+// === Post-loss fight recap (gameplay plan #6) ===
+// buildDefeatRecap is pure: given the bounded per-turn fight records captured
+// in BattleScreen and the turn the fight was lost on, it explains the biggest
+// single hit taken and, for symmetry, the biggest hit dealt.
+function formatEffectiveness(value) {
+  return String(Math.round(value * 100) / 100);
+}
+
+export function buildDefeatRecap(fightRecords, turnCount) {
+  const records = Array.isArray(fightRecords) ? fightRecords : [];
+  const hitsTaken = records.filter((r) => r.attacker === 'npc' && (r.damage ?? 0) > 0);
+  const hitsDealt = records.filter((r) => r.attacker === 'player' && (r.damage ?? 0) > 0);
+  const biggestHitTaken = hitsTaken.length
+    ? hitsTaken.reduce((a, b) => (b.damage > a.damage ? b : a))
+    : null;
+  const biggestHitDealt = hitsDealt.length
+    ? hitsDealt.reduce((a, b) => (b.damage > a.damage ? b : a))
+    : null;
+
+  const causes = [];
+  let summary = null;
+  if (biggestHitTaken) {
+    const effectiveness = biggestHitTaken.effectiveness ?? 1;
+    if (effectiveness > 1) causes.push(`super-effective ×${formatEffectiveness(effectiveness)}`);
+    else if (effectiveness < 1) causes.push(`resisted ×${formatEffectiveness(effectiveness)}`);
+    if (biggestHitTaken.wasCharged) causes.push('opponent charged');
+    if (biggestHitTaken.isCritical) causes.push('critical hit');
+    // Defend halves damage only for the turn it is used, so a hit landing the
+    // turn after a defend means the guard had already expired.
+    const defendedPrevTurn = records.some(
+      (r) => r.turn === biggestHitTaken.turn - 1 && r.playerDefended
+    );
+    if (defendedPrevTurn && !biggestHitTaken.playerDefended) causes.push('your defend expired');
+
+    const chargedPrefix = biggestHitTaken.wasCharged ? 'charged ' : '';
+    summary = `Turn ${biggestHitTaken.turn} — ${chargedPrefix}${biggestHitTaken.moveName} hit for ${biggestHitTaken.damage}${causes.length ? `: ${causes.join(' × ')}` : ''}.`;
+  }
+
+  const dealtSummary = biggestHitDealt
+    ? `Your biggest hit: ${biggestHitDealt.moveName} for ${biggestHitDealt.damage}.`
+    : null;
+
+  return { lostTurn: turnCount, biggestHitTaken, biggestHitDealt, causes, summary, dealtSummary };
+
+}

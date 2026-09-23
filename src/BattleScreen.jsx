@@ -19,7 +19,7 @@ import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
 import VfxOverlay from './VfxOverlay';
-import { getBattlePresentationProfile, getBattleContactState, hasDamagingImpact, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, getTellCallout, shouldAnimateBattleEvent, getEffectivenessBadge } from './battlePresentation';
+import { getBattlePresentationProfile, getBattleContactState, hasDamagingImpact, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, getTellCallout, shouldAnimateBattleEvent, getEffectivenessBadge, buildDefeatRecap } from './battlePresentation';
 import { resolveBattlePose } from './battleSets';
 import { resolveBattleArena } from './arenas';
 import BattleCues from './BattleCues';
@@ -44,6 +44,9 @@ const PHASES = {
   PHASE_SHIFT: 'phaseShift',
   EPILOGUE: 'epilogue',
 };
+
+// Gameplay plan #6: cap on the per-turn fight record that feeds the post-loss recap.
+const FIGHT_RECORD_CAP = 200;
 
 function getScaledNpcStats(baseStats, baseLevel, playerLevel, ngPlus = 0) {
   // Scale NPC stats by how far the player out-levels them, plus +25% per New
@@ -216,6 +219,7 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     battleLog: [],
     turnCount: 0,
     maxDamageDealt: 0,
+    fightRecords: [],
     bench,
     npcAtkBuff: null,
     npcDefBuff: null,
@@ -264,6 +268,8 @@ function battleReducer(state, action) {
       return { ...state, phase: PHASES.PLAYER_TURN, playerSpriteClass: '', npcSpriteClass: '', npcAttacking: false, playerForcedFrame: null, turnCount: state.turnCount + 1 };
     case 'TRACK_DAMAGE':
       return { ...state, maxDamageDealt: Math.max(state.maxDamageDealt, action.damage) };
+    case 'APPEND_FIGHT_RECORDS':
+      return { ...state, fightRecords: [...(state.fightRecords || []), ...action.records].slice(-FIGHT_RECORD_CAP) };
     case 'SET_PLAYER_STATUS':
       return { ...state, playerStatus: action.value };
     case 'SET_NPC_STATUS':
@@ -1168,6 +1174,26 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       };
     }
 
+    // Gameplay plan #6: capture a bounded per-turn fight record for the
+    // post-loss recap. Turn context (was this a charged strike firing, did the
+    // player defend) is stamped on every damaging event so the recap can
+    // explain the biggest hit taken. Reflected/blocked hits damage the wrong
+    // target or deal none, so they don't count as hits taken or dealt.
+    const fightRecords = result.events
+      .filter(e => e.action === 'attack' && e.hit && !e.reflected && !e.blocked && (e.damage ?? 0) > 0)
+      .map(e => ({
+        turn: currentTurn,
+        attacker: e.attacker,
+        moveName: e.moveName,
+        moveKey: e.moveKey,
+        damage: e.damage,
+        effectiveness: e.effectiveness ?? 1,
+        isCritical: !!e.isCritical,
+        wasCharged: e.attacker === 'npc' && previouslyCharged,
+        playerDefended: playerDefendedLastTurn.current,
+      }));
+    if (fightRecords.length) dispatch({ type: 'APPEND_FIGHT_RECORDS', records: fightRecords });
+
     // C6: a signature firing dims the arena so the once-per-battle climax
     // reads as an event (player or NPC). Cleared when the turn settles.
     const signatureInFlight = isSignature || !!moves[moveKey]?.isSignature;
@@ -1622,6 +1648,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
   });
   const commandDisabled = id => commands.find(command => command.id === id)?.disabled ?? true;
   const defeatAdvice = state.phase === PHASES.DEFEAT ? getDefeatAdvice(state, battleConfig) : null;
+  const defeatRecap = state.phase === PHASES.DEFEAT ? buildDefeatRecap(state.fightRecords, state.turnCount + 1) : null;
   const battleCues = getBattleCues(state, { playerDefendedLastTurn: playerDefendedLastTurn.current, isMirrorAdmin: battleConfig?.isMirrorAdmin });
   const battleEdge = getBattleEdge(playerHpPercent, npcHpPercent, playerHpState, npcHpState);
   const battleRank = getBattleRank(state.turnCount + 1, state.maxDamageDealt, playerHpPercent);
@@ -2241,6 +2268,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
                 <strong>RETRY</strong>
               </div>
             </div>
+            {defeatRecap?.summary && <div className="defeat-recap">
+              <strong>WHAT HAPPENED</strong>
+              <p>{defeatRecap.summary}</p>
+              {defeatRecap.dealtSummary && <p>{defeatRecap.dealtSummary}</p>}
+            </div>}
             {defeatAdvice && <div className="defeat-advice">
               <strong>{defeatAdvice.title}</strong>
               <p>{defeatAdvice.detail}</p>

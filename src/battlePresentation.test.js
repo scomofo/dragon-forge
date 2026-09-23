@@ -9,6 +9,7 @@ import {
   getEffectivenessBadge,
   EFFECTIVENESS_BADGES,
   TELL_VARIANT,
+  buildDefeatRecap,
 } from './battlePresentation';
 import { BOSS_PATTERNS } from './bossPatterns';
 import { setBattleSpeed } from './battleSpeed';
@@ -212,5 +213,151 @@ describe('getEffectivenessBadge', () => {
   test('falls back to neutral for unknown elements', () => {
     expect(getEffectivenessBadge('nope', 'ice')).toEqual({ symbol: '●', text: 'NEUT', matchClass: 'normal' });
     expect(getEffectivenessBadge('fire', 'nope')).toEqual({ symbol: '●', text: 'NEUT', matchClass: 'normal' });
+  });
+});
+
+describe('buildDefeatRecap', () => {
+  const npcHit = (overrides = {}) => ({
+    turn: 7,
+    attacker: 'npc',
+    moveName: 'Tectonic Rupture',
+    moveKey: 'golem_rupture',
+    damage: 84,
+    effectiveness: 1,
+    isCritical: false,
+    wasCharged: false,
+    playerDefended: false,
+    ...overrides,
+  });
+  const playerHit = (overrides = {}) => ({
+    turn: 6,
+    attacker: 'player',
+    moveName: 'Ember Fang',
+    moveKey: 'ember_fang',
+    damage: 52,
+    effectiveness: 1,
+    isCritical: false,
+    wasCharged: false,
+    playerDefended: false,
+    ...overrides,
+  });
+
+  test('returns an empty recap for empty or missing records', () => {
+    for (const records of [[], null, undefined, 'nope']) {
+      const recap = buildDefeatRecap(records, 7);
+      expect(recap.lostTurn).toBe(7);
+      expect(recap.biggestHitTaken).toBeNull();
+      expect(recap.biggestHitDealt).toBeNull();
+      expect(recap.causes).toEqual([]);
+      expect(recap.summary).toBeNull();
+      expect(recap.dealtSummary).toBeNull();
+    }
+  });
+
+  test('picks the biggest single hit taken across all turns', () => {
+    const records = [
+      npcHit({ turn: 5, moveName: 'Rock Throw', damage: 30 }),
+      npcHit({ turn: 7, damage: 84 }),
+      npcHit({ turn: 6, moveName: 'Heavy Slam', damage: 60 }),
+    ];
+    const recap = buildDefeatRecap(records, 7);
+    expect(recap.biggestHitTaken.damage).toBe(84);
+    expect(recap.biggestHitTaken.turn).toBe(7);
+    expect(recap.summary).toBe('Turn 7 — Tectonic Rupture hit for 84.');
+  });
+
+  test('picks the biggest hit dealt for symmetry', () => {
+    const records = [npcHit(), playerHit({ damage: 52 }), playerHit({ turn: 4, moveName: 'Claw', damage: 40 })];
+    const recap = buildDefeatRecap(records, 7);
+    expect(recap.biggestHitDealt.damage).toBe(52);
+    expect(recap.biggestHitDealt.moveName).toBe('Ember Fang');
+    expect(recap.dealtSummary).toBe('Your biggest hit: Ember Fang for 52.');
+  });
+
+  test('reports dealt damage even when the player took no damage', () => {
+    const recap = buildDefeatRecap([playerHit()], 7);
+    expect(recap.biggestHitTaken).toBeNull();
+    expect(recap.summary).toBeNull();
+    expect(recap.dealtSummary).toBe('Your biggest hit: Ember Fang for 52.');
+  });
+
+  test('ignores zero-damage records when finding biggest hits', () => {
+    const recap = buildDefeatRecap([npcHit({ damage: 0 }), playerHit({ damage: 0 })], 7);
+    expect(recap.biggestHitTaken).toBeNull();
+    expect(recap.biggestHitDealt).toBeNull();
+    expect(recap.summary).toBeNull();
+  });
+
+  test('flags super-effective and resisted hits', () => {
+    const se = buildDefeatRecap([npcHit({ effectiveness: 2 })], 7);
+    expect(se.causes).toEqual(['super-effective ×2']);
+    expect(se.summary).toBe('Turn 7 — Tectonic Rupture hit for 84: super-effective ×2.');
+
+    const resisted = buildDefeatRecap([npcHit({ effectiveness: 0.5 })], 7);
+    expect(resisted.causes).toEqual(['resisted ×0.5']);
+    expect(resisted.summary).toBe('Turn 7 — Tectonic Rupture hit for 84: resisted ×0.5.');
+  });
+
+  test('omits the effectiveness fragment for neutral hits', () => {
+    const recap = buildDefeatRecap([npcHit({ effectiveness: 1 })], 7);
+    expect(recap.causes).toEqual([]);
+    expect(recap.summary).toBe('Turn 7 — Tectonic Rupture hit for 84.');
+  });
+
+  test('flags charged, critical, and expired-defend causes together', () => {
+    const records = [
+      npcHit({ turn: 6, damage: 20, playerDefended: true }),
+      npcHit({ turn: 7, damage: 84, effectiveness: 2, wasCharged: true, isCritical: true }),
+    ];
+    const recap = buildDefeatRecap(records, 7);
+    expect(recap.causes).toEqual([
+      'super-effective ×2',
+      'opponent charged',
+      'critical hit',
+      'your defend expired',
+    ]);
+    expect(recap.summary).toBe(
+      'Turn 7 — charged Tectonic Rupture hit for 84: super-effective ×2 × opponent charged × critical hit × your defend expired.'
+    );
+  });
+
+  test('does not claim defend expired when the player never defended', () => {
+    const recap = buildDefeatRecap([npcHit({ turn: 7, damage: 84 })], 7);
+    expect(recap.causes).not.toContain('your defend expired');
+  });
+
+  test('does not claim defend expired when the player defended the hit turn too', () => {
+    const records = [
+      npcHit({ turn: 6, damage: 20, playerDefended: true }),
+      npcHit({ turn: 7, damage: 84, playerDefended: true }),
+    ];
+    const recap = buildDefeatRecap(records, 7);
+    expect(recap.causes).not.toContain('your defend expired');
+  });
+
+  test('does not claim defend expired from a stale defend two turns back', () => {
+    const records = [
+      npcHit({ turn: 5, damage: 20, playerDefended: true }),
+      npcHit({ turn: 6, damage: 30 }),
+      npcHit({ turn: 7, damage: 84 }),
+    ];
+    const recap = buildDefeatRecap(records, 7);
+    expect(recap.causes).not.toContain('your defend expired');
+  });
+
+  test('detects defend on the previous turn from any record of that turn', () => {
+    // The player defended turn 6 (their own defend produces no damaging
+    // record); the NPC's turn-6 hit carries the turn's defended flag.
+    const records = [
+      npcHit({ turn: 6, damage: 12, playerDefended: true }),
+      npcHit({ turn: 7, damage: 84 }),
+    ];
+    const recap = buildDefeatRecap(records, 7);
+    expect(recap.causes).toContain('your defend expired');
+  });
+
+  test('rounds fractional effectiveness multipliers cleanly', () => {
+    const recap = buildDefeatRecap([npcHit({ effectiveness: 1.5 })], 7);
+    expect(recap.causes).toEqual(['super-effective ×1.5']);
   });
 });
