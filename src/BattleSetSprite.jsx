@@ -8,8 +8,6 @@ import { forwardRef, useEffect, useRef } from 'react';
 import { normalizeBattlePose } from './battleSets';
 import { getBattleSpriteSize, startBattleSpritePlayback } from './battleSpritePlayback';
 
-const INTEGER_SCALE = 2;
-
 const BattleSetSprite = forwardRef(function BattleSetSprite({
   src,
   cell = 96,
@@ -38,8 +36,10 @@ const BattleSetSprite = forwardRef(function BattleSetSprite({
     else ref.current = node;
   };
 
-  const px = cell * INTEGER_SCALE;
   const displaySize = getBattleSpriteSize(cell, width, height);
+  // Backing raster matches the integer display size so the cell scales by a
+  // whole number of screen pixels (no fractional blur under `pixelated`).
+  const px = Math.max(cell, Math.round(displaySize / cell) * cell);
   return (
     <canvas
       ref={setCanvasRefs}

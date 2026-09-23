@@ -1240,7 +1240,7 @@
   z-index: 22;
   opacity: 0;
   background-repeat: no-repeat;
-  image-rendering: auto;
+  image-rendering: pixelated; /* SNES register: pixel art must never be smoothed */
   transform: translate(-50%, -50%);
   filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.18));
   will-change: left, transform, opacity, background-position;

@@ -2,9 +2,12 @@ import { normalizeBattlePose, POSE_FRAME_DURATIONS } from './battleSets';
 import { scaleBattleDuration } from './battleSpeed';
 
 // A sheet cell is square, even when its parent reserves a portrait-shaped slot.
+// Display size snaps to the nearest integer multiple of the cell: pixel art
+// must never render at a fractional scale (art bible — "integer scale only").
 export function getBattleSpriteSize(cell, width, height) {
   const bounds = [width, height].filter((value) => Number.isFinite(value) && value > 0);
-  return bounds.length ? Math.min(...bounds) : cell * 2;
+  if (!bounds.length) return cell * 2;
+  return Math.max(cell, Math.round(Math.min(...bounds) / cell) * cell);
 }
 
 // One lifetime owns one image request and one frame clock. React replaces this

@@ -214,7 +214,7 @@ export default function TitleScreen({ onStart, save }) {
           <div className="terminal-felix-section">
             <div className="terminal-felix-portrait">
               <img
-                src={`${import.meta.env.BASE_URL}assets/felix_pixel.jpg`}
+                src={`${import.meta.env.BASE_URL}assets/felix_pixel.webp`}
                 alt="Professor Felix"
                 className="pixelated"
               />
