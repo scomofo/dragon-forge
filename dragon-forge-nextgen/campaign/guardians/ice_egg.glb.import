@@ -3,12 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-path="res://.godot/imported/ice_egg.glb-957b6186c24c517fe837c16249d4e4aa.scn"
+uid="uid://ddnb8nj0eeuy6"
+path="res://.godot/imported/ice_egg.glb-a2fe01f5c9c8a2cc0d894eeefe37e9db.scn"
 
 [deps]
 
 source_file="res://campaign/guardians/ice_egg.glb"
-dest_files=["res://.godot/imported/ice_egg.glb-957b6186c24c517fe837c16249d4e4aa.scn"]
+dest_files=["res://.godot/imported/ice_egg.glb-a2fe01f5c9c8a2cc0d894eeefe37e9db.scn"]
 
 [params]
 
@@ -37,3 +38,5 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=1
