@@ -2,15 +2,18 @@
 
 importer="texture"
 type="CompressedTexture2D"
-path="res://.godot/imported/atlas_emission.png-7d992b8e66d6ab466b74120d59468f44.ctex"
+uid="uid://mgcnpxnxd5ox"
+path.s3tc="res://.godot/imported/atlas_emission.png-54050f1440286220ba148e84291bb407.s3tc.ctex"
+path.etc2="res://.godot/imported/atlas_emission.png-54050f1440286220ba148e84291bb407.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://campaign/light/atlas_emission.png"
-dest_files=["res://.godot/imported/atlas_emission.png-7d992b8e66d6ab466b74120d59468f44.ctex"]
+dest_files=["res://.godot/imported/atlas_emission.png-54050f1440286220ba148e84291bb407.s3tc.ctex", "res://.godot/imported/atlas_emission.png-54050f1440286220ba148e84291bb407.etc2.ctex"]
 
 [params]
 
@@ -36,4 +39,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

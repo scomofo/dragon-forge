@@ -3,12 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-path="res://.godot/imported/light_guardian.glb-46af415bf1dae55b06c7c04a21aa68ef.scn"
+uid="uid://bolm2e6ndpoih"
+path="res://.godot/imported/light_guardian.glb-8b73d3afe783904b2279e4647d3db060.scn"
 
 [deps]
 
 source_file="res://campaign/light/light_guardian.glb"
-dest_files=["res://.godot/imported/light_guardian.glb-46af415bf1dae55b06c7c04a21aa68ef.scn"]
+dest_files=["res://.godot/imported/light_guardian.glb-8b73d3afe783904b2279e4647d3db060.scn"]
 
 [params]
 
@@ -37,3 +38,5 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=1
