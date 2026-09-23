@@ -5,6 +5,8 @@ import {
   getBattleResultCallout,
   getStatusMoveSummary,
   shouldAnimateBattleEvent,
+  getEffectivenessBadge,
+  EFFECTIVENESS_BADGES,
 } from './battlePresentation';
 import { setBattleSpeed } from './battleSpeed';
 
@@ -97,5 +99,33 @@ describe('getStatusMoveSummary', () => {
 
   test('returns null for moves without a status rider', () => {
     expect(getStatusMoveSummary({ element: 'neutral', canApplyStatus: false })).toBeNull();
+  });
+});
+
+describe('getEffectivenessBadge', () => {
+  test('maps ADVANTAGE matchups to the super-effective chip', () => {
+    expect(getEffectivenessBadge('fire', 'ice')).toEqual({ symbol: '▲', text: 'SE', matchClass: 'advantage' });
+    expect(getEffectivenessBadge('shadow', 'light')).toEqual({ symbol: '▲', text: 'SE', matchClass: 'advantage' });
+  });
+
+  test('maps RESISTED matchups to the resisted chip', () => {
+    expect(getEffectivenessBadge('fire', 'stone')).toEqual({ symbol: '▼', text: 'RES', matchClass: 'resisted' });
+    expect(getEffectivenessBadge('light', 'void')).toEqual({ symbol: '▼', text: 'RES', matchClass: 'resisted' });
+  });
+
+  test('maps NORMAL matchups to the neutral chip', () => {
+    expect(getEffectivenessBadge('fire', 'storm')).toEqual({ symbol: '●', text: 'NEUT', matchClass: 'normal' });
+    expect(getEffectivenessBadge('ice', 'venom')).toEqual({ symbol: '●', text: 'NEUT', matchClass: 'normal' });
+  });
+
+  test('badge matchClass matches the lowercase matchup class used on .move-btn', () => {
+    expect(EFFECTIVENESS_BADGES.ADVANTAGE.matchClass).toBe('advantage');
+    expect(EFFECTIVENESS_BADGES.RESISTED.matchClass).toBe('resisted');
+    expect(EFFECTIVENESS_BADGES.NORMAL.matchClass).toBe('normal');
+  });
+
+  test('falls back to neutral for unknown elements', () => {
+    expect(getEffectivenessBadge('nope', 'ice')).toEqual({ symbol: '●', text: 'NEUT', matchClass: 'normal' });
+    expect(getEffectivenessBadge('fire', 'nope')).toEqual({ symbol: '●', text: 'NEUT', matchClass: 'normal' });
   });
 });

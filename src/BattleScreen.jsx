@@ -19,7 +19,7 @@ import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
 import VfxOverlay from './VfxOverlay';
-import { getBattlePresentationProfile, getBattleContactState, hasDamagingImpact, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, shouldAnimateBattleEvent } from './battlePresentation';
+import { getBattlePresentationProfile, getBattleContactState, hasDamagingImpact, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, shouldAnimateBattleEvent, getEffectivenessBadge } from './battlePresentation';
 import { resolveBattlePose } from './battleSets';
 import { resolveBattleArena } from './arenas';
 import BattleCues from './BattleCues';
@@ -1979,6 +1979,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
             const isResolving = isResolvingTurn;
             const isSelected = selectedMoveKey === move.key;
             const matchup = getTypeEffectivenessLabel(move.element, npc.element);
+            const effectBadge = getEffectivenessBadge(move.element, npc.element);
             const statusSummary = getStatusMoveSummary(move);
             const signatureSummary = getSignatureSummary(move);
             const signatureSpent = !!(move.isSignature && state.playerSignatureUsed?.[state.dragonId]);
@@ -1997,7 +1998,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
                 <span className="tooltip">
                   {move.corrupted ? 'BASIC ATTACK | ' : ''}PWR:{move.power} ACC:{move.accuracy}%{statusSummary ? ` | ${statusSummary.title}: ${statusSummary.summary}, ${statusSummary.duration}` : ''}{signatureSummary ? ` | ${signatureSummary.title}` : ''}
                 </span>
-                <strong>{move.name.toUpperCase()}</strong>
+                <strong>
+                  {move.name.toUpperCase()}
+                  <span className={`effect-badge ${effectBadge.matchClass}`} title={`Type matchup: ${matchup}`}>{effectBadge.symbol} {effectBadge.text}</span>
+                </strong>
                 <span className="move-meta">
                   {move.corrupted && <i>CORRUPTED · {state.bossState.garbledTurnsLeft} {state.bossState.garbledTurnsLeft === 1 ? 'USE' : 'USES'}</i>}
                   <i>{moveColor.icon} {move.element.toUpperCase()}</i>

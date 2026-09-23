@@ -591,6 +591,44 @@
   filter: saturate(0.72);
 }
 
+/* Always-visible, touch-legible effectiveness chip next to the move name.
+   Color follows the existing matchup class (advantage/resisted/normal). */
+.effect-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 4px 6px;
+  margin-left: 6px;
+  border: 1px solid #555;
+  border-radius: 3px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  line-height: 1;
+  white-space: nowrap;
+  vertical-align: middle;
+  position: relative;
+  z-index: 1;
+}
+
+.effect-badge.advantage {
+  color: #ffd34d;
+  border-color: color-mix(in srgb, #ffcc00 60%, transparent);
+  background: rgba(255, 204, 0, 0.12);
+}
+
+.effect-badge.resisted {
+  color: #c3c9d2;
+  border-color: color-mix(in srgb, #99a0aa 60%, transparent);
+  background: rgba(153, 160, 170, 0.10);
+}
+
+.effect-badge.normal {
+  color: #9aa3ad;
+  border-color: rgba(90, 90, 105, 0.9);
+  background: rgba(0, 0, 0, 0.35);
+}
+
 .move-btn .tooltip {
   display: none;
   position: absolute;

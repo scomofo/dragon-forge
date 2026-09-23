@@ -1,4 +1,5 @@
 import { STATUS_APPLY_CHANCE, STATUS_EFFECTS } from './gameData';
+import { getTypeEffectivenessLabel } from './battleEngine';
 
 const BASE_PROFILES = {
   defend: {
@@ -303,4 +304,21 @@ export function getSignatureSummary(move) {
     return { label: 'LOCK 100%', title: 'Guaranteed status' };
   }
   return { label: 'SIG', title: 'Once per battle' };
+}
+
+// === TYPE EFFECTIVENESS BADGES ===
+// Always-visible, touch-legible chips rendered next to each move name on the
+// battle move buttons. Pure data: a compact symbol + short label plus the
+// existing matchup CSS class (advantage/resisted/normal) so the badge colors
+// stay consistent with the .move-btn matchup styling. The full matchup word
+// remains in .move-meta for the tooltip.
+export const EFFECTIVENESS_BADGES = {
+  ADVANTAGE: { symbol: '▲', text: 'SE', matchClass: 'advantage' },
+  RESISTED: { symbol: '▼', text: 'RES', matchClass: 'resisted' },
+  NORMAL: { symbol: '●', text: 'NEUT', matchClass: 'normal' },
+};
+
+export function getEffectivenessBadge(moveElement, defenderElement) {
+  const label = getTypeEffectivenessLabel(moveElement, defenderElement);
+  return EFFECTIVENESS_BADGES[label] || EFFECTIVENESS_BADGES.NORMAL;
 }
