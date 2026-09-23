@@ -61,7 +61,10 @@ function findButton(node, label) {
   }
   if (node.type === 'button') {
     const children = Array.isArray(node.props.children) ? node.props.children : [node.props.children];
-    if (children.some(child => child?.type === 'strong' && child.props.children === label)) return node;
+    // The move name is the <strong>'s text child; an effectiveness badge chip
+    // may sit alongside it, so match on the text child rather than exact children.
+    const strongText = (child) => [child.props.children].flat().find(c => typeof c === 'string');
+    if (children.some(child => child?.type === 'strong' && strongText(child) === label)) return node;
   }
   return findButton(node.props?.children, label);
 }

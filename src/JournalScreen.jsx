@@ -3,13 +3,14 @@ import { useState, useEffect, useRef } from 'react';
 import { playSound } from './soundEngine';
 import { dragons, elementColors, getDragonLore, JOURNAL_DRAGON_IDS } from './gameData';
 import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
-import { claimMilestone, setDragonNickname, setFlag } from './persistence';
-import { checkMilestones } from './journalMilestones';
+import { claimMilestone, setDragonNickname, setEquippedTitle, setFlag } from './persistence';
+import { checkMilestones, getTitleName } from './journalMilestones';
 import { stageToRoman } from './utils';
 import { JOURNAL_BRIEFING } from './loreCanon';
 import { CAPTAINS_LOG_FRAGMENTS, getCaptainLogDisplay } from './forgeData';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
+import ArchiveScreen from './ArchiveScreen';
 
 export default function JournalScreen({ onNavigate, save, refreshSave, showToast }) {
   const [tab, setTab] = useState(() => (save.flags?.journalBriefingSeen ? 'dragons' : 'briefing'));
@@ -25,8 +26,16 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
 
   function handleClaim(m) {
     playSound('journalUnlock');
-    claimMilestone(m.id, m.reward);
-    showToast(`🏆 ${m.name} — +${m.reward} ◆`);
+    claimMilestone(m.id, m.reward, m.titleReward);
+    // NG+ lore-chase milestones pay no DataScraps — the reward is the Felix
+    // prose, recorded into the Archive's Ascendant Record.
+    if (m.reward === 0 && m.loreReward) {
+      showToast(`📜 ${m.name} — recorded in the Archive`);
+    } else {
+      showToast(m.titleReward
+        ? `🏆 ${m.name} — +${m.reward} ◆ · Title unlocked: ${getTitleName(m.titleReward)}`
+        : `🏆 ${m.name} — +${m.reward} ◆`);
+    }
     refreshSave();
     setMilestoneResults(prev => prev.map(r => r.id === m.id ? { ...r, claimed: true, newlyClaimed: false } : r));
   }
@@ -91,9 +100,20 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
         >
           DRAGONS
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'archive'}
+          className={`journal-tab ${tab === 'archive' ? 'active' : ''}`}
+          onClick={() => switchTab('archive')}
+        >
+          ARCHIVE
+        </button>
       </div>
 
-      {tab === 'briefing' ? (
+      {tab === 'archive' ? (
+        <ArchiveScreen save={save} milestones={milestoneResults} onClaim={handleClaim} />
+      ) : tab === 'briefing' ? (
         <div className="journal-briefing">
           <p className="journal-briefing-kicker">FIELD BRIEFING — PROF. FELIX</p>
           <div className="journal-briefing-grid">
@@ -170,6 +190,26 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
             <div className="journal-discovery-count">
               {discoveredCount}/{JOURNAL_DRAGON_IDS.length} DISCOVERED
             </div>
+            {(save.titles?.length > 0) && (
+              <div className="journal-title-row">
+                <label htmlFor="journal-title-select">TITLE</label>
+                <select
+                  id="journal-title-select"
+                  className="journal-title-select"
+                  value={save.equippedTitle || ''}
+                  onChange={(e) => {
+                    playSound('buttonClick');
+                    setEquippedTitle(e.target.value || null);
+                    refreshSave();
+                  }}
+                >
+                  <option value="">— None —</option>
+                  {save.titles.map((id) => (
+                    <option key={id} value={id}>{getTitleName(id) || id}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="journal-detail">
@@ -262,7 +302,8 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
             )}
 
             <div className="journal-milestones">
-              {milestoneResults.map((m) => {
+              {/* NG+ lore-chase milestones live in the ARCHIVE tab's chase track, not here. */}
+              {milestoneResults.filter((m) => !m.ngPlus).map((m) => {
                 const isClaimed = m.claimed;
                 const claimable = m.newlyClaimed;
 
@@ -270,9 +311,10 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
                   <div
                     key={m.id}
                     className={`milestone-badge ${isClaimed ? 'claimed' : ''} ${claimable ? 'claimable' : ''}`}
-                    title={`${m.description} — ${m.reward} DataScraps`}
+                    title={`${m.description} — ${m.reward} DataScraps${m.titleReward ? ` · Title: ${getTitleName(m.titleReward)}` : ''}`}
                   >
                     {isClaimed ? '✓ ' : ''}{m.name}
+                    {m.titleReward && <span style={{ display: 'block', fontSize: 6, color: '#ffcc00' }}>+ {getTitleName(m.titleReward)}</span>}
                     {claimable ? (
                       <button
                         className="milestone-claim-btn"

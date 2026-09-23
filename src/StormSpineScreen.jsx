@@ -6,6 +6,7 @@ import { getCampaignNodeById } from './campaignMap';
 import { getBossPattern } from './bossPatterns';
 import { getStageForLevel, getTypeEffectiveness } from './battleEngine';
 import { STORM_SPINE_ROOMS } from './worldZones';
+import { isFeaturedZone } from './featuredZone';
 import { getStormSpineBattleConfig, getStormSpineExits, getStormSpineObjective, getStormSpineProgress, STORM_SPINE_CACHE_REWARD, STORM_SPINE_CLEAR_REWARD } from './stormSpine';
 import { actInStormSpine, loadSave } from './persistence';
 import { playSound } from './soundEngine';
@@ -216,7 +217,11 @@ export default function StormSpineScreen({ save, refreshSave, onNavigate, onBegi
       <NavBar activeScreen="map" onNavigate={onNavigate} save={save} />
       <main className="outer-grid-layout">
         <header className="outer-grid-header">
-          <div><p className="outer-grid-kicker">SECTOR 03 · STORM SPINE</p><h1>{room.name}</h1></div>
+          <div><p className="outer-grid-kicker">SECTOR 03 · STORM SPINE</p><h1>{room.name}</h1>
+            {isFeaturedZone('storm_spine') && (
+              <p className="featured-zone-badge">⭐ FEATURED — double scraps today</p>
+            )}
+          </div>
           <button type="button" onClick={() => onNavigate('map')}>CAMPAIGN MAP</button>
         </header>
         <div className="outer-grid-objective"><span>OBJECTIVE</span><p>{getStormSpineObjective(save)}</p></div>

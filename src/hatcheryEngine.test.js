@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { rollRarity, rollElement, rollShiny, executePull, executeVoidEggPull, applyPullResult, getRarityCeremony, orderGridResults, rankPullExcitement } from './hatcheryEngine';
+import { rollRarity, rollElement, rollShiny, executePull, executeVoidEggPull, applyPullResult, getRarityCeremony, getPityRitual, getPityProgress, orderGridResults, rankPullExcitement } from './hatcheryEngine';
+import { XP_OVERFLOW_SCRAP_RATE } from './gameData';
 
 describe('rollRarity', () => {
   it('returns a rarity tier object', () => {
@@ -232,5 +233,87 @@ describe('executeVoidEggPull', () => {
     expect(result.save.dragons.void.owned).toBe(true);
     expect(result.save.dragons.void.shiny).toBe(true);
     expect(result.save.pityCounter).toBe(0);
+  });
+});
+
+describe('getPityProgress', () => {
+  it('tracks the fraction toward the guaranteed Rare+ (pityCounter / 10)', () => {
+    expect(getPityProgress(0)).toBe(0);
+    expect(getPityProgress(5)).toBe(0.5);
+    expect(getPityProgress(9)).toBeCloseTo(0.9);
+    expect(getPityProgress(10)).toBe(1);
+  });
+
+  it('clamps outside the [0, 10] range', () => {
+    expect(getPityProgress(-3)).toBe(0);
+    expect(getPityProgress(42)).toBe(1);
+  });
+});
+
+describe('getPityRitual', () => {
+  it('is a no-op for non-pity pulls', () => {
+    expect(getPityRitual(false)).toEqual({ glow: null, extraHoldMs: 0, css: '' });
+  });
+
+  it('gives the pity pull a pink aura and a held beat', () => {
+    const ritual = getPityRitual(true);
+    expect(ritual.css).toBe('egg-pity-glow');
+    expect(ritual.extraHoldMs).toBe(600);
+    // Distinct from the Exotic gold so the guaranteed pull reads as pity, not Exotic.
+    expect(ritual.glow).not.toBe(getRarityCeremony('Exotic').glow);
+  });
+});
+
+describe('getRarityCeremony — Exotic reveal hold (plan #5d)', () => {
+  it('holds the Exotic reveal a fraction longer (900ms)', () => {
+    expect(getRarityCeremony('Exotic').holdMs).toBe(900);
+  });
+});
+
+describe('applyPullResult — duplicate XP overflow to DataScraps', () => {
+  const saveWith = (dragon, dataScraps = 100) => ({
+    dragons: { fire: dragon },
+    dataScraps,
+    pityCounter: 0,
+  });
+
+  it('converts level-50 duplicate XP to scraps at the overflow rate', () => {
+    // Exotic duplicate: 50 * 5 = 250 XP, all of it overflows on a maxed dragon.
+    const save = saveWith({ level: 50, xp: 0, owned: true, shiny: false });
+    const pull = { element: 'fire', rarityName: 'Exotic', rarityMultiplier: 5, shiny: false, newPityCounter: 0 };
+    const result = applyPullResult(save, pull);
+    expect(result.xpGained).toBe(250);
+    expect(result.scrapsGained).toBe(250 / XP_OVERFLOW_SCRAP_RATE); // 25
+    expect(result.save.dataScraps).toBe(100 + 25);
+    expect(result.save.dragons.fire.level).toBe(50);
+    expect(result.save.dragons.fire.xp).toBe(0);
+  });
+
+  it('converts only the past-cap remainder (partial overflow)', () => {
+    // L49 needs 290 XP; 280 banked + 50 from a Common duplicate -> L50, 40 overflows.
+    const save = saveWith({ level: 49, xp: 280, owned: true, shiny: false });
+    const pull = { element: 'fire', rarityName: 'Common', rarityMultiplier: 1, shiny: false, newPityCounter: 1 };
+    const result = applyPullResult(save, pull);
+    expect(result.save.dragons.fire.level).toBe(50);
+    expect(result.scrapsGained).toBe(4); // 40 overflow XP / 10
+    expect(result.save.dataScraps).toBe(104);
+  });
+
+  it('grants no scraps when the duplicate XP fits under the cap', () => {
+    const save = saveWith({ level: 1, xp: 0, owned: true, shiny: false });
+    const pull = { element: 'fire', rarityName: 'Uncommon', rarityMultiplier: 2, shiny: false, newPityCounter: 1 };
+    const result = applyPullResult(save, pull);
+    expect(result.xpGained).toBe(100);
+    expect(result.scrapsGained).toBe(0);
+    expect(result.save.dataScraps).toBe(100);
+  });
+
+  it('grants no scraps for new dragons', () => {
+    const save = saveWith({ level: 1, xp: 0, owned: false, shiny: false });
+    const pull = { element: 'fire', rarityName: 'Exotic', rarityMultiplier: 5, shiny: false, newPityCounter: 0 };
+    const result = applyPullResult(save, pull);
+    expect(result.isNew).toBe(true);
+    expect(result.scrapsGained).toBe(0);
+    expect(result.save.dataScraps).toBe(100);
   });
 });

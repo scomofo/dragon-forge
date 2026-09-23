@@ -329,6 +329,52 @@
   animation: shinyCardPulse 1.5s ease-in-out infinite;
 }
 
+/* Duplicate-pull overflow: XP that would have vanished past the level-50 cap
+   becomes DataScraps (gameplay plan #5c). */
+.reveal-badge.scrap-badge {
+  color: #44dd88;
+  border: 1px solid #44dd88;
+}
+
+/* Pity-pull ritual aura (gameplay plan #5b): hot pink, distinct from the
+   Exotic gold. Applied to the egg container for the whole HATCHING phase of a
+   pity-guaranteed pull. */
+.egg-container.egg-pity-glow {
+  animation: pityEggAura 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes pityEggAura {
+  0% { filter: brightness(1.05) drop-shadow(0 0 10px rgba(255, 102, 170, 0.55)); }
+  100% { filter: brightness(1.5) drop-shadow(0 0 28px rgba(255, 102, 170, 0.95)); }
+}
+
+/* Pity countdown ring (gameplay plan #5a): progress ring next to the text
+   hint, filling as pityCounter approaches the guaranteed Rare+. */
+.pity-meter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pity-ring-track {
+  fill: none;
+  stroke: #2a2a2a;
+  stroke-width: 3;
+}
+
+.pity-ring-fill {
+  fill: none;
+  stroke: #ff66aa;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 75.4; /* 2πr for r=12 */
+  transform: rotate(-90deg);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: stroke-dashoffset 0.3s ease;
+}
+
 .pity-hint {
   font-size: 8px;
   color: #666;

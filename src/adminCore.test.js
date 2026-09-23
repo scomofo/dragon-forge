@@ -4,6 +4,10 @@ import { PULL_COST } from './gameData';
 import { ADMIN_CORE_ROOMS, WORLD_ZONES } from './worldZones';
 import { applyAdminCoreAction, getAdminCoreBattleConfig, getAdminCoreExits, getAdminCoreObjective, getAdminCoreProgress, ADMIN_CORE_CACHE_REWARD, ADMIN_CORE_CLEAR_REWARD } from './adminCore';
 
+// Featured-zone determinism: 20240101 is not the Admin Core's featured day,
+// so reward assertions see base rates regardless of the run date.
+const NO_FEATURE = { seed: 20240101 };
+
 function expedition() {
   return {
     dragons: { light: { owned: true, level: 12 }, stone: { owned: true, level: 12 }, fire: { owned: false, level: 1 } },
@@ -65,7 +69,7 @@ describe('Admin Core authored route', () => {
     const laneRoom = { hoarding: 'reliquary-vault', memory: 'echo-archive', passage: 'protocol-perch' }[lantern];
     save = walk(save, laneRoom);
     if (lantern === 'hoarding') {
-      save = applyAdminCoreAction(save, 'claim-cache');
+      save = applyAdminCoreAction(save, 'claim-cache', null, NO_FEATURE);
       expect(applyAdminCoreAction(save, 'claim-cache')).toBe(save); // once only
       save = walk(save, 'protocol-perch');
     } else if (lantern === 'memory') {
@@ -78,7 +82,7 @@ describe('Admin Core authored route', () => {
     expect(applyAdminCoreAction(save, 'move', 'reset-threshold')).toBe(save);
     save = { ...save, defeatedNpcs: [...save.defeatedNpcs, 'protocol_vulture'] };
     save = walk(save, 'reset-threshold');
-    save = applyAdminCoreAction(save, 'claim-clear');
+    save = applyAdminCoreAction(save, 'claim-clear', null, NO_FEATURE);
     const reward = PULL_COST + (lantern === 'hoarding' ? ADMIN_CORE_CACHE_REWARD : 0);
     expect(save.dataScraps).toBe(original.dataScraps + reward);
     expect(save.stats.totalScrapsEarned).toBe(original.stats.totalScrapsEarned + reward);

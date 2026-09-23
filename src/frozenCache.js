@@ -9,6 +9,7 @@
 import { getCampaignNodeById, getCampaignNodeState } from './campaignMap';
 import { dragons, PULL_COST } from './gameData';
 import { FROZEN_CACHE_ROOMS } from './worldZones';
+import { applyFeaturedMultiplier, getFeaturedZoneSeed } from './featuredZone';
 
 export const FROZEN_CACHE_VAULT_REWARD = 20;
 export const FROZEN_CACHE_CLEAR_REWARD = PULL_COST;
@@ -69,7 +70,7 @@ export function getFrozenCacheObjective(save) {
 
 // Returns the same save for invalid/repeated actions. Persistence reloads the
 // latest save for every action so clicks cannot replay rewards or erase wins.
-export function applyFrozenCacheAction(save, action, value) {
+export function applyFrozenCacheAction(save, action, value, { seed = getFeaturedZoneSeed() } = {}) {
   const progress = getFrozenCacheProgress(save);
   let reward = 0;
   if (action === 'move') {
@@ -98,11 +99,15 @@ export function applyFrozenCacheAction(save, action, value) {
     reward = FROZEN_CACHE_CLEAR_REWARD;
   } else return save;
 
+  // Daily featured zone: when the Frozen Cache is featured, vault + clear
+  // rewards pay double scraps. The seed defaults to today; tests pass an
+  // explicit seed for determinism.
+  const paidReward = applyFeaturedMultiplier('frozen_cache', reward, seed);
   return {
     ...save, frozenCache: progress,
-    ...(reward > 0 ? {
-      dataScraps: (save.dataScraps || 0) + reward,
-      stats: { ...save.stats, totalScrapsEarned: (save.stats?.totalScrapsEarned || 0) + reward },
+    ...(paidReward > 0 ? {
+      dataScraps: (save.dataScraps || 0) + paidReward,
+      stats: { ...save.stats, totalScrapsEarned: (save.stats?.totalScrapsEarned || 0) + paidReward },
     } : {}),
   };
 }

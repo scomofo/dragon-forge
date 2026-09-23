@@ -10,6 +10,7 @@
 import { getCampaignNodeById, getCampaignNodeState } from './campaignMap';
 import { dragons, PULL_COST } from './gameData';
 import { ADMIN_CORE_ROOMS } from './worldZones';
+import { applyFeaturedMultiplier, getFeaturedZoneSeed } from './featuredZone';
 
 export const ADMIN_CORE_CACHE_REWARD = 35;
 export const ADMIN_CORE_CLEAR_REWARD = PULL_COST;
@@ -69,7 +70,7 @@ export function getAdminCoreObjective(save) {
 
 // Returns the same save for invalid/repeated actions. Persistence reloads the
 // latest save for every action so clicks cannot replay rewards or erase wins.
-export function applyAdminCoreAction(save, action, value) {
+export function applyAdminCoreAction(save, action, value, { seed = getFeaturedZoneSeed() } = {}) {
   const progress = getAdminCoreProgress(save);
   let reward = 0;
   if (action === 'move') {
@@ -96,11 +97,15 @@ export function applyAdminCoreAction(save, action, value) {
     reward = ADMIN_CORE_CLEAR_REWARD;
   } else return save;
 
+  // Daily featured zone: when the Admin Core is featured, cache + clear
+  // rewards pay double scraps. The seed defaults to today; tests pass an
+  // explicit seed for determinism.
+  const paidReward = applyFeaturedMultiplier('admin_core', reward, seed);
   return {
     ...save, adminCore: progress,
-    ...(reward > 0 ? {
-      dataScraps: (save.dataScraps || 0) + reward,
-      stats: { ...save.stats, totalScrapsEarned: (save.stats?.totalScrapsEarned || 0) + reward },
+    ...(paidReward > 0 ? {
+      dataScraps: (save.dataScraps || 0) + paidReward,
+      stats: { ...save.stats, totalScrapsEarned: (save.stats?.totalScrapsEarned || 0) + paidReward },
     } : {}),
   };
 }

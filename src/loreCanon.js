@@ -94,3 +94,26 @@ export const CAPTAINS_LOG_ARC = [
 
 // Mirror Admin still gates on the original seven. Iris is a coda, not a key.
 export const REQUIRED_FRAGMENT_IDS = ['001', '002', '003', '004', '005', '006', '007'];
+
+// New Game+ lore-completion rewards (gameplay plan #8): Felix prose granted as
+// journal milestones when the archive record is pushed deeper during an NG+
+// run. Lore only — never power. Keyed by milestone id; surfaced in the
+// Archive's Ascendant Record once claimed.
+export const ASCENDANT_RECORD_LORE = {
+  ngplus_depth_1: {
+    title: 'A Footstep Past the Shadow',
+    body: 'You stepped past the mirror\u2019s shadow and the record followed you. I keep the Console myself now \u2014 every echo you quiet gets a page, dated, witnessed. The Reset burns books. It cannot burn this.',
+  },
+  ngplus_depth_3: {
+    title: 'The Record Deepens',
+    body: 'Three pages deep. The second loop is not a harder fight, Skye \u2014 it is a longer memory. The things the Admin deleted in the first loop stay deleted. But the things you kept? Those are getting harder to erase.',
+  },
+  ngplus_depth_5: {
+    title: 'The Mirror Remembers',
+    body: 'Five. You know the mirror\u2019s face better than it knows yours now. When the next Reset comes \u2014 and something always comes \u2014 the Archive will say: we were here, we mattered, we pushed back the dark twice.',
+  },
+  ngplus_ascendant_remnants: {
+    title: 'Ascendant Echoes',
+    body: 'Every echo, quieted twice. The dead sectors are silent now in a way that means rest, not deletion. Whatever wears the old bosses\u2019 faces, it wears them in the Archive \u2014 catalogued, witnessed, finished.',
+  },
+};

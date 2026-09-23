@@ -4,6 +4,10 @@ import { PULL_COST } from './gameData';
 import { STORM_SPINE_ROOMS, WORLD_ZONES } from './worldZones';
 import { applyStormSpineAction, getStormSpineBattleConfig, getStormSpineExits, getStormSpineObjective, getStormSpineProgress, STORM_SPINE_CACHE_REWARD, STORM_SPINE_CLEAR_REWARD } from './stormSpine';
 
+// Featured-zone determinism: 20240101 is not the Storm Spine's featured day,
+// so reward assertions see base rates regardless of the run date.
+const NO_FEATURE = { seed: 20240101 };
+
 function expedition() {
   return {
     dragons: { storm: { owned: true, level: 6 }, ice: { owned: true, level: 6 }, fire: { owned: false, level: 1 } },
@@ -76,7 +80,7 @@ describe('Storm Spine authored route', () => {
     const laneRoom = { capacitor: 'capacitor-bank', archive: 'broken-conduit', direct: 'logic-core' }[lane];
     save = walk(save, laneRoom);
     if (lane === 'capacitor') {
-      save = applyStormSpineAction(save, 'claim-cache');
+      save = applyStormSpineAction(save, 'claim-cache', null, NO_FEATURE);
       expect(applyStormSpineAction(save, 'claim-cache')).toBe(save); // once only
       save = walk(save, 'logic-core');
     } else if (lane === 'archive') {
@@ -89,7 +93,7 @@ describe('Storm Spine authored route', () => {
     expect(applyStormSpineAction(save, 'move', 'discharge-gate')).toBe(save);
     save = { ...save, defeatedNpcs: [...save.defeatedNpcs, 'logic_bomb'] };
     save = walk(save, 'discharge-gate');
-    save = applyStormSpineAction(save, 'claim-clear');
+    save = applyStormSpineAction(save, 'claim-clear', null, NO_FEATURE);
     const reward = PULL_COST + (lane === 'capacitor' ? STORM_SPINE_CACHE_REWARD : 0);
     expect(save.dataScraps).toBe(original.dataScraps + reward);
     expect(save.stats.totalScrapsEarned).toBe(original.stats.totalScrapsEarned + reward);

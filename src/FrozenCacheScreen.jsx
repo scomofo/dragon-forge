@@ -6,6 +6,7 @@ import { getCampaignNodeById } from './campaignMap';
 import { getBossPattern } from './bossPatterns';
 import { getStageForLevel, getTypeEffectiveness } from './battleEngine';
 import { FROZEN_CACHE_ROOMS } from './worldZones';
+import { isFeaturedZone } from './featuredZone';
 import { getFrozenCacheBattleConfig, getFrozenCacheExits, getFrozenCacheObjective, getFrozenCacheProgress, FROZEN_CACHE_VAULT_REWARD, FROZEN_CACHE_CLEAR_REWARD } from './frozenCache';
 import { actInFrozenCache, loadSave } from './persistence';
 import { playSound } from './soundEngine';
@@ -228,7 +229,11 @@ export default function FrozenCacheScreen({ save, refreshSave, onNavigate, onBeg
       <NavBar activeScreen="map" onNavigate={onNavigate} save={save} />
       <main className="outer-grid-layout">
         <header className="outer-grid-header">
-          <div><p className="outer-grid-kicker">SECTOR 02 · FROZEN CACHE</p><h1>{room.name}</h1></div>
+          <div><p className="outer-grid-kicker">SECTOR 02 · FROZEN CACHE</p><h1>{room.name}</h1>
+            {isFeaturedZone('frozen_cache') && (
+              <p className="featured-zone-badge">⭐ FEATURED — double scraps today</p>
+            )}
+          </div>
           <button type="button" onClick={() => onNavigate('map')}>CAMPAIGN MAP</button>
         </header>
         <div className="outer-grid-objective"><span>OBJECTIVE</span><p>{getFrozenCacheObjective(save)}</p></div>

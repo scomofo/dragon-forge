@@ -13,13 +13,15 @@ import { getDailyStreakMultiplier } from './dailyChallenge';
 import { getExpedition } from './expeditions';
 import { FRAGMENT_TRIGGERS, RELIC_DROPS, getRelic, getRelicBattleModifiers } from './forgeData';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
+import { getWantedDragon, getWantedCoreElement, WANTED_DRAGON_CORE_BONUS } from './wantedDragon';
 import { swapActiveAndBench, faintSwap } from './benchLogic';
 import { EPILOGUE_LINES, MIRROR_ADMIN_EPILOGUE_LINES } from './singularityBosses';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
 import VfxOverlay from './VfxOverlay';
-import { getBattlePresentationProfile, getBattleContactState, hasDamagingImpact, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, shouldAnimateBattleEvent } from './battlePresentation';
+import { getBattleFlipX, getBattleLungeDirection } from './battleFacing';
+import { getBattlePresentationProfile, getBattleContactState, hasDamagingImpact, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, getTellCallout, shouldAnimateBattleEvent, getEffectivenessBadge, buildDefeatRecap } from './battlePresentation';
 import { resolveBattlePose } from './battleSets';
 import { resolveBattleArena } from './arenas';
 import BattleCues from './BattleCues';
@@ -44,6 +46,9 @@ const PHASES = {
   PHASE_SHIFT: 'phaseShift',
   EPILOGUE: 'epilogue',
 };
+
+// Gameplay plan #6: cap on the per-turn fight record that feeds the post-loss recap.
+const FIGHT_RECORD_CAP = 200;
 
 function getScaledNpcStats(baseStats, baseLevel, playerLevel, ngPlus = 0) {
   // Scale NPC stats by how far the player out-levels them, plus +25% per New
@@ -125,7 +130,6 @@ function initBattle(dragonId, npcId, save, battleConfig) {
       arena: boss.arena,
       arenaFilter: boss.arenaFilter || null,
       spriteFilter: phase ? phase.spriteFilter : (boss.spriteFilter || null),
-      flipSprite: false,
     };
   } else if (battleConfig?.dailyNpc) {
     npc = battleConfig.dailyNpc;
@@ -216,6 +220,7 @@ function initBattle(dragonId, npcId, save, battleConfig) {
     battleLog: [],
     turnCount: 0,
     maxDamageDealt: 0,
+    fightRecords: [],
     bench,
     npcAtkBuff: null,
     npcDefBuff: null,
@@ -257,13 +262,15 @@ function battleReducer(state, action) {
     case 'SET_PHASE':
       return { ...state, phase: action.phase };
     case 'SET_VICTORY':
-      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1, relicDropped: action.relicDropped || null, wasRepeat: action.wasRepeat || false, rankBonus: action.rankBonus || 0, stageEvolved: action.stageEvolved || null };
+      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1, relicDropped: action.relicDropped || null, wasRepeat: action.wasRepeat || false, rankBonus: action.rankBonus || 0, stageEvolved: action.stageEvolved || null, wantedBonus: action.wantedBonus || null };
     case 'SET_DEFEAT':
       return { ...state, phase: PHASES.DEFEAT };
     case 'RESET_TURN':
       return { ...state, phase: PHASES.PLAYER_TURN, playerSpriteClass: '', npcSpriteClass: '', npcAttacking: false, playerForcedFrame: null, turnCount: state.turnCount + 1 };
     case 'TRACK_DAMAGE':
       return { ...state, maxDamageDealt: Math.max(state.maxDamageDealt, action.damage) };
+    case 'APPEND_FIGHT_RECORDS':
+      return { ...state, fightRecords: [...(state.fightRecords || []), ...action.records].slice(-FIGHT_RECORD_CAP) };
     case 'SET_PLAYER_STATUS':
       return { ...state, playerStatus: action.value };
     case 'SET_NPC_STATUS':
@@ -399,6 +406,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
     pendingTimersRef.current.add(id);
     return id;
   }, []);
+  // P4 tell vocabulary: every telegraph (charge wind-up, signature
+  // pre-warning, pattern beat) fires through getTellCallout — one visual
+  // contract (icon + one line, variant 'tell') on the battle-callout banner.
+  const fireTellBanner = useCallback((tell, readMs = 1200) => {
+    if (!tell) return;
+    dispatch({ type: 'SET_BATTLE_CALLOUT', value: tell });
+    trackedTimeout(() => dispatch({ type: 'CLEAR_BATTLE_CALLOUT' }), readMs);
+  }, [trackedTimeout]);
   // C5: entrance overlay — stamps both combatants in before input unlocks.
   const [introDone, setIntroDone] = useState(false);
   const retryStartedRef = useRef(false);
@@ -576,10 +591,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
     dispatch({ type: 'SET_CONTACT_POSES', value: getBattleContactState(event, profile) });
     if (isPlayer) {
       const spriteEl = playerSpriteRef.current?.getCanvas?.() || playerSpriteContainerRef.current;
-      if (spriteEl) playerLunge(spriteEl, 'left');
+      if (spriteEl) playerLunge(spriteEl, getBattleLungeDirection('player'));
     } else {
       const npcEl = npcSpriteImgRef.current;
-      if (npcEl) npcLunge(npcEl, battleState.npc.flipSprite ? 'left' : 'right');
+      if (npcEl) npcLunge(npcEl, getBattleLungeDirection('enemy'));
     }
     // Whip/swoosh at the contact frame (matches lunge anticipation -> strike timing)
     trackedTimeout(() => playSound('lungeContact'), scaleBattleDuration(110));
@@ -804,6 +819,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       dispatch({ type: 'ADD_LOG', text: forcedSwap
         ? `${turnState.npc.name} lures ${state.dragon.name} out — ${turnState.dragon.name} guards on entry. Command interrupted; Toxic Cloud incoming!`
         : `${state.dragon.name} swaps out — ${turnState.dragon.name} guards on entry!` });
+      if (forcedSwap) fireTellBanner(getTellCallout({ kind: 'pattern', patternId: 'phishing_siren', beat: 'lure' }));
       moveKey = 'defend';
       // Auras belong to the fighter that left, not to the arena slot.
       playerAuraRef.current?.kill();
@@ -872,6 +888,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       !turnState.signatureMoveUsed && !turnState.npcChargedMove &&
       npcHpRatio <= sigCondition.hpThreshold;
 
+    // P4 tell vocabulary: pattern intro banner before the boss's first turn
+    // resolves — one contract (icon + one line, variant 'tell') for every
+    // authored pattern. Mirror Admin uses the mirror_admin_reset pattern id.
+    if (currentTurn === 1) {
+      const introPatternId = battleConfig?.isMirrorAdmin ? 'mirror_admin_reset' : turnState.bossPatternId;
+      fireTellBanner(getTellCallout({ kind: 'pattern', patternId: introPatternId }), 1400);
+    }
+
     // ---- Charge / fire logic ----
     const desperationMode = (turnState.npcHp / turnState.npcMaxHp) < 0.30;
     let npcMoveKey;
@@ -885,6 +909,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       npcMoveKey = 'bomb_detonation';
       if (turnState.npcChargedMove) dispatch({ type: 'CLEAR_NPC_CHARGED_MOVE' });
       dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name}'s fuse hits zero — FINAL DETONATION! Defend or finish it before it acts.` });
+      fireTellBanner(getTellCallout({ kind: 'pattern', patternId: 'logic_bomb', beat: 'detonation' }), 1400);
     } else if (turnState.npcChargedMove) {
       // Fire the stored charged move at 1.4× ATK
       npcMoveKey = turnState.npcChargedMove;
@@ -893,6 +918,14 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
     } else if (shouldFireSignature) {
       npcMoveKey = sigKey;
       dispatch({ type: 'SET_SIGNATURE_USED' });
+      // P4 tell vocabulary: signature pre-warning, fired through the shared
+      // helper before the boss's turn resolves (the SIGNATURE banner at
+      // resolution stays as the climax beat).
+      fireTellBanner(getTellCallout({
+        kind: 'signature',
+        npcName: turnState.npc.name,
+        moveName: moves[sigKey]?.name || sigKey,
+      }), 1100);
     } else {
       npcMoveKey = pickNpcMove(turnState.npc.moveKeys, turnState.npc.element, turnState.dragon.element, turnState.playerStatus, battleContext);
 
@@ -909,6 +942,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
         dispatch({ type: 'APPLY_DAMAGE_TO_NPC', damage: burnDamage });
         dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} overheats — the heat stack burns it for ${burnDamage}!` });
         dispatch({ type: 'SET_BOSS_STATE', value: { heatStacks: 0 } });
+        fireTellBanner(getTellCallout({ kind: 'pattern', patternId, beat: 'overheat' }));
         playSound('statusTick', { element: 'fire' });
       } else if (patternId === 'buffer_overflow') {
         const stacks = bs.heatStacks + 1;
@@ -922,6 +956,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
         npcMoveKey = 'vulture_drain';
         dispatch({ type: 'SET_BOSS_STATE', value: { perchUsed: true } });
         dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} perches — Soul Drain is next!` });
+        fireTellBanner(getTellCallout({ kind: 'pattern', patternId, beat: 'perch' }));
       }
 
       // recursive_golem: at 3 harden stacks Tectonic Rupture is FORCED and
@@ -930,6 +965,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
         npcMoveKey = npcData.signatureMoveKey || 'golem_rupture';
         dispatch({ type: 'SET_BOSS_STATE', value: { hardenStacks: 0 } });
         dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name}'s harden loop ruptures!` });
+        fireTellBanner(getTellCallout({ kind: 'pattern', patternId, beat: 'rupture' }));
       }
 
       // stack_overflow: after the doublers run out it crashes — skip this turn.
@@ -937,6 +973,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
         npcMoveKey = 'defend';
         dispatch({ type: 'SET_BOSS_STATE', value: { crashTurnsLeft: bs.crashTurnsLeft - 1 } });
         dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} crashes — it skips the turn recovering.` });
+        fireTellBanner(getTellCallout({ kind: 'pattern', patternId, beat: 'crash' }));
       }
 
       const npcMoveData = moves[npcMoveKey];
@@ -994,6 +1031,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       finalNpcState = { ...finalNpcState, def: Math.floor(finalNpcState.def * (1 + pips * 0.1)) };
       dispatch({ type: 'SET_BOSS_STATE', value: { leakPips: pips } });
       dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} leak pip ${pips}/5 — DEF +${pips * 10}%.` });
+      if (pips === 5 && (bs.leakPips || 0) < 5) {
+        fireTellBanner(getTellCallout({ kind: 'pattern', patternId: 'memory_leak', beat: 'maxed' }));
+      }
     }
 
     // On charge turn: NPC defends (takes the player hit while winding up)
@@ -1039,6 +1079,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
         const corruption = createCorruptionState(turnState.dragonId, turnState.dragon.moveKeys);
         dispatch({ type: 'SET_BOSS_STATE', value: corruption });
         if (corruption.garbledMoveKey) dispatch({ type: 'ADD_LOG', text: `Burn corrupts ${turnState.dragon.name}'s ${moves[corruption.garbledMoveKey].name} — BASIC for its next 2 uses.` });
+        if (corruption.garbledMoveKey) {
+          fireTellBanner(getTellCallout({ kind: 'pattern', patternId: 'data_corruption', beat: 'corrupted' }));
+        }
       }
     }
 
@@ -1049,6 +1092,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       if (el === bs.prevElement && !bs.decrypted) {
         dispatch({ type: 'SET_BOSS_STATE', value: { decrypted: true, prevElement: el } });
         dispatch({ type: 'ADD_LOG', text: `Encryption cracked — ${turnState.npc.name}'s type is exposed!` });
+        fireTellBanner(getTellCallout({ kind: 'pattern', patternId: 'crypto_crab', beat: 'decrypted' }));
       } else if (!bs.decrypted) {
         dispatch({ type: 'SET_BOSS_STATE', value: { prevElement: el } });
         dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} reads ENCRYPTED — repeat your last element to crack it.` });
@@ -1061,6 +1105,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       if (npcAttackEvent && !npcAttackEvent.hit) {
         dispatch({ type: 'SET_BOSS_STATE', value: { pierceNext: true } });
         dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} phases — its next hit ignores Defend!` });
+        fireTellBanner(getTellCallout({ kind: 'pattern', patternId: 'bit_wraith', beat: 'phase' }));
       } else if (npcAttackEvent?.hit) {
         dispatch({ type: 'SET_BOSS_STATE', value: { pierceNext: false } });
       }
@@ -1071,6 +1116,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       if (headsBroken > bs.headsBroken) {
         dispatch({ type: 'SET_BOSS_STATE', value: { headsBroken } });
         dispatch({ type: 'ADD_LOG', text: `Head down (${headsBroken}/${HYDRA_HEAD_COUNT})${headsBroken === HYDRA_HEAD_COUNT ? ' — HP lock broken!' : ' — keep hitting its weakness.'}` });
+        fireTellBanner(getTellCallout({
+          kind: 'pattern',
+          patternId: 'glitch_hydra',
+          beat: headsBroken === HYDRA_HEAD_COUNT ? 'lockBroken' : 'headBroken',
+        }));
       }
     }
 
@@ -1109,6 +1159,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
     if (turnState.bossPatternId === 'stack_overflow' && npcAttackEvent?.hit && npcAttackEvent.moveKey === 'thunder_clap' && !bs.surgeUsed) {
       dispatch({ type: 'SET_BOSS_STATE', value: { spdDoubleTurnsLeft: 2, surgeUsed: true, crashTurnsLeft: 2 } });
       dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} surges — its speed doubles for two turns!` });
+      fireTellBanner(getTellCallout({ kind: 'pattern', patternId: 'stack_overflow', beat: 'surge' }));
     } else if (turnState.bossPatternId === 'stack_overflow' && bs.spdDoubleTurnsLeft > 0) {
       dispatch({ type: 'SET_BOSS_STATE', value: { spdDoubleTurnsLeft: bs.spdDoubleTurnsLeft - 1 } });
     }
@@ -1123,6 +1174,26 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
         ),
       };
     }
+
+    // Gameplay plan #6: capture a bounded per-turn fight record for the
+    // post-loss recap. Turn context (was this a charged strike firing, did the
+    // player defend) is stamped on every damaging event so the recap can
+    // explain the biggest hit taken. Reflected/blocked hits damage the wrong
+    // target or deal none, so they don't count as hits taken or dealt.
+    const fightRecords = result.events
+      .filter(e => e.action === 'attack' && e.hit && !e.reflected && !e.blocked && (e.damage ?? 0) > 0)
+      .map(e => ({
+        turn: currentTurn,
+        attacker: e.attacker,
+        moveName: e.moveName,
+        moveKey: e.moveKey,
+        damage: e.damage,
+        effectiveness: e.effectiveness ?? 1,
+        isCritical: !!e.isCritical,
+        wasCharged: e.attacker === 'npc' && previouslyCharged,
+        playerDefended: playerDefendedLastTurn.current,
+      }));
+    if (fightRecords.length) dispatch({ type: 'APPEND_FIGHT_RECORDS', records: fightRecords });
 
     // C6: a signature firing dims the arena so the once-per-battle climax
     // reads as an event (player or NPC). Cleared when the turn settles.
@@ -1158,6 +1229,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
     if (isCharging) {
       const chargeMoveName = moves[npcMoveKey]?.name || 'a powerful move';
       dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} is winding up ${chargeMoveName}!` });
+      // P4 tell vocabulary: the wind-up beat fires through the shared helper
+      // before the charged strike lands next turn.
+      fireTellBanner(getTellCallout({ kind: 'charge', npcName: turnState.npc.name, moveName: chargeMoveName }));
       playSound('combatMessage');
     }
 
@@ -1268,6 +1342,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
           dispatch({ type: 'SYNC_BATTLE_RESULT', result });
           dispatch({ type: 'SET_BOSS_STATE', value: { mirrorHealPunished: true } });
           dispatch({ type: 'ADD_LOG', text: `${turnState.npc.name} triggers the Great Reset — heals ${healAmount} HP!` });
+          fireTellBanner(getTellCallout({ kind: 'pattern', patternId: 'mirror_admin_reset', beat: 'reset' }));
           playSound('statusTick', { element: 'shadow' });
         }
       }
@@ -1423,6 +1498,20 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
           coreDropped = { element: npcElement, count: coreCount };
         }
 
+        // Weekly wanted dragon: if the active dragon is this week's wanted
+        // dragon, grant bonus cores of its element on the win.
+        // ECONOMY REVIEW (ADR-0006): unthrottled core faucet — every win
+        // with the wanted dragon pays this on top of the normal core drop.
+        let wantedBonus = null;
+        const wantedDragonId = getWantedDragon();
+        if (turnState.dragonId === wantedDragonId) {
+          const bonusElement = getWantedCoreElement(wantedDragonId);
+          if (bonusElement) {
+            addCore(bonusElement, WANTED_DRAGON_CORE_BONUS);
+            wantedBonus = { element: bonusElement, count: WANTED_DRAGON_CORE_BONUS, dragonId: wantedDragonId };
+          }
+        }
+
         // Relic drops — first defeat of specific NPCs only
         const relicDropId = RELIC_DROPS[npcId];
         let relicDropped = null;
@@ -1488,7 +1577,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
           const preBattleStage = getStageForLevel(turnState.playerLevel);
           const postBattleStage = getStageForLevel(newLevel);
           const stageEvolved = postBattleStage > preBattleStage ? postBattleStage : null;
-          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped, wasRepeat: isRepeatDefeat || isSingularityRepeat, rankBonus, stageEvolved });
+          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped, wasRepeat: isRepeatDefeat || isSingularityRepeat, rankBonus, stageEvolved, wantedBonus });
           stopMusic();
           stopHeartbeat();
           playSound('victoryFanfare');
@@ -1574,6 +1663,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
   });
   const commandDisabled = id => commands.find(command => command.id === id)?.disabled ?? true;
   const defeatAdvice = state.phase === PHASES.DEFEAT ? getDefeatAdvice(state, battleConfig) : null;
+  const defeatRecap = state.phase === PHASES.DEFEAT ? buildDefeatRecap(state.fightRecords, state.turnCount + 1) : null;
   const battleCues = getBattleCues(state, { playerDefendedLastTurn: playerDefendedLastTurn.current, isMirrorAdmin: battleConfig?.isMirrorAdmin });
   const battleEdge = getBattleEdge(playerHpPercent, npcHpPercent, playerHpState, npcHpState);
   const battleRank = getBattleRank(state.turnCount + 1, state.maxDamageDealt, playerHpPercent);
@@ -1850,7 +1940,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
             attackSprite={npc.attackSprite}
             isAttacking={state.npcAttacking}
             className={state.npcSpriteClass}
-            flipX={npc.flipSprite}
+            // Enemy art is authored facing left; the enemy anchors left, so flip
+            // every enemy sprite to face right toward the player (see battleFacing.js).
+            flipX={getBattleFlipX('enemy', true)}
             smooth={battleConfig?.boss?.bespokeArt}
             style={{ filter: state.npc.spriteFilter || 'none' }}
             actorId={npc.id || null}
@@ -1891,7 +1983,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
             ref={playerSpriteRef}
             spriteSheet={dragon.stageSprites?.[state.playerStage] || dragon.spriteSheet}
             stage={state.playerStage}
-            flipX={!dragon.facesLeft}
+            // Dragon art is authored facing right; the player anchors right, so
+            // flip to face left toward the enemy (see battleFacing.js).
+            flipX={getBattleFlipX('player', dragon.facesLeft === true)}
             forcedFrame={state.playerForcedFrame}
             className={state.playerSpriteClass}
             element={dragon.element}
@@ -1941,6 +2035,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
 
       {state.battleCallout && (
         <div className={`battle-callout ${state.battleCallout.variant}`}>
+          {state.battleCallout.icon && (
+            <span className="callout-icon" aria-hidden="true">{state.battleCallout.icon}</span>
+          )}
           {state.battleCallout.text}
         </div>
       )}
@@ -1979,6 +2076,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
             const isResolving = isResolvingTurn;
             const isSelected = selectedMoveKey === move.key;
             const matchup = getTypeEffectivenessLabel(move.element, npc.element);
+            const effectBadge = getEffectivenessBadge(move.element, npc.element);
             const statusSummary = getStatusMoveSummary(move);
             const signatureSummary = getSignatureSummary(move);
             const signatureSpent = !!(move.isSignature && state.playerSignatureUsed?.[state.dragonId]);
@@ -1997,7 +2095,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
                 <span className="tooltip">
                   {move.corrupted ? 'BASIC ATTACK | ' : ''}PWR:{move.power} ACC:{move.accuracy}%{statusSummary ? ` | ${statusSummary.title}: ${statusSummary.summary}, ${statusSummary.duration}` : ''}{signatureSummary ? ` | ${signatureSummary.title}` : ''}
                 </span>
-                <strong>{move.name.toUpperCase()}</strong>
+                <strong>
+                  {move.name.toUpperCase()}
+                  <span className={`effect-badge ${effectBadge.matchClass}`} title={`Type matchup: ${matchup}`}>{effectBadge.symbol} {effectBadge.text}</span>
+                </strong>
                 <span className="move-meta">
                   {move.corrupted && <i>CORRUPTED · {state.bossState.garbledTurnsLeft} {state.bossState.garbledTurnsLeft === 1 ? 'USE' : 'USES'}</i>}
                   <i>{moveColor.icon} {move.element.toUpperCase()}</i>
@@ -2128,6 +2229,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
               +{state.coreDropped.count} {state.coreDropped.element.toUpperCase()} CORE{state.coreDropped.count > 1 ? 'S' : ''}
             </div>
           )}
+          {state.wantedBonus && (
+            <div className="wanted-bonus-display" style={{ color: elementColors[state.wantedBonus.element]?.glow || '#44aaff' }}>
+              ⭐ WANTED BONUS: +{state.wantedBonus.count} {state.wantedBonus.element.toUpperCase()} CORE{state.wantedBonus.count > 1 ? 'S' : ''}
+            </div>
+          )}
           {state.relicDropped && (() => {
             const r = getRelic(state.relicDropped);
             return (
@@ -2186,6 +2292,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
                 <strong>RETRY</strong>
               </div>
             </div>
+            {defeatRecap?.summary && <div className="defeat-recap">
+              <strong>WHAT HAPPENED</strong>
+              <p>{defeatRecap.summary}</p>
+              {defeatRecap.dealtSummary && <p>{defeatRecap.dealtSummary}</p>}
+            </div>}
             {defeatAdvice && <div className="defeat-advice">
               <strong>{defeatAdvice.title}</strong>
               <p>{defeatAdvice.detail}</p>

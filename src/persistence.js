@@ -7,6 +7,7 @@ import { applyAdminCoreAction, getAdminCoreProgress } from './adminCore';
 import { isExpeditionAvailable } from './expeditions';
 import { fillSaveDefaults, validateSaveShape } from './saveValidation';
 import { createSaveStorage, READY_SAVE_STATUS } from './saveStorage';
+import { getDailySeed } from './dailyChallenge';
 
 const DEFAULT_SAVE = {
   // `discovered` is a permanent codex flag: once a dragon has ever been owned it stays
@@ -26,6 +27,14 @@ const DEFAULT_SAVE = {
   dataScraps: 0,
   pityCounter: 0,
   milestones: [],
+  // Cosmetic codex rewards only: unlocked title ids + the equipped title shown
+  // under the player header on the Stats screen. Titles never affect stats.
+  titles: [],
+  equippedTitle: null,
+  // First-discovery order: dragon ids in the order `discovered` first flipped
+  // true. Historical order cannot be reconstructed, so legacy saves start with
+  // an empty list and only new discoveries append from here on.
+  discoveryOrder: [],
   defeatedNpcs: [],
   outerGrid: getOuterGridProgress({}),
   frozenCache: getFrozenCacheProgress({}),
@@ -37,12 +46,19 @@ const DEFAULT_SAVE = {
   remnantDefeated: [],
   fusionLineage: [],
   bestRanks: {},
-  inventory: { cores: {}, xpBoostBattles: 0, stabilityBoost: false },
+  inventory: { cores: {}, xpBoostBattles: 0, stabilityBoost: false, streakShield: 0 },
   stats: { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 },
   lastDailyCompleted: 0,
   dailyStreak: 0,
   introSeen: false,
   ngPlus: 0,
+  // NG+ lore-completion chase (gameplay plan #8): the archive record of how far
+  // past the Mirror Admin's shadow the player has pushed in NG+ runs. Lifetime
+  // record — intentionally NOT reset by applyNewGamePlus. Lore only, never power.
+  ngPlusLoreDepth: 0,
+  // Remnant ids cleared while an NG+ run was active ("ascendant" clears).
+  // Feeds both lore depth and the archive's remnant entries. Lifetime record.
+  ngPlusRemnantClears: [],
   // Engagement telemetry: when they first booted, when they were last here,
   // how many sessions, and how long they've played. Drives the Stats screen
   // and the welcome-back beat.
@@ -99,6 +115,14 @@ function migrateSave(save) {
   if (save.dataScraps === undefined) save.dataScraps = 0;
   if (save.pityCounter === undefined) save.pityCounter = 0;
   if (save.milestones === undefined) save.milestones = [];
+  // Codex depth (gameplay plan #9): cosmetic titles + discovery-order log.
+  if (!Array.isArray(save.titles)) save.titles = [];
+  if (typeof save.equippedTitle !== 'string' || !save.titles.includes(save.equippedTitle)) {
+    save.equippedTitle = null;
+  }
+  // Backfill is impossible: the order past discoveries happened in was never
+  // recorded. Legacy saves begin the log here; new discoveries append.
+  if (!Array.isArray(save.discoveryOrder)) save.discoveryOrder = [];
   // Retroactively grant full_roster for saves that met the old 6-dragon threshold before it was raised to 8.
   if (!save.milestones.includes('full_roster') &&
       Object.values(save.dragons).filter(d => d.discovered).length >= 8) {
@@ -124,6 +148,8 @@ function migrateSave(save) {
   // Returning players who have already owned a dragon have seen the boot sequence; skip the wall for them.
   if (save.introSeen === undefined) save.introSeen = Object.values(save.dragons).some(d => d.owned);
   if (save.ngPlus === undefined) save.ngPlus = 0;
+  if (save.ngPlusLoreDepth === undefined) save.ngPlusLoreDepth = 0;
+  if (!Array.isArray(save.ngPlusRemnantClears)) save.ngPlusRemnantClears = [];
   if (save.singularityComplete === undefined) save.singularityComplete = false;
   if (save.mirrorAdminDefeated === undefined) save.mirrorAdminDefeated = false;
   if (!Array.isArray(save.remnantDefeated)) save.remnantDefeated = [];
@@ -133,11 +159,13 @@ function migrateSave(save) {
   if (save.singularityComplete && !save.dragons.light.owned) {
     save.dragons.light.owned = true;
     save.dragons.light.discovered = true;
+    recordDiscovery(save, 'light');
   }
   if (save.inventory === undefined) {
-    save.inventory = { cores: {}, xpBoostBattles: 0, stabilityBoost: false };
+    save.inventory = { cores: {}, xpBoostBattles: 0, stabilityBoost: false, streakShield: 0 };
   }
   if (save.inventory.voidEgg === undefined) save.inventory.voidEgg = false;
+  if (save.inventory.streakShield === undefined) save.inventory.streakShield = 0;
   if (save.stats === undefined) {
     save.stats = { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 };
   }
@@ -274,28 +302,28 @@ export function rememberExpedition(screen) {
   return true;
 }
 
-function actInExpedition(screen, applyAction, action, value) {
+function actInExpedition(screen, applyAction, action, value, options) {
   const save = loadSave();
-  const next = applyAction(save, action, value);
+  const next = applyAction(save, action, value, options);
   if (next === save) return false;
   writeSave({ ...next, flags: { ...next.flags, activeExpedition: screen } });
   return true;
 }
 
-export function actInOuterGrid(action, value) {
-  return actInExpedition('outerGrid', applyOuterGridAction, action, value);
+export function actInOuterGrid(action, value, options) {
+  return actInExpedition('outerGrid', applyOuterGridAction, action, value, options);
 }
 
-export function actInFrozenCache(action, value) {
-  return actInExpedition('frozenCache', applyFrozenCacheAction, action, value);
+export function actInFrozenCache(action, value, options) {
+  return actInExpedition('frozenCache', applyFrozenCacheAction, action, value, options);
 }
 
-export function actInStormSpine(action, value) {
-  return actInExpedition('stormSpine', applyStormSpineAction, action, value);
+export function actInStormSpine(action, value, options) {
+  return actInExpedition('stormSpine', applyStormSpineAction, action, value, options);
 }
 
-export function actInAdminCore(action, value) {
-  return actInExpedition('adminCore', applyAdminCoreAction, action, value);
+export function actInAdminCore(action, value, options) {
+  return actInExpedition('adminCore', applyAdminCoreAction, action, value, options);
 }
 
 export function meltCores(count = 10, scraps = 250) {
@@ -376,7 +404,18 @@ export function unlockDragon(dragonId, shiny) {
   const save = loadSave();
   save.dragons[dragonId] = { ...save.dragons[dragonId], owned: true, discovered: true };
   if (shiny) save.dragons[dragonId].shiny = true;
+  recordDiscovery(save, dragonId);
   writeSave(save);
+}
+
+// Equip one of the player's unlocked codex titles (cosmetic only). Pass null
+// to unequip. Returns false for titles the player hasn't unlocked.
+export function setEquippedTitle(titleId) {
+  const save = loadSave();
+  if (titleId !== null && !(save.titles || []).includes(titleId)) return false;
+  save.equippedTitle = titleId;
+  writeSave(save);
+  return true;
 }
 
 export function xpForLevel(level) { return 50 + (level - 1) * 5; }  // L1:50 .. L49:290, smooth ramp
@@ -384,8 +423,11 @@ export function xpForLevel(level) { return 50 + (level - 1) * 5; }  // L1:50 .. 
 // Single source of truth for XP->level progression. Mutates `dragon` in place on
 // the one canonical curve, capping at level 50. EVERY XP source (battle wins,
 // duplicate pulls, shop items) must go through this so a dragon levels the same
-// no matter where the XP came from.
-export function applyDragonXp(dragon, amount) {
+// no matter where the XP came from. Overflow past the level-50 cap is reported
+// (not silently discarded) so callers can convert it — e.g. hatchery
+// duplicate-XP becomes DataScraps.
+export function applyDragonXpWithOverflow(dragon, amount) {
+  const startLevel = dragon.level;
   dragon.xp += amount;
   let need = xpForLevel(dragon.level);
   while (dragon.xp >= need && dragon.level < 50) {
@@ -393,8 +435,16 @@ export function applyDragonXp(dragon, amount) {
     dragon.level++;
     need = xpForLevel(dragon.level);
   }
-  if (dragon.level >= 50) dragon.xp = 0;
-  return dragon;
+  let overflowXp = 0;
+  if (dragon.level >= 50) {
+    overflowXp = dragon.xp;
+    dragon.xp = 0;
+  }
+  return { dragon, overflowXp, levelsGained: dragon.level - startLevel };
+}
+
+export function applyDragonXp(dragon, amount) {
+  return applyDragonXpWithOverflow(dragon, amount).dragon;
 }
 
 export function addDragonXp(dragonId, bonusXp) {
@@ -409,11 +459,28 @@ export function upgradeDragonShiny(dragonId) {
   writeSave(save);
 }
 
-export function claimMilestone(milestoneId, reward) {
+// First-discovery ordering (gameplay plan #9): append a dragon id the first
+// time `discovered` flips true. The duplicate guard makes every call site safe
+// to call whenever it sets discovered — order always reflects true firsts.
+export function recordDiscovery(save, dragonId) {
+  if (!Array.isArray(save.discoveryOrder)) save.discoveryOrder = [];
+  if (!dragonId) return save;
+  if (!save.discoveryOrder.includes(dragonId)) save.discoveryOrder.push(dragonId);
+  return save;
+}
+
+export function claimMilestone(milestoneId, reward, titleReward) {
   const save = loadSave();
   if (save.milestones.includes(milestoneId)) return false;
   save.milestones.push(milestoneId);
   save.dataScraps += reward;
+  // Cosmetic title grant: unlock the title, and auto-equip it when the player
+  // has none equipped so the reward is immediately visible.
+  if (titleReward) {
+    if (!Array.isArray(save.titles)) save.titles = [];
+    if (!save.titles.includes(titleReward)) save.titles.push(titleReward);
+    if (!save.equippedTitle) save.equippedTitle = titleReward;
+  }
   writeSave(save);
   return true;
 }
@@ -460,8 +527,12 @@ function grantReplayReward(save, clearCount) {
 
 export function recordSingularityDefeat(bossId) {
   const save = loadSave();
-  if (!save.singularityProgress.defeated.includes(bossId)) {
+  // First clear of this boss in the current loop — a repeat clear (boss still
+  // in `defeated`) must not push the record deeper.
+  const isNewClear = !save.singularityProgress.defeated.includes(bossId);
+  if (isNewClear) {
     save.singularityProgress.defeated.push(bossId);
+    applyNgPlusLoreDepth(save, { kind: 'boss', id: bossId, isNewClear });
   }
   const clearCount = (save.singularityProgress.replayCounts[bossId] || 0) + 1;
   save.singularityProgress.replayCounts[bossId] = clearCount;
@@ -484,10 +555,12 @@ export function markIntroSeen() {
 
 export function markMirrorAdminDefeated() {
   const save = loadSave();
+  const firstClearThisLoop = !save.mirrorAdminDefeated;
   save.mirrorAdminDefeated = true;
   const clearCount = (save.singularityProgress.replayCounts['mirror_admin'] || 0) + 1;
   save.singularityProgress.replayCounts['mirror_admin'] = clearCount;
   grantReplayReward(save, clearCount);
+  if (firstClearThisLoop) applyNgPlusLoreDepth(save, { kind: 'mirror_admin', id: 'mirror_admin', isNewClear: true });
   writeSave(save);
 }
 
@@ -497,11 +570,15 @@ export function recordRemnantDefeat(remnantId) {
   if (!save.remnantDefeated.includes(remnantId)) {
     save.remnantDefeated.push(remnantId);
   }
+  // Ascendant clear: feeds BOTH lore depth and the archive's remnant record.
+  // applyNgPlusLoreDepth dedupes per remnant, so repeats never double-count.
+  applyNgPlusLoreDepth(save, { kind: 'remnant', id: remnantId });
   writeSave(save);
 }
 
 export function markSingularityComplete() {
   const save = loadSave();
+  const firstClearThisLoop = !save.singularityComplete;
   save.singularityComplete = true;
   save.singularityProgress.finalBossPhase = 4;
   save.singularityProgress.replayCounts['the_singularity'] =
@@ -509,7 +586,9 @@ export function markSingularityComplete() {
   if (save.dragons.light && !save.dragons.light.owned) {
     save.dragons.light.owned = true;
     save.dragons.light.discovered = true;
+    recordDiscovery(save, 'light');
   }
+  if (firstClearThisLoop) applyNgPlusLoreDepth(save, { kind: 'singularity', id: 'the_singularity', isNewClear: true });
   writeSave(save);
 }
 
@@ -549,6 +628,14 @@ export function setStabilityBoost(value) {
   writeSave(save);
 }
 
+// Streak Shield: shop consumable (max 1 held) that preserves the daily
+// streak when it would otherwise break. Consumed by completeDailyChallenge.
+export function setStreakShield(value) {
+  const save = loadSave();
+  save.inventory.streakShield = value;
+  writeSave(save);
+}
+
 // Void Egg: the deterministic Void chase. Forged from 5 of each core; the
 // hatchery consumes it on the next pull for a guaranteed shiny Void Dragon.
 export function setVoidEgg(value) {
@@ -576,6 +663,7 @@ export function fuseDragons(parentAId, parentBId, offspringElement, offspringLev
   };
   save.dataScraps -= 100;
   save.stats.fusionsCompleted = (save.stats.fusionsCompleted || 0) + 1;
+  recordDiscovery(save, offspringElement);
   if (!Array.isArray(save.fusionLineage)) save.fusionLineage = [];
   save.fusionLineage.push({ parentA: parentAId, parentB: parentBId, offspring: offspringElement, offspringLevel });
   writeSave(save);
@@ -614,15 +702,68 @@ function getYesterdaySeed() {
 export function completeDailyChallenge(seed) {
   const save = loadSave();
   const yesterdaySeed = getYesterdaySeed();
-  save.dailyStreak = save.lastDailyCompleted === yesterdaySeed ? (save.dailyStreak || 0) + 1 : 1;
+  const todaySeed = getDailySeed();
+  if (save.lastDailyCompleted === yesterdaySeed) {
+    save.dailyStreak = (save.dailyStreak || 0) + 1;
+  } else if (save.lastDailyCompleted === todaySeed) {
+    // Already counted today (e.g. a repeated completion): leave the streak alone.
+  } else if ((save.inventory?.streakShield || 0) > 0) {
+    // Streak Shield: consume one shield to preserve the streak (+1) instead
+    // of resetting to 1.
+    save.inventory.streakShield = (save.inventory.streakShield || 0) - 1;
+    save.dailyStreak = (save.dailyStreak || 0) + 1;
+  } else {
+    save.dailyStreak = 1;
+  }
   save.lastDailyCompleted = seed;
   writeSave(save);
+}
+
+// === NEW GAME+ LORE-COMPLETION CHASE (gameplay plan #8) ===
+// The NG+ fantasy is LORE COMPLETION, not mastery proof or power expression:
+// "depth" is how far past the Mirror Admin's shadow the archive record has
+// been pushed in NG+ runs. An NG+ run is ACTIVE exactly when save.ngPlus >= 1
+// (applyNewGamePlus increments it; it is never reset).
+//
+// DEPTH INCREMENT RULES — depth advances ONLY while an NG+ run is active, and
+// only for clears the record has not logged yet:
+//   - Singularity gatekeepers (`kind: 'boss'`): the first clear of each boss
+//     per loop. applyNewGamePlus re-locks `singularityProgress.defeated`, so
+//     "new" is well-defined per loop; repeat clears in the same loop are
+//     passed with isNewClear=false and grant nothing.
+//   - The Singularity / Mirror Admin: first clear per loop (their flags are
+//     also re-locked by applyNewGamePlus).
+//   - Remnants ("ascendant" clears): the first NG+ clear of each remnant EVER.
+//     ngPlusRemnantClears is the lifetime NG+ remnant record — never reset by
+//     applyNewGamePlus — so it dedupes here and feeds the archive directly.
+// ngPlusLoreDepth is likewise a lifetime record: it is never reset by
+// applyNewGamePlus, so depth milestones can complete across multiple loops.
+// Pure on the passed save so the rules are unit-testable; returns true when
+// depth advanced.
+export function isNgPlusRunActive(save) {
+  return (save?.ngPlus || 0) >= 1;
+}
+
+export function applyNgPlusLoreDepth(save, { kind, id, isNewClear = true } = {}) {
+  if (!isNgPlusRunActive(save)) return false;
+  if (kind === 'remnant') {
+    if (!Array.isArray(save.ngPlusRemnantClears)) save.ngPlusRemnantClears = [];
+    if (!id || save.ngPlusRemnantClears.includes(id)) return false;
+    save.ngPlusRemnantClears.push(id);
+  } else if (!isNewClear) {
+    return false;
+  }
+  save.ngPlusLoreDepth = (save.ngPlusLoreDepth || 0) + 1;
+  return true;
 }
 
 // New Game+: after a true-final clear, re-lock the campaign + Singularity for
 // another, harder run while KEEPING the collection (dragons, scraps, cores,
 // milestones, records, stats, skye). save.ngPlus scales enemies + rewards.
 // Pure so the reset semantics can be unit-tested.
+// NOTE (gameplay plan #8): the NG+ lore-chase record — ngPlusLoreDepth and
+// ngPlusRemnantClears — is intentionally NOT reset here. It is the lifetime
+// archive of the second loop, so depth milestones complete across loops.
 export function applyNewGamePlus(save) {
   save.ngPlus = (save.ngPlus || 0) + 1;
   save.defeatedNpcs = [];

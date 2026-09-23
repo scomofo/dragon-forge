@@ -1,4 +1,40 @@
 import { CAMPAIGN_NODES } from './campaignMap';
+import { CORRUPTION_REMNANTS } from './singularityBosses';
+import { ASCENDANT_RECORD_LORE } from './loreCanon';
+import { rarityTiers, JOURNAL_DRAGON_IDS } from './gameData';
+
+// === CODEX TITLES (gameplay plan #9) ===
+// Cosmetic-only player titles granted by collection milestones. Pure flavor:
+// they show under the player header on the Stats screen and are selectable in
+// the Journal. No stat effects, no gameplay power. Portrait frames were
+// considered for the same reward slots and deferred: the dragon portrait path
+// has no frame layer, and titles deliver the same showcase with far less risk.
+export const TITLES = {
+  hearth_warden:    { id: 'hearth_warden',    name: 'Hearth Warden',    flavor: 'Keeper of the primal pair — fire and ice, the first sparks.' },
+  wildcaller:       { id: 'wildcaller',       name: 'Wildcaller',       flavor: 'The storm, the venom, and the stone answer when called.' },
+  umbral_scholar:   { id: 'umbral_scholar',   name: 'Umbral Scholar',   flavor: 'Studied the shadow long enough to be studied back.' },
+  rift_walker:      { id: 'rift_walker',      name: 'Rift Walker',      flavor: 'Walked the tear in the simulation and came back changed.' },
+  prismatic_warden: { id: 'prismatic_warden', name: 'Prismatic Warden', flavor: 'Every dragon, every color, every impossible shine.' },
+  awakened:         { id: 'awakened',         name: 'the Awakened',     flavor: 'One bond carried all the way through the forge.' },
+  ascendant:        { id: 'ascendant',        name: 'the Ascendant',    flavor: 'Three awakened dragons. Felix is taking notes.' },
+  transcendent:     { id: 'transcendent',     name: 'the Transcendent', flavor: 'Every dragon fully awakened. The codex is complete.' },
+};
+
+export function getTitleName(titleId) {
+  return TITLES[titleId]?.name || null;
+}
+
+// Rarity tiers come from the single gameData source of truth so milestone
+// thresholds can never drift from the hatchery's actual tiers.
+const tierElements = (tierName) =>
+  rarityTiers.find((t) => t.name === tierName)?.elements || [];
+
+// Fully Awakened: owned, max level, and shiny. All three, no shortcuts.
+export function countFullyAwakened(save) {
+  return Object.values(save.dragons || {}).filter(
+    (d) => d.owned && d.level >= 50 && d.shiny,
+  ).length;
+}
 
 export const MILESTONES = [
   {
@@ -259,6 +295,227 @@ export const MILESTONES = [
         met: total > 0 && sCount >= total,
         progress: `${sCount}/${total}`,
       };
+    },
+  },
+  // --- NEW GAME+ LORE-COMPLETION CHASE (gameplay plan #8) ---
+  // NG+-exclusive milestones: each check gates on save.ngPlus >= 1 so they can
+  // never complete in the first loop. Rewards are lore-only — reward: 0 pays
+  // no DataScraps; the reward is the Felix prose in `loreReward`, surfaced in
+  // the Archive's Ascendant Record. `ngPlus: true` tags them for the Journal's
+  // separate NG+ chase-track section (shown only while an NG+ run is active).
+  {
+    id: 'ngplus_depth_1',
+    name: 'A Footstep Past the Shadow',
+    description: 'In a New Game+ run, push the archive record one step deeper',
+    reward: 0,
+    ngPlus: true,
+    loreReward: ASCENDANT_RECORD_LORE.ngplus_depth_1,
+    check: (save) => {
+      const depth = save.ngPlusLoreDepth || 0;
+      const met = (save.ngPlus || 0) >= 1 && depth >= 1;
+      return { met, progress: `${Math.min(depth, 1)}/1` };
+    },
+  },
+  {
+    id: 'ngplus_depth_3',
+    name: 'The Record Deepens',
+    description: 'In New Game+ runs, push the archive record 3 steps deeper',
+    reward: 0,
+    ngPlus: true,
+    loreReward: ASCENDANT_RECORD_LORE.ngplus_depth_3,
+    check: (save) => {
+      const depth = save.ngPlusLoreDepth || 0;
+      const met = (save.ngPlus || 0) >= 1 && depth >= 3;
+      return { met, progress: `${Math.min(depth, 3)}/3` };
+    },
+  },
+  {
+    id: 'ngplus_depth_5',
+    name: 'The Mirror Remembers',
+    description: 'In New Game+ runs, push the archive record 5 steps deeper',
+    reward: 0,
+    ngPlus: true,
+    loreReward: ASCENDANT_RECORD_LORE.ngplus_depth_5,
+    check: (save) => {
+      const depth = save.ngPlusLoreDepth || 0;
+      const met = (save.ngPlus || 0) >= 1 && depth >= 5;
+      return { met, progress: `${Math.min(depth, 5)}/5` };
+    },
+  },
+  {
+    id: 'ngplus_ascendant_remnants',
+    name: 'Ascendant Echoes',
+    description: 'In New Game+ runs, quiet all 3 Corruption Remnants a second time',
+    reward: 0,
+    ngPlus: true,
+    loreReward: ASCENDANT_RECORD_LORE.ngplus_ascendant_remnants,
+    check: (save) => {
+      const need = CORRUPTION_REMNANTS.map((r) => r.id);
+      const have = Array.isArray(save.ngPlusRemnantClears) ? save.ngPlusRemnantClears : [];
+      const count = need.filter((id) => have.includes(id)).length;
+      const met = (save.ngPlus || 0) >= 1 && count >= need.length;
+      return { met, progress: `${count}/${need.length}` };
+    },
+  },
+  // === Codex depth (gameplay plan #9): elemental attunement ===
+  // Each of the six hatchery elements maps 1:1 to a dragon, so an element's
+  // "completion" is discovering that dragon. Void, Light, and Synthesis are
+  // deliberately excluded here — void_hunter, light_bearer, and
+  // synthesis_born already grant milestones for those ids.
+  {
+    id: 'attune_fire',
+    name: 'Flame Attunement',
+    description: 'Discover the Fire Dragon',
+    reward: 150,
+    check: (save) => {
+      const done = !!save.dragons.fire?.discovered;
+      return { met: done, progress: done ? '1/1' : '0/1' };
+    },
+  },
+  {
+    id: 'attune_ice',
+    name: 'Frost Attunement',
+    description: 'Discover the Ice Dragon',
+    reward: 150,
+    check: (save) => {
+      const done = !!save.dragons.ice?.discovered;
+      return { met: done, progress: done ? '1/1' : '0/1' };
+    },
+  },
+  {
+    id: 'attune_storm',
+    name: 'Tempest Attunement',
+    description: 'Discover the Storm Dragon',
+    reward: 150,
+    check: (save) => {
+      const done = !!save.dragons.storm?.discovered;
+      return { met: done, progress: done ? '1/1' : '0/1' };
+    },
+  },
+  {
+    id: 'attune_stone',
+    name: 'Bastion Attunement',
+    description: 'Discover the Stone Dragon',
+    reward: 150,
+    check: (save) => {
+      const done = !!save.dragons.stone?.discovered;
+      return { met: done, progress: done ? '1/1' : '0/1' };
+    },
+  },
+  {
+    id: 'attune_venom',
+    name: 'Venom Attunement',
+    description: 'Discover the Venom Dragon',
+    reward: 150,
+    check: (save) => {
+      const done = !!save.dragons.venom?.discovered;
+      return { met: done, progress: done ? '1/1' : '0/1' };
+    },
+  },
+  {
+    id: 'attune_shadow',
+    name: 'Shadow Attunement',
+    description: 'Discover the Shadow Dragon',
+    reward: 150,
+    check: (save) => {
+      const done = !!save.dragons.shadow?.discovered;
+      return { met: done, progress: done ? '1/1' : '0/1' };
+    },
+  },
+  // === Codex depth: rarity-tier completion ===
+  // Each grants a cosmetic player title via `titleReward`, consumed at claim.
+  {
+    id: 'tier_common',
+    name: 'Primal Pair',
+    description: 'Discover all Common dragons (Fire, Ice)',
+    reward: 250,
+    titleReward: 'hearth_warden',
+    check: (save) => {
+      const ids = tierElements('Common');
+      const found = ids.filter((id) => save.dragons[id]?.discovered).length;
+      return { met: ids.length > 0 && found >= ids.length, progress: `${found}/${ids.length}` };
+    },
+  },
+  {
+    id: 'tier_uncommon',
+    name: 'Wild Triad',
+    description: 'Discover all Uncommon dragons (Storm, Venom, Stone)',
+    reward: 400,
+    titleReward: 'wildcaller',
+    check: (save) => {
+      const ids = tierElements('Uncommon');
+      const found = ids.filter((id) => save.dragons[id]?.discovered).length;
+      return { met: ids.length > 0 && found >= ids.length, progress: `${found}/${ids.length}` };
+    },
+  },
+  {
+    id: 'tier_rare',
+    name: 'Into the Dark',
+    description: 'Discover all Rare dragons (Shadow)',
+    reward: 500,
+    titleReward: 'umbral_scholar',
+    check: (save) => {
+      const ids = tierElements('Rare');
+      const found = ids.filter((id) => save.dragons[id]?.discovered).length;
+      return { met: ids.length > 0 && found >= ids.length, progress: `${found}/${ids.length}` };
+    },
+  },
+  {
+    id: 'tier_exotic',
+    name: 'Beyond the Veil',
+    description: 'Discover all Exotic dragons (Void)',
+    reward: 750,
+    titleReward: 'rift_walker',
+    check: (save) => {
+      const ids = tierElements('Exotic');
+      const found = ids.filter((id) => save.dragons[id]?.discovered).length;
+      return { met: ids.length > 0 && found >= ids.length, progress: `${found}/${ids.length}` };
+    },
+  },
+  {
+    id: 'shiny_perfection',
+    name: 'Prismatic Set',
+    description: 'Own all 9 shiny dragons',
+    reward: 2500,
+    titleReward: 'prismatic_warden',
+    check: (save) => {
+      const total = JOURNAL_DRAGON_IDS.length;
+      const shinies = JOURNAL_DRAGON_IDS.filter((id) => save.dragons[id]?.owned && save.dragons[id]?.shiny).length;
+      return { met: shinies >= total, progress: `${shinies}/${total}` };
+    },
+  },
+  // === Codex depth: Fully Awakened (Lv.50 AND shiny) ===
+  {
+    id: 'awakened_one',
+    name: 'Fully Awakened',
+    description: 'Fully awaken 1 dragon (Lv.50 + shiny)',
+    reward: 750,
+    titleReward: 'awakened',
+    check: (save) => {
+      const n = countFullyAwakened(save);
+      return { met: n >= 1, progress: `${Math.min(n, 1)}/1` };
+    },
+  },
+  {
+    id: 'awakened_three',
+    name: 'Fully Awakened ×3',
+    description: 'Fully awaken 3 dragons (Lv.50 + shiny)',
+    reward: 1500,
+    titleReward: 'ascendant',
+    check: (save) => {
+      const n = countFullyAwakened(save);
+      return { met: n >= 3, progress: `${Math.min(n, 3)}/3` };
+    },
+  },
+  {
+    id: 'awakened_all',
+    name: 'Fully Awakened: Complete',
+    description: 'Fully awaken all 9 dragons (Lv.50 + shiny)',
+    reward: 3000,
+    titleReward: 'transcendent',
+    check: (save) => {
+      const n = countFullyAwakened(save);
+      return { met: n >= JOURNAL_DRAGON_IDS.length, progress: `${Math.min(n, JOURNAL_DRAGON_IDS.length)}/${JOURNAL_DRAGON_IDS.length}` };
     },
   },
 ];

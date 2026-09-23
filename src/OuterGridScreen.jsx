@@ -6,6 +6,7 @@ import { getCampaignNodeById } from './campaignMap';
 import { getBossPattern } from './bossPatterns';
 import { getStageForLevel, getTypeEffectiveness } from './battleEngine';
 import { OUTER_GRID_ROOMS } from './worldZones';
+import { isFeaturedZone } from './featuredZone';
 import { getOuterGridBattleConfig, getOuterGridExits, getOuterGridObjective, getOuterGridProgress, OUTER_GRID_CACHE_REWARD, OUTER_GRID_CLEAR_REWARD } from './outerGrid';
 import { actInOuterGrid, loadSave } from './persistence';
 import { playSound } from './soundEngine';
@@ -207,7 +208,11 @@ export default function OuterGridScreen({ save, refreshSave, onNavigate, onBegin
       <NavBar activeScreen="map" onNavigate={onNavigate} save={save} />
       <main className="outer-grid-layout">
         <header className="outer-grid-header">
-          <div><p className="outer-grid-kicker">SECTOR 01 · OUTER GRID</p><h1>{room.name}</h1></div>
+          <div><p className="outer-grid-kicker">SECTOR 01 · OUTER GRID</p><h1>{room.name}</h1>
+            {isFeaturedZone('outer_grid') && (
+              <p className="featured-zone-badge">⭐ FEATURED — double scraps today</p>
+            )}
+          </div>
           <button type="button" onClick={() => onNavigate('map')}>CAMPAIGN MAP</button>
         </header>
         <div className="outer-grid-objective"><span>OBJECTIVE</span><p>{getOuterGridObjective(save)}</p></div>

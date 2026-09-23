@@ -1,3 +1,5 @@
+import { calculateStatsForLevel } from './battleEngine';
+
 const ALCHEMY = {
   'fire_fire': 'fire',
   'ice_ice': 'ice',
@@ -117,4 +119,68 @@ export function executeFusion(parentA, parentB, { stabilityBoost = false } = {})
     parentAId: parentA.id,
     parentBId: parentB.id,
   };
+}
+
+// Deterministic forge reading for the pre-fusion preview. Every input to
+// executeFusion (element, stability, stats, level, shiny) is a pure function of
+// the parents — there is no randomness anywhere in the fusion pipeline — so
+// this preview is EXACT, not an estimate. The returned `deterministic: true`
+// flag documents that contract for the UI.
+export function getFusionPreview(parentA, parentB, { stabilityBoost = false } = {}) {
+  const element = getFusionElement(parentA.element, parentB.element);
+  const stability = getStabilityTier(parentA.element, parentB.element, stabilityBoost);
+  const fusedBaseStats = calculateFusionStats(parentA.stats, parentB.stats, stability);
+  const level = getFusionOffspringLevel(parentA.level, parentB.level);
+  const shiny = Boolean(parentA.shiny || parentB.shiny);
+  const offspringStats = calculateStatsForLevel(fusedBaseStats, level, shiny);
+
+  const deltaVs = (parentStats) => ({
+    hp: offspringStats.hp - parentStats.hp,
+    atk: offspringStats.atk - parentStats.atk,
+    def: offspringStats.def - parentStats.def,
+    spd: offspringStats.spd - parentStats.spd,
+  });
+
+  return {
+    element,
+    stability,
+    fusedBaseStats,
+    level,
+    shiny,
+    offspringStats,
+    deltas: { parentA: deltaVs(parentA.stats), parentB: deltaVs(parentB.stats) },
+    deterministic: true,
+  };
+}
+
+// Forge Log alchemy grid. A recipe counts as DISCOVERED when any lineage entry
+// fused that parent-element pair. The key is the sorted parent pair (the recipe
+// input), order-independent, so fire+ice and ice+fire are one recipe — keyed on
+// the input pair rather than the offspring because that is what the player
+// chose to try. Lineage entries store parent dragon ids, which are the same
+// element keys the ALCHEMY table is keyed on, so no dragon-table lookup is
+// needed; malformed entries are ignored.
+export function getDiscoveredRecipeKeys(lineage = []) {
+  const keys = new Set();
+  for (const entry of lineage || []) {
+    if (!entry || !entry.parentA || !entry.parentB) continue;
+    keys.add(sortedKey(String(entry.parentA), String(entry.parentB)));
+  }
+  return keys;
+}
+
+export function getAlchemyGrid(lineage = []) {
+  const discovered = getDiscoveredRecipeKeys(lineage);
+  const seen = new Set();
+  const grid = [];
+  for (const [rawKey, offspring] of Object.entries(ALCHEMY)) {
+    // The table holds both orderings of some pairs (light_void/void_light);
+    // normalize so each recipe appears once.
+    const key = sortedKey(...rawKey.split('_'));
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const [a, b] = key.split('_');
+    grid.push({ key, parents: [a, b], offspring, discovered: discovered.has(key) });
+  }
+  return grid;
 }

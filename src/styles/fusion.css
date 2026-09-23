@@ -232,6 +232,180 @@
   50% { opacity: 1; }
 }
 
+/* === FUSION TABS === */
+.fusion-tabs {
+  display: flex;
+  gap: 8px;
+  z-index: 1;
+}
+
+.fusion-tab {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  padding: 8px 16px;
+  background: #1a1a2e;
+  color: #888;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.fusion-tab.active {
+  color: #ff6622;
+  border-color: #ff6622;
+}
+
+/* === FORGE READING stat deltas === */
+.fusion-preview-deltas {
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fusion-delta-row {
+  display: grid;
+  grid-template-columns: 34px 44px 1fr 1fr;
+  font-size: 8px;
+  color: #aaa;
+  align-items: baseline;
+}
+
+.fusion-delta-stat { color: #666; }
+.fusion-delta-value { color: #fff; text-align: right; padding-right: 8px; }
+.fusion-delta-pos { color: #44ff44; }
+.fusion-delta-neg { color: #ff4444; }
+.fusion-delta-zero { color: #666; }
+
+/* === OVERWRITE CONFIRMATION === */
+.fusion-confirm-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+}
+
+.fusion-confirm-card {
+  background: #1a1a2e;
+  border: 2px solid #ff4444;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 420px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fusion-confirm-title {
+  font-size: 11px;
+  color: #ff4444;
+}
+
+.fusion-confirm-text {
+  font-size: 8px;
+  color: #aaa;
+  line-height: 1.6;
+}
+
+.fusion-confirm-target {
+  border: 1px solid #666;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 9px;
+  color: #ccc;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fusion-confirm-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.fusion-btn-danger {
+  border-color: #ff4444;
+  color: #ff4444;
+}
+
+.fusion-btn-danger:hover:not(:disabled) {
+  background: #ff4444;
+  color: #111118;
+}
+
+/* === FORGE LOG === */
+.fusion-log {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 560px;
+  z-index: 1;
+}
+
+.fusion-log h3 {
+  font-size: 10px;
+  color: #888;
+  text-align: center;
+}
+
+.fusion-log-empty {
+  font-size: 8px;
+  color: #666;
+  text-align: center;
+}
+
+.fusion-log-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.fusion-log-entry {
+  font-size: 8px;
+  color: #aaa;
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 6px 10px;
+}
+
+.fusion-alchemy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.fusion-alchemy-cell {
+  font-size: 7px;
+  color: #666;
+  background: #14141f;
+  border: 1px solid #2a2a3a;
+  border-radius: 4px;
+  padding: 6px 8px;
+}
+
+.fusion-alchemy-cell.discovered {
+  color: #ccc;
+  border-color: #44ff44;
+}
+
+.fusion-alchemy-check {
+  color: #44ff44;
+  margin-right: 4px;
+}
+
+.fusion-alchemy-cell:not(.discovered) .fusion-alchemy-check {
+  color: #555;
+}
+
 @media (max-width: 768px) {
   .fusion-parents { flex-direction: column; gap: 8px; }
   .fusion-dragon-picker { grid-template-columns: repeat(2, 1fr); }

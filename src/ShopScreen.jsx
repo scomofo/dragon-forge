@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { playSound } from './soundEngine';
 import { assetUrl } from './utils';
 import { dragons, elementColors, JOURNAL_DRAGON_IDS } from './gameData';
-import { loadSave, writeSave, spendScraps, addDragonXp, upgradeDragonShiny, updatePityCounter, setXpBoost, spendCores, setStabilityBoost, meltCores, setVoidEgg } from './persistence';
+import { loadSave, writeSave, spendScraps, addDragonXp, upgradeDragonShiny, updatePityCounter, setXpBoost, spendCores, setStabilityBoost, meltCores, setVoidEgg, setStreakShield } from './persistence';
 import { BUY_ITEMS, FORGE_RECIPES, canAffordBuy, canForge, getForgeableElement, ELEMENTS_FOR_CORES } from './shopItems';
 import NavBar from './NavBar';
 
@@ -42,6 +42,10 @@ export default function ShopScreen({ onNavigate, save, refreshSave }) {
         break;
       case 'meltCores':
         meltCores(item.coresRequired || 10, item.scrapsGranted || 250);
+        break;
+      case 'streak_shield':
+        // Max 1 held (canAffordBuy also blocks re-purchase at cap).
+        setStreakShield(Math.min(1, (save.inventory?.streakShield || 0) + 1));
         break;
       case 'reroll': {
         // Re-roll fused base stats — generate random variation

@@ -191,7 +191,7 @@ export const npcs = {
     element: 'shadow',
     level: 4,
     stats: { hp: 55, atk: 22, def: 10, spd: 20 },
-    moveKeys: ['shadow_strike', 'void_pulse'],
+    moveKeys: ['shadow_strike', 'void_pulse', 'void_rift', 'npc_focus'],
     signatureMoveKey: 'wraith_unravel',
     signatureCondition: { hpThreshold: 0.50 },
     difficulty: 'Medium',
@@ -208,7 +208,7 @@ export const npcs = {
     element: 'storm',
     level: 7,
     stats: { hp: 75, atk: 24, def: 16, spd: 18 },
-    moveKeys: ['lightning_strike', 'thunder_clap', 'npc_harden'],
+    moveKeys: ['lightning_strike', 'thunder_clap', 'npc_harden', 'npc_focus'],
     signatureMoveKey: 'hydra_overcharge',
     signatureCondition: { hpThreshold: 0.40 },
     difficulty: 'Hard',
@@ -225,7 +225,7 @@ export const npcs = {
     element: 'stone',
     level: 10,
     stats: { hp: 120, atk: 20, def: 28, spd: 6 },
-    moveKeys: ['rock_slide', 'earthquake', 'npc_harden'],
+    moveKeys: ['rock_slide', 'earthquake', 'npc_harden', 'npc_focus'],
     signatureMoveKey: 'golem_rupture',
     signatureCondition: { hpThreshold: 0.45 },
     difficulty: 'Boss',
@@ -257,7 +257,7 @@ export const npcs = {
     element: 'ice',
     level: 5,
     stats: { hp: 85, atk: 20, def: 22, spd: 12 },
-    moveKeys: ['frost_bite', 'blizzard'],
+    moveKeys: ['frost_bite', 'blizzard', 'npc_harden', 'npc_focus'],
     difficulty: 'Medium',
     baseXP: 45,
     scrapsReward: 60,
@@ -272,7 +272,7 @@ export const npcs = {
     element: 'fire',
     level: 8,
     stats: { hp: 70, atk: 30, def: 12, spd: 24 },
-    moveKeys: ['magma_breath', 'flame_wall', 'npc_focus'],
+    moveKeys: ['magma_breath', 'flame_wall', 'npc_focus', 'npc_harden'],
     signatureMoveKey: 'bomb_detonation',
     signatureCondition: { hpThreshold: 0.35 },
     difficulty: 'Hard',
@@ -288,7 +288,7 @@ export const npcs = {
     element: 'venom',
     level: 6,
     stats: { hp: 80, atk: 24, def: 16, spd: 20 },
-    moveKeys: ['acid_spit', 'toxic_cloud', 'npc_focus'],
+    moveKeys: ['acid_spit', 'toxic_cloud', 'npc_focus', 'npc_harden'],
     difficulty: 'Medium',
     baseXP: 50,
     scrapsReward: 70,
@@ -303,7 +303,7 @@ export const npcs = {
     element: 'shadow',
     level: 12,
     stats: { hp: 100, atk: 28, def: 22, spd: 16 },
-    moveKeys: ['shadow_strike', 'void_pulse', 'npc_focus'],
+    moveKeys: ['shadow_strike', 'void_pulse', 'npc_focus', 'void_rift'],
     signatureMoveKey: 'vulture_drain',
     signatureCondition: { hpThreshold: 0.50 },
     difficulty: 'Boss',
@@ -400,6 +400,13 @@ export const rarityTiers = [
 export const PULL_COST = 50;
 export const SHINY_CHANCE = 0.02;
 export const PITY_THRESHOLD = 10;
+
+// === HATCHERY ECONOMY ===
+// Duplicate-pull XP that overflows past the level-50 cap is converted to
+// DataScraps at this rate (XP per scrap). Deliberately stingy: overflow is a
+// consolation prize, not an economy source. Flagged for ADR-0006 economy
+// review — tune only with playtest data.
+export const XP_OVERFLOW_SCRAP_RATE = 10;
 
 // === STATUS EFFECTS ===
 export const STATUS_EFFECTS = {

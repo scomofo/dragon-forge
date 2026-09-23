@@ -3,6 +3,7 @@ import { playSound } from './soundEngine';
 import { dragons, npcs, elementColors } from './gameData';
 import { getTypeEffectiveness, calculateStatsForLevel, getStageForLevel } from './battleEngine';
 import { getDailyChallenge, isDailyChallengeCompleted, getDateString, getEffectiveStreak, getMsUntilDailyReset, getTodaySeedCode, decodeSeedCode } from './dailyChallenge';
+import { getWantedDragon, WANTED_DRAGON_CORE_BONUS } from './wantedDragon';
 import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import NavBar from './NavBar';
@@ -175,6 +176,19 @@ export default function BattleSelectScreen({ onBeginBattle, onNavigate, save, re
 
         <div className="select-panel">
           <h2>OPPONENTS</h2>
+          {/* Weekly wanted dragon */}
+          {(() => {
+            const wantedId = getWantedDragon();
+            const wanted = dragons[wantedId];
+            return (
+              <div className="wanted-dragon-banner">
+                <span className="wanted-dragon-banner-label">⭐ WANTED</span>
+                <span className="wanted-dragon-banner-text">
+                  {wanted?.name?.toUpperCase() || wantedId} — win battles with it for +{WANTED_DRAGON_CORE_BONUS} bonus cores
+                </span>
+              </div>
+            );
+          })()}
           {/* Daily Challenge */}
           {(() => {
             const daily = getDailyChallenge();
