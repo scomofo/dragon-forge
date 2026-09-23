@@ -2,15 +2,18 @@
 
 importer="texture"
 type="CompressedTexture2D"
-path="res://.godot/imported/dragon_normal.png-c639a2205129d8bb57d3b8357ec9eddd.ctex"
+uid="uid://bvrrxsowl86rf"
+path.s3tc="res://.godot/imported/dragon_normal.png-72f3b09f8a8a4d4d5b89a8f8d4ff7667.s3tc.ctex"
+path.etc2="res://.godot/imported/dragon_normal.png-72f3b09f8a8a4d4d5b89a8f8d4ff7667.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://art/generated/dragon_normal.png"
-dest_files=["res://.godot/imported/dragon_normal.png-c639a2205129d8bb57d3b8357ec9eddd.ctex"]
+dest_files=["res://.godot/imported/dragon_normal.png-72f3b09f8a8a4d4d5b89a8f8d4ff7667.s3tc.ctex", "res://.godot/imported/dragon_normal.png-72f3b09f8a8a4d4d5b89a8f8d4ff7667.etc2.ctex"]
 
 [params]
 
@@ -20,12 +23,12 @@ compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
-compress/normal_map=0
+compress/normal_map=1
 compress/channel_pack=0
 mipmaps/generate=true
 mipmaps/limit=-1
-roughness/mode=0
-roughness/src_normal=""
+roughness/mode=1
+roughness/src_normal="res://art/generated/dragon_normal.png"
 process/channel_remap/red=0
 process/channel_remap/green=1
 process/channel_remap/blue=2
@@ -36,4 +39,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

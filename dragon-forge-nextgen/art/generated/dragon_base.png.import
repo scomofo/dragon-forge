@@ -2,15 +2,18 @@
 
 importer="texture"
 type="CompressedTexture2D"
-path="res://.godot/imported/dragon_base.png-dd4678dae7f2823ddf5fef98f52e2259.ctex"
+uid="uid://ccoc5uipp8r64"
+path.s3tc="res://.godot/imported/dragon_base.png-a54718c2273e8dfc1639fdc9d5ab510e.s3tc.ctex"
+path.etc2="res://.godot/imported/dragon_base.png-a54718c2273e8dfc1639fdc9d5ab510e.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://art/generated/dragon_base.png"
-dest_files=["res://.godot/imported/dragon_base.png-dd4678dae7f2823ddf5fef98f52e2259.ctex"]
+dest_files=["res://.godot/imported/dragon_base.png-a54718c2273e8dfc1639fdc9d5ab510e.s3tc.ctex", "res://.godot/imported/dragon_base.png-a54718c2273e8dfc1639fdc9d5ab510e.etc2.ctex"]
 
 [params]
 
@@ -36,4 +39,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
