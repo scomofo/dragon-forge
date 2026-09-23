@@ -3,12 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-path="res://.godot/imported/shadow_guardian.glb-0db614d49219de9b3ff660ade65ec392.scn"
+uid="uid://b5oi1npuqhyo6"
+path="res://.godot/imported/shadow_guardian.glb-b372b22cfba993d6c3377636774f424b.scn"
 
 [deps]
 
 source_file="res://campaign/shadow/shadow_guardian.glb"
-dest_files=["res://.godot/imported/shadow_guardian.glb-0db614d49219de9b3ff660ade65ec392.scn"]
+dest_files=["res://.godot/imported/shadow_guardian.glb-b372b22cfba993d6c3377636774f424b.scn"]
 
 [params]
 
@@ -37,3 +38,5 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=1
