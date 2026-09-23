@@ -338,3 +338,211 @@
   0%, 100% { box-shadow: 0 0 4px rgba(255, 204, 0, 0.4); }
   50% { box-shadow: 0 0 12px rgba(255, 204, 0, 0.8); }
 }
+
+/* === ARCHIVE CODEX (gameplay plan #8) === */
+.archive {
+  padding: 12px;
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.archive-kicker {
+  font-size: 10px;
+  color: #ffcc00;
+  letter-spacing: 0.2em;
+  margin: 0 0 6px;
+}
+
+.archive-flavor {
+  font-size: 8px;
+  line-height: 1.8;
+  color: #999;
+  margin: 0 0 10px;
+  max-width: 640px;
+}
+
+.archive-completion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.archive-completion-bar {
+  flex: 1;
+  height: 8px;
+  background: #1a1a24;
+  border: 1px solid #333;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.archive-completion-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffcc00, #ff9933);
+  transition: width 0.4s;
+}
+
+.archive-completion-text {
+  font-size: 8px;
+  color: #ffcc00;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.archive-group {
+  border-top: 1px solid #2a2a35;
+  padding-top: 12px;
+}
+
+.archive-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.archive-group-head h3 {
+  font-size: 9px;
+  color: #ddd;
+  letter-spacing: 0.15em;
+  margin: 0;
+}
+
+.archive-group-count {
+  font-size: 8px;
+  color: #666;
+}
+
+.archive-group-blurb {
+  font-size: 7px;
+  line-height: 1.7;
+  color: #666;
+  margin: 4px 0 10px;
+}
+
+.archive-entry-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 8px;
+}
+
+.archive-entry,
+.archive-lore-entry {
+  background: #14141c;
+  border: 1px solid #2a2a35;
+  border-radius: 3px;
+  padding: 10px;
+}
+
+.archive-entry.is-unlocked,
+.archive-lore-entry.is-unlocked {
+  border-left: 3px solid #ffcc00;
+}
+
+.archive-entry.is-locked,
+.archive-lore-entry.is-locked {
+  opacity: 0.55;
+}
+
+.archive-entry-head h4,
+.archive-lore-entry h4 {
+  font-size: 8px;
+  color: #eee;
+  margin: 0 0 4px;
+  letter-spacing: 0.05em;
+}
+
+.archive-entry-sub {
+  font-size: 6px;
+  color: #777;
+  letter-spacing: 0.1em;
+}
+
+.archive-entry-body,
+.archive-lore-entry p {
+  font-size: 8px;
+  line-height: 1.8;
+  color: #aaa;
+  margin: 8px 0 0;
+  white-space: pre-line;
+}
+
+.archive-entry.is-locked .archive-entry-body,
+.archive-lore-entry.is-locked p {
+  color: #555;
+  font-style: italic;
+}
+
+.archive-entry-note {
+  font-size: 7px;
+  line-height: 1.7;
+  color: #777;
+  margin: 8px 0 0;
+  font-style: italic;
+}
+
+.archive-ascendant-tag {
+  margin-top: 8px;
+  font-size: 6px;
+  color: #b48cff;
+  letter-spacing: 0.12em;
+}
+
+/* --- NG+ chase track --- */
+.archive-ngplus {
+  border: 1px solid #4a3a1a;
+  border-radius: 4px;
+  padding: 14px;
+  background: #161410;
+}
+
+.archive-depth {
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  background: #1a1812;
+  border: 1px solid #3a3220;
+  border-radius: 3px;
+}
+
+.archive-depth-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.archive-depth-label {
+  font-size: 8px;
+  color: #ffcc00;
+  letter-spacing: 0.2em;
+}
+
+.archive-depth-value {
+  font-size: 16px;
+  color: #ffcc00;
+}
+
+.archive-depth-next {
+  margin-top: 6px;
+  font-size: 7px;
+  color: #998;
+}
+
+.archive-chase-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.archive-ascendant h3 {
+  font-size: 9px;
+  color: #b48cff;
+  letter-spacing: 0.15em;
+  margin: 0 0 4px;
+}
+
+.archive-lore-entry {
+  margin-bottom: 8px;
+}

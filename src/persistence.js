@@ -44,6 +44,13 @@ const DEFAULT_SAVE = {
   dailyStreak: 0,
   introSeen: false,
   ngPlus: 0,
+  // NG+ lore-completion chase (gameplay plan #8): the archive record of how far
+  // past the Mirror Admin's shadow the player has pushed in NG+ runs. Lifetime
+  // record — intentionally NOT reset by applyNewGamePlus. Lore only, never power.
+  ngPlusLoreDepth: 0,
+  // Remnant ids cleared while an NG+ run was active ("ascendant" clears).
+  // Feeds both lore depth and the archive's remnant entries. Lifetime record.
+  ngPlusRemnantClears: [],
   // Engagement telemetry: when they first booted, when they were last here,
   // how many sessions, and how long they've played. Drives the Stats screen
   // and the welcome-back beat.
@@ -125,6 +132,8 @@ function migrateSave(save) {
   // Returning players who have already owned a dragon have seen the boot sequence; skip the wall for them.
   if (save.introSeen === undefined) save.introSeen = Object.values(save.dragons).some(d => d.owned);
   if (save.ngPlus === undefined) save.ngPlus = 0;
+  if (save.ngPlusLoreDepth === undefined) save.ngPlusLoreDepth = 0;
+  if (!Array.isArray(save.ngPlusRemnantClears)) save.ngPlusRemnantClears = [];
   if (save.singularityComplete === undefined) save.singularityComplete = false;
   if (save.mirrorAdminDefeated === undefined) save.mirrorAdminDefeated = false;
   if (!Array.isArray(save.remnantDefeated)) save.remnantDefeated = [];
@@ -473,8 +482,12 @@ function grantReplayReward(save, clearCount) {
 
 export function recordSingularityDefeat(bossId) {
   const save = loadSave();
-  if (!save.singularityProgress.defeated.includes(bossId)) {
+  // First clear of this boss in the current loop — a repeat clear (boss still
+  // in `defeated`) must not push the record deeper.
+  const isNewClear = !save.singularityProgress.defeated.includes(bossId);
+  if (isNewClear) {
     save.singularityProgress.defeated.push(bossId);
+    applyNgPlusLoreDepth(save, { kind: 'boss', id: bossId, isNewClear });
   }
   const clearCount = (save.singularityProgress.replayCounts[bossId] || 0) + 1;
   save.singularityProgress.replayCounts[bossId] = clearCount;
@@ -497,10 +510,12 @@ export function markIntroSeen() {
 
 export function markMirrorAdminDefeated() {
   const save = loadSave();
+  const firstClearThisLoop = !save.mirrorAdminDefeated;
   save.mirrorAdminDefeated = true;
   const clearCount = (save.singularityProgress.replayCounts['mirror_admin'] || 0) + 1;
   save.singularityProgress.replayCounts['mirror_admin'] = clearCount;
   grantReplayReward(save, clearCount);
+  if (firstClearThisLoop) applyNgPlusLoreDepth(save, { kind: 'mirror_admin', id: 'mirror_admin', isNewClear: true });
   writeSave(save);
 }
 
@@ -510,11 +525,15 @@ export function recordRemnantDefeat(remnantId) {
   if (!save.remnantDefeated.includes(remnantId)) {
     save.remnantDefeated.push(remnantId);
   }
+  // Ascendant clear: feeds BOTH lore depth and the archive's remnant record.
+  // applyNgPlusLoreDepth dedupes per remnant, so repeats never double-count.
+  applyNgPlusLoreDepth(save, { kind: 'remnant', id: remnantId });
   writeSave(save);
 }
 
 export function markSingularityComplete() {
   const save = loadSave();
+  const firstClearThisLoop = !save.singularityComplete;
   save.singularityComplete = true;
   save.singularityProgress.finalBossPhase = 4;
   save.singularityProgress.replayCounts['the_singularity'] =
@@ -523,6 +542,7 @@ export function markSingularityComplete() {
     save.dragons.light.owned = true;
     save.dragons.light.discovered = true;
   }
+  if (firstClearThisLoop) applyNgPlusLoreDepth(save, { kind: 'singularity', id: 'the_singularity', isNewClear: true });
   writeSave(save);
 }
 
@@ -652,10 +672,51 @@ export function completeDailyChallenge(seed) {
   writeSave(save);
 }
 
+// === NEW GAME+ LORE-COMPLETION CHASE (gameplay plan #8) ===
+// The NG+ fantasy is LORE COMPLETION, not mastery proof or power expression:
+// "depth" is how far past the Mirror Admin's shadow the archive record has
+// been pushed in NG+ runs. An NG+ run is ACTIVE exactly when save.ngPlus >= 1
+// (applyNewGamePlus increments it; it is never reset).
+//
+// DEPTH INCREMENT RULES — depth advances ONLY while an NG+ run is active, and
+// only for clears the record has not logged yet:
+//   - Singularity gatekeepers (`kind: 'boss'`): the first clear of each boss
+//     per loop. applyNewGamePlus re-locks `singularityProgress.defeated`, so
+//     "new" is well-defined per loop; repeat clears in the same loop are
+//     passed with isNewClear=false and grant nothing.
+//   - The Singularity / Mirror Admin: first clear per loop (their flags are
+//     also re-locked by applyNewGamePlus).
+//   - Remnants ("ascendant" clears): the first NG+ clear of each remnant EVER.
+//     ngPlusRemnantClears is the lifetime NG+ remnant record — never reset by
+//     applyNewGamePlus — so it dedupes here and feeds the archive directly.
+// ngPlusLoreDepth is likewise a lifetime record: it is never reset by
+// applyNewGamePlus, so depth milestones can complete across multiple loops.
+// Pure on the passed save so the rules are unit-testable; returns true when
+// depth advanced.
+export function isNgPlusRunActive(save) {
+  return (save?.ngPlus || 0) >= 1;
+}
+
+export function applyNgPlusLoreDepth(save, { kind, id, isNewClear = true } = {}) {
+  if (!isNgPlusRunActive(save)) return false;
+  if (kind === 'remnant') {
+    if (!Array.isArray(save.ngPlusRemnantClears)) save.ngPlusRemnantClears = [];
+    if (!id || save.ngPlusRemnantClears.includes(id)) return false;
+    save.ngPlusRemnantClears.push(id);
+  } else if (!isNewClear) {
+    return false;
+  }
+  save.ngPlusLoreDepth = (save.ngPlusLoreDepth || 0) + 1;
+  return true;
+}
+
 // New Game+: after a true-final clear, re-lock the campaign + Singularity for
 // another, harder run while KEEPING the collection (dragons, scraps, cores,
 // milestones, records, stats, skye). save.ngPlus scales enemies + rewards.
 // Pure so the reset semantics can be unit-tested.
+// NOTE (gameplay plan #8): the NG+ lore-chase record — ngPlusLoreDepth and
+// ngPlusRemnantClears — is intentionally NOT reset here. It is the lifetime
+// archive of the second loop, so depth milestones complete across loops.
 export function applyNewGamePlus(save) {
   save.ngPlus = (save.ngPlus || 0) + 1;
   save.defeatedNpcs = [];

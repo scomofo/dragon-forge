@@ -10,6 +10,7 @@ import { JOURNAL_BRIEFING } from './loreCanon';
 import { CAPTAINS_LOG_FRAGMENTS, getCaptainLogDisplay } from './forgeData';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
+import ArchiveScreen from './ArchiveScreen';
 
 export default function JournalScreen({ onNavigate, save, refreshSave, showToast }) {
   const [tab, setTab] = useState(() => (save.flags?.journalBriefingSeen ? 'dragons' : 'briefing'));
@@ -26,7 +27,13 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
   function handleClaim(m) {
     playSound('journalUnlock');
     claimMilestone(m.id, m.reward);
-    showToast(`🏆 ${m.name} — +${m.reward} ◆`);
+    // NG+ lore-chase milestones pay no DataScraps — the reward is the Felix
+    // prose, recorded into the Archive's Ascendant Record.
+    if (m.reward === 0 && m.loreReward) {
+      showToast(`📜 ${m.name} — recorded in the Archive`);
+    } else {
+      showToast(`🏆 ${m.name} — +${m.reward} ◆`);
+    }
     refreshSave();
     setMilestoneResults(prev => prev.map(r => r.id === m.id ? { ...r, claimed: true, newlyClaimed: false } : r));
   }
@@ -91,9 +98,20 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
         >
           DRAGONS
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'archive'}
+          className={`journal-tab ${tab === 'archive' ? 'active' : ''}`}
+          onClick={() => switchTab('archive')}
+        >
+          ARCHIVE
+        </button>
       </div>
 
-      {tab === 'briefing' ? (
+      {tab === 'archive' ? (
+        <ArchiveScreen save={save} milestones={milestoneResults} onClaim={handleClaim} />
+      ) : tab === 'briefing' ? (
         <div className="journal-briefing">
           <p className="journal-briefing-kicker">FIELD BRIEFING — PROF. FELIX</p>
           <div className="journal-briefing-grid">
@@ -262,7 +280,8 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
             )}
 
             <div className="journal-milestones">
-              {milestoneResults.map((m) => {
+              {/* NG+ lore-chase milestones live in the ARCHIVE tab's chase track, not here. */}
+              {milestoneResults.filter((m) => !m.ngPlus).map((m) => {
                 const isClaimed = m.claimed;
                 const claimable = m.newlyClaimed;
 

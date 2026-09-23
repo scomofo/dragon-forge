@@ -1,4 +1,6 @@
 import { CAMPAIGN_NODES } from './campaignMap';
+import { CORRUPTION_REMNANTS } from './singularityBosses';
+import { ASCENDANT_RECORD_LORE } from './loreCanon';
 
 export const MILESTONES = [
   {
@@ -259,6 +261,66 @@ export const MILESTONES = [
         met: total > 0 && sCount >= total,
         progress: `${sCount}/${total}`,
       };
+    },
+  },
+  // --- NEW GAME+ LORE-COMPLETION CHASE (gameplay plan #8) ---
+  // NG+-exclusive milestones: each check gates on save.ngPlus >= 1 so they can
+  // never complete in the first loop. Rewards are lore-only — reward: 0 pays
+  // no DataScraps; the reward is the Felix prose in `loreReward`, surfaced in
+  // the Archive's Ascendant Record. `ngPlus: true` tags them for the Journal's
+  // separate NG+ chase-track section (shown only while an NG+ run is active).
+  {
+    id: 'ngplus_depth_1',
+    name: 'A Footstep Past the Shadow',
+    description: 'In a New Game+ run, push the archive record one step deeper',
+    reward: 0,
+    ngPlus: true,
+    loreReward: ASCENDANT_RECORD_LORE.ngplus_depth_1,
+    check: (save) => {
+      const depth = save.ngPlusLoreDepth || 0;
+      const met = (save.ngPlus || 0) >= 1 && depth >= 1;
+      return { met, progress: `${Math.min(depth, 1)}/1` };
+    },
+  },
+  {
+    id: 'ngplus_depth_3',
+    name: 'The Record Deepens',
+    description: 'In New Game+ runs, push the archive record 3 steps deeper',
+    reward: 0,
+    ngPlus: true,
+    loreReward: ASCENDANT_RECORD_LORE.ngplus_depth_3,
+    check: (save) => {
+      const depth = save.ngPlusLoreDepth || 0;
+      const met = (save.ngPlus || 0) >= 1 && depth >= 3;
+      return { met, progress: `${Math.min(depth, 3)}/3` };
+    },
+  },
+  {
+    id: 'ngplus_depth_5',
+    name: 'The Mirror Remembers',
+    description: 'In New Game+ runs, push the archive record 5 steps deeper',
+    reward: 0,
+    ngPlus: true,
+    loreReward: ASCENDANT_RECORD_LORE.ngplus_depth_5,
+    check: (save) => {
+      const depth = save.ngPlusLoreDepth || 0;
+      const met = (save.ngPlus || 0) >= 1 && depth >= 5;
+      return { met, progress: `${Math.min(depth, 5)}/5` };
+    },
+  },
+  {
+    id: 'ngplus_ascendant_remnants',
+    name: 'Ascendant Echoes',
+    description: 'In New Game+ runs, quiet all 3 Corruption Remnants a second time',
+    reward: 0,
+    ngPlus: true,
+    loreReward: ASCENDANT_RECORD_LORE.ngplus_ascendant_remnants,
+    check: (save) => {
+      const need = CORRUPTION_REMNANTS.map((r) => r.id);
+      const have = Array.isArray(save.ngPlusRemnantClears) ? save.ngPlusRemnantClears : [];
+      const count = need.filter((id) => have.includes(id)).length;
+      const met = (save.ngPlus || 0) >= 1 && count >= need.length;
+      return { met, progress: `${count}/${need.length}` };
     },
   },
 ];
