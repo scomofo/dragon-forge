@@ -34,6 +34,13 @@ vi.mock('./persistence', () => ({
   trackStat: vi.fn(),
   applyDragonXp: vi.fn(),
   applyDragonXpWithOverflow: vi.fn(dragon => ({ dragon, overflowXp: 0, levelsGained: 0 })),
+  // Mirrors the real recordDiscovery so hatcheryEngine's discovery-order
+  // append works under the mocked persistence module.
+  recordDiscovery: (save, dragonId) => {
+    if (!Array.isArray(save.discoveryOrder)) save.discoveryOrder = [];
+    if (dragonId && !save.discoveryOrder.includes(dragonId)) save.discoveryOrder.push(dragonId);
+    return save;
+  },
 }));
 vi.mock('./soundEngine', () => ({ playSound: vi.fn() }));
 vi.mock('./animationEngine', () => ({ eggBurst: vi.fn() }));

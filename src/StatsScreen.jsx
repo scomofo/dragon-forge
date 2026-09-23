@@ -2,7 +2,15 @@
 import { dragons, elementColors, JOURNAL_DRAGON_IDS } from './gameData';
 import { getStageForLevel } from './battleEngine';
 import { formatPlaytime } from './persistence';
+import { getTitleName } from './journalMilestones';
 import NavBar from './NavBar';
+
+// 1st, 2nd, 3rd, 4th … for the discovery-order record lines.
+function ordinal(n) {
+  const suffixes = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]);
+}
 
 export default function StatsScreen({ onNavigate, save }) {
   const stats = save.stats || {};
@@ -25,6 +33,8 @@ export default function StatsScreen({ onNavigate, save }) {
   // Total cores
   const cores = save.inventory?.cores || {};
   const totalCores = Object.values(cores).reduce((sum, n) => sum + n, 0);
+  const equippedTitleName = getTitleName(save.equippedTitle);
+  const discoveryOrder = Array.isArray(save.discoveryOrder) ? save.discoveryOrder : [];
 
   return (
     <div>
@@ -32,6 +42,9 @@ export default function StatsScreen({ onNavigate, save }) {
 
       <div className="stats-layout">
         <div className="stats-title">FORGE STATISTICS</div>
+        {equippedTitleName && (
+          <div className="stats-equipped-title">«{equippedTitleName}»</div>
+        )}
 
         <div className="stats-grid">
           <div className="stats-card">
@@ -115,6 +128,19 @@ export default function StatsScreen({ onNavigate, save }) {
             <div className="stats-card-label">Daily Streak</div>
             <div className="stats-card-value" style={{ color: '#ff6600' }}>
               🔥 {save.dailyStreak || 0} day{save.dailyStreak === 1 ? '' : 's'}
+            </div>
+          </div>
+          <div className="stats-card">
+            <div className="stats-card-label">Discovery Order</div>
+            <div className="stats-card-value stats-discovery-list">
+              {discoveryOrder.length > 0 ? (
+                <>
+                  {discoveryOrder.slice(0, 3).map((id, i) => (
+                    <div key={id}>{ordinal(i + 1)}: {dragons[id]?.name || id}</div>
+                  ))}
+                  <div className="stats-discovery-total">{discoveryOrder.length} discovered</div>
+                </>
+              ) : '—'}
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { rarityTiers, SHINY_CHANCE, PITY_THRESHOLD, XP_OVERFLOW_SCRAP_RATE } from './gameData';
-import { applyDragonXpWithOverflow } from './persistence';
+import { applyDragonXpWithOverflow, recordDiscovery } from './persistence';
 
 export function rollRarity(pityCounter) {
   if (pityCounter >= PITY_THRESHOLD - 1) {
@@ -71,6 +71,7 @@ export function applyPullResult(save, pull) {
   if (!dragon.owned) {
     dragon.owned = true;
     dragon.discovered = true;
+    recordDiscovery(newSave, pull.element);
     if (pull.shiny) dragon.shiny = true;
     isNew = true;
   } else {

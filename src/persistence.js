@@ -27,6 +27,14 @@ const DEFAULT_SAVE = {
   dataScraps: 0,
   pityCounter: 0,
   milestones: [],
+  // Cosmetic codex rewards only: unlocked title ids + the equipped title shown
+  // under the player header on the Stats screen. Titles never affect stats.
+  titles: [],
+  equippedTitle: null,
+  // First-discovery order: dragon ids in the order `discovered` first flipped
+  // true. Historical order cannot be reconstructed, so legacy saves start with
+  // an empty list and only new discoveries append from here on.
+  discoveryOrder: [],
   defeatedNpcs: [],
   outerGrid: getOuterGridProgress({}),
   frozenCache: getFrozenCacheProgress({}),
@@ -107,6 +115,14 @@ function migrateSave(save) {
   if (save.dataScraps === undefined) save.dataScraps = 0;
   if (save.pityCounter === undefined) save.pityCounter = 0;
   if (save.milestones === undefined) save.milestones = [];
+  // Codex depth (gameplay plan #9): cosmetic titles + discovery-order log.
+  if (!Array.isArray(save.titles)) save.titles = [];
+  if (typeof save.equippedTitle !== 'string' || !save.titles.includes(save.equippedTitle)) {
+    save.equippedTitle = null;
+  }
+  // Backfill is impossible: the order past discoveries happened in was never
+  // recorded. Legacy saves begin the log here; new discoveries append.
+  if (!Array.isArray(save.discoveryOrder)) save.discoveryOrder = [];
   // Retroactively grant full_roster for saves that met the old 6-dragon threshold before it was raised to 8.
   if (!save.milestones.includes('full_roster') &&
       Object.values(save.dragons).filter(d => d.discovered).length >= 8) {
@@ -143,6 +159,7 @@ function migrateSave(save) {
   if (save.singularityComplete && !save.dragons.light.owned) {
     save.dragons.light.owned = true;
     save.dragons.light.discovered = true;
+    recordDiscovery(save, 'light');
   }
   if (save.inventory === undefined) {
     save.inventory = { cores: {}, xpBoostBattles: 0, stabilityBoost: false, streakShield: 0 };
@@ -387,7 +404,18 @@ export function unlockDragon(dragonId, shiny) {
   const save = loadSave();
   save.dragons[dragonId] = { ...save.dragons[dragonId], owned: true, discovered: true };
   if (shiny) save.dragons[dragonId].shiny = true;
+  recordDiscovery(save, dragonId);
   writeSave(save);
+}
+
+// Equip one of the player's unlocked codex titles (cosmetic only). Pass null
+// to unequip. Returns false for titles the player hasn't unlocked.
+export function setEquippedTitle(titleId) {
+  const save = loadSave();
+  if (titleId !== null && !(save.titles || []).includes(titleId)) return false;
+  save.equippedTitle = titleId;
+  writeSave(save);
+  return true;
 }
 
 export function xpForLevel(level) { return 50 + (level - 1) * 5; }  // L1:50 .. L49:290, smooth ramp
@@ -431,11 +459,28 @@ export function upgradeDragonShiny(dragonId) {
   writeSave(save);
 }
 
-export function claimMilestone(milestoneId, reward) {
+// First-discovery ordering (gameplay plan #9): append a dragon id the first
+// time `discovered` flips true. The duplicate guard makes every call site safe
+// to call whenever it sets discovered — order always reflects true firsts.
+export function recordDiscovery(save, dragonId) {
+  if (!Array.isArray(save.discoveryOrder)) save.discoveryOrder = [];
+  if (!dragonId) return save;
+  if (!save.discoveryOrder.includes(dragonId)) save.discoveryOrder.push(dragonId);
+  return save;
+}
+
+export function claimMilestone(milestoneId, reward, titleReward) {
   const save = loadSave();
   if (save.milestones.includes(milestoneId)) return false;
   save.milestones.push(milestoneId);
   save.dataScraps += reward;
+  // Cosmetic title grant: unlock the title, and auto-equip it when the player
+  // has none equipped so the reward is immediately visible.
+  if (titleReward) {
+    if (!Array.isArray(save.titles)) save.titles = [];
+    if (!save.titles.includes(titleReward)) save.titles.push(titleReward);
+    if (!save.equippedTitle) save.equippedTitle = titleReward;
+  }
   writeSave(save);
   return true;
 }
@@ -541,6 +586,7 @@ export function markSingularityComplete() {
   if (save.dragons.light && !save.dragons.light.owned) {
     save.dragons.light.owned = true;
     save.dragons.light.discovered = true;
+    recordDiscovery(save, 'light');
   }
   if (firstClearThisLoop) applyNgPlusLoreDepth(save, { kind: 'singularity', id: 'the_singularity', isNewClear: true });
   writeSave(save);
@@ -617,6 +663,7 @@ export function fuseDragons(parentAId, parentBId, offspringElement, offspringLev
   };
   save.dataScraps -= 100;
   save.stats.fusionsCompleted = (save.stats.fusionsCompleted || 0) + 1;
+  recordDiscovery(save, offspringElement);
   if (!Array.isArray(save.fusionLineage)) save.fusionLineage = [];
   save.fusionLineage.push({ parentA: parentAId, parentB: parentBId, offspring: offspringElement, offspringLevel });
   writeSave(save);

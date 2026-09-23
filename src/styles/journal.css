@@ -545,4 +545,31 @@
 
 .archive-lore-entry {
   margin-bottom: 8px;
+/* === Codex title selector (gameplay plan #9) === */
+
+.journal-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 8px;
+  color: #888;
+  letter-spacing: 0.15em;
+}
+
+.journal-title-select {
+  background: #111118;
+  color: #ffcc00;
+  border: 1px solid #444;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 9px;
+  padding: 4px 8px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.journal-title-select:hover {
+  border-color: #ffcc00;
 }
