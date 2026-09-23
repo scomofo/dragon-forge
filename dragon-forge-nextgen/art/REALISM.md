@@ -46,6 +46,42 @@ Evolved forms are rebuilt from the revised parents. The existing export validato
 check that parent geometry, joint bindings and clip tracks are preserved byte for
 byte in each evolved mesh. Idle sway is quieter for Magma and Nox.
 
+## Second detail pass — September 2026
+
+The remaining block-built guardians were raised toward the revised tier without
+changing their identities or rigs:
+
+- **Stone (Cairn):** 1,908 → 5,788 triangles. Glowing fault-seam eyes, a rocky maw
+  flanking the emissive mouth slit, toe and finger blocks, torso strata slabs,
+  emissive fault cracks, a back crystal cluster, forearm/shin guard plates,
+  pauldrons, knuckle plates and joint bands. 18 joints unchanged.
+- **Shadow (Umbra):** 1,998 → 3,890 triangles. Void-lit fangs, cheek spikes, brow
+  ridges, a two-row neck ruff, dorsal ridge plates, haunch plates, triple toes
+  with claws and tail fin plates; torso/skull segment density raised. 26 joints
+  unchanged, all negative-space holes preserved.
+- **Light (Lumen):** 1,994 → 3,182 triangles. Doubled gold lattice on every wing
+  and body pane, a floating halo ring, wingtip glass shards, forearm guard panes,
+  glass motes orbiting the torso, toe segments and gold joint bands. 25 joints
+  unchanged; hover clearance and wingspan bounds unchanged.
+
+## Deliberate non-revisions
+
+- **Void (Null)** keeps its minimal diamond frame. A tear in the simulation reads
+  as *absence*; adding animal anatomy would destroy the identity the family
+  playtest approved. Its 992 triangles are the art direction, not a gap.
+- **Synthesis (Prism)** composes Void's frame with Light's panes and deliberately
+  inherits both directions. It was not revised because its parents define it.
+- **Egg coverage is 3 of 9 by design.** Magma, Ice and Storm have egg models
+  because their stories hatch. Stone (Admin Vault imprint), Shadow (Fire+Venom
+  resonance), Void (preserved imprint), Light (direct awakening after Singularity
+  stabilization), Synthesis (Light+Void resonance) and Tempest (an evolution)
+  recruit through imprints, resonances, awakenings and evolution — see the
+  recruitment table in `campaign/README.md`. Generating literal eggs for them
+  would contradict the fiction, so none were authored.
+- **Minor-family atlas sizing** was already correct: the light, shadow, stone,
+  synthesis and void atlases ship at 1024×1024 (the revised families and the
+  boss atlas are 2048² where the audit assumed). No resizing was needed.
+
 ## Reproduce and review
 
 Use the pinned NumPy/Pillow versions in `tools/art-requirements.txt`, then run from
