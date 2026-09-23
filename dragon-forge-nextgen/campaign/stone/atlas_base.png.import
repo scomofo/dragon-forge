@@ -2,15 +2,18 @@
 
 importer="texture"
 type="CompressedTexture2D"
-path="res://.godot/imported/atlas_base.png-d05b44d06f656cc255cae7e30a353c96.ctex"
+uid="uid://dnftrkwltwq23"
+path.s3tc="res://.godot/imported/atlas_base.png-3952555dba798ff46580f8f8cebbe6f4.s3tc.ctex"
+path.etc2="res://.godot/imported/atlas_base.png-3952555dba798ff46580f8f8cebbe6f4.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://campaign/stone/atlas_base.png"
-dest_files=["res://.godot/imported/atlas_base.png-d05b44d06f656cc255cae7e30a353c96.ctex"]
+dest_files=["res://.godot/imported/atlas_base.png-3952555dba798ff46580f8f8cebbe6f4.s3tc.ctex", "res://.godot/imported/atlas_base.png-3952555dba798ff46580f8f8cebbe6f4.etc2.ctex"]
 
 [params]
 
@@ -36,4 +39,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
