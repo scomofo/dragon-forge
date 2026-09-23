@@ -2219,7 +2219,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
       {state.phase === PHASES.EPILOGUE && (
         <div className="epilogue-overlay">
           <div className="epilogue-portrait">
-            <img src={`${import.meta.env.BASE_URL}assets/felix_pixel.jpg`} alt="Professor Felix" className="pixelated" />
+            <img src={`${import.meta.env.BASE_URL}assets/felix_pixel.webp`} alt="Professor Felix" className="pixelated" />
           </div>
           <div className="epilogue-text">
             {(state.isMirrorAdmin ? MIRROR_ADMIN_EPILOGUE_LINES : EPILOGUE_LINES).map((line, i) => (

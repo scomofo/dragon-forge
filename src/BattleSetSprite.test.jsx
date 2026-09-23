@@ -171,11 +171,11 @@ describe('battle sheet playback lifecycle', () => {
 
 describe('battle sheet display bounds', () => {
   it.each([
-    [320, 250, 250], [192, 150, 150], [448, 350, 350],
-    [160, 160, 160], [80, 120, 80], [null, null, 192],
-  ])('fits the square strip inside a %s×%s slot', (width, height, expected) => {
+    [320, 250, 288], [192, 150, 192], [448, 350, 384],
+    [160, 160, 192], [80, 120, 96], [null, null, 192],
+  ])('fits the square strip inside a %s×%s slot at an integer multiple of the 96px cell', (width, height, expected) => {
     const html = renderToStaticMarkup(<BattleSetSprite src="fire_idle.webp" width={width} height={height} />);
     expect(html).toContain(`width:${expected}px;height:${expected}px`);
-    expect(html).toContain('width="192" height="192"');
+    expect(html).toContain(`width="${expected}" height="${expected}"`);
   });
 });

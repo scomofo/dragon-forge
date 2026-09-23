@@ -51,7 +51,7 @@ Stage 1 is a hatchling of the *same* plan, not a different animal.
 - Same cell size as the dragon they face. No printed words ("404 Error" banned). Hue-rotate is not a new actor.
 - Arenas 320×176. No leftover labels, grid paper, or watermarks.
 - Each signature has its own strip. Sharing `FLAME_WALL` is a tracked placeholder (`VFX_PLACEHOLDERS`).
-- Eggs: six authored frames. Construction leftovers fail QA.
+- Eggs: eight authored frames. Construction leftovers fail QA.
 
 ## Production order (P1)
 

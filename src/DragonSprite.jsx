@@ -98,7 +98,14 @@ const DragonSprite = forwardRef(function DragonSprite({ spriteSheet, stage = 3, 
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
       }
-      ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
+      // Contain-fit the (square) portrait so it never stretches into the
+      // wider display slots (e.g. 320x250). Letterbox instead of squashing.
+      const fit = Math.min(canvas.width / img.width, canvas.height / img.height);
+      const dw = Math.round(img.width * fit);
+      const dh = Math.round(img.height * fit);
+      const dx = Math.round((canvas.width - dw) / 2);
+      const dy = Math.round((canvas.height - dh) / 2);
+      ctx.drawImage(img, 0, 0, img.width, img.height, dx, dy, dw, dh);
       ctx.restore();
       // Green chroma-key (no-op when the sprite already has baked transparency).
       const single = ctx.getImageData(0, 0, canvas.width, canvas.height);
