@@ -65,6 +65,10 @@ Layout:
 
 When porting a system from web → Godot: data/rules go into `scripts/sim/` as a stateless module; screen controllers go into `scripts/screens/`; world-specific nodes go into `scripts/world/`.
 
+## Nextgen native prototype (`dragon-forge-nextgen/`)
+
+Separate from the frozen Godot slice, `dragon-forge-nextgen/` is the **active native development line**: a Godot 4.6.3 action-RPG prototype (Reconnection campaign, WASD combat, nine guardians) with its own README, save namespace, and `nextgen-*` CI workflows. It is intentionally isolated from `dragon-forge-godot/` (per [ADR-0013](docs/architecture/adr-0013-next-gen-foundation.md) and [ADR-0014](docs/architecture/adr-0014-nextgen-prototype-isolation.md)) — do not merge its entry points, autoloads, or save code with the legacy Godot project. Real-time combat there is an adaptation of the cartridge's identity, not a balance replacement; no soundtrack or art assets are to be replaced.
+
 ## Cross-build notes
 
 - Art is tracked per-build: **`public/assets/` is the source of truth for the browser build**. New web art must be placed in `public/assets/` to ship and must pass `design/gdd/art-bible.md`.
