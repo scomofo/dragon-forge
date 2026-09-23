@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b51hggmx08735"
-path.s3tc="res://.godot/imported/atlas_base.png-3b5032b8940f1147e3a9eb96a24e5ccb.s3tc.ctex"
-path.etc2="res://.godot/imported/atlas_base.png-3b5032b8940f1147e3a9eb96a24e5ccb.etc2.ctex"
+uid="uid://co023t86lwkrr"
+path.s3tc="res://.godot/imported/atlas_emission.png-6a8c3922af680aa35457e021e09266af.s3tc.ctex"
+path.etc2="res://.godot/imported/atlas_emission.png-6a8c3922af680aa35457e021e09266af.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://art/generated/atlas_base.png"
-dest_files=["res://.godot/imported/atlas_base.png-3b5032b8940f1147e3a9eb96a24e5ccb.s3tc.ctex", "res://.godot/imported/atlas_base.png-3b5032b8940f1147e3a9eb96a24e5ccb.etc2.ctex"]
+source_file="res://campaign/venom/atlas_emission.png"
+dest_files=["res://.godot/imported/atlas_emission.png-6a8c3922af680aa35457e021e09266af.s3tc.ctex", "res://.godot/imported/atlas_emission.png-6a8c3922af680aa35457e021e09266af.etc2.ctex"]
 
 [params]
 

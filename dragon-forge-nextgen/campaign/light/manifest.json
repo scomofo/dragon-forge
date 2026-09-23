@@ -14,8 +14,8 @@
   },
   "asset": {
     "file": "light_guardian.glb",
-    "triangles": 1994,
-    "vertices": 2642,
+    "triangles": 3182,
+    "vertices": 3631,
     "surfaces": 1,
     "bones": 25,
     "clips": [
@@ -31,12 +31,12 @@
     ],
     "bounds": [
       [
-        -1.7836302518844604,
+        -1.840000033378601,
         0.2175000011920929,
         -0.7412430047988892
       ],
       [
-        1.7836302518844604,
+        1.840000033378601,
         2.9484455585479736,
         0.31299999356269836
       ]
@@ -64,6 +64,6 @@
     "atlas_emission.png": "a1c9af1a6cbfe219bb16228648060d2901d107e7d293684397ea2cdb8a18d2dc",
     "atlas_normal.png": "e1fa3a473e7e1c988a4d809676412da667b5fc724069c7dca4a5fff2091e37ef",
     "atlas_orm.png": "82eb5b990825c093d596f6b386dbe5024e526e5226d18d0a1a988b29afbb07e7",
-    "light_guardian.glb": "2f5f49f52c7714f9b20ad100a2ba784b85936cddf0dfa429c89dbcafe89638a0"
+    "light_guardian.glb": "a05a9e824ee9cadb59c6e1b229daeb2f3c80af4985eab32073e6e84182095e0b"
   }
 }

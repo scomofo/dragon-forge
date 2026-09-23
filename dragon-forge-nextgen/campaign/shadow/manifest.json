@@ -2,8 +2,8 @@
   "source": "tools/build_shadow_guardian.py",
   "asset": {
     "file": "shadow_guardian.glb",
-    "triangles": 1998,
-    "vertices": 1675,
+    "triangles": 3890,
+    "vertices": 3321,
     "surfaces": 1,
     "bones": 26,
     "clips": [
@@ -19,9 +19,9 @@
     ],
     "bounds": [
       [
-        -0.522360622882843,
+        -0.5279174447059631,
         0.09157449007034302,
-        -1.6363202333450317
+        -1.6375640630722046
       ],
       [
         0.5279174447059631,
@@ -35,6 +35,6 @@
     "atlas_emission.png": "f1d5dbef77ab5337db7ee53812ca236e1f0d9deabbddc6497ea3ba53929135aa",
     "atlas_normal.png": "e13a5e57bf5cc43a00d5aebd2e8b63459c8b1b8e576fa237801a9e7f33df2536",
     "atlas_orm.png": "53f37ad24b7b4988be82f525850a4871e9c455a397dea1e63db2bee0b6e9e205",
-    "shadow_guardian.glb": "e9f6c962d8ec3c3775f4379ea8fdbc8213e2992b034078fb61cad3d62323d184"
+    "shadow_guardian.glb": "97d67a4c39952fddb52521480b0d93238a9b1a90c5be6021e78f9ff8847d73a3"
   }
 }

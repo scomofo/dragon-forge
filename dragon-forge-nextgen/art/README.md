@@ -6,7 +6,7 @@ direction. Earlier descriptions and counts below document previous passes.
 
 # Surface / deformation / footwork update
 
-See `POLISH.md` for the implemented repaint, baked stress-pose corrections, and world-space foot-lock contract. The atlas is now 2048×2048; Magma has 13,388 triangles. Earlier asset-set descriptions below remain historical where they cite the original 1024 atlas or triangle count.
+See `POLISH.md` for the implemented repaint, baked stress-pose corrections, and world-space foot-lock contract. The atlas is now 2048×2048; Magma has 17,528 triangles. Earlier asset-set descriptions below remain historical where they cite the original 1024 atlas or triangle count.
 
 # Dragon Forge — first imported character and environment art set
 
@@ -26,7 +26,7 @@ Each exported asset has one combined mesh and one atlas material. Counts refer t
 
 | Asset | Triangles | Bones | Purpose |
 |---|---:|---:|---|
-| magma_guardian | 13,340 | 24 | Playable Magma; nine clips |
+| magma_guardian | 17,528 | 24 | Playable Magma; nine clips |
 | firewall_sentinel | 2,064 | 8 | Shield-cycle enemy |
 | packet_warden | 2,344 | 8 | Crowned/heavier enemy variant |
 | deck_panel | 1,088 | — | Repeated plate deck with gutters/rivets |

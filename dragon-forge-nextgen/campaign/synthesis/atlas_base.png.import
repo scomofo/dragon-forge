@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b51hggmx08735"
-path.s3tc="res://.godot/imported/atlas_base.png-3b5032b8940f1147e3a9eb96a24e5ccb.s3tc.ctex"
-path.etc2="res://.godot/imported/atlas_base.png-3b5032b8940f1147e3a9eb96a24e5ccb.etc2.ctex"
+uid="uid://cjx3cx3irnnf0"
+path.s3tc="res://.godot/imported/atlas_base.png-7f6e5340bd23e5571d93334234148def.s3tc.ctex"
+path.etc2="res://.godot/imported/atlas_base.png-7f6e5340bd23e5571d93334234148def.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://art/generated/atlas_base.png"
-dest_files=["res://.godot/imported/atlas_base.png-3b5032b8940f1147e3a9eb96a24e5ccb.s3tc.ctex", "res://.godot/imported/atlas_base.png-3b5032b8940f1147e3a9eb96a24e5ccb.etc2.ctex"]
+source_file="res://campaign/synthesis/atlas_base.png"
+dest_files=["res://.godot/imported/atlas_base.png-7f6e5340bd23e5571d93334234148def.s3tc.ctex", "res://.godot/imported/atlas_base.png-7f6e5340bd23e5571d93334234148def.etc2.ctex"]
 
 [params]
 
