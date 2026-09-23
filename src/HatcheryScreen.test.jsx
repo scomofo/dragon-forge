@@ -33,6 +33,7 @@ vi.mock('./persistence', () => ({
   writeSave: vi.fn(save => { control.save = structuredClone(save); return true; }),
   trackStat: vi.fn(),
   applyDragonXp: vi.fn(),
+  applyDragonXpWithOverflow: vi.fn(dragon => ({ dragon, overflowXp: 0, levelsGained: 0 })),
 }));
 vi.mock('./soundEngine', () => ({ playSound: vi.fn() }));
 vi.mock('./animationEngine', () => ({ eggBurst: vi.fn() }));

@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { wait } from './utils';
 import { playSound } from './soundEngine';
-import { dragons, elementColors, eggSheets, PULL_COST } from './gameData';
-import { executePull, executeVoidEggPull, applyPullResult, getRarityCeremony, orderGridResults } from './hatcheryEngine';
+import { dragons, elementColors, eggSheets, PULL_COST, PITY_THRESHOLD } from './gameData';
+import { executePull, executeVoidEggPull, applyPullResult, getRarityCeremony, getPityRitual, getPityProgress, orderGridResults } from './hatcheryEngine';
 import { loadSave, writeSave, trackStat } from './persistence';
 import { assetUrl } from './utils';
 import { eggBurst } from './animationEngine';
@@ -33,12 +33,16 @@ const HATCH_SEQUENCE = [
   { frame: 6, duration: 400, css: '' },                    // Burst! (eggBurst handles the VFX; skip frame 7 shell)
 ];
 
+const PITY_RING_RADIUS = 12;
+const PITY_RING_CIRCUMFERENCE = 2 * Math.PI * PITY_RING_RADIUS;
+
 export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const [phase, setPhase] = useState(PHASES.IDLE);
   const [eggFrame, setEggFrame] = useState(0);
   const [eggSheet, setEggSheet] = useState(eggSheets.generic);
   const [eggCss, setEggCss] = useState('');
   const [eggGlowColor, setEggGlowColor] = useState(null);
+  const [eggPityCss, setEggPityCss] = useState('');
   const [showTutorial, setShowTutorial] = useState(() => Object.values(save.dragons).every(d => !d.owned));
   const [currentResult, setCurrentResult] = useState(null);
   const [gridResults, setGridResults] = useState([]);
@@ -67,15 +71,17 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const showFirstExpedition = firstGuardian && !(save.defeatedNpcs || []).includes('firewall_sentinel')
     && !pullPending && phase !== PHASES.HATCHING;
 
-  const animateHatch = useCallback(async (element, rarityName = 'Common') => {
+  const animateHatch = useCallback(async (element, rarityName = 'Common', isPityPull = false) => {
     const ceremony = getRarityCeremony(rarityName);
+    const pityRitual = getPityRitual(isPityPull);
     skippedRef.current = false;
     burstFiredRef.current = false;
     currentElementRef.current = element;
     setEggSheet(eggSheets.generic);
     setEggFrame(0);
     setEggCss('');
-    setEggGlowColor(ceremony.glow);
+    setEggPityCss(pityRitual.css);
+    setEggGlowColor(pityRitual.glow || ceremony.glow);
     setPhase(PHASES.HATCHING);
 
     await wait(400);
@@ -106,9 +112,11 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
 
       if (step.frame === 6) {
         // Hold-your-breath beat: Rare+ hangs on the cracked egg for a moment
-        // before it bursts — anticipation is the reward.
-        if (ceremony.holdMs > 0) {
-          await wait(ceremony.holdMs);
+        // before it bursts — anticipation is the reward. A pity-guaranteed
+        // pull adds its own extra held beat on top of the rarity ceremony.
+        const holdMs = ceremony.holdMs + pityRitual.extraHoldMs;
+        if (holdMs > 0) {
+          await wait(holdMs);
           if (skippedRef.current) return;
         }
         await wait(60); // let the burst frame paint before slicing the canvas
@@ -120,6 +128,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
       }
     }
     setEggCss('');
+    setEggPityCss('');
   }, [fireBurst]);
 
   const handlePull1 = async (event) => {
@@ -146,13 +155,18 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     playSound('buttonClick');
     try {
       const pull = voidEggPull ? executeVoidEggPull() : executePull(currentSave.pityCounter);
+      // A pull made with the pity counter at its max is the guaranteed one —
+      // it gets the pity ritual (pink aura + extra held beat). Void Egg pulls
+      // bypass the pity system entirely.
+      const isPityPull = !voidEggPull && currentSave.pityCounter >= PITY_THRESHOLD - 1;
       const result = applyPullResult(currentSave, pull);
       writeSave(result.save);
       trackStat('totalPulls');
+      if (result.scrapsGained > 0) trackStat('overflowScraps', result.scrapsGained);
       refreshSave();
       setGridResults([]);
 
-      await animateHatch(pull.element, pull.rarityName);
+      await animateHatch(pull.element, pull.rarityName, isPityPull);
 
       setCurrentResult({ pull, apply: result });
       setPhase(PHASES.REVEAL);
@@ -177,6 +191,9 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     setPullPending(true);
     playSound('buttonClick');
     try {
+      // The pity ritual applies if the ten-pull STARTS on the guaranteed pull;
+      // only the first pull's hatch is animated.
+      const firstIsPityPull = currentSave.pityCounter >= PITY_THRESHOLD - 1;
       const results = [];
       for (let i = 0; i < 10; i++) {
         const pull = executePull(currentSave.pityCounter);
@@ -187,12 +204,14 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
 
       writeSave(currentSave);
       trackStat('totalPulls', 10);
+      const scrapsTotal = results.reduce((sum, r) => sum + (r.apply.scrapsGained || 0), 0);
+      if (scrapsTotal > 0) trackStat('overflowScraps', scrapsTotal);
       refreshSave();
 
       // Animate first pull
       const first = results[0];
       setGridResults([]);
-      await animateHatch(first.pull.element, first.pull.rarityName);
+      await animateHatch(first.pull.element, first.pull.rarityName, firstIsPityPull);
 
       setCurrentResult({ pull: first.pull, apply: first.apply });
       setPhase(PHASES.REVEAL);
@@ -214,6 +233,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
       skippedRef.current = true;
       setEggFrame(6);
       setEggCss('');
+      setEggPityCss('');
       // Let the jump-to-burst frame paint, then fire the shatter once.
       setTimeout(() => fireBurst(currentElementRef.current), 60);
     }
@@ -225,6 +245,8 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     setCurrentResult(null);
     setGridResults([]);
     setEggFrame(0);
+    setEggCss('');
+    setEggPityCss('');
     setEggSheet(eggSheets.generic);
     setEggGlowColor(null);
     refreshSave();
@@ -317,7 +339,7 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
         <div className="hatchery-title">QUANTUM INCUBATION LAB</div>
 
         <div
-          className={`egg-container ${eggCss}`}
+          className={`egg-container ${eggCss} ${eggPityCss}`}
           ref={eggContainerRef}
           style={eggGlowColor ? { '--rarity-glow': eggGlowColor } : undefined}
         >
@@ -353,6 +375,9 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
               )}
               {currentResult.pull.shiny && (
                 <div className="reveal-badge shiny-badge">+20% STATS</div>
+              )}
+              {!currentResult.apply.isNew && currentResult.apply.scrapsGained > 0 && (
+                <div className="reveal-badge scrap-badge">+{currentResult.apply.scrapsGained}◆ overflow</div>
               )}
             </div>
           )}
@@ -402,7 +427,26 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
         )}
 
         {pityRemaining < 10 && pityRemaining > 0 && phase === PHASES.IDLE && (
-          <div className="pity-hint">Rare+ guaranteed in {pityRemaining} pulls</div>
+          <div className="pity-meter">
+            <svg
+              className="pity-ring"
+              width="30"
+              height="30"
+              viewBox="0 0 30 30"
+              role="img"
+              aria-label={`Pity progress: ${save.pityCounter} of 10 pulls toward a guaranteed Rare or better`}
+            >
+              <circle cx="15" cy="15" r={PITY_RING_RADIUS} className="pity-ring-track" />
+              <circle
+                cx="15"
+                cy="15"
+                r={PITY_RING_RADIUS}
+                className="pity-ring-fill"
+                style={{ strokeDashoffset: (PITY_RING_CIRCUMFERENCE * (1 - getPityProgress(save.pityCounter))).toFixed(2) }}
+              />
+            </svg>
+            <div className="pity-hint">Rare+ guaranteed in {pityRemaining} pulls</div>
+          </div>
         )}
 
         {(phase === PHASES.IDLE || phase === PHASES.REVEAL || phase === PHASES.GRID) && (

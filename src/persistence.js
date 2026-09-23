@@ -384,8 +384,11 @@ export function xpForLevel(level) { return 50 + (level - 1) * 5; }  // L1:50 .. 
 // Single source of truth for XP->level progression. Mutates `dragon` in place on
 // the one canonical curve, capping at level 50. EVERY XP source (battle wins,
 // duplicate pulls, shop items) must go through this so a dragon levels the same
-// no matter where the XP came from.
-export function applyDragonXp(dragon, amount) {
+// no matter where the XP came from. Overflow past the level-50 cap is reported
+// (not silently discarded) so callers can convert it — e.g. hatchery
+// duplicate-XP becomes DataScraps.
+export function applyDragonXpWithOverflow(dragon, amount) {
+  const startLevel = dragon.level;
   dragon.xp += amount;
   let need = xpForLevel(dragon.level);
   while (dragon.xp >= need && dragon.level < 50) {
@@ -393,8 +396,16 @@ export function applyDragonXp(dragon, amount) {
     dragon.level++;
     need = xpForLevel(dragon.level);
   }
-  if (dragon.level >= 50) dragon.xp = 0;
-  return dragon;
+  let overflowXp = 0;
+  if (dragon.level >= 50) {
+    overflowXp = dragon.xp;
+    dragon.xp = 0;
+  }
+  return { dragon, overflowXp, levelsGained: dragon.level - startLevel };
+}
+
+export function applyDragonXp(dragon, amount) {
+  return applyDragonXpWithOverflow(dragon, amount).dragon;
 }
 
 export function addDragonXp(dragonId, bonusXp) {

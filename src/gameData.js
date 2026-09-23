@@ -401,6 +401,13 @@ export const PULL_COST = 50;
 export const SHINY_CHANCE = 0.02;
 export const PITY_THRESHOLD = 10;
 
+// === HATCHERY ECONOMY ===
+// Duplicate-pull XP that overflows past the level-50 cap is converted to
+// DataScraps at this rate (XP per scrap). Deliberately stingy: overflow is a
+// consolation prize, not an economy source. Flagged for ADR-0006 economy
+// review — tune only with playtest data.
+export const XP_OVERFLOW_SCRAP_RATE = 10;
+
 // === STATUS EFFECTS ===
 export const STATUS_EFFECTS = {
   fire:   { name: 'Burn',        icon: '🔥', duration: 2, type: 'dot',     value: 0.15 },
