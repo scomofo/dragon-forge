@@ -28,8 +28,8 @@ for name,digest in m['files'].items():
     check(hashlib.sha256(p.read_bytes()).hexdigest()==digest,'hash '+name)
 a=m['asset'];doc=glb(FOLDER/a['file'])
 prim=doc['meshes'][0]['primitives'][0]
-check(doc['accessors'][prim['attributes']['POSITION']]['count']==a['vertices']==1555,'1555 vertices')
-check(doc['accessors'][prim['indices']]['count']//3==a['triangles']==1908,'1908 triangles')
+check(doc['accessors'][prim['attributes']['POSITION']]['count']==a['vertices']==4657,'4657 vertices')
+check(doc['accessors'][prim['indices']]['count']//3==a['triangles']==5788,'5788 triangles')
 check(len(doc['skins'][0]['joints'])==a['bones']==18,'18 skin joints')
 clips=[x.get('name','') for x in doc['animations']]
 check(clips==a['clips'] and len(clips)==9,'nine named clips in authored order')

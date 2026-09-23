@@ -4,6 +4,10 @@
 Metres, +Y up, -Z forward. Cut opalescent panes have real thickness and rigid
 skinning; separate worn gold borders articulate at mechanical joints. No purple
 palette, procedural runtime meshes, external models or foot-planting claim.
+
+Detail pass (Sept 2026): denser gold leading on the wing panes, a halo ring,
+neck crest, toe segments and filigree raise Lumen to the revised-guardian
+detail tier while keeping its sleek mechanical-glass identity.
 """
 from pathlib import Path
 import hashlib
@@ -107,6 +111,9 @@ def pane(mesh, points, slot, bone, thickness=.045, border=.025, mullion=True):
     if mullion:
         # A real gold divider splits the opalescent window into facets.
         beam(mesh, points[0] + [0, 0, -.032], points[len(points) // 2] + [0, 0, -.032], border * .55, 4, bone)
+        # Detail pass: a second cross-divider doubles the gold lattice.
+        second = (len(points) // 2 + 1) % len(points)
+        beam(mesh, points[1] + [0, 0, -.032], points[second] + [0, 0, -.032], border * .45, 4, bone)
 
 
 def guardian():
@@ -140,6 +147,7 @@ def guardian():
         mesh.tube([(sign * .52, 1.41, -.08), (sign * .54, 1.18, -.20)], [.105, .125], slot=2, bone=fore, sides=8)
         mesh.plate((sign * .55, 1.32, -.235), .24, .30, normal=(sign * .2, 0, -1), slot=10, bone=fore, depth=.05)
         mesh.box((sign * .54, 1.105, -.23), (.20, .15, .19), slot=3, bone=hand, bevel=.025)
+        mesh.box((sign * .41, 1.66, -.025), (.24, .07, .24), slot=4, bone=arm, bevel=.02)
         for digit in [-1, 0, 1]:
             x = sign * .54 + digit * .058
             mesh.tube([(x, 1.10, -.28), (x, 1.03, -.38)], [.034, .008], slot=5, bone=hand, sides=5)
@@ -152,6 +160,9 @@ def guardian():
         mesh.tube([(sign * .24, .65, .07), (sign * .24, .35, -.01)], [.105, .085], slot=2, bone=shin, sides=8)
         mesh.plate((sign * .24, .49, -.05), .18, .32, normal=(0, 0, -1), slot=8, bone=shin, depth=.025)
         mesh.box((sign * .24, .27, -.13), (.21, .105, .38), slot=5, bone=foot, bevel=.018)
+        mesh.box((sign * .21, .91, .075), (.26, .07, .26), slot=4, bone=thigh, bevel=.02)
+        for toe in [-1, 0, 1]:
+            mesh.tube([(sign * .24 + toe * .06, .25, -.30), (sign * .24 + toe * .06, .24, -.43)], [.028, .006], slot=1, bone=foot, sides=6)
         # Three separate rigid windows form each upward-pointing wing chevron.
         wing = mesh.bone('Wing.' + side, (sign * .36, 1.94, .27), chest)
         middle = mesh.bone('WingMid.' + side, (sign * .83, 2.47, .25), wing)
@@ -162,6 +173,18 @@ def guardian():
         pane(mesh, points([(1.53, 2.73, .22), (2.04, 2.92, .22), (1.81, 2.36, .22), (1.47, 1.93, .22)]), 11, tip, border=.031)
         beam(mesh, (sign * .34, 1.92, .27), (sign * .80, 2.47, .27), .043, 3, wing)
         beam(mesh, (sign * .83, 2.47, .25), (sign * 1.26, 2.70, .25), .043, 4, middle)
+        # Wingtip glass shards trail the last pane.
+        mesh.plate((sign * 1.72, 2.62, .22), .10, .16, normal=(0, 0, 1), slot=11, bone=tip, depth=.012, tint=1.0)
+        mesh.plate((sign * 1.80, 2.50, .22), .08, .12, normal=(0, 0, 1), slot=7, bone=tip, depth=.012, tint=.9)
+        # Forearm guard pane: a small glass vambrace over the forearm plate.
+        mesh.plate((sign * .55, 1.32, -.28), .18, .22, normal=(sign * .2, 0, -1), slot=11, bone=fore, depth=.02, tint=1.0)
+    # Halo ring: a thin gold torus floating behind the head.
+    mesh.ring((0, 2.45, .05), .33, .028, 4, head, axis='z', segments=24)
+    # Floating glass motes orbit the torso: shed light made solid.
+    for i in range(8):
+        a = i / 8 * math.tau
+        mx, my = math.cos(a) * .55, 1.55 + math.sin(a) * .38
+        mesh.plate((mx, my, .12), .09, .13, normal=(math.cos(a), .2, .3), slot=11, bone=chest, depth=.012, tint=1.0)
     for clip, duration in DURATIONS.items():
         times = list(np.linspace(0, duration, max(4, int(duration * 30) + 1)))
         if clip in WINDUPS:

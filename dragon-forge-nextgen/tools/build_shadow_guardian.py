@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """Offline Umbra/Shadow authoring: negative-space holed wolf, metres/Y-up/-Z-front.
+
+Detail pass (Sept 2026): void-lit fangs, clawed triple toes, neck ruff, dorsal
+ridge plates and denser segment counts raise the wolf to the revised-guardian
+detail tier while preserving its defining holes and gaps.
 Committed exports are runtime-ready; Python is only an editable authoring path.
 """
 from pathlib import Path
@@ -37,8 +41,8 @@ def guardian():
     neck=m.bone('Neck',(0,1.20,-.72),chest);head=m.bone('Head',(0,1.46,-1.13),neck);jaw=m.bone('Jaw',(0,1.31,-1.40),head)
     # Two disconnected torso masses are intentional. Their missing middle volume is the
     # defining Shadow silhouette: a true hole/gap, not a dark texture painted on a body.
-    m.tube([(0,.70,.82),(0,.78,.56),(0,.83,.31)],[.25,.38,.32],[.23,.34,.28],slot=2,bone=pelvis,sides=11)
-    m.tube([(0,.87,-.02),(0,.99,-.27),(0,1.10,-.55)],[.30,.43,.31],[.26,.38,.25],slot=3,bone=chest,sides=11)
+    m.tube([(0,.70,.82),(0,.78,.56),(0,.83,.31)],[.25,.38,.32],[.23,.34,.28],slot=2,bone=pelvis,sides=13)
+    m.tube([(0,.87,-.02),(0,.99,-.27),(0,1.10,-.55)],[.30,.43,.31],[.26,.38,.25],slot=3,bone=chest,sides=13)
     # Broken dorsal/ventral crescents frame the missing central body without closing it.
     m.tube([(-.19,1.05,-.02),(-.24,1.27,.10),(-.17,1.35,.33)],[.055,.043,.018],slot=8,bone=chest,sides=6)
     m.tube([( .19,1.05,-.02),( .24,1.27,.10),( .17,1.35,.33)],[.055,.043,.018],slot=8,bone=chest,sides=6)
@@ -47,9 +51,32 @@ def guardian():
     # A thin floating spine line maintains readable flow while preserving side-on negative space.
     m.tube([(0,1.10,-.02),(0,1.32,.13),(0,1.36,.28)],[.045,.035,.012],slot=12,bone=chest,sides=6)
     # Wolf-like neck/skull with a second intentional cheek gap between upper skull and jaw.
-    m.tube([(0,1.07,-.52),(0,1.23,-.77),(0,1.46,-1.08)],[.23,.25,.28],[.20,.22,.23],slot=1,bone=neck,sides=10)
-    m.tube([(0,1.48,-1.04),(0,1.51,-1.32),(0,1.45,-1.60)],[.27,.23,.12],[.20,.15,.08],slot=2,bone=head,sides=9)
-    m.tube([(0,1.27,-1.20),(0,1.24,-1.47),(0,1.30,-1.63)],[.20,.17,.08],[.055,.045,.018],slot=0,bone=jaw,sides=8)
+    m.tube([(0,1.07,-.52),(0,1.23,-.77),(0,1.46,-1.08)],[.23,.25,.28],[.20,.22,.23],slot=1,bone=neck,sides=12)
+    m.tube([(0,1.48,-1.04),(0,1.51,-1.32),(0,1.45,-1.60)],[.27,.23,.12],[.20,.15,.08],slot=2,bone=head,sides=11)
+    m.tube([(0,1.27,-1.20),(0,1.24,-1.47),(0,1.30,-1.63)],[.20,.17,.08],[.055,.045,.018],slot=0,bone=jaw,sides=10)
+    # Void-lit fangs: uppers hang from the skull, lowers rise from the jaw.
+    for s in [-1,1]:
+        m.tube([(s*.13,1.34,-1.28),(s*.15,1.22,-1.38),(s*.15,1.12,-1.44)],[.035,.022,.002],slot=12,bone=head,sides=6)
+        m.tube([(s*.11,1.30,-1.50),(s*.12,1.40,-1.56),(s*.12,1.48,-1.58)],[.030,.018,.002],slot=12,bone=jaw,sides=6)
+        m.tube([(s*.24,1.50,-1.20),(s*.38,1.56,-1.28),(s*.48,1.58,-1.30)],[.035,.018,.002],slot=4,bone=head,sides=6)
+        m.tube([(s*.22,1.38,-1.15),(s*.34,1.34,-1.22),(s*.42,1.32,-1.24)],[.030,.015,.002],slot=4,bone=head,sides=6)
+    # Neck ruff: short spikes ringing the neck, floating clear of the body.
+    for s in [-1,1]:
+        for ry,rz in [(1.12,-.60),(1.22,-.72),(1.32,-.84),(1.42,-.96)]:
+            m.tube([(s*.20,ry,rz),(s*.34,ry+.10,rz+.02),(s*.44,ry+.16,rz+.05)],[.045,.020,.002],slot=4,bone=neck,sides=6)
+    # Dorsal ridge plates along the floating spine line.
+    for i in range(5):
+        t=i/4
+        m.plate((0,1.13+t*.25,-.02+t*.29),.10,.16,normal=(0,.9,.2),up=(0,0,-1),slot=9,bone=chest,depth=.03)
+    # Brow ridges over the eye slits and a second ruff row behind the first.
+    for s in [-1,1]:
+        m.tube([(s*.10,1.62,-1.30),(s*.18,1.66,-1.38),(s*.26,1.66,-1.42)],[.035,.020,.002],slot=4,bone=head,sides=6)
+        for ry,rz in [(1.02,-.48),(1.30,-.80)]:
+            m.tube([(s*.24,ry,rz),(s*.38,ry+.12,rz+.03),(s*.50,ry+.18,rz+.06)],[.038,.018,.002],slot=4,bone=neck,sides=6)
+    # Haunch plates on the hindquarters.
+    for s in [-1,1]:
+        m.plate((s*.30,.86,.62),.22,.30,normal=(s*.8,.35,-.2),up=(0,1,0),slot=5,bone=pelvis,depth=.04)
+        m.plate((s*.34,.66,.44),.18,.24,normal=(s*.8,.2,-.3),up=(0,1,0),slot=9,bone=pelvis,depth=.04)
     # Tall split ears, eye slits and small void-lit facial chips.
     for s in [-1,1]:
         ear=m.bone('Ear.'+('L' if s<0 else 'R'),(s*.18,1.60,-1.02),head)
@@ -60,10 +87,11 @@ def guardian():
     for z,prefix,parent in [(-.34,'F',chest),(.52,'B',pelvis)]:
         for s,name in [(-1,'L'),(1,'R')]:
             upper=m.bone(prefix+'Leg.'+name,(s*.31,.72,z),parent);hock=m.bone(prefix+'Hock.'+name,(s*.46,.38,z-.08),upper);foot=m.bone(prefix+'Foot.'+name,(s*.39,.16,z-.30),hock)
-            m.tube([(s*.27,.78,z),(s*.45,.54,z-.03),(s*.46,.35,z-.10)],[.105,.085,.055],slot=1,bone=upper,sides=7)
-            m.tube([(s*.46,.36,z-.10),(s*.38,.20,z-.18),(s*.39,.12,z-.41)],[.070,.052,.024],slot=2,bone=hock,sides=7)
-            for toe in [-.07,.07]:
+            m.tube([(s*.27,.78,z),(s*.45,.54,z-.03),(s*.46,.35,z-.10)],[.105,.085,.055],slot=1,bone=upper,sides=8)
+            m.tube([(s*.46,.36,z-.10),(s*.38,.20,z-.18),(s*.39,.12,z-.41)],[.070,.052,.024],slot=2,bone=hock,sides=8)
+            for toe in [-.09,0,.09]:
                 m.tube([(s*.39+toe,.13,z-.39),(s*.40+toe,.095,z-.58)],[.040,.004],slot=12,bone=foot,sides=6)
+                m.tube([(s*.40+toe,.12,z-.56),(s*.40+toe,.105,z-.70)],[.020,.002],slot=12,bone=foot,sides=6)
     # Segmented tail deliberately alternates solid and gap rhythm.
     parent=pelvis
     for i in range(6):
@@ -71,7 +99,9 @@ def guardian():
         bone=m.bone('Tail'+str(i),(x,y,z),parent)
         # leave small discontinuities between pieces to echo the holed torso
         m.tube([(x,y,z+.02),(x+.03*math.sin(i),y-.02,z+.25)],[max(.035,.16-i*.020),max(.012,.12-i*.019)],slot=3 if i%2 else 4,bone=bone,sides=7)
-        if i<5:m.plate((x,y+.10,z+.13),.14-i*.012,.22,normal=(0,1,0),up=(0,0,-1),slot=9,bone=bone,depth=.025)
+        if i<5:
+            m.plate((x,y+.10,z+.13),.14-i*.012,.22,normal=(0,1,0),up=(0,0,-1),slot=9,bone=bone,depth=.025)
+            m.plate((x+.06,y+.16,z+.18),.10-i*.008,.14,normal=(.4,.9,.1),up=(0,0,-1),slot=12,bone=bone,depth=.02)
         parent=bone
     durations={'idle':1.6,'walk':.76,'claw':.30,'breath':.52,'wall':.50,'burst':.62,'guard':.72,'hurt':.22,'defeat':.78}
     limbs=['FLeg.L','FLeg.R','BLeg.L','BLeg.R']
