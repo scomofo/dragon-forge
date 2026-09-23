@@ -3,12 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-path="res://.godot/imported/tempest_arc.glb-43278d3efe09561f641e730ade1a72e4.scn"
+uid="uid://c6u2ytqtrc361"
+path="res://.godot/imported/tempest_arc.glb-b148494279f60ba834c572690968e6b0.scn"
 
 [deps]
 
 source_file="res://campaign/tempest/tempest_arc.glb"
-dest_files=["res://.godot/imported/tempest_arc.glb-43278d3efe09561f641e730ade1a72e4.scn"]
+dest_files=["res://.godot/imported/tempest_arc.glb-b148494279f60ba834c572690968e6b0.scn"]
 
 [params]
 
@@ -37,3 +38,5 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=1
