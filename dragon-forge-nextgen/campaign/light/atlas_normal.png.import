@@ -2,16 +2,15 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b51hggmx08735"
-path="res://.godot/imported/atlas_base.png-3b5032b8940f1147e3a9eb96a24e5ccb.ctex"
+path="res://.godot/imported/atlas_normal.png-487763b4d947dd47d6ca7ba7112f3c50.ctex"
 metadata={
 "vram_texture": true
 }
 
 [deps]
 
-source_file="res://art/generated/atlas_base.png"
-dest_files=["res://.godot/imported/atlas_base.png-3b5032b8940f1147e3a9eb96a24e5ccb.ctex"]
+source_file="res://campaign/light/atlas_normal.png"
+dest_files=["res://.godot/imported/atlas_normal.png-487763b4d947dd47d6ca7ba7112f3c50.ctex"]
 
 [params]
 
