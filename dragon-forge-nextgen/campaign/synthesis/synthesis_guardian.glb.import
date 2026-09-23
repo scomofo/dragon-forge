@@ -3,12 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-path="res://.godot/imported/synthesis_guardian.glb-8711a6f323ad9a94ea6e49ca1798a6d2.scn"
+uid="uid://bo6gsl4jdpu71"
+path="res://.godot/imported/synthesis_guardian.glb-f4cc82f6a7ccb60d92f01006a4d87973.scn"
 
 [deps]
 
 source_file="res://campaign/synthesis/synthesis_guardian.glb"
-dest_files=["res://.godot/imported/synthesis_guardian.glb-8711a6f323ad9a94ea6e49ca1798a6d2.scn"]
+dest_files=["res://.godot/imported/synthesis_guardian.glb-f4cc82f6a7ccb60d92f01006a4d87973.scn"]
 
 [params]
 
@@ -37,3 +38,5 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=1
