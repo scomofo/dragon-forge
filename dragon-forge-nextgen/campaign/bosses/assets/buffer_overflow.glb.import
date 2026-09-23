@@ -3,12 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-path="res://.godot/imported/buffer_overflow.glb-ac954a9a6bb6b7fc1a709b1f94f959fc.scn"
+uid="uid://bthgi6mcr1t8p"
+path="res://.godot/imported/buffer_overflow.glb-0d533ea75a73387802d85dae541f9a70.scn"
 
 [deps]
 
 source_file="res://campaign/bosses/assets/buffer_overflow.glb"
-dest_files=["res://.godot/imported/buffer_overflow.glb-ac954a9a6bb6b7fc1a709b1f94f959fc.scn"]
+dest_files=["res://.godot/imported/buffer_overflow.glb-0d533ea75a73387802d85dae541f9a70.scn"]
 
 [params]
 
@@ -37,3 +38,5 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=1

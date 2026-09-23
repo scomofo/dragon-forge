@@ -3,12 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-path="res://.godot/imported/mirror_admin.glb-7aab0ce3c28890ad3ebdcbf027a0fcc7.scn"
+uid="uid://cej8e8actpvhn"
+path="res://.godot/imported/mirror_admin.glb-6330f806bf6c195db8b8b03b34ccc3b1.scn"
 
 [deps]
 
 source_file="res://campaign/bosses/assets/mirror_admin.glb"
-dest_files=["res://.godot/imported/mirror_admin.glb-7aab0ce3c28890ad3ebdcbf027a0fcc7.scn"]
+dest_files=["res://.godot/imported/mirror_admin.glb-6330f806bf6c195db8b8b03b34ccc3b1.scn"]
 
 [params]
 
@@ -37,3 +38,5 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=1

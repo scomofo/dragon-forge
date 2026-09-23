@@ -3,12 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-path="res://.godot/imported/memory_leak.glb-4cdd50fc5a0fe55654cd8123034b7636.scn"
+uid="uid://ys0iuxtjquue"
+path="res://.godot/imported/memory_leak.glb-4980d1ddb1ecd7ae07602930960a3db0.scn"
 
 [deps]
 
 source_file="res://campaign/bosses/assets/memory_leak.glb"
-dest_files=["res://.godot/imported/memory_leak.glb-4cdd50fc5a0fe55654cd8123034b7636.scn"]
+dest_files=["res://.godot/imported/memory_leak.glb-4980d1ddb1ecd7ae07602930960a3db0.scn"]
 
 [params]
 
@@ -37,3 +38,5 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=1
