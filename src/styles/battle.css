@@ -1528,6 +1528,10 @@
 .battle-callout.criticalHit { color: #ffcc00; }
 .battle-callout.reflect { color: #b388ff; }
 .battle-callout.ko { color: #ffffff; }
+/* P4 tell vocabulary: the beat-level telegraph banner — icon + one-line
+   warning shown before the boss acts (charge, signature, pattern beats). */
+.battle-callout.tell { color: #ffcc44; }
+.battle-callout .callout-icon { margin-right: 8px; }
 
 @media (prefers-reduced-motion: reduce) {
   .battle-callout {

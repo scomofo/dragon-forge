@@ -248,6 +248,114 @@ export function getBattleResultCallout(event) {
   return text ? { text, variant } : null;
 }
 
+// === FORMAL TELL VOCABULARY ===
+// Every boss telegraph — NPC charge wind-ups, signature pre-warnings, and the
+// authored boss-pattern beats — fires through ONE presentation contract:
+// { icon, text, variant: 'tell' }, rendered by the battle-callout banner.
+// The banner is the beat-level moment shown BEFORE the boss acts; the
+// BattleCues chips stay the persistent layer. The pattern's full `tell` prose
+// still lives in bossPatterns.js; `intro` condenses it to the one-line banner
+// shown before the boss's first turn, and `beats` cover each pattern's
+// committed mid-battle moments (fired when the script actually commits).
+export const TELL_VARIANT = 'tell';
+
+const PATTERN_TELL_BANNERS = {
+  firewall_sentinel: {
+    intro: { icon: '🛡️', text: 'PACKET SHIELD UP — DEFEND, THEN STRIKE' },
+    beats: {},
+  },
+  buffer_overflow: {
+    intro: { icon: '🌡️', text: 'HEAT BUILDING — MAGMA BREATH AT 4 STACKS' },
+    beats: {
+      overheat: { icon: '🔥', text: 'OVERHEAT — MAGMA BREATH FORCED!' },
+    },
+  },
+  bit_wraith: {
+    intro: { icon: '👁️', text: 'PHASE WATCH — A MISS MAKES IT PIERCE DEFEND' },
+    beats: {
+      phase: { icon: '🌀', text: 'IT PHASES — NEXT HIT IGNORES DEFEND!' },
+    },
+  },
+  crypto_crab: {
+    intro: { icon: '🔒', text: 'ENCRYPTED — REPEAT AN ELEMENT TO CRACK IT' },
+    beats: {
+      decrypted: { icon: '🔓', text: 'ENCRYPTION CRACKED — DAMAGE OPENS!' },
+    },
+  },
+  phishing_siren: {
+    intro: { icon: '🎣', text: 'LURE PULSE — WATCH TURNS 2 AND 5' },
+    beats: {
+      lure: { icon: '🎣', text: 'LURED — COMMAND INTERRUPTED!' },
+    },
+  },
+  glitch_hydra: {
+    intro: { icon: '🐉', text: 'THREE HEADS — BREAK THEM WITH SUPER-EFFECTIVE HITS' },
+    beats: {
+      headBroken: { icon: '💢', text: 'HEAD DOWN — KEEP HITTING ITS WEAKNESS' },
+      lockBroken: { icon: '🔓', text: 'HP LOCK BROKEN — FINISH IT!' },
+    },
+  },
+  logic_bomb: {
+    intro: { icon: '⏳', text: 'FUSE BURNING — DETONATION AT ZERO' },
+    beats: {
+      detonation: { icon: '💥', text: 'FINAL DETONATION — DEFEND OR FINISH IT!' },
+    },
+  },
+  recursive_golem: {
+    intro: { icon: '🧱', text: 'HARDEN LOOPS — RUPTURE AT 3 STACKS' },
+    beats: {
+      rupture: { icon: '🌋', text: 'RUPTURE — TECTONIC RUPTURE FORCED!' },
+    },
+  },
+  protocol_vulture: {
+    intro: { icon: '🦅', text: 'PERCH AT HALF HP — SOUL DRAIN NEXT' },
+    beats: {
+      perch: { icon: '🦅', text: 'PERCHED — SOUL DRAIN INCOMING!' },
+    },
+  },
+  data_corruption: {
+    intro: { icon: '📼', text: 'CORRUPTION WATCH — BURN GARBLES A MOVE' },
+    beats: {
+      corrupted: { icon: '⚠️', text: 'MOVE CORRUPTED — FIRES AS BASIC ATTACK' },
+    },
+  },
+  memory_leak: {
+    intro: { icon: '💧', text: 'LEAK GROWING — ICE RESETS THE BUILDUP' },
+    beats: {
+      maxed: { icon: '🌊', text: 'LEAK MAXED — ICE RESETS IT!' },
+    },
+  },
+  stack_overflow: {
+    intro: { icon: '⚡', text: 'SURGE WATCH — THUNDER CLAP DOUBLES SPEED' },
+    beats: {
+      surge: { icon: '⚡', text: 'SURGE — SPEED DOUBLED FOR TWO TURNS!' },
+      crash: { icon: '💥', text: 'SYSTEM CRASH — IT SKIPS THE TURN!' },
+    },
+  },
+  mirror_admin_reset: {
+    intro: { icon: '🪞', text: 'GREAT RESET ARMED — A PHASE-3 KO HEALS IT' },
+    beats: {
+      reset: { icon: '🪞', text: 'GREAT RESET — HEALED 25% MAX HP!' },
+    },
+  },
+};
+
+export function getTellCallout({ kind, npcName = '', moveName = '', patternId = null, beat = null } = {}) {
+  if (kind === 'charge' && moveName) {
+    return { icon: '⚡', text: `${npcName} is winding up ${moveName}!`.toUpperCase(), variant: TELL_VARIANT };
+  }
+  if (kind === 'signature' && moveName) {
+    return { icon: '💥', text: `Signature — ${npcName} unleashes ${moveName}!`.toUpperCase(), variant: TELL_VARIANT };
+  }
+  if (kind === 'pattern' && patternId) {
+    const entry = PATTERN_TELL_BANNERS[patternId];
+    if (!entry) return null;
+    const banner = (beat && entry.beats[beat]) || (!beat && entry.intro);
+    return banner ? { ...banner, variant: TELL_VARIANT } : null;
+  }
+  return null;
+}
+
 export function shouldAnimateBattleEvent(event) {
   if (!event) return false;
   if (event.attacker === 'status') return false;

@@ -4,10 +4,13 @@ import {
   getBattlePresentationProfile,
   getBattleResultCallout,
   getStatusMoveSummary,
+  getTellCallout,
   shouldAnimateBattleEvent,
   getEffectivenessBadge,
   EFFECTIVENESS_BADGES,
+  TELL_VARIANT,
 } from './battlePresentation';
+import { BOSS_PATTERNS } from './bossPatterns';
 import { setBattleSpeed } from './battleSpeed';
 
 afterEach(() => setBattleSpeed(1));
@@ -84,6 +87,88 @@ describe('battle presentation profiles', () => {
     setBattleSpeed(2);
     const fast = getBattlePresentationProfile(event, { power: 40 });
     expect(fast).toEqual(normal);
+  });
+});
+
+describe('getTellCallout', () => {
+  test('charge wind-up returns icon + one-line warning under the tell variant', () => {
+    expect(getTellCallout({ kind: 'charge', npcName: 'Buffer Overflow', moveName: 'Magma Breath' })).toEqual({
+      icon: '⚡',
+      text: 'BUFFER OVERFLOW IS WINDING UP MAGMA BREATH!',
+      variant: 'tell',
+    });
+  });
+
+  test('signature pre-warning returns icon + one-line warning under the tell variant', () => {
+    expect(getTellCallout({ kind: 'signature', npcName: 'Logic Bomb', moveName: 'Final Detonation' })).toEqual({
+      icon: '💥',
+      text: 'SIGNATURE — LOGIC BOMB UNLEASHES FINAL DETONATION!',
+      variant: 'tell',
+    });
+  });
+
+  test('every authored boss pattern has an intro tell under the same contract', () => {
+    const patternIds = Object.keys(BOSS_PATTERNS);
+    expect(patternIds).toHaveLength(13);
+    for (const patternId of patternIds) {
+      const callout = getTellCallout({ kind: 'pattern', patternId });
+      expect(callout, `intro for ${patternId}`).toMatchObject({ variant: TELL_VARIANT });
+      expect(typeof callout.icon, `icon for ${patternId}`).toBe('string');
+      expect(callout.icon.length, `icon for ${patternId}`).toBeGreaterThan(0);
+      expect(typeof callout.text, `text for ${patternId}`).toBe('string');
+      expect(callout.text.length, `text for ${patternId}`).toBeGreaterThan(0);
+    }
+  });
+
+  test('pattern beats fire through the same helper with the same contract', () => {
+    const beats = [
+      ['buffer_overflow', 'overheat'],
+      ['bit_wraith', 'phase'],
+      ['crypto_crab', 'decrypted'],
+      ['phishing_siren', 'lure'],
+      ['glitch_hydra', 'headBroken'],
+      ['glitch_hydra', 'lockBroken'],
+      ['logic_bomb', 'detonation'],
+      ['recursive_golem', 'rupture'],
+      ['protocol_vulture', 'perch'],
+      ['data_corruption', 'corrupted'],
+      ['memory_leak', 'maxed'],
+      ['stack_overflow', 'surge'],
+      ['stack_overflow', 'crash'],
+      ['mirror_admin_reset', 'reset'],
+    ];
+    for (const [patternId, beat] of beats) {
+      expect(getTellCallout({ kind: 'pattern', patternId, beat }), `${patternId}/${beat}`)
+        .toMatchObject({ variant: 'tell' });
+    }
+  });
+
+  test('returns null for unknown patterns, unknown beats, and missing details', () => {
+    expect(getTellCallout({ kind: 'pattern', patternId: 'not_a_boss' })).toBeNull();
+    expect(getTellCallout({ kind: 'pattern', patternId: 'bit_wraith', beat: 'nope' })).toBeNull();
+    expect(getTellCallout({ kind: 'charge' })).toBeNull();
+    expect(getTellCallout({ kind: 'signature' })).toBeNull();
+    expect(getTellCallout()).toBeNull();
+  });
+
+  test('tell variant does not collide with result callout variants', () => {
+    const resultVariants = new Set(
+      [
+        { action: 'attack', hit: false },
+        { action: 'attack', hit: true, effectiveness: 0.5, targetHp: 10 },
+        { action: 'attack', hit: true, effectiveness: 2, targetHp: 10 },
+        { action: 'attack', hit: true, isCritical: true, targetHp: 10 },
+        { action: 'attack', hit: true, reflected: true, targetHp: 10 },
+        { action: 'attack', hit: true, targetHp: 0 },
+        { action: 'buff' },
+        { action: 'charge' },
+        { action: 'heal' },
+      ]
+        .map(getBattleResultCallout)
+        .filter(Boolean)
+        .map(callout => callout.variant),
+    );
+    expect(resultVariants.has(TELL_VARIANT)).toBe(false);
   });
 });
 
