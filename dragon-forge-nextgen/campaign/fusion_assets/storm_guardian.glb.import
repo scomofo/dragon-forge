@@ -3,12 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-path="res://.godot/imported/storm_guardian.glb-8b74b0e6cfb66b33579471fcdb5af429.scn"
+uid="uid://dyympi2ij0jpa"
+path="res://.godot/imported/storm_guardian.glb-7bc24721df4d62f92a217b8d96c2a9ec.scn"
 
 [deps]
 
 source_file="res://campaign/fusion_assets/storm_guardian.glb"
-dest_files=["res://.godot/imported/storm_guardian.glb-8b74b0e6cfb66b33579471fcdb5af429.scn"]
+dest_files=["res://.godot/imported/storm_guardian.glb-7bc24721df4d62f92a217b8d96c2a9ec.scn"]
 
 [params]
 
@@ -37,3 +38,5 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=1

@@ -2,15 +2,18 @@
 
 importer="texture"
 type="CompressedTexture2D"
-path="res://.godot/imported/atlas_base.png-e808ce743a789bc42b2ed3c0cca0568d.ctex"
+uid="uid://bwk61x4imdvl3"
+path.s3tc="res://.godot/imported/atlas_base.png-57dd2abec87b7eec6b03b47f1907dfd8.s3tc.ctex"
+path.etc2="res://.godot/imported/atlas_base.png-57dd2abec87b7eec6b03b47f1907dfd8.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://campaign/fusion_assets/atlas_base.png"
-dest_files=["res://.godot/imported/atlas_base.png-e808ce743a789bc42b2ed3c0cca0568d.ctex"]
+dest_files=["res://.godot/imported/atlas_base.png-57dd2abec87b7eec6b03b47f1907dfd8.s3tc.ctex", "res://.godot/imported/atlas_base.png-57dd2abec87b7eec6b03b47f1907dfd8.etc2.ctex"]
 
 [params]
 
@@ -36,4 +39,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
