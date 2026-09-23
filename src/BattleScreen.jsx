@@ -20,6 +20,7 @@ import DragonSprite from './DragonSprite';
 import NpcSprite from './NpcSprite';
 import DamageNumber from './DamageNumber';
 import VfxOverlay from './VfxOverlay';
+import { getBattleFlipX, getBattleLungeDirection } from './battleFacing';
 import { getBattlePresentationProfile, getBattleContactState, hasDamagingImpact, getBattleResultCallout, getStatusMoveSummary, getSignatureSummary, getTellCallout, shouldAnimateBattleEvent, getEffectivenessBadge, buildDefeatRecap } from './battlePresentation';
 import { resolveBattlePose } from './battleSets';
 import { resolveBattleArena } from './arenas';
@@ -129,7 +130,6 @@ function initBattle(dragonId, npcId, save, battleConfig) {
       arena: boss.arena,
       arenaFilter: boss.arenaFilter || null,
       spriteFilter: phase ? phase.spriteFilter : (boss.spriteFilter || null),
-      flipSprite: false,
     };
   } else if (battleConfig?.dailyNpc) {
     npc = battleConfig.dailyNpc;
@@ -591,10 +591,10 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
     dispatch({ type: 'SET_CONTACT_POSES', value: getBattleContactState(event, profile) });
     if (isPlayer) {
       const spriteEl = playerSpriteRef.current?.getCanvas?.() || playerSpriteContainerRef.current;
-      if (spriteEl) playerLunge(spriteEl, 'left');
+      if (spriteEl) playerLunge(spriteEl, getBattleLungeDirection('player'));
     } else {
       const npcEl = npcSpriteImgRef.current;
-      if (npcEl) npcLunge(npcEl, battleState.npc.flipSprite ? 'left' : 'right');
+      if (npcEl) npcLunge(npcEl, getBattleLungeDirection('enemy'));
     }
     // Whip/swoosh at the contact frame (matches lunge anticipation -> strike timing)
     trackedTimeout(() => playSound('lungeContact'), scaleBattleDuration(110));
@@ -1940,7 +1940,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
             attackSprite={npc.attackSprite}
             isAttacking={state.npcAttacking}
             className={state.npcSpriteClass}
-            flipX={npc.flipSprite}
+            // Enemy art is authored facing left; the enemy anchors left, so flip
+            // every enemy sprite to face right toward the player (see battleFacing.js).
+            flipX={getBattleFlipX('enemy', true)}
             smooth={battleConfig?.boss?.bespokeArt}
             style={{ filter: state.npc.spriteFilter || 'none' }}
             actorId={npc.id || null}
@@ -1981,7 +1983,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
             ref={playerSpriteRef}
             spriteSheet={dragon.stageSprites?.[state.playerStage] || dragon.spriteSheet}
             stage={state.playerStage}
-            flipX={!dragon.facesLeft}
+            // Dragon art is authored facing right; the player anchors right, so
+            // flip to face left toward the enemy (see battleFacing.js).
+            flipX={getBattleFlipX('player', dragon.facesLeft === true)}
             forcedFrame={state.playerForcedFrame}
             className={state.playerSpriteClass}
             element={dragon.element}
