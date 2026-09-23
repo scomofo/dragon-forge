@@ -1,6 +1,16 @@
 // @ts-nocheck
 import { describe, it, expect } from 'vitest';
-import { getFusionElement, calculateFusionStats, getStabilityTier, getFusionOffspringLevel, executeFusion } from './fusionEngine';
+import {
+  getFusionElement,
+  calculateFusionStats,
+  getStabilityTier,
+  getFusionOffspringLevel,
+  executeFusion,
+  getFusionPreview,
+  getDiscoveredRecipeKeys,
+  getAlchemyGrid,
+} from './fusionEngine';
+import { calculateStatsForLevel } from './battleEngine';
 
 describe('getFusionElement', () => {
   it('returns same element for same-element fusion', () => {
@@ -146,5 +156,113 @@ describe('getFusionOffspringLevel', () => {
     expect(result.element).toBe('synthesis');
     expect(result.parentAId).toBe('void');
     expect(result.parentBId).toBe('light');
+  });
+});
+
+describe('getFusionPreview', () => {
+  const parentA = { id: 'fire', element: 'fire', stats: { hp: 110, atk: 28, def: 20, spd: 18 }, level: 12, shiny: false };
+  const parentB = { id: 'ice', element: 'ice', stats: { hp: 100, atk: 24, def: 26, spd: 20 }, level: 10, shiny: false };
+
+  it('resolves the exact offspring element, stability, and level', () => {
+    const preview = getFusionPreview(parentA, parentB);
+    expect(preview.element).toBe('storm');
+    expect(preview.stability).toBe('unstable');
+    // max(10, min(50, round(11 * 0.85))) = max(10, 9) = 10
+    expect(preview.level).toBe(10);
+    expect(preview.shiny).toBe(false);
+    expect(preview.deterministic).toBe(true);
+  });
+
+  it('computes offspring current stats from fused base stats at the offspring level', () => {
+    const preview = getFusionPreview(parentA, parentB);
+    expect(preview.fusedBaseStats).toEqual({ hp: 92, atk: 30, def: 25, spd: 20 });
+    expect(preview.offspringStats).toEqual(calculateStatsForLevel(preview.fusedBaseStats, preview.level, false));
+    expect(preview.offspringStats).toEqual({ hp: 151, atk: 49, def: 41, spd: 32 });
+  });
+
+  it('reports stat deltas vs EACH parent', () => {
+    const preview = getFusionPreview(parentA, parentB);
+    expect(preview.deltas.parentA).toEqual({ hp: 41, atk: 21, def: 21, spd: 14 });
+    expect(preview.deltas.parentB).toEqual({ hp: 51, atk: 25, def: 15, spd: 12 });
+  });
+
+  it('can report negative deltas (losses vs a strong parent)', () => {
+    // A Lv.50 parent fused with a Lv.10 parent: the Lv.26 offspring trails the
+    // maxed parent's HP, so deltas must be able to go negative.
+    const maxA = { id: 'fire', element: 'fire', stats: calculateStatsForLevel({ hp: 110, atk: 28, def: 20, spd: 18 }, 50, false), level: 50, shiny: false };
+    const lowB = { id: 'ice', element: 'ice', stats: calculateStatsForLevel({ hp: 100, atk: 24, def: 26, spd: 20 }, 10, false), level: 10, shiny: false };
+    const preview = getFusionPreview(maxA, lowB);
+    expect(preview.level).toBe(26);
+    expect(preview.offspringStats).toEqual({ hp: 447, atk: 152, def: 111, spd: 95 });
+    expect(preview.deltas.parentA).toEqual({ hp: -30, atk: 31, def: 25, spd: 17 });
+    expect(preview.deltas.parentB).toEqual({ hp: 284, atk: 113, def: 69, spd: 63 });
+  });
+
+  it('inherits shiny from either parent and applies it to offspring stats', () => {
+    const shinyA = { ...parentA, shiny: true };
+    const preview = getFusionPreview(shinyA, parentB);
+    expect(preview.shiny).toBe(true);
+    expect(preview.offspringStats).toEqual(calculateStatsForLevel(preview.fusedBaseStats, preview.level, true));
+  });
+
+  it('is order-independent (deltas swap, everything else identical)', () => {
+    const ab = getFusionPreview(parentA, parentB);
+    const ba = getFusionPreview(parentB, parentA);
+    expect(ba.element).toBe(ab.element);
+    expect(ba.stability).toBe(ab.stability);
+    expect(ba.level).toBe(ab.level);
+    expect(ba.offspringStats).toEqual(ab.offspringStats);
+    expect(ba.deltas.parentA).toEqual(ab.deltas.parentB);
+    expect(ba.deltas.parentB).toEqual(ab.deltas.parentA);
+  });
+
+  it('applies the stability boost to the preview tier', () => {
+    expect(getFusionPreview(parentA, parentB).stability).toBe('unstable');
+    expect(getFusionPreview(parentA, parentB, { stabilityBoost: true }).stability).toBe('normal');
+  });
+});
+
+describe('getDiscoveredRecipeKeys', () => {
+  it('keys recipes by the sorted parent pair, order-independent', () => {
+    const lineage = [
+      { parentA: 'fire', parentB: 'ice', offspring: 'storm', offspringLevel: 10 },
+      { parentA: 'ice', parentB: 'fire', offspring: 'storm', offspringLevel: 10 },
+    ];
+    const keys = getDiscoveredRecipeKeys(lineage);
+    expect(keys.size).toBe(1);
+    expect(keys.has('fire_ice')).toBe(true);
+  });
+
+  it('ignores malformed lineage entries', () => {
+    expect(getDiscoveredRecipeKeys([null, {}, { parentA: 'fire' }]).size).toBe(0);
+    expect(getDiscoveredRecipeKeys(undefined).size).toBe(0);
+  });
+});
+
+describe('getAlchemyGrid', () => {
+  it('covers every ALCHEMY recipe exactly once (dedupes light_void/void_light)', () => {
+    const grid = getAlchemyGrid([]);
+    expect(grid.length).toBe(22);
+    expect(new Set(grid.map((r) => r.key)).size).toBe(22);
+    expect(grid.every((r) => r.discovered === false)).toBe(true);
+  });
+
+  it('marks recipes discovered by lineage entries, order-independent', () => {
+    const lineage = [{ parentA: 'ice', parentB: 'fire', offspring: 'storm', offspringLevel: 10 }];
+    const grid = getAlchemyGrid(lineage);
+    const fireIce = grid.find((r) => r.key === 'fire_ice');
+    expect(fireIce.discovered).toBe(true);
+    expect(fireIce.offspring).toBe('storm');
+    expect(fireIce.parents).toEqual(['fire', 'ice']);
+    const fireStorm = grid.find((r) => r.key === 'fire_storm');
+    expect(fireStorm.discovered).toBe(false);
+  });
+
+  it('counts the synthesis recipe from a void+light fusion', () => {
+    const lineage = [{ parentA: 'void', parentB: 'light', offspring: 'synthesis', offspringLevel: 17 }];
+    const grid = getAlchemyGrid(lineage);
+    const synthesis = grid.find((r) => r.offspring === 'synthesis');
+    expect(synthesis.discovered).toBe(true);
+    expect(synthesis.key).toBe('light_void');
   });
 });
