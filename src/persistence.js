@@ -7,6 +7,7 @@ import { applyAdminCoreAction, getAdminCoreProgress } from './adminCore';
 import { isExpeditionAvailable } from './expeditions';
 import { fillSaveDefaults, validateSaveShape } from './saveValidation';
 import { createSaveStorage, READY_SAVE_STATUS } from './saveStorage';
+import { getDailySeed } from './dailyChallenge';
 
 const DEFAULT_SAVE = {
   // `discovered` is a permanent codex flag: once a dragon has ever been owned it stays
@@ -37,7 +38,7 @@ const DEFAULT_SAVE = {
   remnantDefeated: [],
   fusionLineage: [],
   bestRanks: {},
-  inventory: { cores: {}, xpBoostBattles: 0, stabilityBoost: false },
+  inventory: { cores: {}, xpBoostBattles: 0, stabilityBoost: false, streakShield: 0 },
   stats: { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 },
   lastDailyCompleted: 0,
   dailyStreak: 0,
@@ -135,9 +136,10 @@ function migrateSave(save) {
     save.dragons.light.discovered = true;
   }
   if (save.inventory === undefined) {
-    save.inventory = { cores: {}, xpBoostBattles: 0, stabilityBoost: false };
+    save.inventory = { cores: {}, xpBoostBattles: 0, stabilityBoost: false, streakShield: 0 };
   }
   if (save.inventory.voidEgg === undefined) save.inventory.voidEgg = false;
+  if (save.inventory.streakShield === undefined) save.inventory.streakShield = 0;
   if (save.stats === undefined) {
     save.stats = { battlesWon: 0, battlesLost: 0, totalScrapsEarned: 0, totalPulls: 0, fusionsCompleted: 0 };
   }
@@ -274,28 +276,28 @@ export function rememberExpedition(screen) {
   return true;
 }
 
-function actInExpedition(screen, applyAction, action, value) {
+function actInExpedition(screen, applyAction, action, value, options) {
   const save = loadSave();
-  const next = applyAction(save, action, value);
+  const next = applyAction(save, action, value, options);
   if (next === save) return false;
   writeSave({ ...next, flags: { ...next.flags, activeExpedition: screen } });
   return true;
 }
 
-export function actInOuterGrid(action, value) {
-  return actInExpedition('outerGrid', applyOuterGridAction, action, value);
+export function actInOuterGrid(action, value, options) {
+  return actInExpedition('outerGrid', applyOuterGridAction, action, value, options);
 }
 
-export function actInFrozenCache(action, value) {
-  return actInExpedition('frozenCache', applyFrozenCacheAction, action, value);
+export function actInFrozenCache(action, value, options) {
+  return actInExpedition('frozenCache', applyFrozenCacheAction, action, value, options);
 }
 
-export function actInStormSpine(action, value) {
-  return actInExpedition('stormSpine', applyStormSpineAction, action, value);
+export function actInStormSpine(action, value, options) {
+  return actInExpedition('stormSpine', applyStormSpineAction, action, value, options);
 }
 
-export function actInAdminCore(action, value) {
-  return actInExpedition('adminCore', applyAdminCoreAction, action, value);
+export function actInAdminCore(action, value, options) {
+  return actInExpedition('adminCore', applyAdminCoreAction, action, value, options);
 }
 
 export function meltCores(count = 10, scraps = 250) {
@@ -560,6 +562,14 @@ export function setStabilityBoost(value) {
   writeSave(save);
 }
 
+// Streak Shield: shop consumable (max 1 held) that preserves the daily
+// streak when it would otherwise break. Consumed by completeDailyChallenge.
+export function setStreakShield(value) {
+  const save = loadSave();
+  save.inventory.streakShield = value;
+  writeSave(save);
+}
+
 // Void Egg: the deterministic Void chase. Forged from 5 of each core; the
 // hatchery consumes it on the next pull for a guaranteed shiny Void Dragon.
 export function setVoidEgg(value) {
@@ -625,7 +635,19 @@ function getYesterdaySeed() {
 export function completeDailyChallenge(seed) {
   const save = loadSave();
   const yesterdaySeed = getYesterdaySeed();
-  save.dailyStreak = save.lastDailyCompleted === yesterdaySeed ? (save.dailyStreak || 0) + 1 : 1;
+  const todaySeed = getDailySeed();
+  if (save.lastDailyCompleted === yesterdaySeed) {
+    save.dailyStreak = (save.dailyStreak || 0) + 1;
+  } else if (save.lastDailyCompleted === todaySeed) {
+    // Already counted today (e.g. a repeated completion): leave the streak alone.
+  } else if ((save.inventory?.streakShield || 0) > 0) {
+    // Streak Shield: consume one shield to preserve the streak (+1) instead
+    // of resetting to 1.
+    save.inventory.streakShield = (save.inventory.streakShield || 0) - 1;
+    save.dailyStreak = (save.dailyStreak || 0) + 1;
+  } else {
+    save.dailyStreak = 1;
+  }
   save.lastDailyCompleted = seed;
   writeSave(save);
 }

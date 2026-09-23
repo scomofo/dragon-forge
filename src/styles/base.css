@@ -191,3 +191,42 @@ body {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* === GAMEPLAY PLAN #7: SESSION DESIGN === */
+.featured-zone-badge {
+  display: inline-block;
+  margin: 4px 0 0;
+  padding: 3px 8px;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: #ffcc00;
+  border: 1px solid #ffcc00;
+  border-radius: 3px;
+  background: rgba(255, 204, 0, 0.08);
+  text-shadow: 0 0 8px rgba(255, 204, 0, 0.6);
+}
+
+.wanted-dragon-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  color: #e8d5ff;
+  border: 1px solid #c8a8e0;
+  border-radius: 4px;
+  background: rgba(200, 168, 224, 0.08);
+}
+
+.wanted-dragon-banner-label {
+  color: #ffcc00;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(255, 204, 0, 0.6);
+  white-space: nowrap;
+}
+
+.wanted-dragon-banner-text {
+  line-height: 1.5;
+}

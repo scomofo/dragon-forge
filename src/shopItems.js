@@ -75,6 +75,17 @@ export const BUY_ITEMS = [
     scrapsGranted: 250,
     stackable: true,
   },
+  {
+    // ECONOMY REVIEW (ADR-0006): 500 DataScraps is deliberately steep for a
+    // streak save — flagged per gameplay plan #7.
+    id: 'streak_shield',
+    name: 'Streak Shield',
+    description: 'Preserves your daily streak if you miss a day (max 1 held)',
+    cost: 500,
+    icon: '🛡️',
+    effect: 'streak_shield',
+    stackable: false,
+  },
 ];
 
 export const FORGE_RECIPES = [
@@ -129,6 +140,9 @@ export const FORGE_RECIPES = [
 
 export function canAffordBuy(item, save) {
   if (item.requiresPostgame && !save.mirrorAdminDefeated) return false;
+  // Streak Shield is capped at 1 held — block the purchase instead of
+  // charging 500 scraps for nothing.
+  if (item.effect === 'streak_shield' && (save.inventory?.streakShield || 0) >= 1) return false;
   if (item.effect === 'meltCores') {
     const cores = save.inventory?.cores || {};
     const total = Object.values(cores).reduce((sum, n) => sum + n, 0);

@@ -4,6 +4,10 @@ import { PULL_COST } from './gameData';
 import { FROZEN_CACHE_ROOMS, WORLD_ZONES } from './worldZones';
 import { applyFrozenCacheAction, getFrozenCacheBattleConfig, getFrozenCacheExits, getFrozenCacheObjective, getFrozenCacheProgress, FROZEN_CACHE_VAULT_REWARD, FROZEN_CACHE_CLEAR_REWARD } from './frozenCache';
 
+// Featured-zone determinism: 20240102 is not the Frozen Cache's featured day,
+// so reward assertions see base rates regardless of the run date.
+const NO_FEATURE = { seed: 20240102 };
+
 function expedition() {
   return {
     dragons: { fire: { owned: true, level: 3 }, ice: { owned: true, level: 3 }, storm: { owned: false, level: 1 } },
@@ -58,7 +62,7 @@ describe('Frozen Cache authored route', () => {
     expect(applyFrozenCacheAction(save, 'choose-route', route === 'thaw' ? 'crack' : 'thaw')).toBe(save);
     if (route === 'crack') {
       save = walk(save, 'frozen-vault');
-      save = applyFrozenCacheAction(save, 'claim-vault');
+      save = applyFrozenCacheAction(save, 'claim-vault', null, NO_FEATURE);
       expect(applyFrozenCacheAction(save, 'claim-vault')).toBe(save); // once only
       save = walk(save, 'siren-loop');
     } else {
@@ -77,7 +81,7 @@ describe('Frozen Cache authored route', () => {
     expect(applyFrozenCacheAction(save, 'move', 'thaw-gate')).toBe(save);
     save = { ...save, defeatedNpcs: [...save.defeatedNpcs, 'crypto_crab'] };
     save = walk(save, 'thaw-gate');
-    save = applyFrozenCacheAction(save, 'claim-clear');
+    save = applyFrozenCacheAction(save, 'claim-clear', null, NO_FEATURE);
     const reward = PULL_COST + (route === 'crack' ? FROZEN_CACHE_VAULT_REWARD : 0);
     expect(save.dataScraps).toBe(original.dataScraps + reward);
     expect(save.stats.totalScrapsEarned).toBe(original.stats.totalScrapsEarned + reward);

@@ -1180,6 +1180,13 @@
   line-height: 1.7;
 }
 
+.wanted-bonus-display {
+  font-size: 9px;
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 8px rgba(255, 204, 0, 0.6);
+}
+
 .relic-drop-display {
   font-size: 9px;
   line-height: 1.7;

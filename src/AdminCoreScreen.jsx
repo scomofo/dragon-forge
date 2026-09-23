@@ -6,6 +6,7 @@ import { getCampaignNodeById } from './campaignMap';
 import { getBossPattern } from './bossPatterns';
 import { getStageForLevel, getTypeEffectiveness } from './battleEngine';
 import { ADMIN_CORE_ROOMS } from './worldZones';
+import { isFeaturedZone } from './featuredZone';
 import { getAdminCoreBattleConfig, getAdminCoreExits, getAdminCoreObjective, getAdminCoreProgress, ADMIN_CORE_CACHE_REWARD, ADMIN_CORE_CLEAR_REWARD } from './adminCore';
 import { actInAdminCore, loadSave } from './persistence';
 import { playSound } from './soundEngine';
@@ -216,7 +217,11 @@ export default function AdminCoreScreen({ save, refreshSave, onNavigate, onBegin
       <NavBar activeScreen="map" onNavigate={onNavigate} save={save} />
       <main className="outer-grid-layout">
         <header className="outer-grid-header">
-          <div><p className="outer-grid-kicker">SECTOR 04 · ADMIN CORE</p><h1>{room.name}</h1></div>
+          <div><p className="outer-grid-kicker">SECTOR 04 · ADMIN CORE</p><h1>{room.name}</h1>
+            {isFeaturedZone('admin_core') && (
+              <p className="featured-zone-badge">⭐ FEATURED — double scraps today</p>
+            )}
+          </div>
           <button type="button" onClick={() => onNavigate('map')}>CAMPAIGN MAP</button>
         </header>
         <div className="outer-grid-objective"><span>OBJECTIVE</span><p>{getAdminCoreObjective(save)}</p></div>

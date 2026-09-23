@@ -1,6 +1,7 @@
 import { getCampaignNodeById, getCampaignNodeState } from './campaignMap';
 import { dragons, PULL_COST } from './gameData';
 import { OUTER_GRID_ROOMS } from './worldZones';
+import { applyFeaturedMultiplier, getFeaturedZoneSeed } from './featuredZone';
 
 export const OUTER_GRID_CACHE_REWARD = 15;
 export const OUTER_GRID_CLEAR_REWARD = PULL_COST;
@@ -55,7 +56,7 @@ export function getOuterGridObjective(save) {
 
 // Returns the same save for invalid/repeated actions. Persistence reloads the
 // latest save for every action so clicks cannot replay rewards or erase wins.
-export function applyOuterGridAction(save, action, value) {
+export function applyOuterGridAction(save, action, value, { seed = getFeaturedZoneSeed() } = {}) {
   const progress = getOuterGridProgress(save);
   let reward = 0;
   if (action === 'move') {
@@ -82,11 +83,15 @@ export function applyOuterGridAction(save, action, value) {
     reward = OUTER_GRID_CLEAR_REWARD;
   } else return save;
 
+  // Daily featured zone: when the Outer Grid is featured, cache + clear
+  // rewards pay double scraps. The seed defaults to today; tests pass an
+  // explicit seed for determinism.
+  const paidReward = applyFeaturedMultiplier('outer_grid', reward, seed);
   return {
     ...save, outerGrid: progress,
-    ...(reward > 0 ? {
-      dataScraps: (save.dataScraps || 0) + reward,
-      stats: { ...save.stats, totalScrapsEarned: (save.stats?.totalScrapsEarned || 0) + reward },
+    ...(paidReward > 0 ? {
+      dataScraps: (save.dataScraps || 0) + paidReward,
+      stats: { ...save.stats, totalScrapsEarned: (save.stats?.totalScrapsEarned || 0) + paidReward },
     } : {}),
   };
 }

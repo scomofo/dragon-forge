@@ -13,6 +13,7 @@ import { getDailyStreakMultiplier } from './dailyChallenge';
 import { getExpedition } from './expeditions';
 import { FRAGMENT_TRIGGERS, RELIC_DROPS, getRelic, getRelicBattleModifiers } from './forgeData';
 import { CORE_DROP_CHANCE, CORE_DOUBLE_CHANCE } from './shopItems';
+import { getWantedDragon, getWantedCoreElement, WANTED_DRAGON_CORE_BONUS } from './wantedDragon';
 import { swapActiveAndBench, faintSwap } from './benchLogic';
 import { EPILOGUE_LINES, MIRROR_ADMIN_EPILOGUE_LINES } from './singularityBosses';
 import DragonSprite from './DragonSprite';
@@ -261,7 +262,7 @@ function battleReducer(state, action) {
     case 'SET_PHASE':
       return { ...state, phase: action.phase };
     case 'SET_VICTORY':
-      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1, relicDropped: action.relicDropped || null, wasRepeat: action.wasRepeat || false, rankBonus: action.rankBonus || 0, stageEvolved: action.stageEvolved || null };
+      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1, relicDropped: action.relicDropped || null, wasRepeat: action.wasRepeat || false, rankBonus: action.rankBonus || 0, stageEvolved: action.stageEvolved || null, wantedBonus: action.wantedBonus || null };
     case 'SET_DEFEAT':
       return { ...state, phase: PHASES.DEFEAT };
     case 'RESET_TURN':
@@ -1497,6 +1498,20 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
           coreDropped = { element: npcElement, count: coreCount };
         }
 
+        // Weekly wanted dragon: if the active dragon is this week's wanted
+        // dragon, grant bonus cores of its element on the win.
+        // ECONOMY REVIEW (ADR-0006): unthrottled core faucet — every win
+        // with the wanted dragon pays this on top of the normal core drop.
+        let wantedBonus = null;
+        const wantedDragonId = getWantedDragon();
+        if (turnState.dragonId === wantedDragonId) {
+          const bonusElement = getWantedCoreElement(wantedDragonId);
+          if (bonusElement) {
+            addCore(bonusElement, WANTED_DRAGON_CORE_BONUS);
+            wantedBonus = { element: bonusElement, count: WANTED_DRAGON_CORE_BONUS, dragonId: wantedDragonId };
+          }
+        }
+
         // Relic drops — first defeat of specific NPCs only
         const relicDropId = RELIC_DROPS[npcId];
         let relicDropped = null;
@@ -1562,7 +1577,7 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
           const preBattleStage = getStageForLevel(turnState.playerLevel);
           const postBattleStage = getStageForLevel(newLevel);
           const stageEvolved = postBattleStage > preBattleStage ? postBattleStage : null;
-          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped, wasRepeat: isRepeatDefeat || isSingularityRepeat, rankBonus, stageEvolved });
+          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped, wasRepeat: isRepeatDefeat || isSingularityRepeat, rankBonus, stageEvolved, wantedBonus });
           stopMusic();
           stopHeartbeat();
           playSound('victoryFanfare');
@@ -2208,6 +2223,11 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
           {state.coreDropped && (
             <div className="core-drop-display" style={{ color: elementColors[state.coreDropped.element]?.glow || '#44aaff' }}>
               +{state.coreDropped.count} {state.coreDropped.element.toUpperCase()} CORE{state.coreDropped.count > 1 ? 'S' : ''}
+            </div>
+          )}
+          {state.wantedBonus && (
+            <div className="wanted-bonus-display" style={{ color: elementColors[state.wantedBonus.element]?.glow || '#44aaff' }}>
+              ⭐ WANTED BONUS: +{state.wantedBonus.count} {state.wantedBonus.element.toUpperCase()} CORE{state.wantedBonus.count > 1 ? 'S' : ''}
             </div>
           )}
           {state.relicDropped && (() => {

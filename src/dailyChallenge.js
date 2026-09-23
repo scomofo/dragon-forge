@@ -2,7 +2,7 @@ import { npcs, elementColors } from './gameData';
 
 const NPC_IDS = Object.keys(npcs);
 
-function getDailySeed() {
+export function getDailySeed() {
   const now = new Date();
   return now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
 }
@@ -28,12 +28,31 @@ export function getTodaySeedCode() {
   return encodeSeedCode(getDailySeed());
 }
 
-function seededRandom(seed) {
+export function seededRandom(seed) {
   let s = seed;
   return () => {
     s = (s * 1664525 + 1013904223) & 0xffffffff;
     return (s >>> 0) / 0xffffffff;
   };
+}
+
+// Avalanche a small integer seed before it reaches the LCG. Consecutive
+// calendar seeds (20260923, 20260924, ...) move the LCG's first output by
+// only ~0.0004, so a raw date seed would pin a rotation pick for months at
+// a time (verified: 2 zone changes in all of 2026 without mixing). This
+// splitmix32-style finalizer spreads one changed bit across the whole word,
+// so day/week seeds decorrelate while staying fully deterministic.
+export function mixSeed(seed) {
+  let z = (seed >>> 0) + 0x9e3779b9;
+  z = Math.imul(z ^ (z >>> 16), 0x21f0aaad);
+  z = Math.imul(z ^ (z >>> 15), 0x735a2d97);
+  return (z ^ (z >>> 15)) >>> 0;
+}
+
+// Clamp a uniform pick so the (rare) rng() === 1.0 edge can never index past
+// the end of the list.
+export function pickFrom(rng, list) {
+  return list[Math.min(list.length - 1, Math.floor(rng() * list.length))];
 }
 
 export function getDailyChallenge(seedOverride = null, { boostRewards = true } = {}) {

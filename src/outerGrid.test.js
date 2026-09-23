@@ -5,6 +5,10 @@ import { actInOuterGrid, applyNewGamePlus, loadSave, recordNpcDefeat, writeSave 
 import { OUTER_GRID_ROOMS, WORLD_ZONES } from './worldZones';
 import { applyOuterGridAction, getOuterGridBattleConfig, getOuterGridExits, getOuterGridObjective, getOuterGridProgress, OUTER_GRID_CACHE_REWARD, OUTER_GRID_CLEAR_REWARD } from './outerGrid';
 
+// Featured-zone determinism: 20240101 is not the Outer Grid's featured day,
+// so reward assertions see base rates regardless of the run date.
+const NO_FEATURE = { seed: 20240101 };
+
 function expedition() {
   return {
     dragons: { fire: { owned: true, level: 1 }, ice: { owned: true, level: 1 }, storm: { owned: false, level: 1 } },
@@ -57,7 +61,7 @@ describe('Outer Grid authored route', () => {
     expect(applyOuterGridAction(save, 'choose-route', route === 'span' ? 'crawlway' : 'span')).toBe(save);
     if (route === 'crawlway') {
       save = walk(save, 'maintenance-cache');
-      save = applyOuterGridAction(save, 'claim-cache');
+      save = applyOuterGridAction(save, 'claim-cache', null, NO_FEATURE);
       expect(applyOuterGridAction(save, 'claim-cache')).toBe(save);
       save = walk(save, 'overflow-vent');
     } else {
@@ -68,7 +72,7 @@ describe('Outer Grid authored route', () => {
     expect(applyOuterGridAction(save, 'move', 'return-gate')).toBe(save);
     save = { ...save, defeatedNpcs: ['firewall_sentinel', 'buffer_overflow'] };
     save = walk(save, 'return-gate');
-    save = applyOuterGridAction(save, 'claim-clear');
+    save = applyOuterGridAction(save, 'claim-clear', null, NO_FEATURE);
     const reward = PULL_COST + (route === 'crawlway' ? OUTER_GRID_CACHE_REWARD : 0);
     expect(save.dataScraps).toBe(original.dataScraps + reward);
     expect(save.stats.totalScrapsEarned).toBe(original.stats.totalScrapsEarned + reward);
@@ -141,7 +145,7 @@ describe('Outer Grid save lifecycle', () => {
     expect(restored.dataScraps).toBe(legacy.dataScraps);
     expect(restored.dragons.fire.owned).toBe(true);
     const atGate = walk({ ...restored, outerGrid: { roomId: 'overflow-vent' } }, 'return-gate');
-    expect(applyOuterGridAction(atGate, 'claim-clear').dataScraps).toBe(legacy.dataScraps + OUTER_GRID_CLEAR_REWARD);
+    expect(applyOuterGridAction(atGate, 'claim-clear', null, NO_FEATURE).dataScraps).toBe(legacy.dataScraps + OUTER_GRID_CLEAR_REWARD);
   });
 
   it('repairs malformed or locked checkpoints instead of discarding the rest of the save', () => {
@@ -172,11 +176,11 @@ describe('Outer Grid save lifecycle', () => {
 
   it('writes each reward once across repeated calls and reloads', () => {
     writeSave({ ...expedition(), defeatedNpcs: ['firewall_sentinel', 'buffer_overflow'], outerGrid: { roomId: 'maintenance-cache', spanRoute: 'crawlway' } });
-    expect(actInOuterGrid('claim-cache')).toBe(true);
+    expect(actInOuterGrid('claim-cache', null, NO_FEATURE)).toBe(true);
     expect(actInOuterGrid('claim-cache')).toBe(false);
     actInOuterGrid('move', 'overflow-vent');
     actInOuterGrid('move', 'return-gate');
-    expect(actInOuterGrid('claim-clear')).toBe(true);
+    expect(actInOuterGrid('claim-clear', null, NO_FEATURE)).toBe(true);
     expect(actInOuterGrid('claim-clear')).toBe(false);
     expect(loadSave().dataScraps).toBe(9 + OUTER_GRID_CACHE_REWARD + OUTER_GRID_CLEAR_REWARD);
     expect(loadSave().stats.totalScrapsEarned).toBe(20 + OUTER_GRID_CACHE_REWARD + OUTER_GRID_CLEAR_REWARD);
