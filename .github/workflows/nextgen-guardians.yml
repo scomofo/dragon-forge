@@ -18,7 +18,7 @@ jobs:
       LIBGL_ALWAYS_SOFTWARE: '1'
       GODOT_SILENCE_ROOT_WARNING: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           sparse-checkout: dragon-forge-nextgen
       - name: Install isolated validation tools

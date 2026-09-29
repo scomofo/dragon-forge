@@ -19,7 +19,7 @@ jobs:
       LIBGL_ALWAYS_SOFTWARE: '1'
       GLTF_VALIDATOR_MODULE: /tmp/art-validator/node_modules/gltf-validator
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           sparse-checkout: |
             dragon-forge-nextgen
