@@ -19,7 +19,7 @@ jobs:
       LIBGL_ALWAYS_SOFTWARE: '1'
       GODOT_LINUX_X86_64_SHA256: d0bc2113065e481c9c2c2b2c37daa4e8be3fe9e27f0ab9ab0b6096e9a37907f3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false

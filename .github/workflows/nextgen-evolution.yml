@@ -19,7 +19,7 @@ jobs:
       GODOT_SILENCE_ROOT_WARNING: '1'
       GLTF_VALIDATOR_MODULE: /tmp/evolution-validator/node_modules/gltf-validator
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           sparse-checkout: dragon-forge-nextgen
       - name: Install isolated validation tools
