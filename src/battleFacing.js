@@ -16,6 +16,11 @@
 // Both sides therefore flip: the enemy mirrors its left-facing art to face
 // right toward the player, and the player dragon mirrors its right-facing
 // art to face left toward the enemy.
+//
+// Convention enforced 2026-10-07: every player battle-set strip faces RIGHT
+// (ice/light/shadow/storm were authored facing left and are mirrored in the
+// shipped strips) and every enemy strip faces LEFT, so the flips below always
+// land both combatants facing each other. New art must follow this.
 
 /**
  * Returns true when the sprite must be mirrored horizontally so the
