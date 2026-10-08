@@ -11,6 +11,7 @@ import { rarityTiers, JOURNAL_DRAGON_IDS } from './gameData';
 // has no frame layer, and titles deliver the same showcase with far less risk.
 export const TITLES = {
   hearth_warden:    { id: 'hearth_warden',    name: 'Hearth Warden',    flavor: 'Keeper of the primal pair — fire and ice, the first sparks.' },
+  worldkeeper:      { id: 'worldkeeper',      name: 'Worldkeeper',      flavor: 'Kept the rendered world from being classified as dead memory. The record shows it.' },
   wildcaller:       { id: 'wildcaller',       name: 'Wildcaller',       flavor: 'The storm, the venom, and the stone answer when called.' },
   umbral_scholar:   { id: 'umbral_scholar',   name: 'Umbral Scholar',   flavor: 'Studied the shadow long enough to be studied back.' },
   rift_walker:      { id: 'rift_walker',      name: 'Rift Walker',      flavor: 'Walked the tear in the simulation and came back changed.' },

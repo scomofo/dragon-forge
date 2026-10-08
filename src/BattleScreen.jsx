@@ -8,7 +8,7 @@ import {
   getStageForLevel, calculateXpGain, getTypeEffectivenessLabel,
   CHARGE_ATK_MULTIPLIER,
 } from './battleEngine';
-import { loadSave, addDragonXp, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, setLastZone, trackStat, completeDailyChallenge, updateRecords, unlockFragment, getRankBonusScraps, recordBattleRank } from './persistence';
+import { loadSave, addDragonXp, addScraps, recordNpcDefeat, recordSingularityDefeat, markSingularityComplete, markMirrorAdminDefeated, addCore, decrementXpBoost, grantRelic, incrementBountiesCleared, setLastZone, trackStat, completeDailyChallenge, updateRecords, unlockFragment, getRankBonusScraps, recordBattleRank, clearRecorruption, checkAndCompleteQuests } from './persistence';
 import { getDailyStreakMultiplier } from './dailyChallenge';
 import { getExpedition } from './expeditions';
 import { FRAGMENT_TRIGGERS, RELIC_DROPS, getRelic, getRelicBattleModifiers } from './forgeData';
@@ -262,7 +262,7 @@ function battleReducer(state, action) {
     case 'SET_PHASE':
       return { ...state, phase: action.phase };
     case 'SET_VICTORY':
-      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1, relicDropped: action.relicDropped || null, wasRepeat: action.wasRepeat || false, rankBonus: action.rankBonus || 0, stageEvolved: action.stageEvolved || null, wantedBonus: action.wantedBonus || null };
+      return { ...state, phase: PHASES.VICTORY, xpGained: action.xpGained, leveledUp: action.leveledUp, newLevel: action.newLevel, scrapsGained: action.scrapsGained || 0, coreDropped: action.coreDropped || null, streakMultiplier: action.streakMultiplier || 1, relicDropped: action.relicDropped || null, wasRepeat: action.wasRepeat || false, rankBonus: action.rankBonus || 0, stageEvolved: action.stageEvolved || null, wantedBonus: action.wantedBonus || null, questsDone: action.questsDone || [] };
     case 'SET_DEFEAT':
       return { ...state, phase: PHASES.DEFEAT };
     case 'RESET_TURN':
@@ -1483,6 +1483,8 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
           }
         } else {
           recordNpcDefeat(npcId);
+          // Beat 9: re-clearing a recorrupted node clears the rollback flag.
+          clearRecorruption(npcId);
           if (battleConfig?.dailyNpc && !isSharedSeed) {
             completeDailyChallenge(battleConfig.dailyNpc.seed);
           }
@@ -1577,7 +1579,9 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
           const preBattleStage = getStageForLevel(turnState.playerLevel);
           const postBattleStage = getStageForLevel(newLevel);
           const stageEvolved = postBattleStage > preBattleStage ? postBattleStage : null;
-          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped, wasRepeat: isRepeatDefeat || isSingularityRepeat, rankBonus, stageEvolved, wantedBonus });
+          // Act I quest spine: victories can complete quest steps.
+          const questsDone = checkAndCompleteQuests();
+          dispatch({ type: 'SET_VICTORY', xpGained, leveledUp, newLevel, scrapsGained, coreDropped, streakMultiplier, relicDropped, wasRepeat: isRepeatDefeat || isSingularityRepeat, rankBonus, stageEvolved, wantedBonus, questsDone });
           stopMusic();
           stopHeartbeat();
           playSound('victoryFanfare');
@@ -2200,6 +2204,15 @@ export default function BattleScreen({ dragonId, npcId, onBattleEnd, onRetryBatt
                 <div className="stage-up-sub">New form unlocked — damage multiplier increased</div>
               </div>
             )}
+            {(state.questsDone || []).map(({ quest, rewardText }) => (
+              <div key={quest.id} className="stage-up-display" style={{ borderColor: '#6af' }}>
+                <div className="stage-up-kicker" style={{ color: '#6af' }}>QUEST COMPLETE</div>
+                <div className="stage-up-body">{quest.title}</div>
+                <div className="stage-up-sub">“{quest.completeText}”</div>
+                {rewardText && <div className="stage-up-sub" style={{ color: '#fc6' }}>{rewardText}</div>}
+                <div className="stage-up-sub" style={{ color: '#789' }}>Next: {quest.whatNext}</div>
+              </div>
+            ))}
             <div className="result-summary-grid">
               <div>
                 <span>XP</span>

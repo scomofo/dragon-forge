@@ -80,6 +80,10 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
 
   const selectedNode = CAMPAIGN_NODES.find((node) => node.id === selectedNodeId) || firstActionable;
   const selectedState = getCampaignNodeState(selectedNode, save);
+  // Beat 9: a recorrupted node is cleared-but-ambushed — re-battleable until
+  // the rollback is purged.
+  const selectedRecorrupted = (save.quests?.recorrupted || []).includes(selectedNode.npcId);
+  const effectiveSelectedState = selectedRecorrupted && selectedState === 'cleared' ? 'available' : selectedState;
   const selectedNpc = npcs[selectedNode.npcId];
   // Zones with an authored room route get an EXPLORE entry point.
   const selectedZone = getZoneForNode(selectedNode.id);
@@ -101,7 +105,7 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
         selectedDragonEntry.progress.shiny
       )
     : null;
-  const canBegin = selectedState === 'available' && selectedDragonId;
+  const canBegin = effectiveSelectedState === 'available' && selectedDragonId;
   const routeChainNodes = [
     ...selectedNode.prerequisiteIds
       .map((id) => CAMPAIGN_NODES.find((node) => node.id === id))
@@ -302,23 +306,28 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
               const color = elementColors[node.element] || elementColors.neutral;
               const isSelected = selectedNode.id === node.id;
               const bestRank = save.bestRanks?.[node.npcId];
+              // Beat 9: rollback ambush — the Admin re-corrupted a cleared node.
+              const recorrupted = (save.quests?.recorrupted || []).includes(node.npcId);
               return (
                 <button
                   key={node.id}
-                  className={`campaign-node ${state} ${node.type} ${isSelected ? 'selected controller-focus' : ''}`}
+                  className={`campaign-node ${state} ${node.type} ${isSelected ? 'selected controller-focus' : ''} ${recorrupted ? 'recorrupted' : ''}`}
                   style={{
                     '--node-x': `${node.position.x}%`,
                     '--node-y': `${node.position.y}%`,
-                    '--node-color': color.primary,
-                    '--node-glow': color.glow,
+                    '--node-color': recorrupted ? '#ff4444' : color.primary,
+                    '--node-glow': recorrupted ? '#ff6666' : color.glow,
                   }}
                   onClick={() => selectNode(node)}
-                  aria-label={`${node.label} ${state}${bestRank ? ` best rank ${bestRank}` : ''}`}
+                  aria-label={`${node.label} ${recorrupted ? 're-corrupted' : state}${bestRank ? ` best rank ${bestRank}` : ''}`}
                 >
                   <span className={`node-type-badge ${node.type}`}>{getNodeTypeGlyph(node.type)}</span>
-                  <span className="node-orb">{state === 'locked' ? 'LOCK' : state === 'cleared' ? 'OK' : color.icon}</span>
+                  <span className="node-orb">{state === 'locked' ? 'LOCK' : recorrupted ? '⚠' : state === 'cleared' ? 'OK' : color.icon}</span>
                   <span className="node-label">{node.label}</span>
-                  {bestRank && (
+                  {recorrupted && (
+                    <span className="node-rank-badge" style={{ color: '#ff6666' }}>RE-CORRUPTED</span>
+                  )}
+                  {bestRank && !recorrupted && (
                     <span className={`node-rank-badge rank-${bestRank.toLowerCase()}`}>{bestRank}</span>
                   )}
                 </button>
@@ -527,7 +536,7 @@ export default function CampaignMapScreen({ save, onNavigate, onBeginCampaignBat
           </div>
 
           <button className={`campaign-begin ${canBegin ? 'ready' : ''}`} disabled={!canBegin} onClick={beginBattle}>
-            {selectedState === 'cleared' ? 'NODE STABILIZED' : selectedState === 'locked' ? 'SIGNAL LOCKED' : selectedDragon ? 'BEGIN BATTLE' : 'SELECT DRAGON'}
+            {selectedRecorrupted ? 'PURGE ROLLBACK' : selectedState === 'cleared' ? 'NODE STABILIZED' : selectedState === 'locked' ? 'SIGNAL LOCKED' : selectedDragon ? 'BEGIN BATTLE' : 'SELECT DRAGON'}
           </button>
         </aside>
       </div>

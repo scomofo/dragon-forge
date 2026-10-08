@@ -3,7 +3,8 @@ import { wait } from './utils';
 import { playSound } from './soundEngine';
 import { dragons, elementColors, eggSheets, PULL_COST, PITY_THRESHOLD } from './gameData';
 import { executePull, executeVoidEggPull, applyPullResult, getRarityCeremony, getPityRitual, getPityProgress, orderGridResults } from './hatcheryEngine';
-import { loadSave, writeSave, trackStat } from './persistence';
+import { loadSave, writeSave, trackStat, markQuestSeen, checkAndCompleteQuests } from './persistence';
+import { getAwakeningLine } from './quests';
 import { assetUrl } from './utils';
 import { eggBurst } from './animationEngine';
 import NavBar from './NavBar';
@@ -36,7 +37,7 @@ const HATCH_SEQUENCE = [
 const PITY_RING_RADIUS = 12;
 const PITY_RING_CIRCUMFERENCE = 2 * Math.PI * PITY_RING_RADIUS;
 
-export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
+export default function HatcheryScreen({ onNavigate, save, refreshSave, showToast }) {
   const [phase, setPhase] = useState(PHASES.IDLE);
   const [eggFrame, setEggFrame] = useState(0);
   const [eggSheet, setEggSheet] = useState(eggSheets.generic);
@@ -47,6 +48,10 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
   const [currentResult, setCurrentResult] = useState(null);
   const [gridResults, setGridResults] = useState([]);
   const [pullPending, setPullPending] = useState(false);
+  // Beat 3: the first hatch is a story event. Shown once, on the first-ever
+  // pull, after the reveal — a guardian protocol coming online, not a pet.
+  const [showAwakening, setShowAwakening] = useState(false);
+  const [awakeningElement, setAwakeningElement] = useState('fire');
   const pullInFlightRef = useRef(false);
   const skippedRef = useRef(false);
   const eggContainerRef = useRef(null);
@@ -164,12 +169,24 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
       trackStat('totalPulls');
       if (result.scrapsGained > 0) trackStat('overflowScraps', result.scrapsGained);
       refreshSave();
+      // Quest spine: a hatch can complete quest steps (first guardian, etc.).
+      const hatchedQuests = checkAndCompleteQuests();
+      hatchedQuests.forEach(({ quest, rewardText }) => {
+        showToast?.(`📜 QUEST COMPLETE: ${quest.title}${rewardText ? ` — ${rewardText}` : ''}`);
+      });
+      if (hatchedQuests.length > 0) refreshSave();
       setGridResults([]);
 
       await animateHatch(pull.element, pull.rarityName, isPityPull);
 
       setCurrentResult({ pull, apply: result });
       setPhase(PHASES.REVEAL);
+      // Beat 3: first-ever hatch becomes the awakening ceremony — a guardian
+      // protocol coming online. Shown once; the seen flag drives quest credit.
+      if (firstPull && !currentSave.quests?.seen?.['protocol-online']) {
+        setAwakeningElement(pull.element);
+        setShowAwakening(true);
+      }
       const stinger = getRarityCeremony(pull.rarityName).stinger;
       if (stinger) setTimeout(() => playSound(stinger), 600);
     } finally {
@@ -385,8 +402,42 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
             </div>
           )}
 
-          {phase === PHASES.GRID && (
-            <div className="reveal-result">
+          {/* Beat 3: the awakening — the first hatch as a story event. */}
+          {showAwakening && (
+            <div className="awakening-result" style={{ border: '1px solid #6af', padding: 16, marginTop: 12 }}>
+              <div style={{ fontSize: 10, letterSpacing: '0.2em', color: '#6af', marginBottom: 8 }}>
+                A PROTOCOL ANSWERS
+              </div>
+              <div style={{ fontSize: 13, color: '#fff', marginBottom: 8 }}>
+                Not a pet. A living elemental protocol — one layer of the Elemental Matrix coming back online.
+              </div>
+              <div style={{ fontSize: 12, color: elementColors[awakeningElement]?.glow || '#fc6', marginBottom: 8 }}>
+                {getAwakeningLine(awakeningElement)}
+              </div>
+              <div style={{ fontSize: 11, color: '#999', marginBottom: 12 }}>
+                Something in the machine chose you back. — Felix: the Matrix needs all six base elements stabilized. The campaign map is open.
+              </div>
+              <button
+                type="button"
+                className="hatch-btn"
+                onClick={() => {
+                  playSound('buttonClick');
+                  setShowAwakening(false);
+                  markQuestSeen('protocol-online');
+                  refreshSave();
+                  const done = checkAndCompleteQuests();
+                  done.forEach(({ quest, rewardText }) => {
+                    showToast?.(`📜 QUEST COMPLETE: ${quest.title}${rewardText ? ` — ${rewardText}` : ''}`);
+                  });
+                  refreshSave();
+                }}
+              >
+                BEGIN
+              </button>
+            </div>
+          )}
+
+          {phase === PHASES.GRID && (            <div className="reveal-result">
               <div style={{ fontSize: 9, color: '#888', marginBottom: 8 }}>10x PULL RESULTS</div>
               <div className="pull-grid">
                 {gridResults.map((r, i) => {
