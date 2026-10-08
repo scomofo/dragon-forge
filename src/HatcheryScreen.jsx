@@ -154,10 +154,10 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     setPullPending(true);
     playSound('buttonClick');
     try {
-      const pull = voidEggPull ? executeVoidEggPull() : executePull(currentSave.pityCounter);
+      const pull = voidEggPull ? executeVoidEggPull(currentSave.pityCounter) : executePull(currentSave.pityCounter);
       // A pull made with the pity counter at its max is the guaranteed one —
       // it gets the pity ritual (pink aura + extra held beat). Void Egg pulls
-      // bypass the pity system entirely.
+      // bypass the pity system without resetting it.
       const isPityPull = !voidEggPull && currentSave.pityCounter >= PITY_THRESHOLD - 1;
       const result = applyPullResult(currentSave, pull);
       writeSave(result.save);
@@ -191,15 +191,18 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
     setPullPending(true);
     playSound('buttonClick');
     try {
-      // The pity ritual applies if the ten-pull STARTS on the guaranteed pull;
-      // only the first pull's hatch is animated.
+      // The pity ritual applies to whichever pull in the ten-pull was the
+      // guaranteed one (not just when the ten-pull starts on it); only the
+      // first pull's hatch is animated, but the pity card is crowned in the
+      // results grid wherever it landed.
       const firstIsPityPull = currentSave.pityCounter >= PITY_THRESHOLD - 1;
       const results = [];
       for (let i = 0; i < 10; i++) {
+        const wasPityPull = currentSave.pityCounter >= PITY_THRESHOLD - 1;
         const pull = executePull(currentSave.pityCounter);
         const result = applyPullResult(currentSave, pull);
         currentSave = result.save;
-        results.push({ pull, apply: result });
+        results.push({ pull, apply: result, wasPityPull });
       }
 
       writeSave(currentSave);
@@ -405,6 +408,9 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
                       <div className={`card-badge ${r.apply.isNew ? 'new-badge' : 'xp-badge'}`}>
                         {r.apply.isNew ? 'NEW' : `+${r.apply.xpGained}XP`}
                       </div>
+                      {r.wasPityPull && (
+                        <div className="card-badge pity-badge" title="Pity-guaranteed pull">👑 PITY</div>
+                      )}
                     </div>
                   );
                 })}
@@ -445,7 +451,9 @@ export default function HatcheryScreen({ onNavigate, save, refreshSave }) {
                 style={{ strokeDashoffset: (PITY_RING_CIRCUMFERENCE * (1 - getPityProgress(save.pityCounter))).toFixed(2) }}
               />
             </svg>
-            <div className="pity-hint">Rare+ guaranteed in {pityRemaining} pulls</div>
+            <div className={`pity-hint${pityRemaining === 1 ? ' pity-next' : ''}`}>
+              {pityRemaining === 1 ? '✨ NEXT PULL IS GUARANTEED RARE+ ✨' : `Rare+ guaranteed in ${pityRemaining} pulls`}
+            </div>
           </div>
         )}
 

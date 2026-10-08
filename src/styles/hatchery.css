@@ -380,6 +380,18 @@
   color: #666;
 }
 
+/* Penultimate-pull tension beat: the next pull is the guaranteed one. */
+.pity-hint.pity-next {
+  color: #d4a017;
+  font-weight: 700;
+  animation: pity-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pity-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
 .pull-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -449,6 +461,12 @@
 .pull-grid-card .card-badge {
   font-size: 6px;
   margin-top: 2px;
+}
+
+/* Crown marker on the pity-guaranteed card in a 10-pull results grid. */
+.pull-grid-card .card-badge.pity-badge {
+  color: #d4a017;
+  font-weight: 700;
 }
 
 @media (max-width: 768px) {

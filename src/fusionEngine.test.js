@@ -9,6 +9,7 @@ import {
   getFusionPreview,
   getDiscoveredRecipeKeys,
   getAlchemyGrid,
+  hasAlchemyRecipe,
 } from './fusionEngine';
 import { calculateStatsForLevel } from './battleEngine';
 
@@ -124,6 +125,52 @@ describe('executeFusion', () => {
     const result = executeFusion(parentA, parentB);
     // round(50 * 0.85) = 43 — not the old cap-30 cliff
     expect(result.level).toBe(43);
+  });
+
+  it('feeds base stats (not level-scaled stats) into the fusion base', () => {
+    const base = { hp: 100, atk: 20, def: 20, spd: 20 };
+    const scaled = { hp: 400, atk: 80, def: 80, spd: 80 };
+    const parentA = { id: 'fire', element: 'fire', stats: scaled, baseStats: base, level: 50, shiny: false };
+    const parentB = { id: 'fire', element: 'fire', stats: scaled, baseStats: base, level: 50, shiny: false };
+    const result = executeFusion(parentA, parentB);
+    // stable: avg(100,100) * 1.1 * 1.25 = 137.5 -> 137, NOT avg(400,400) * 1.375 = 550
+    expect(result.fusedBaseStats).toEqual({ hp: 137, atk: 27, def: 27, spd: 27 });
+  });
+
+  it('caps fused base stats at 2x the stronger parent species base', () => {
+    const inflated = { hp: 500, atk: 200, def: 200, spd: 200 };
+    const speciesBase = { hp: 100, atk: 20, def: 20, spd: 20 };
+    const parentA = { id: 'fire', element: 'fire', stats: inflated, baseStats: inflated, speciesBaseStats: speciesBase, level: 50, shiny: false };
+    const parentB = { id: 'fire', element: 'fire', stats: inflated, baseStats: inflated, speciesBaseStats: speciesBase, level: 50, shiny: false };
+    const result = executeFusion(parentA, parentB);
+    // uncapped would be 500*1.375=687 hp; capped at 2x species base = 200
+    expect(result.fusedBaseStats).toEqual({ hp: 200, atk: 40, def: 40, spd: 40 });
+  });
+
+  it('fusion chains converge instead of compounding exponentially', () => {
+    const speciesBase = { hp: 100, atk: 20, def: 20, spd: 20 };
+    let base = { ...speciesBase };
+    for (let gen = 0; gen < 6; gen++) {
+      const parent = { id: 'fire', element: 'fire', stats: base, baseStats: base, speciesBaseStats: speciesBase, level: 50, shiny: false };
+      base = executeFusion(parent, parent).fusedBaseStats;
+    }
+    // old behavior: ~8.5x+ by gen 4 and climbing; new: pinned at the 2x cap
+    expect(base).toEqual({ hp: 200, atk: 40, def: 40, spd: 40 });
+  });
+});
+
+describe('hasAlchemyRecipe', () => {
+  it('is true for authored pairs, order-independent', () => {
+    expect(hasAlchemyRecipe('fire', 'ice')).toBe(true);
+    expect(hasAlchemyRecipe('ice', 'fire')).toBe(true);
+    expect(hasAlchemyRecipe('fire', 'fire')).toBe(true);
+    expect(hasAlchemyRecipe('void', 'light')).toBe(true);
+  });
+
+  it('is false for fallback pairs that silently consume rare parents', () => {
+    expect(hasAlchemyRecipe('void', 'storm')).toBe(false);
+    expect(hasAlchemyRecipe('light', 'fire')).toBe(false);
+    expect(hasAlchemyRecipe('synthesis', 'fire')).toBe(false);
   });
 });
 

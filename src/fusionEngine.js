@@ -63,12 +63,21 @@ export function getStabilityTier(elementA, elementB, stabilityBoost = false) {
   return tier;
 }
 
-export function calculateFusionStats(statsA, statsB, stabilityTier) {
+// Fused base stats can never exceed 2× the stronger parent's SPECIES base
+// stats. Feeding level-scaled stats into the fusion base used to compound
+// exponentially across chains (~8.5× a normal Lv50 by generation 4),
+// trivializing every boss. Capping against the unfused species base — not the
+// parent's possibly-already-fused base — makes chains converge at 2× instead
+// of diverging to infinity. Fusion stays rewarding; it just stops breaking
+// the difficulty curve.
+export const FUSED_BASE_STAT_CAP_MULT = 2;
+
+export function calculateFusionStats(baseA, baseB, stabilityTier, speciesBaseA = null, speciesBaseB = null) {
   const avg = {
-    hp:  (statsA.hp + statsB.hp) / 2,
-    atk: (statsA.atk + statsB.atk) / 2,
-    def: (statsA.def + statsB.def) / 2,
-    spd: (statsA.spd + statsB.spd) / 2,
+    hp:  (baseA.hp + baseB.hp) / 2,
+    atk: (baseA.atk + baseB.atk) / 2,
+    def: (baseA.def + baseB.def) / 2,
+    spd: (baseA.spd + baseB.spd) / 2,
   };
 
   let fused = {
@@ -90,7 +99,25 @@ export function calculateFusionStats(statsA, statsB, stabilityTier) {
     fused.atk = Math.floor(fused.atk * 1.1);
   }
 
+  if (speciesBaseA && speciesBaseB) {
+    const capped = {};
+    for (const key of ['hp', 'atk', 'def', 'spd']) {
+      capped[key] = Math.min(
+        fused[key],
+        Math.floor(FUSED_BASE_STAT_CAP_MULT * Math.max(speciesBaseA[key], speciesBaseB[key])),
+      );
+    }
+    return capped;
+  }
+
   return fused;
+}
+
+// True when the pair has an authored alchemy entry. Otherwise getFusionElement
+// silently falls back to the alphabetically-first element — which can consume
+// a rare parent (e.g. void) to produce a plain offspring with no warning.
+export function hasAlchemyRecipe(elementA, elementB) {
+  return Object.prototype.hasOwnProperty.call(ALCHEMY, sortedKey(elementA, elementB));
 }
 
 // Level carry: the child keeps most of the parents' investment instead of the
@@ -104,7 +131,17 @@ export function getFusionOffspringLevel(levelA, levelB) {
 export function executeFusion(parentA, parentB, { stabilityBoost = false } = {}) {
   const element = getFusionElement(parentA.element, parentB.element);
   const stabilityTier = getStabilityTier(parentA.element, parentB.element, stabilityBoost);
-  const fusedBaseStats = calculateFusionStats(parentA.stats, parentB.stats, stabilityTier);
+  // Base stats in — never level-scaled stats. Feeding scaled stats here used
+  // to compound exponentially across fusion chains. `baseStats` is the
+  // parent's effective base (its own fusedBaseStats, or the species base); the
+  // cap is measured against the unfused species base so chains converge.
+  const fusedBaseStats = calculateFusionStats(
+    parentA.baseStats ?? parentA.stats,
+    parentB.baseStats ?? parentB.stats,
+    stabilityTier,
+    parentA.speciesBaseStats ?? null,
+    parentB.speciesBaseStats ?? null,
+  );
   const shiny = parentA.shiny || parentB.shiny;
 
   const level = getFusionOffspringLevel(parentA.level, parentB.level);
@@ -129,7 +166,13 @@ export function executeFusion(parentA, parentB, { stabilityBoost = false } = {})
 export function getFusionPreview(parentA, parentB, { stabilityBoost = false } = {}) {
   const element = getFusionElement(parentA.element, parentB.element);
   const stability = getStabilityTier(parentA.element, parentB.element, stabilityBoost);
-  const fusedBaseStats = calculateFusionStats(parentA.stats, parentB.stats, stability);
+  const fusedBaseStats = calculateFusionStats(
+    parentA.baseStats ?? parentA.stats,
+    parentB.baseStats ?? parentB.stats,
+    stability,
+    parentA.speciesBaseStats ?? null,
+    parentB.speciesBaseStats ?? null,
+  );
   const level = getFusionOffspringLevel(parentA.level, parentB.level);
   const shiny = Boolean(parentA.shiny || parentB.shiny);
   const offspringStats = calculateStatsForLevel(fusedBaseStats, level, shiny);
