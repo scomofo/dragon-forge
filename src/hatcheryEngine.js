@@ -50,14 +50,16 @@ export function executePull(pityCounter) {
 
 // Void Egg pull: fully deterministic — the forged egg hatches into a shiny
 // Void Dragon, no RNG. Same shape as executePull so the ceremony + apply path
-// are identical (Exotic telegraphing included).
-export function executeVoidEggPull() {
+// are identical (Exotic telegraphing included). The Void Egg bypasses the pity
+// system — it neither advances nor resets the counter, so hatching it at 9/10
+// pity no longer eats the guaranteed Rare+.
+export function executeVoidEggPull(pityCounter = 0) {
   return {
     element: 'void',
     rarityName: 'Exotic',
     rarityMultiplier: 5,
     shiny: true,
-    newPityCounter: 0,
+    newPityCounter: pityCounter,
   };
 }
 

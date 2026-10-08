@@ -212,7 +212,7 @@ describe('orderGridResults', () => {
 });
 
 describe('executeVoidEggPull', () => {
-  it('is fully deterministic: shiny Exotic void, pity reset', () => {
+  it('is fully deterministic: shiny Exotic void, pity preserved', () => {
     const pull = executeVoidEggPull();
     expect(pull).toEqual({
       element: 'void',
@@ -223,16 +223,21 @@ describe('executeVoidEggPull', () => {
     });
   });
 
-  it('grants the void dragon through the standard apply path', () => {
+  it('preserves the incoming pity counter instead of zeroing it', () => {
+    expect(executeVoidEggPull(9).newPityCounter).toBe(9);
+    expect(executeVoidEggPull(4).newPityCounter).toBe(4);
+  });
+
+  it('grants the void dragon through the standard apply path without touching pity', () => {
     const save = {
       dragons: { void: { level: 1, xp: 0, owned: false, discovered: false, shiny: false, fusedBaseStats: null } },
-      pityCounter: 4,
+      pityCounter: 9,
     };
-    const result = applyPullResult(save, executeVoidEggPull());
+    const result = applyPullResult(save, executeVoidEggPull(9));
     expect(result.isNew).toBe(true);
     expect(result.save.dragons.void.owned).toBe(true);
     expect(result.save.dragons.void.shiny).toBe(true);
-    expect(result.save.pityCounter).toBe(0);
+    expect(result.save.pityCounter).toBe(9);
   });
 });
 

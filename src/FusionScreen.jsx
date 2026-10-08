@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { wait, assetUrl } from './utils';
 import gsap from 'gsap';
 import { dragons, elementColors } from './gameData';
-import { getStabilityTier, getFusionElement, getFusionPreview, getAlchemyGrid, executeFusion } from './fusionEngine';
+import { getStabilityTier, getFusionElement, getFusionPreview, getAlchemyGrid, executeFusion, hasAlchemyRecipe } from './fusionEngine';
 import { calculateStatsForLevel, getStageForLevel } from './battleEngine';
 import { fuseDragons, setStabilityBoost } from './persistence';
 import { playSound } from './soundEngine';
@@ -34,7 +34,7 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
       const stage = getStageForLevel(d.level);
       const baseStats = d.fusedBaseStats || dragon.baseStats;
       const stats = calculateStatsForLevel(baseStats, d.level, d.shiny);
-      return { id, ...dragon, ...d, stage, stats, baseStats };
+      return { id, ...dragon, ...d, stage, stats, baseStats, speciesBaseStats: dragon.baseStats };
     });
 
   const canFuse = parentA && parentB && save.dataScraps >= 100;
@@ -151,8 +151,8 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
     await wait(400);
 
     const result = executeFusion(
-      { id: parentA.id, element: parentA.element, stats: parentA.stats, level: parentA.level, shiny: parentA.shiny },
-      { id: parentB.id, element: parentB.element, stats: parentB.stats, level: parentB.level, shiny: parentB.shiny },
+      { id: parentA.id, element: parentA.element, stats: parentA.stats, baseStats: parentA.baseStats, speciesBaseStats: parentA.speciesBaseStats, level: parentA.level, shiny: parentA.shiny },
+      { id: parentB.id, element: parentB.element, stats: parentB.stats, baseStats: parentB.baseStats, speciesBaseStats: parentB.speciesBaseStats, level: parentB.level, shiny: parentB.shiny },
       { stabilityBoost }
     );
 
@@ -324,6 +324,11 @@ export default function FusionScreen({ onNavigate, save, refreshSave }) {
                 {pendingOverwrite && (
                   <div className="fusion-warning">
                     ⚠ Will REPLACE your existing {(dragons[pendingOverwrite]?.name || pendingOverwrite).toUpperCase()}!
+                  </div>
+                )}
+                {parentA && parentB && !hasAlchemyRecipe(parentA.element, parentB.element) && (
+                  <div className="fusion-warning">
+                    ⚠ No alchemy recipe for {parentA.name} + {parentB.name} — the offspring will be a plain {(dragons[preview.element]?.name || preview.element).toUpperCase()}. No refunds on consumed parents.
                   </div>
                 )}
                 <div className="fusion-warning">⚠ Both parents will be consumed</div>
