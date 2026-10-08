@@ -22,6 +22,20 @@ function dailyDone(save) {
   return { ...save, lastDailyCompleted: todaySeed() };
 }
 
+// Act I quest spine: mid-game fixtures describe players with the opening
+// behind them. Without a completed quest ledger the tracked main quest would
+// (correctly) outrank the system under test — these players finished Act I.
+const ACT1_QUEST_IDS = [
+  'dead-memory', 'protocol-online', 'weaver-distress', 'captains-log',
+  'analog-bypass', 'friction-saddle', 'southern-partition', 'threat-model',
+];
+function act1Done(save) {
+  return {
+    ...save,
+    quests: { completed: [...ACT1_QUEST_IDS], seen: { 'protocol-online': true }, recorrupted: [], adminNoticed: true },
+  };
+}
+
 describe('getPlayerGuidance', () => {
   it('points new players at the first hatch', () => {
     expect(getPlayerGuidance(freshSave)).toMatchObject({
@@ -43,13 +57,13 @@ describe('getPlayerGuidance', () => {
   });
 
   it('points players with spendable rewards at the shop', () => {
-    const save = dailyDone({
+    const save = act1Done(dailyDone({
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 3 } },
       defeatedNpcs: ['firewall_sentinel'],
       dataScraps: 120,
       inventory: { cores: { stone: 1 } },
-    });
+    }));
 
     expect(getPlayerGuidance(save)).toMatchObject({
       target: 'shop',
@@ -58,13 +72,13 @@ describe('getPlayerGuidance', () => {
   });
 
   it('does not point at the shop when nothing is affordable', () => {
-    const save = dailyDone({
+    const save = act1Done(dailyDone({
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 3 } },
       defeatedNpcs: ['firewall_sentinel'],
       dataScraps: 30,
       inventory: { cores: { stone: 1 } },
-    });
+    }));
 
     expect(getPlayerGuidance(save)).toMatchObject({
       target: 'map',
@@ -73,7 +87,7 @@ describe('getPlayerGuidance', () => {
   });
 
   it('points players at fusion when they have enough lineage and level', () => {
-    const save = dailyDone({
+    const save = act1Done(dailyDone({
       ...freshSave,
       dragons: {
         ...freshSave.dragons,
@@ -83,7 +97,7 @@ describe('getPlayerGuidance', () => {
       defeatedNpcs: ['firewall_sentinel'],
       dataScraps: 0,
       inventory: { cores: {} },
-    });
+    }));
 
     expect(getPlayerGuidance(save)).toMatchObject({
       target: 'fusion',
@@ -92,7 +106,7 @@ describe('getPlayerGuidance', () => {
   });
 
   it('points players at singularity when it unlocks', () => {
-    const save = dailyDone({
+    const save = act1Done(dailyDone({
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 7 } },
       defeatedNpcs: ['firewall_sentinel', 'protocol_vulture'],
@@ -100,7 +114,7 @@ describe('getPlayerGuidance', () => {
       inventory: { cores: {} },
       singularityProgress: { defeated: [] },
       flags: { currentAct: 3 },
-    });
+    }));
 
     expect(getPlayerGuidance(save)).toMatchObject({
       target: 'singularity',
@@ -109,14 +123,14 @@ describe('getPlayerGuidance', () => {
   });
 
   it('points at the next campaign node when nothing else is actionable', () => {
-    const save = dailyDone({
+    const save = act1Done(dailyDone({
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 4 } },
       defeatedNpcs: ['firewall_sentinel'],
       dataScraps: 0,
       inventory: { cores: {} },
       flags: { currentAct: 1 },
-    });
+    }));
 
     expect(getPlayerGuidance(save)).toMatchObject({
       target: 'map',
@@ -134,12 +148,12 @@ describe('getPlayerGuidance', () => {
   });
 
   it('keeps an entered Outer Grid route ahead of the daily until its reward is collected', () => {
-    const save = {
+    const save = act1Done({
       ...freshSave,
       dragons: { fire: { owned: true, level: 3 } },
       defeatedNpcs: ['firewall_sentinel'],
       outerGrid: { roomId: 'firewall-span', visited: ['signal-breach'] },
-    };
+    });
     expect(getPlayerGuidance(save)).toMatchObject({ target: 'outerGrid', action: 'CONTINUE ROUTE' });
     save.defeatedNpcs.push('buffer_overflow');
     expect(getPlayerGuidance(save).title).toContain('Return Gate');
@@ -174,22 +188,22 @@ describe('getPlayerGuidance', () => {
   });
 
   it('points at forge when player has enough progression to upgrade', () => {
-    const save = dailyDone({
+    const save = act1Done(dailyDone({
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 5 } },
       defeatedNpcs: ['a', 'b', 'c'],
       skye: { wrenchTier: 1 },
-    });
+    }));
     expect(getPlayerGuidance(save)).toMatchObject({ target: 'forge', action: 'VISIT FORGE' });
   });
 
   it('surfaces an open Daily Challenge once the player is battling', () => {
-    const save = {
+    const save = act1Done({
       ...freshSave,
       dragons: { ...freshSave.dragons, fire: { owned: true, level: 5 } },
       defeatedNpcs: ['firewall_sentinel'],
       lastDailyCompleted: 19990101, // some other day — today's is open
-    };
+    });
     expect(getPlayerGuidance(save)).toMatchObject({ target: 'battleSelect', action: 'DAILY OPEN' });
   });
 
@@ -211,5 +225,39 @@ describe('getPlayerGuidance', () => {
 
   it('keeps the daily out of the way for brand-new players (first hatch/battle first)', () => {
     expect(getPlayerGuidance(freshSave).action).not.toBe('DAILY OPEN');
+  });
+
+  it('drives the chip from the tracked quest once early steps are done (quest what-next)', () => {
+    const now = new Date();
+    const todaySeed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    const save = {
+      ...freshSave,
+      dragons: { ...freshSave.dragons, fire: { owned: true, level: 5 } },
+      defeatedNpcs: ['firewall_sentinel'],
+      stats: { battlesWon: 1 },
+      flags: { metFelix: false },
+      lastDailyCompleted: 19990101, // daily open — quest still outranks it
+      quests: { completed: [], seen: {}, recorrupted: [], adminNoticed: false },
+    };
+    const guidance = getPlayerGuidance(save);
+    expect(guidance.target).toBe('forge');
+    expect(guidance.action).toBe('MEET FELIX');
+    expect(guidance.title).toContain('Keep the rendered world');
+  });
+
+  it('points at the forge for the wrench upgrade when the analog-bypass quest is tracked', () => {
+    const save = {
+      ...freshSave,
+      dragons: { ...freshSave.dragons, fire: { owned: true, level: 9 } },
+      defeatedNpcs: ['firewall_sentinel'],
+      stats: { battlesWon: 5 },
+      flags: { metFelix: true, journalBriefingSeen: true, fragmentsUnlocked: ['001', '002'] },
+      skye: { wrenchTier: 1, bountiesCleared: 0 },
+      lastDailyCompleted: 19990101,
+      quests: { completed: ['dead-memory', 'weaver-distress', 'captains-log'], seen: { 'protocol-online': true }, recorrupted: [], adminNoticed: false },
+    };
+    const guidance = getPlayerGuidance(save);
+    expect(guidance.target).toBe('forge');
+    expect(guidance.action).toBe('UPGRADE');
   });
 });

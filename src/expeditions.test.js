@@ -12,6 +12,12 @@ function explorer(defeatedNpcs = ['firewall_sentinel']) {
     dragons: { fire: { owned: true, level: 8 }, ice: { owned: true, level: 8 } },
     dataScraps: 17, defeatedNpcs, inventory: { cores: { ice: 2 } },
     stats: { battlesWon: 4, totalScrapsEarned: 70 }, flags: { metFelix: true },
+    // Act I quest spine: these fixtures are mid-game explorers with the
+    // opening beats behind them, so the tracked quest stays out of the way.
+    quests: {
+      completed: ['dead-memory', 'protocol-online', 'weaver-distress', 'captains-log', 'analog-bypass', 'friction-saddle', 'southern-partition', 'threat-model'],
+      seen: { 'protocol-online': true }, recorrupted: [], adminNoticed: true,
+    },
   };
 }
 

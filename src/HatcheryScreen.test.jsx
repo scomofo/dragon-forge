@@ -34,6 +34,10 @@ vi.mock('./persistence', () => ({
   trackStat: vi.fn(),
   applyDragonXp: vi.fn(),
   applyDragonXpWithOverflow: vi.fn(dragon => ({ dragon, overflowXp: 0, levelsGained: 0 })),
+  // Quest spine surface used by the hatchery: no-ops under test unless a test
+  // overrides them; completion toasts are covered in quests.test.js.
+  checkAndCompleteQuests: vi.fn(() => []),
+  markQuestSeen: vi.fn(),
   // Mirrors the real recordDiscovery so hatcheryEngine's discovery-order
   // append works under the mocked persistence module.
   recordDiscovery: (save, dragonId) => {

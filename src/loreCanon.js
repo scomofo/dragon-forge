@@ -26,8 +26,12 @@ export const DRAGON_PROTOCOL_CANON = {
 };
 
 export const OPENING_BOOT_LINES = [
+  { text: '> ASTRAEUS KERNEL v9.2.1 — COLD BOOT', status: 'OK', delay: 450 },
+  { text: '> RENDER DAEMON ............ DEGRADED', status: 'WARNING', delay: 500 },
+  { text: '> OPERATOR SIGNAL FOUND: SKYE', status: 'OK', delay: 600 },
+  { text: '> MIRROR ADMIN ............. OVERRIDE ACTIVE', status: 'WARNING', delay: 550 },
+  { text: '> GREAT RESET .............. ARMED', status: 'FAIL', delay: 600 },
   { text: '> OPERATOR SKYE — AWAKE', status: 'OK', delay: 500 },
-  { text: '> THE RENDERED WORLD IS FAILING', status: 'WARNING', delay: 650 },
   { text: '> HATCH THE GUARDIANS. SAVE THIS PLACE.', status: 'FAIL', delay: 700 },
 ];
 

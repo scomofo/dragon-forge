@@ -143,9 +143,11 @@ describe('codex titles catalog', () => {
     }
   });
 
-  it('grants 8 distinct cosmetic titles', () => {
-    expect(Object.keys(TITLES)).toHaveLength(8);
+  it('grants 9 distinct cosmetic titles', () => {
+    expect(Object.keys(TITLES)).toHaveLength(9);
     expect(getTitleName('nope')).toBeNull();
+    // Act I quest spine: the dead-memory quest grants the Worldkeeper title.
+    expect(getTitleName('worldkeeper')).toBe('Worldkeeper');
   });
 
   it('checkMilestones carries titleReward through to the claim path', () => {

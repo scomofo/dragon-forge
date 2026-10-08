@@ -19,7 +19,7 @@ import SingularityScreen from './SingularityScreen';
 import ForgeScreen from './ForgeScreen';
 import CreditsScreen from './CreditsScreen';
 import { playMusic, stopMusic, playSound } from './soundEngine';
-import { loadSave, getSaveStatus, recordRemnantDefeat, beginSession, accumulatePlaytime, grantWelcomeBack, rememberExpedition } from './persistence';
+import { loadSave, getSaveStatus, recordRemnantDefeat, beginSession, accumulatePlaytime, grantWelcomeBack, rememberExpedition, checkAndCompleteQuests } from './persistence';
 import { getExpedition } from './expeditions';
 import { getSingularityStage, scaleBossForPlayer } from './singularityProgress';
 import { checkMilestones } from './journalMilestones';
@@ -53,10 +53,16 @@ export default function App() {
   const saveSessionEpochRef = useRef(0);
   const saveStatus = useSaveStatus();
   function refreshSave() {
+    // Act I quest spine: quest completion is state-derived, so any refresh
+    // settles newly-satisfied quests. Idempotent — already-done quests no-op.
+    const questsDone = checkAndCompleteQuests();
     const newSave = loadSave();
     const prevIds = new Set(checkMilestones(save).filter(m => m.newlyClaimed).map(m => m.id));
     const fresh = checkMilestones(newSave).filter(m => m.newlyClaimed && !prevIds.has(m.id));
     if (fresh.length > 0) showToast(`Milestone ready: "${fresh[0].name}" — claim in JOURNAL`);
+    questsDone.forEach(({ quest, rewardText }) => {
+      showToast(`📜 QUEST COMPLETE: ${quest.title}${rewardText ? ` — ${rewardText}` : ''}`);
+    });
     setSave(newSave);
   }
   const stage = getSingularityStage(save);
@@ -292,7 +298,7 @@ export default function App() {
       )}
       {screen === SCREENS.HATCHERY && (
         <div className="screen-enter" key="hatchery">
-          <HatcheryScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} />
+          <HatcheryScreen onNavigate={handleNavigate} save={save} refreshSave={refreshSave} showToast={showToast} />
         </div>
       )}
       {screen === SCREENS.FUSION && (

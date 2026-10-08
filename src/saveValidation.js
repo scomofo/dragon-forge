@@ -111,6 +111,14 @@ const schema = {
   // Each expedition already sanitizes its individual checkpoints, route choices,
   // and flags. Keep those repairs without accepting a broken progress container.
   outerGrid: object, frozenCache: object, stormSpine: object, adminCore: object,
+  // Act I quest spine: completion ledger, one-time ceremony flags, recorrupted
+  // nodes (Beat 9 rollback ambushes), Admin threat-model flag.
+  quests: shape({
+    completed: strings,
+    seen: record(boolean),
+    recorrupted: strings,
+    adminNoticed: boolean,
+  }),
 };
 
 export function validateSaveShape(save) {

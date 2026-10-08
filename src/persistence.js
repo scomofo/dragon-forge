@@ -8,6 +8,7 @@ import { isExpeditionAvailable } from './expeditions';
 import { fillSaveDefaults, validateSaveShape } from './saveValidation';
 import { createSaveStorage, READY_SAVE_STATUS } from './saveStorage';
 import { getDailySeed } from './dailyChallenge';
+import { QUESTS, getQuestProgress, applyQuestCompletion } from './quests';
 
 const DEFAULT_SAVE = {
   // `discovered` is a permanent codex flag: once a dragon has ever been owned it stays
@@ -36,6 +37,10 @@ const DEFAULT_SAVE = {
   // an empty list and only new discoveries append from here on.
   discoveryOrder: [],
   defeatedNpcs: [],
+  // Act I quest spine (design/quest-spine.md): completion records, one-time
+  // ceremony flags, recorrupted campaign nodes (Beat 9 rollback ambushes),
+  // and whether the Admin has added Skye to its threat model.
+  quests: { completed: [], seen: {}, recorrupted: [], adminNoticed: false },
   outerGrid: getOuterGridProgress({}),
   frozenCache: getFrozenCacheProgress({}),
   stormSpine: getStormSpineProgress({}),
@@ -139,6 +144,17 @@ function migrateSave(save) {
     save.dragons.synthesis = { level: 1, xp: 0, owned: false, shiny: false, fusedBaseStats: null };
   }
   if (save.defeatedNpcs === undefined) save.defeatedNpcs = [];
+  // Quest spine backfill: legacy saves get a clean quest ledger. Completion is
+  // derived from live state on the next checkAndCompleteQuests pass, so old
+  // progress is recognized, not reset.
+  if (save.quests === undefined || save.quests === null) {
+    save.quests = { completed: [], seen: {}, recorrupted: [], adminNoticed: false };
+  } else {
+    if (!Array.isArray(save.quests.completed)) save.quests.completed = [];
+    if (typeof save.quests.seen !== 'object' || save.quests.seen === null) save.quests.seen = {};
+    if (!Array.isArray(save.quests.recorrupted)) save.quests.recorrupted = [];
+    if (save.quests.adminNoticed === undefined) save.quests.adminNoticed = false;
+  }
   if (save.singularityProgress === undefined) {
     save.singularityProgress = { defeated: [], finalBossPhase: 0, replayCounts: {} };
   } else if (!save.singularityProgress.replayCounts) {
@@ -506,6 +522,46 @@ export function recordNpcDefeat(npcId) {
     save.defeatedNpcs.push(npcId);
     writeSave(save);
   }
+}
+
+// --- Act I quest spine ------------------------------------------------------
+// Checks every available quest against live save state and completes the ones
+// whose subtasks all hold. Idempotent: already-completed quests are skipped.
+// Returns the newly completed quests with their reward text for toasts.
+export function checkAndCompleteQuests() {
+  const save = loadSave();
+  const completed = [];
+  for (const quest of QUESTS) {
+    if ((save.quests?.completed || []).includes(quest.id)) continue;
+    const progress = getQuestProgress(quest, save);
+    if (progress.status === 'locked' || !progress.done) continue;
+    const rewardText = applyQuestCompletion(save, quest);
+    completed.push({ quest, rewardText });
+  }
+  if (completed.length > 0) writeSave(save);
+  return completed;
+}
+
+// Marks a one-time quest ceremony as seen (e.g. the first-hatch awakening).
+export function markQuestSeen(questId) {
+  const save = loadSave();
+  if (!save.quests) save.quests = { completed: [], seen: {}, recorrupted: [], adminNoticed: false };
+  if (!save.quests.seen[questId]) {
+    save.quests.seen[questId] = true;
+    writeSave(save);
+  }
+}
+
+// Beat 9: re-clearing a recorrupted node clears the rollback flag.
+export function clearRecorruption(npcId) {
+  const save = loadSave();
+  const list = save.quests?.recorrupted;
+  if (!Array.isArray(list)) return false;
+  const idx = list.indexOf(npcId);
+  if (idx === -1) return false;
+  list.splice(idx, 1);
+  writeSave(save);
+  return true;
 }
 
 // Endgame replay reward: every 5th total clear of a Singularity boss yields a

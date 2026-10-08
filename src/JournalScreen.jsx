@@ -8,13 +8,76 @@ import { checkMilestones, getTitleName } from './journalMilestones';
 import { stageToRoman } from './utils';
 import { JOURNAL_BRIEFING } from './loreCanon';
 import { CAPTAINS_LOG_FRAGMENTS, getCaptainLogDisplay } from './forgeData';
+import { getAvailableQuests, getTrackedQuest } from './quests';
 import NavBar from './NavBar';
 import DragonSprite from './DragonSprite';
 import ArchiveScreen from './ArchiveScreen';
 
+// Act I quest spine: the tracked quest log. The pinned quest is the spine's
+// current beat; every subtask carries its "why" so the journal answers the
+// flow question, not just the checklist.
+function QuestLog({ save, onNavigate }) {
+  const quests = getAvailableQuests(save);
+  const tracked = getTrackedQuest(save);
+  const active = quests.filter((p) => p.status === 'active' && p.quest.id !== tracked?.quest.id);
+  const completed = quests.filter((p) => p.status === 'complete');
+
+  const renderQuest = (progress, pinned) => {
+    const q = progress.quest;
+    return (
+      <article key={q.id} className={`journal-log-entry ${pinned ? 'is-unlocked' : ''}`}>
+        <h4>
+          {pinned && '📌 '}{q.title}
+          <span style={{ color: '#666', fontWeight: 'normal' }}> — {q.giver}</span>
+        </h4>
+        <p style={{ color: '#999', fontStyle: 'italic' }}>{q.briefing}</p>
+        <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0' }}>
+          {progress.subtasks.map((st) => (
+            <li key={st.id} style={{ marginBottom: 6, color: st.done ? '#5a8c5a' : '#ccc' }}>
+              <span style={{ marginRight: 8 }}>{st.done ? '✓' : '○'}</span>
+              {st.label}
+              {!st.done && (
+                <button
+                  type="button"
+                  className="milestone-claim-btn"
+                  style={{ marginLeft: 10 }}
+                  onClick={() => { playSound('buttonClick'); onNavigate(st.target); }}
+                >
+                  {st.action} →
+                </button>
+              )}
+              <div style={{ fontSize: 11, color: '#777', marginTop: 2, marginLeft: 24 }}>{st.why}</div>
+            </li>
+          ))}
+        </ul>
+        {progress.status === 'complete' ? (
+          <p style={{ color: '#8a9' }}>“{q.completeText}”</p>
+        ) : (
+          <p style={{ color: '#789' }}>Next: {q.whatNext}</p>
+        )}
+      </article>
+    );
+  };
+
+  return (
+    <div className="journal-briefing">
+      <p className="journal-briefing-kicker">TRACKED QUESTS — ACT I: THE KIND LIE</p>
+      {tracked && renderQuest(tracked, true)}
+      {active.map((p) => renderQuest(p, false))}
+      {completed.length > 0 && (
+        <div className="journal-log-head" style={{ marginTop: 16 }}>
+          <h3>COMPLETED</h3>
+          <span>{completed.length} {completed.length === 1 ? 'quest' : 'quests'}</span>
+        </div>
+      )}
+      {completed.map((p) => renderQuest(p, false))}
+      {quests.length === 0 && <p style={{ color: '#666' }}>No quests yet.</p>}
+    </div>
+  );
+}
+
 export default function JournalScreen({ onNavigate, save, refreshSave, showToast }) {
-  const [tab, setTab] = useState(() => (save.flags?.journalBriefingSeen ? 'dragons' : 'briefing'));
-  const [editingName, setEditingName] = useState(false);
+  const [tab, setTab] = useState(() => (save.flags?.journalBriefingSeen ? 'dragons' : 'briefing'));  const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
   const [selectedId, setSelectedId] = useState(() => {
     const firstOwned = JOURNAL_DRAGON_IDS.find(el => save.dragons[el]?.owned);
@@ -94,6 +157,15 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
         <button
           type="button"
           role="tab"
+          aria-selected={tab === 'quests'}
+          className={`journal-tab ${tab === 'quests' ? 'active' : ''}`}
+          onClick={() => switchTab('quests')}
+        >
+          QUESTS
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={tab === 'dragons'}
           className={`journal-tab ${tab === 'dragons' ? 'active' : ''}`}
           onClick={() => switchTab('dragons')}
@@ -113,6 +185,8 @@ export default function JournalScreen({ onNavigate, save, refreshSave, showToast
 
       {tab === 'archive' ? (
         <ArchiveScreen save={save} milestones={milestoneResults} onClaim={handleClaim} />
+      ) : tab === 'quests' ? (
+        <QuestLog save={save} onNavigate={onNavigate} />
       ) : tab === 'briefing' ? (
         <div className="journal-briefing">
           <p className="journal-briefing-kicker">FIELD BRIEFING — PROF. FELIX</p>

@@ -5,6 +5,7 @@ import { BUY_ITEMS, FORGE_RECIPES, canAffordBuy, canForge } from './shopItems';
 import { REQUIRED_FRAGMENT_IDS } from './loreCanon';
 import { isDailyChallengeCompleted } from './dailyChallenge';
 import { getExpeditionGuidance } from './expeditions';
+import { getTrackedStep } from './quests';
 
 function getOwnedDragons(save) {
   return Object.entries(save?.dragons || {}).filter(([, dragon]) => dragon?.owned);
@@ -60,6 +61,18 @@ export function getPlayerGuidance(save) {
   // chores. Saves that have never entered a route keep their existing guidance.
   const expedition = getExpeditionGuidance(save);
   if (expedition) return expedition;
+
+  // Act I quest spine: the tracked quest's current step tells the player WHY,
+  // not just where. Outranks daily chores — the "what next" is the flow fix —
+  // but yields to a route the player deliberately entered.
+  const tracked = getTrackedStep(save);
+  if (tracked) {
+    return {
+      target: tracked.step.target,
+      action: tracked.step.action,
+      title: `${tracked.quest.title} — ${tracked.step.why}`,
+    };
+  }
 
   // The daily is the highest-value thing on the board while it's open — it
   // pays 3× scraps / 2× XP and feeds the streak, so outrank optional systems.

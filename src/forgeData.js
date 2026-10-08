@@ -250,6 +250,18 @@ export const RELICS = {
     source: 'Mirror Admin\'s Sanctum (Act IV)',
     effect: '+15% XP gain from all dragon battles.',
   },
+  // Act I quest spine (Beat 7): the Weaver speaks through her craft. Her voice
+  // lives in this description — practical, warm, precise about grip and drift.
+  friction_saddle: {
+    id: 'friction_saddle',
+    name: 'Friction Saddle',
+    icon: '🏇',
+    slotCost: 1,
+    mythic: false,
+    source: 'The Weaver\'s workshop (Act I quest)',
+    effect: '+10% DEF in dragon battles.',
+    flavor: 'Analog fasteners, digital silk, and a grip that will hold through a dive. She measured your dragon twice and said nothing the whole time. — The Weaver',
+  },
 };
 
 // Wrench upgrade tiers — each upgrade unlocks more relic slots.
@@ -367,7 +379,7 @@ export function getRelicBattleModifiers(relicIds = []) {
   const has = (id) => relicIds.includes(id);
   return {
     atkBonus:            has('iron_knuckle')     ? 5    : 0,
-    defMultiplier:       has('phase_lens')        ? 1.15 : 1.0,
+    defMultiplier:       has('phase_lens')        ? 1.15 : has('friction_saddle') ? 1.10 : 1.0,
     spdBonus:            has('twin_forge')        ? 5    : 0,
     chainHitChance:      has('hydra_cog')         ? 0.20 : 0,
     statusDurationBonus: has('coolant_core')      ? 1    : 0,
