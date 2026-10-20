@@ -34,7 +34,7 @@ func play_music_context(track_key: String) -> void:
 	if not _music_enabled or track_key == _current_track:
 		return
 	_current_track = track_key
-	var path := "res://assets/audio/music/%s.ogg" % track_key
+	var path := "res://assets/music/%s.mp3" % track_key
 	if not ResourceLoader.exists(path):
 		return
 	_music_player.stream = load(path)
